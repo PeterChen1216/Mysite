@@ -789,27 +789,27 @@ pre>code {
     width: 168px;
     border-width: 4px;
     border-style: solid;
-    border-radius: 50%
+    border-radius: 8px
 }
-
+ 
 .border-dark {
     border-color: #292929
 }
-
+ 
 .border-bright {
     border-color: #fff
 }
-
+ 
 .border-light {
     border-color: #e8e8e8
 }
-
+ 
 .circle-img-light {
     margin: 0px auto;
     width: 168px;
     border-width: 3px;
     border-style: solid;
-    border-radius: 50%
+    border-radius: 8px
 }
 
 #my-name {
