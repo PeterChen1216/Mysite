@@ -251,9 +251,9 @@ const blocks: Array<{ name: BlockName; x: number; y: number; w: number; glow?: s
   /* GPA badge: right-anchored so a long honor name can't run off the page. It is longer than
      Figma's (the honor's full name comes from content), so where there is room beside the
      unscaled stage — side by side from 1280 px, centred and stacked at 672–1023 px — it
-     overhangs the stage by 40 px (Figma: 24 px) to stay clear of the gold block. Elsewhere the
-     stage is scaled down or the margin is too narrow, and the badge, kept at its full text size,
-     sits over the top of the gold block (docs/STATUS.md D). */
+     overhangs the stage by 40 px (Figma: 24 px) to stay clear of the gold block. Elsewhere it
+     covers part of the gold block: its top half where the stage is scaled down and the badge
+     keeps its full text size, a 13×14 px corner at 592–671 px (docs/STATUS.md D). */
   .stage__tip--gpa {
     right: 0;
     top: 8px;

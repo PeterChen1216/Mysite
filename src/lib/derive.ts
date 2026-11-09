@@ -4,6 +4,7 @@
  * unit-tested in one place (tests/unit/derive.test.ts).
  */
 import { createHash } from 'node:crypto';
+import { decodeHTML, decodeHTMLAttribute } from 'entities';
 import { formatYearMonth } from './format';
 
 // ---------------------------------------------------------------- shapes (structural)
@@ -82,8 +83,8 @@ export function githubHandle(socials: SocialLike[]): string | undefined {
   return gh ? new URL(gh.url).pathname.split('/').filter(Boolean)[0] : undefined;
 }
 
-/** `2024-07`, `2024-09` → `2024-07 → 2024-09`; `present` → `now` (label from copy.yaml). */
-export function logRange(start: string, end: string, nowLabel = 'now'): string {
+/** `2024-07`, `2024-09` → `2024-07 → 2024-09`; `present` → copy.yaml `labels.now`. */
+export function logRange(start: string, end: string, nowLabel: string): string {
   return `${start} → ${end === 'present' ? nowLabel : end}`;
 }
 
@@ -171,9 +172,9 @@ export function copyVars(input: {
 }
 
 /**
- * True when a string is only symbols or punctuation (`_`, `↓`, `▲`). Hero.astro hides such a
- * word from screen readers only when it is highlighted (the `[_]` cursor); a plain `&` or `+` in
- * the headline is part of the sentence and stays readable.
+ * True when a string is only symbols or punctuation (`_`, `↓`, `▲`). Hero.astro hides a
+ * highlighted part of the headline from screen readers when it is decoration like this (the
+ * `[_]` cursor); `&` or `+` in the sentence or inside a highlighted phrase stays readable.
  */
 export function isDecorative(text: string): boolean {
   return /^[^\p{L}\p{N}]+$/u.test(text.trim());
@@ -185,80 +186,123 @@ export function isDecorative(text: string): boolean {
  * never decoration: `C++` and `cd ~` keep them.
  */
 const GLYPH = String.raw`(?:(?!\p{ASCII})[\p{So}\p{Sm}\p{Sk}][\u{FE0E}\u{FE0F}]?(?:\u{200D}(?!\p{ASCII})[\p{So}\p{Sm}\p{Sk}][\u{FE0E}\u{FE0F}]?)*)`;
-// One glyph per repetition, so a long run of symbols can't make the match backtrack.
-const LEAD_GLYPHS = new RegExp(String.raw`^(?:${GLYPH}\s*)*`, 'u');
-const TRAIL_GLYPHS = new RegExp(String.raw`(?:\s*${GLYPH})*$`, 'u');
+/** A label cut into glyphs, runs of whitespace and single other characters, left to right. */
+const GLYPH_TOKENS = new RegExp(String.raw`${GLYPH}|\s+|[^]`, 'gu');
+const IS_GLYPH = new RegExp(String.raw`^${GLYPH}$`, 'u');
 
 /**
  * Split decorative symbols off the ends of a label (`▲ back to spawn` → lead `▲ `), so they can be
  * hidden from screen readers while the words stay readable. Ordinary punctuation such as
- * `(loading…)` belongs to the words.
+ * `(loading…)` belongs to the words. Linear in the label's length.
  */
 export function glyphParts(label: string): { lead: string; text: string; trail: string } {
-  const lead = LEAD_GLYPHS.exec(label)?.[0] ?? '';
-  const rest = label.slice(lead.length);
-  const trail = TRAIL_GLYPHS.exec(rest)?.[0] ?? '';
-  const text = rest.slice(0, rest.length - trail.length);
-  return text ? { lead, text, trail } : { lead: '', text: label, trail: '' };
+  const tokens = label.match(GLYPH_TOKENS) ?? [];
+  const glyph = (i: number) => i >= 0 && i < tokens.length && IS_GLYPH.test(tokens[i]!);
+  const space = (i: number) => i >= 0 && i < tokens.length && /^\s+$/.test(tokens[i]!);
+  // Lead: glyphs from the start, each with the whitespace after it.
+  let start = 0;
+  while (glyph(start)) start += space(start + 1) ? 2 : 1;
+  // Trail: glyphs from the end, each with the whitespace before it.
+  let end = tokens.length;
+  while (end - 1 >= start && glyph(end - 1)) end -= space(end - 2) && end - 2 >= start ? 2 : 1;
+  const text = tokens.slice(start, end).join('');
+  if (!text) return { lead: '', text: label, trail: '' };
+  return { lead: tokens.slice(0, start).join(''), text, trail: tokens.slice(end).join('') };
 }
 
 // ---------------------------------------------------------------- now.md → ticker lines
-/** An HTML tag whose name matches `names`; quoted attribute values may contain `>`. */
-const tagsNamed = (names: string) =>
-  new RegExp(String.raw`<\/?(?:${names})(?![\w-])(?:[^>"']|"[^"]*"|'[^']*')*>`, 'gi');
-const ANY_TAG = tagsNamed('[a-z][\\w-]*');
-/** Tags that start a new line of their own: each list item and paragraph is one ticker item. */
-const BLOCK_TAGS = tagsNamed(
-  'address|article|aside|blockquote|dd|details|div|dl|dt|figcaption|figure|footer|header|hr|li|main|nav|ol|p|pre|section|summary|table|tbody|tfoot|thead|tr|ul',
+/**
+ * One HTML comment, or one tag: `</`?, its name, then its attributes up to the closing `>`.
+ * Quoted attribute values may hold `<` and `>` (Astro does not escape them), so a whole tag is
+ * always read as one token.
+ */
+const HTML_TOKEN = /<!--[\s\S]*?(?:-->|$)|<(\/?)([a-z][\w-]*)((?:[^>"']|"[^"]*"|'[^']*')*)>/gi;
+/** Elements that end one ticker item and start the next: each list item and paragraph is one. */
+const BLOCK = new Set(
+  'address article aside blockquote dd details div dl dt figcaption figure footer header hr li main nav ol p pre section summary table tbody tfoot thead tr ul'.split(
+    ' ',
+  ),
 );
-/** Tags that separate words without starting a new item (a hard line break, table cells). */
-const SPACE_TAGS = tagsNamed('br|td|th');
+/** Elements that separate words within an item: a hard line break, table cells. */
+const SPACE = new Set(['br', 'td', 'th']);
+/** Elements dropped with their content: their text is not a status line. */
+const DROP = new Set(['script', 'style', 'template']);
+const HEADING = /^h[1-6]$/;
 
-const NAMED_ENTITIES: Record<string, string> = {
-  amp: '&',
-  lt: '<',
-  gt: '>',
-  quot: '"',
-  apos: "'",
-  nbsp: ' ',
-};
-/** `&#x26;` `&#38;` `&amp;` → `&`; an unknown named reference stays as written. */
-function decodeEntities(text: string): string {
-  return text.replace(
-    /&(?:#x([0-9a-f]+)|#(\d+)|([a-z]+));/gi,
-    (whole: string, hex?: string, dec?: string, name?: string) => {
-      if (name) return NAMED_ENTITIES[name] ?? whole;
-      const cp = hex ? parseInt(hex, 16) : Number(dec);
-      return cp > 0 && cp <= 0x10ffff ? String.fromCodePoint(cp) : whole;
-    },
-  );
+/** An attribute's decoded value from a tag's attribute text. */
+function attribute(attrs: string, name: string): string | undefined {
+  const m = new RegExp(
+    String.raw`(?:^|\s)${name}\s*=\s*(?:"([^"]*)"|'([^']*)'|([^\s"'=<>\x60]+))`,
+    'i',
+  ).exec(attrs);
+  const raw = m?.[1] ?? m?.[2] ?? m?.[3];
+  return raw === undefined ? undefined : decodeHTMLAttribute(raw);
+}
+
+/** An image's text: its alt, also for a local image, whose alt Astro keeps in a marker attribute. */
+function imageText(attrs: string): string {
+  const alt = attribute(attrs, 'alt');
+  if (alt !== undefined) return alt;
+  const marker = attribute(attrs, '__ASTRO_IMAGE_');
+  if (!marker) return '';
+  try {
+    const value: unknown = (JSON.parse(marker) as { alt?: unknown }).alt;
+    return typeof value === 'string' ? value : '';
+  } catch {
+    return '';
+  }
 }
 
 /**
  * now.md, as rendered by Astro's Markdown pipeline (the CommonMark + GFM used for every page),
  * → one plain line per list item or paragraph, for the ticker. Working from the rendered HTML
- * rather than the Markdown source means links, autolinks, reference links, emphasis, code spans,
- * escapes and entities are already resolved exactly as Markdown defines them. Headings,
- * comments and footnotes are dropped, an image becomes its alt text, and line breaks inside an
- * item become spaces.
+ * rather than the Markdown source means links, autolinks, reference links, emphasis, code spans
+ * and escapes are already resolved exactly as Markdown defines them; character references are
+ * decoded with the full HTML table. Headings (other than a list item's own), comments, footnotes
+ * and scripts are dropped, an image becomes its alt text, and line breaks inside an item become
+ * spaces. The HTML is read tag by tag, never re-parsed after text is added.
  */
 export function nowLines(html: string): string[] {
-  return html
-    .replace(/<!--[\s\S]*?-->/g, '')
-    .replace(/<(h[1-6]|script|style|template)\b[\s\S]*?<\/\1\s*>/gi, '\n')
-    .replace(/<section\b[^>]*\sdata-footnotes\b[\s\S]*?<\/section\s*>/gi, '\n')
-    .replace(/<sup\b[^>]*>\s*<a\b[^>]*\sdata-footnote-ref\b[\s\S]*?<\/sup\s*>/gi, '')
-    .replace(tagsNamed('img'), (img) => {
-      const alt = /\salt\s*=\s*(?:"([^"]*)"|'([^']*)')/i.exec(img);
-      return ` ${alt?.[1] ?? alt?.[2] ?? ''} `;
-    })
-    .replace(/\s+/g, ' ')
-    .replace(BLOCK_TAGS, '\n')
-    .replace(SPACE_TAGS, ' ')
-    .replace(ANY_TAG, '')
-    .split('\n')
-    .map((line) => decodeEntities(line).replace(/\s+/g, ' ').trim())
-    .filter(Boolean);
+  const lines: string[] = [];
+  let line = '';
+  const endItem = () => {
+    const text = line.replace(/\s+/g, ' ').trim();
+    if (text) lines.push(text);
+    line = '';
+  };
+  const token = new RegExp(HTML_TOKEN.source, 'gi');
+  let at = 0;
+  let listDepth = 0; // inside a list item, a heading is the item's own text
+  for (let m = token.exec(html); m; m = token.exec(html)) {
+    line += decodeHTML(html.slice(at, m.index));
+    at = token.lastIndex;
+    const [, close, tag, attrs = ''] = m;
+    if (!tag) continue; // a comment
+    const name = tag.toLowerCase();
+    const dropped =
+      !close &&
+      (DROP.has(name) ||
+        (HEADING.test(name) && listDepth === 0) ||
+        (name === 'section' && /(?:^|\s)data-footnotes\b/i.test(attrs)) ||
+        (name === 'a' && /(?:^|\s)data-footnote-ref\b/i.test(attrs)));
+    if (dropped) {
+      // Skip to the end tag (none of these nest in rendered Markdown).
+      const end = new RegExp(String.raw`<\/${name}\s*>`, 'gi');
+      end.lastIndex = at;
+      at = end.exec(html) ? end.lastIndex : html.length;
+      token.lastIndex = at;
+      // A heading or the footnotes block ends the item before it; a script inside one does not.
+      if (HEADING.test(name) || name === 'section') endItem();
+      continue;
+    }
+    if (name === 'li') listDepth = Math.max(0, listDepth + (close ? -1 : 1));
+    if (BLOCK.has(name) || HEADING.test(name)) endItem();
+    else if (SPACE.has(name)) line += ' ';
+    else if (name === 'img') line += ` ${imageText(attrs)} `;
+  }
+  line += decodeHTML(html.slice(at));
+  endItem();
+  return lines;
 }
 
 /** Deterministic 7-char pseudo commit hash for a log row (decoration, stable across builds). */
@@ -312,6 +356,45 @@ export function gridAreas(rows: string[]): string {
   return rows.map((r) => `'${r}'`).join(' ');
 }
 
+/**
+ * Which About cards content fills, and where every interest is shown:
+ * - off the clock: the interests with an icon;
+ * - AvGeek: when any list in aviation.yaml has entries (it then shows the aviation interest);
+ * - now building: when a project is ongoing; without it the XP card has its column to itself;
+ * - every other interest is listed on the whoami card, so none goes missing.
+ */
+export function aboutCards<I extends InterestLike>(input: {
+  interests: I[];
+  /** aviation.yaml: every array in it is a list the AvGeek card can show. */
+  aviation: Record<string, unknown>;
+  /** An ongoing project fills the now-building card. */
+  building: boolean;
+}): {
+  offClock: I[];
+  avgeek: boolean;
+  aviationInterest: I | undefined;
+  others: I[];
+  /** The XP card alone in its column (no now-building card). */
+  stackOne: boolean;
+  areas: { lg: string[]; md: string[]; sm: string[] };
+} {
+  const avgeek = Object.values(input.aviation).some((v) => Array.isArray(v) && v.length > 0);
+  const aviationInterest = input.interests.find((i) => i.tag === 'aviation');
+  const offClock = input.interests.filter((i) => i.icon);
+  const shown = new Set<I>([
+    ...offClock,
+    ...(avgeek && aviationInterest ? [aviationInterest] : []),
+  ]);
+  return {
+    offClock,
+    avgeek,
+    aviationInterest,
+    others: input.interests.filter((i) => !shown.has(i)),
+    stackOne: !input.building,
+    areas: aboutAreas({ off: offClock.length > 0, av: avgeek }),
+  };
+}
+
 // ---------------------------------------------------------------- labels
 export const PLATFORM_LABEL: Record<string, string> = {
   ios: 'iOS',
@@ -319,16 +402,12 @@ export const PLATFORM_LABEL: Record<string, string> = {
   cli: 'CLI',
   research: 'Research',
 };
-/** Project status words; the page passes copy.yaml `labels.status` (these are the defaults). */
+/**
+ * Project status words: copy.yaml `labels.status`. Interface words are always passed in, never
+ * defaulted here, so a component that forgets them fails the type check instead of silently
+ * showing built-in English.
+ */
 export type StatusLabels = Record<ProjectLike['status'], string>;
-export const STATUS_LABEL: StatusLabels = {
-  idea: 'idea',
-  wip: 'in progress',
-  testflight: 'TestFlight',
-  shipped: 'shipped',
-  completed: 'completed',
-  archived: 'archived',
-};
 /** Progress bar cells (of 10) per status. */
 export const STATUS_PROGRESS: Record<ProjectLike['status'], number> = {
   idea: 1,
@@ -350,13 +429,13 @@ export function heroEyebrow(
   name: string,
   edu: EducationLike,
   location: string,
-  prefix = '// player:',
+  prefix: string,
 ): string {
   return `${prefix} ${name}  ·  ${edu.short ?? edu.school} ${classYear(edu.end)}  ·  ${location}`;
 }
 
 /** `Zhicheng (Peter) Chen — Informatics · Data Science @ University of Washington, Seattle, class of ’27.` */
-export function whoamiLine(fullName: string, edu: EducationLike, classOf = 'class of'): string {
+export function whoamiLine(fullName: string, edu: EducationLike, classOf: string): string {
   const what = [edu.major ?? edu.degree, edu.track].filter(Boolean).join(' · ');
   return `${fullName} — ${what} @ ${edu.school}, ${classOf} ${classYear(edu.end)}.`;
 }
@@ -368,7 +447,7 @@ export function whoamiLine(fullName: string, edu: EducationLike, classOf = 'clas
 export function gpaBadge(
   edu: EducationLike,
   honors: HonorLike[],
-  gpaLabel = 'GPA',
+  gpaLabel: string,
 ): string | undefined {
   if (!edu.gpa) return undefined;
   const gpa = `${gpaLabel} ${edu.gpa.split('/')[0]}`;
@@ -379,8 +458,8 @@ export function gpaBadge(
 /** `Clock Stamp · iOS  [SHIPPED → App Store]` (store label and status words from copy.yaml). */
 export function projectBadge(
   p: ProjectLike,
-  appStoreLabel = 'App Store',
-  statusLabels: StatusLabels = STATUS_LABEL,
+  appStoreLabel: string,
+  statusLabels: StatusLabels,
 ): string {
   const platform = p.platform.map((x) => PLATFORM_LABEL[x] ?? x).join('/');
   const status = statusLabels[p.status].toUpperCase();
@@ -400,7 +479,7 @@ export function nowProject<P extends ProjectLike>(projects: P[]): P | undefined 
 /** `[■■■■■■■■■■]` style bar for a status, plus the label (copy.yaml `labels.status`). */
 export function statusBar(
   status: ProjectLike['status'],
-  labels: StatusLabels = STATUS_LABEL,
+  labels: StatusLabels,
 ): {
   filled: number;
   total: number;
@@ -442,7 +521,6 @@ export interface TickerTags {
   ping: string;
   edu: string;
 }
-const DEFAULT_TAGS: TickerTags = { xp: 'XP', now: 'NOW', work: 'WORK', ping: 'PING', edu: 'EDU' };
 
 /** The scrolling ticker: built only from content facts and now.md lines. */
 export function tickerItems(input: {
@@ -453,13 +531,11 @@ export function tickerItems(input: {
   interests: InterestLike[];
   now: string[];
   email?: string | undefined;
-  tags?: TickerTags;
-  statusLabels?: StatusLabels;
+  tags: TickerTags;
+  statusLabels: StatusLabels;
 }): TickerItem[] {
   const items: TickerItem[] = [];
-  const { edu } = input;
-  const tags = input.tags ?? DEFAULT_TAGS;
-  const statusLabels = input.statusLabels ?? STATUS_LABEL;
+  const { edu, tags, statusLabels } = input;
   if (edu.gpa) {
     const honor = latestHonor(input.honors);
     items.push({
@@ -512,7 +588,7 @@ export interface LogRow {
 type LoggedExperience = ExperienceLike & { logo?: unknown; logo_alt?: string | undefined };
 
 /** One `git log` row per experience entry, newest first (no HEAD / init markers). */
-export function experienceRows(experience: LoggedExperience[], nowLabel = 'now'): LogRow[] {
+export function experienceRows(experience: LoggedExperience[], nowLabel: string): LogRow[] {
   return experience
     .map((x): LogRow => ({
       hash: pseudoHash(`${x.company}|${x.role}|${x.start}`),
@@ -544,8 +620,9 @@ export function gitLog(input: {
   headDates: string;
   experience: LoggedExperience[];
   education: EducationLike[];
-  nowLabel?: string;
-  expectedLabel?: string;
+  /** copy.yaml `labels.now` and `labels.expected`. */
+  nowLabel: string;
+  expectedLabel: string;
 }): LogRow[] {
   const rows: LogRow[] = experienceRows(input.experience, input.nowLabel);
   for (const e of input.education) {
@@ -553,7 +630,7 @@ export function gitLog(input: {
       hash: pseudoHash(`${e.school}|${e.degree}|${e.start}`),
       head: false,
       dates: logRange(e.start, e.end, input.nowLabel),
-      ...(e.expected ? { note: input.expectedLabel ?? '(expected)' } : {}),
+      ...(e.expected ? { note: input.expectedLabel } : {}),
       title: [e.degree, e.track].filter(Boolean).join(' · '),
       sub: [e.school, e.department].filter(Boolean).join(' · '),
       icon: 'bookshelf',
@@ -578,6 +655,6 @@ export function gitLog(input: {
 }
 
 /** `Sep 2023 – Mar 2027 (expected)`. */
-export function educationDates(e: EducationLike, expectedLabel = '(expected)'): string {
+export function educationDates(e: EducationLike, expectedLabel: string): string {
   return `${formatYearMonth(e.start)} – ${formatYearMonth(e.end)}${e.expected ? ` ${expectedLabel}` : ''}`;
 }

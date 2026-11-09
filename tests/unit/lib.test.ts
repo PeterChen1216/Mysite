@@ -7,14 +7,17 @@ describe('format', () => {
   it('formats YYYY-MM', () => {
     expect(formatYearMonth('2024-07')).toBe('Jul 2024');
     expect(formatYearMonth('2027-06')).toBe('Jun 2027');
-    expect(formatYearMonth('present')).toBe('Present');
+    expect(formatYearMonth('present', 'Present')).toBe('Present');
+    // An ongoing end always needs the copy.yaml label: no built-in English.
+    expect(() => formatYearMonth('present')).toThrow(/needs a label/);
   });
   it('rejects malformed values', () => {
     expect(() => formatYearMonth('2024-7')).toThrow();
     expect(() => formatYearMonth('2024-13')).toThrow();
   });
   it('formats ranges', () => {
-    expect(formatRange('2024-07', '2024-09')).toBe('Jul 2024 – Sep 2024');
+    expect(formatRange('2024-07', '2024-09', 'Present')).toBe('Jul 2024 – Sep 2024');
+    expect(formatRange('2026-03', 'present', 'ongoing')).toBe('Mar 2026 – ongoing');
   });
   it('sorts newest first', () => {
     const items = [{ start: '2023-09' }, { start: '2025-01' }, { start: '2024-07' }];

@@ -31,7 +31,9 @@ const canonical = new URL(Astro.url.pathname, Astro.site);
     <Font cssVariable="--font-code" preload={[{ weight: 400 }]} />
     <Font cssVariable="--font-pixel" preload={[{ weight: 700 }]} />
     <Font cssVariable="--font-8bit" preload />
-    <Font cssVariable="--font-term" />
+    <!-- The hero terminal is on the first screen: without a preload its lines first wrap in the
+         wider fallback and then shrink, shifting the stage and buttons (CLS ≈ 0.03). -->
+    <Font cssVariable="--font-term" preload />
     <title>{title}</title>
     <meta name="description" content={description} />
     {site.meta.keywords.length > 0 && (

@@ -14,15 +14,20 @@ interface Props {
 const { data } = Astro.props;
 const { copy, hero, links, profile } = data;
 
-// Headline words, each animated in turn (Figma: word-by-word rise).
+// Headline words, each animated in turn (Figma: word-by-word rise). A highlighted part made of
+// symbols only (the `[_]` cursor) is decoration and hidden from screen readers; symbols inside a
+// sentence or a highlighted phrase (`[data & design]`) are read.
 let w = 0;
 const headline = copy.hero.headline.map((line) =>
-  highlightParts(line).flatMap((part) =>
-    part.text
+  highlightParts(line).flatMap((part) => {
+    const deco = part.hi && isDecorative(part.text);
+    return part.text
       .split(/(\s+)/)
       .filter(Boolean)
-      .map((t) => (/^\s+$/.test(t) ? { space: true as const } : { text: t, hi: part.hi, i: w++ })),
-  ),
+      .map((t) =>
+        /^\s+$/.test(t) ? { space: true as const } : { text: t, hi: part.hi, deco, i: w++ },
+      );
+  }),
 );
 
 // Terminal lines type one after another; pace from src/motion/params.ts.
@@ -61,7 +66,7 @@ const cursor = { steps: 3, dur: typingMs(3), delay: at };
                 data-intro="word"
                 class:list={{ hi: t.hi }}
                 style={`--i:${t.i}`}
-                aria-hidden={t.hi && isDecorative(t.text) ? 'true' : undefined}
+                aria-hidden={t.deco ? 'true' : undefined}
               >
                 {t.text}
               </span>

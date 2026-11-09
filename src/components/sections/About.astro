@@ -16,7 +16,7 @@ import OffClockCard from './about/OffClockCard.astro';
 import SkillsCard from './about/SkillsCard.astro';
 import WhoamiCard from './about/WhoamiCard.astro';
 import XpCard from './about/XpCard.astro';
-import { aboutAreas, gridAreas } from '../../lib/derive';
+import { aboutCards, gridAreas } from '../../lib/derive';
 import type { PageData } from '../../lib/page-data';
 
 interface Props {
@@ -25,25 +25,10 @@ interface Props {
 const { data } = Astro.props;
 const { copy, interests, aviation, building } = data;
 
-const hasAvgeek = [
-  aviation.watching,
-  aviation.seat_rules,
-  aviation.favorite_cabins,
-  aviation.news,
-  aviation.fare_examples,
-  aviation.tools,
-].some((list) => list.length > 0);
-const aviationInterest = interests.items.find((i) => i.tag === 'aviation');
-const offClock = interests.items.filter((i) => i.icon);
-// Interests that no card shows on its own are listed on the whoami card, so every one stays visible.
-const shownElsewhere = new Set([
-  ...offClock,
-  ...(hasAvgeek && aviationInterest ? [aviationInterest] : []),
-]);
-const otherInterests = interests.items.filter((i) => !shownElsewhere.has(i));
-
-// Grid areas for the cards present: three columns (≥ 1280), two (≥ 768), one.
-const areas = aboutAreas({ off: offClock.length > 0, av: hasAvgeek });
+// Which cards content fills, the grid areas for them (three columns ≥ 1280, two ≥ 768, one), and
+// the interests no other card shows (listed on the whoami card): derive.aboutCards.
+const cards = aboutCards({ interests: interests.items, aviation, building: Boolean(building) });
+const { areas } = cards;
 ---
 
 <section class="about" id="about" aria-labelledby="about-title">
@@ -63,14 +48,14 @@ const areas = aboutAreas({ off: offClock.length > 0, av: hasAvgeek });
     class="inv"
     style={`--areas-lg:${gridAreas(areas.lg)};--areas-md:${gridAreas(areas.md)};--areas-sm:${gridAreas(areas.sm)}`}
   >
-    <WhoamiCard data={data} others={otherInterests} />
-    <div class:list={['inv__stack', { 'inv__stack--one': !building }]}>
+    <WhoamiCard data={data} others={cards.others} />
+    <div class:list={['inv__stack', { 'inv__stack--one': cards.stackOne }]}>
       <XpCard data={data} />
       {building && <NowCard data={data} project={building} />}
     </div>
     <EducationCard data={data} />
-    {offClock.length > 0 && <OffClockCard data={data} items={offClock} />}
-    {hasAvgeek && <AvGeekCard data={data} interest={aviationInterest} />}
+    {cards.offClock.length > 0 && <OffClockCard data={data} items={cards.offClock} />}
+    {cards.avgeek && <AvGeekCard data={data} interest={cards.aviationInterest} />}
     <SkillsCard data={data} />
   </div>
 </section>

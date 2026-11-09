@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import {
   aboutAreas,
+  aboutCards,
   classYear,
   copyVars,
   displayUrl,
@@ -91,8 +92,8 @@ describe('formatters', () => {
     expect(githubHandle([])).toBeUndefined();
   });
   it('log ranges and hashes', () => {
-    expect(logRange('2024-07', '2024-09')).toBe('2024-07 → 2024-09');
-    expect(logRange('2026-10', 'present')).toBe('2026-10 → now');
+    expect(logRange('2024-07', '2024-09', 'now')).toBe('2024-07 → 2024-09');
+    expect(logRange('2026-10', 'present', 'now')).toBe('2026-10 → now');
     expect(logRange('2026-10', 'present', 'present')).toBe('2026-10 → present');
     expect(pseudoHash('x')).toMatch(/^[0-9a-f]{7}$/);
     expect(pseudoHash('x')).toBe(pseudoHash('x'));
@@ -116,7 +117,8 @@ describe('formatters', () => {
   });
 });
 
-/** copy.yaml labels.status as shipped (the defaults in derive.ts are the same words). */
+/** copy.yaml words as shipped; derive.ts has no defaults, so tests pass them like the page does. */
+const TAGS = { xp: 'XP', now: 'NOW', work: 'WORK', ping: 'PING', edu: 'EDU' };
 const STATUS_WORDS = {
   idea: 'idea',
   wip: 'in progress',
@@ -128,12 +130,12 @@ const STATUS_WORDS = {
 
 describe('facts come only from content', () => {
   it('hero eyebrow and whoami', () => {
-    expect(heroEyebrow('Peter Chen', edu, 'Seattle, Washington')).toBe(
+    expect(heroEyebrow('Peter Chen', edu, 'Seattle, Washington', '// player:')).toBe(
       '// player: Peter Chen  ·  UW iSchool ’27  ·  Seattle, Washington',
     );
     // Prefix from copy.yaml; no short name falls back to the school.
     expect(heroEyebrow('A B', bareEdu, 'X', '>>')).toBe('>> A B  ·  Some College ’24  ·  X');
-    expect(whoamiLine('Zhicheng (Peter) Chen', edu)).toBe(
+    expect(whoamiLine('Zhicheng (Peter) Chen', edu, 'class of')).toBe(
       'Zhicheng (Peter) Chen — Informatics · Data Science @ University of Washington, Seattle, class of ’27.',
     );
     // No major or track: the degree stands in.
@@ -142,26 +144,35 @@ describe('facts come only from content', () => {
   it('GPA badge uses the latest honor and real GPA', () => {
     expect(latestHonor(honors)?.year).toBe('2025-2026');
     expect(latestHonor([])).toBeUndefined();
-    expect(gpaBadge(edu, honors)).toBe("GPA 3.84  ★  Annual Dean's List 2025–26");
-    expect(gpaBadge(edu, [])).toBe('GPA 3.84');
+    expect(gpaBadge(edu, honors, 'GPA')).toBe("GPA 3.84  ★  Annual Dean's List 2025–26");
+    expect(gpaBadge(edu, [], 'GPA')).toBe('GPA 3.84');
     // The label is copy.yaml labels.gpa.
     expect(gpaBadge(edu, [], 'Grade')).toBe('Grade 3.84');
-    expect(gpaBadge({ ...edu, gpa: undefined }, honors)).toBeUndefined();
+    expect(gpaBadge({ ...edu, gpa: undefined }, honors, 'GPA')).toBeUndefined();
     expect(gpaRatio('3.84/4.00')).toBeCloseTo(0.96);
     expect(gpaRatio('4.2/4.0')).toBe(1);
     expect(gpaRatio('n/a')).toBeUndefined();
     expect(gpaRatio(undefined)).toBeUndefined();
   });
   it('project badge reflects status and App Store link', () => {
-    expect(projectBadge(project())).toBe('Clock Stamp · iOS  [SHIPPED → App Store]');
-    expect(projectBadge(project(), 'App Store')).toBe('Clock Stamp · iOS  [SHIPPED → App Store]');
-    expect(projectBadge(project({ status: 'wip', links: {} }))).toBe(
+    expect(projectBadge(project(), 'App Store', STATUS_WORDS)).toBe(
+      'Clock Stamp · iOS  [SHIPPED → App Store]',
+    );
+    // The store label is copy.yaml's, used as written (here with a no-break space).
+    expect(projectBadge(project(), 'App\u00a0Store', STATUS_WORDS)).toBe(
+      'Clock Stamp · iOS  [SHIPPED → App\u00a0Store]',
+    );
+    expect(projectBadge(project({ status: 'wip', links: {} }), 'App Store', STATUS_WORDS)).toBe(
       'Clock Stamp · iOS  [IN PROGRESS]',
     );
     // A platform without a label is shown as written; no links at all is fine.
-    expect(projectBadge(project({ platform: ['ios', 'watch'], links: undefined }))).toBe(
-      'Clock Stamp · iOS/watch  [SHIPPED]',
-    );
+    expect(
+      projectBadge(
+        project({ platform: ['ios', 'watch'], links: undefined }),
+        'App Store',
+        STATUS_WORDS,
+      ),
+    ).toBe('Clock Stamp · iOS/watch  [SHIPPED]');
     // Status words come from copy.yaml labels.status.
     expect(projectBadge(project(), 'Store', { ...STATUS_WORDS, shipped: 'live' })).toBe(
       'Clock Stamp · iOS  [LIVE → Store]',
@@ -180,15 +191,19 @@ describe('facts come only from content', () => {
     expect(nowProject([done])).toBeUndefined();
   });
   it('status bars', () => {
-    expect(statusBar('shipped')).toEqual({ filled: 10, total: 10, label: 'shipped' });
-    expect(statusBar('wip').filled).toBeLessThan(10);
-    expect(statusBar('idea').label).toBe('idea');
+    expect(statusBar('shipped', STATUS_WORDS)).toEqual({
+      filled: 10,
+      total: 10,
+      label: 'shipped',
+    });
+    expect(statusBar('wip', STATUS_WORDS).filled).toBeLessThan(10);
+    expect(statusBar('idea', STATUS_WORDS).label).toBe('idea');
     expect(statusBar('wip', { ...STATUS_WORDS, wip: 'building' }).label).toBe('building');
   });
   it('education dates', () => {
-    expect(educationDates(edu)).toBe('Sep 2023 – Mar 2027 (expected)');
+    expect(educationDates(edu, '(expected)')).toBe('Sep 2023 – Mar 2027 (expected)');
     expect(educationDates(edu, '(est.)')).toBe('Sep 2023 – Mar 2027 (est.)');
-    expect(educationDates(bareEdu)).toBe('Sep 2020 – Jun 2024');
+    expect(educationDates(bareEdu, '(expected)')).toBe('Sep 2020 – Jun 2024');
   });
 });
 
@@ -214,6 +229,8 @@ describe('ticker', () => {
       interests: [{ name: 'Choir', tag: 'choir' }, { name: 'No tag' }],
       now: ['Writing my thesis'],
       email: 'a@b.c',
+      tags: TAGS,
+      statusLabels: STATUS_WORDS,
     });
     expect(items).toEqual([
       { tag: 'XP', text: "Cumulative GPA 3.84/4.00 · Annual Dean's List 2025–26", tone: 'green' },
@@ -243,7 +260,16 @@ describe('ticker', () => {
       { tag: 'CLIMBING', text: 'Rock climbing', tone: 'diamond' },
     ]);
     expect(
-      tickerItems({ edu, honors: [], projects: [], experience, interests: [], now: [] })[0],
+      tickerItems({
+        edu,
+        honors: [],
+        projects: [],
+        experience,
+        interests: [],
+        now: [],
+        tags: TAGS,
+        statusLabels: STATUS_WORDS,
+      })[0],
     ).toEqual({ tag: 'XP', text: 'Cumulative GPA 3.84/4.00', tone: 'green' });
     // The featured project's status word comes from copy.yaml labels.status.
     const featured = tickerItems({
@@ -253,6 +279,7 @@ describe('ticker', () => {
       experience: [],
       interests: [],
       now: [],
+      tags: TAGS,
       statusLabels: { ...STATUS_WORDS, shipped: 'live' },
     });
     expect(featured[0]).toEqual({ tag: 'iOS', text: 'Clock Stamp · live', tone: 'gold' });
@@ -264,6 +291,7 @@ describe('git log', () => {
     status: 'Open to internships & collaborations',
     headHint: 'say hi ↓',
     headDates: 'now →',
+    nowLabel: 'now',
     expectedLabel: '(expected)',
     experience: [
       {
@@ -313,11 +341,13 @@ describe('git log', () => {
     expect(rows[2]?.logo).toBe('LOGO');
     expect(rows[2]?.logoAlt).toBe('HashKey');
   });
-  it('a finished degree has no note; labels default when not given', () => {
+  it('a finished degree has no note; the labels are the ones passed in', () => {
     const log = gitLog({
       status: 's',
       headHint: 'h',
       headDates: 'd',
+      nowLabel: 'ongoing',
+      expectedLabel: '(est.)',
       experience: [
         { company: 'C', role: 'R', start: '2024-01', end: 'present', location: 'L' },
         { company: 'D', role: 'Q', start: '2023-01', end: '2023-06', location: 'L', logo: 'X' },
@@ -329,8 +359,8 @@ describe('git log', () => {
     });
     expect(log.map((r) => [r.dates, r.note, r.hash === 'init'])).toEqual([
       ['d', undefined, false],
-      ['2024-09 → 2026-06', '(expected)', false],
-      ['2024-01 → now', undefined, false],
+      ['2024-09 → 2026-06', '(est.)', false],
+      ['2024-01 → ongoing', undefined, false],
       ['2023-01 → 2023-06', undefined, false],
       ['2020-09 → 2024-06', undefined, true],
     ]);
@@ -408,11 +438,16 @@ describe('copy.yaml templates', () => {
     );
   });
   it('keeps {from} and {to} only where they are filled later', () => {
-    // hero.avgeek_route takes them; anywhere else they are unknown, like any typo.
-    expect(() =>
-      fillCopy({ hero: { avgeek_badge: 'AvGeek ✈ {from} ⇄ {to}' } }, { city: 'x' }),
-    ).toThrow(/hero\.avgeek_badge: .*\{from\}/);
-    expect(() => fillCopy({ footer: { tagline: 'flown {to} SEA' } }, {})).toThrow(/\{to\}/);
+    // hero.avgeek_route takes them; anywhere else each one is unknown, like any typo.
+    expect(fillCopy({ hero: { avgeek_route: '{from} ⇄ {to}' } }, {})).toEqual({
+      hero: { avgeek_route: '{from} ⇄ {to}' },
+    });
+    expect(() => fillCopy({ hero: { avgeek_badge: 'AvGeek ✈ {from}' } }, { city: 'x' })).toThrow(
+      /copy\.yaml hero\.avgeek_badge: unknown or empty placeholder \{from\}/,
+    );
+    expect(() => fillCopy({ footer: { tagline: 'flown {to} SEA' } }, {})).toThrow(
+      /copy\.yaml footer\.tagline: unknown or empty placeholder \{to\}/,
+    );
   });
   it('placeholder values come from content, with fallbacks for optional fields', () => {
     const base = { displayName: 'Peter Chen', location: 'Seattle, Washington', domain: 'zhic.me' };
@@ -559,15 +594,59 @@ describe('now.md lines', () => {
     expect(nowLines('<!-- one line per bullet -->\n')).toEqual([]);
     expect(nowLines('')).toEqual([]);
   });
-  it('decodes character references and keeps unknown ones as written', () => {
+  it('decodes character references with the full HTML table', () => {
+    // Raw HTML in now.md passes through Markdown untouched, named references included.
     expect(
-      nowLines('<p>&#x26; &#38; &quot;x&quot; &apos;y&apos; a&nbsp;b &copy; &#0; &#x110000;</p>'),
-    ).toEqual(['& & "x" \'y\' a b &copy; &#0; &#x110000;']);
+      nowLines(
+        '<p>Reading <em>The Design of Everyday Things</em> &mdash; again&hellip;</p>\n<p>&#x26; &#38; &quot;x&quot; &apos;y&apos; a&nbsp;b caf&eacute; &copy; &unknown; &#0;</p>',
+      ),
+    ).toEqual([
+      'Reading The Design of Everyday Things — again…',
+      '& & "x" \'y\' a b café © &unknown; \ufffd',
+    ]);
   });
-  it('reads tags whose quoted attributes contain ">"', () => {
+  it('reads whole tags, even when attribute values hold "<" or ">"', () => {
+    // Astro does not escape "<" in attribute values: an alt or a link title may contain one.
+    const html = [
+      '<ul>',
+      '<li>Comparing <img src="https://zhic.me/ab.png" alt="Plan A<B chart"> results</li>',
+      '<li>Shipping <a href="https://x.y" title="see <li> here">Clock Stamp</a> <strong>1.2</strong></li>',
+      "<li><span title='1 > 0'>more</span> <img alt='a > b' src=\"x.png\"></li>",
+      '</ul>',
+    ].join('\n');
+    expect(nowLines(html)).toEqual([
+      'Comparing Plan A<B chart results',
+      'Shipping Clock Stamp 1.2',
+      'more a > b',
+    ]);
+  });
+  it('gives a local image its alt text from Astro’s image marker', () => {
+    const marker =
+      '{&quot;src&quot;:&quot;./now-pic.png&quot;,&quot;alt&quot;:&quot;Orbit &amp; ring&quot;,&quot;index&quot;:0}';
     expect(
-      nowLines('<p><img alt="a > b" src="x.png"> and <span title=\'1 > 0\'>more</span></p>'),
-    ).toEqual(['a > b and more']);
+      nowLines(`<ul>\n<li>LI1 local <img __ASTRO_IMAGE_="${marker}"> image</li>\n</ul>`),
+    ).toEqual(['LI1 local Orbit & ring image']);
+    // A broken marker or no alt at all just leaves the image out.
+    expect(nowLines('<p>a <img __ASTRO_IMAGE_="{oops"> b <img src="x.png"> c</p>')).toEqual([
+      'a b c',
+    ]);
+    expect(nowLines('<p>a <img __ASTRO_IMAGE_="{&quot;src&quot;:&quot;x&quot;}"> b</p>')).toEqual([
+      'a b',
+    ]);
+  });
+  it('keeps a list item whose content is a heading, drops other headings and scripts', () => {
+    const html = [
+      '<h2 id="now">Now</h2>',
+      '<ul>',
+      '<li>',
+      '<h2 id="q12-heading-in-item">Q12 heading in item</h2>',
+      '</li>',
+      '<li>Plain <script>if (a<b) { alert("</p>") }</script>item</li>',
+      '</ul>',
+      '<style>p { color: red }</style>',
+      '<template><p>hidden</p></template>',
+    ].join('\n');
+    expect(nowLines(html)).toEqual(['Q12 heading in item', 'Plain item']);
   });
 });
 
@@ -612,5 +691,41 @@ describe('About grid areas', () => {
 
   it('writes the CSS value', () => {
     expect(gridAreas(['who who', 'edu av'])).toBe("'who who' 'edu av'");
+  });
+});
+
+describe('About cards', () => {
+  const choir = { name: 'Choir', tag: 'choir', icon: 'note' };
+  const pingPong = { name: 'Table tennis', tag: 'table-tennis', icon: 'paddle' };
+  const flying = { name: 'Aviation', tag: 'aviation' };
+  const coding = { name: 'Vibe coding', tag: 'vibe-coding' };
+  const noLists = { id: 'aviation', watching: [], seat_rules: [], tools: [] };
+  const someLists = { ...noLists, tools: [{ name: 'ExpertFlyer', url: 'https://x.y' }] };
+
+  it('shows each interest exactly once, on whichever card has room for it', () => {
+    const all = aboutCards({
+      interests: [choir, flying, coding, pingPong],
+      aviation: someLists,
+      building: true,
+    });
+    expect(all.offClock).toEqual([choir, pingPong]);
+    expect(all.avgeek).toBe(true);
+    expect(all.aviationInterest).toBe(flying);
+    expect(all.others).toEqual([coding]);
+    expect(all.stackOne).toBe(false);
+    expect(all.areas).toEqual(aboutAreas({ off: true, av: true }));
+    // No aviation lists: no AvGeek card, so the aviation interest goes to the whoami card.
+    const bare = aboutCards({ interests: [flying, coding], aviation: noLists, building: false });
+    expect(bare).toMatchObject({ avgeek: false, offClock: [], others: [flying, coding] });
+    expect(bare.stackOne).toBe(true);
+    expect(bare.areas).toEqual(aboutAreas({ off: false, av: false }));
+  });
+  it('counts any list in aviation.yaml, and nothing else', () => {
+    const card = (aviation: Record<string, unknown>) =>
+      aboutCards({ interests: [], aviation, building: true }).avgeek;
+    expect(card({ id: 'aviation', news: [{ headline: 'x' }] })).toBe(true);
+    expect(card({ id: 'aviation', future_list: ['x'] })).toBe(true);
+    expect(card({ id: 'aviation', note: 'not a list', watching: [] })).toBe(false);
+    expect(card({})).toBe(false);
   });
 });

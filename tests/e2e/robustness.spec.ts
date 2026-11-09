@@ -181,6 +181,50 @@ test.describe('motion', () => {
   });
 });
 
+test.describe('globe drag', () => {
+  test.skip(({ isMobile }) => isMobile, 'mouse drag on the desktop layouts');
+  // 1100 px scales the hero stage down: the map must still follow the pointer one to one.
+  for (const width of [1440, 1100]) {
+    test(`dragging the hero globe turns the map with the pointer at ${width}px`, async ({
+      page,
+    }) => {
+      await page.setViewportSize({ width, height: 900 });
+      await page.goto(V2);
+      const globe = page.locator('.stage [data-globe]');
+      // Let the intro finish (the globe scales in) so the drawn size is final.
+      await globe.evaluate((el) =>
+        Promise.all(
+          (el.closest('[data-intro]') ?? el).getAnimations().map((a) => a.finished.catch(() => {})),
+        ),
+      );
+      await page.evaluate(() => {
+        const w = window as unknown as { dragEvents: string[] };
+        w.dragEvents = [];
+        for (const type of ['dragstart', 'pointercancel'])
+          document.addEventListener(type, () => w.dragEvents.push(type), true);
+      });
+      const strip = page.locator('.stage [data-globe-strip]');
+      const left = () => strip.evaluate((el) => el.getBoundingClientRect().left);
+      const box = (await globe.boundingBox())!;
+      const x = box.x + box.width / 2;
+      const y = box.y + box.height / 2;
+      await page.mouse.move(x, y);
+      await page.mouse.down();
+      const before = await left();
+      await page.mouse.move(x + 100, y, { steps: 10 });
+      const moved = (await left()) - before;
+      await page.mouse.up();
+      // One map tile (one turn) on screen, for wrapping.
+      const tile = (648 * box.width) / 324;
+      const delta = ((((moved - 100) % tile) + tile * 1.5) % tile) - tile / 2;
+      expect(Math.abs(delta)).toBeLessThan(3);
+      expect(
+        await page.evaluate(() => (window as unknown as { dragEvents: string[] }).dragEvents),
+      ).toEqual([]);
+    });
+  }
+});
+
 test.describe('keyboard and screen readers', () => {
   test.use({ reducedMotion: 'reduce' });
 

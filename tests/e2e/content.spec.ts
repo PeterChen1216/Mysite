@@ -1,7 +1,7 @@
 import { readFileSync, readdirSync } from 'node:fs';
 import { expect, test, type Page } from '@playwright/test';
 import { parse } from 'yaml';
-import { logRange } from '../../src/lib/derive';
+import { aboutCards, gridAreas, logRange } from '../../src/lib/derive';
 import { formatRange, formatYearMonth } from '../../src/lib/format';
 import { copy, escapeRe } from './copy';
 import { V2 } from './site';
@@ -223,7 +223,7 @@ test.describe('content/ renders completely', () => {
       expect(html).not.toContain(e.address.toLowerCase());
   });
 
-  test('now.md reaches the ticker: [NOW] items when it has lines, none when empty', async ({
+  test('now.md reaches the ticker: [NOW] items for its bullets, none when it is empty', async ({
     page,
   }) => {
     // Wiring only. How Markdown becomes plain text (links, code, entities…) is unit-tested in
@@ -233,16 +233,50 @@ test.describe('content/ renders completely', () => {
       .locator('.ticker__track')
       .first()
       .locator('.ticker__item', { hasText: `[${copy.ticker.tags.now}]` });
-    const body = readFileSync('content/now.md', 'utf8')
-      .replace(/<!--[\s\S]*?-->/g, '')
-      .trim();
-    if (!body) {
+    const body = readFileSync('content/now.md', 'utf8').replace(/<!--[\s\S]*?-->/g, '');
+    if (!body.trim()) {
       await expect(items).toHaveCount(0);
       return;
     }
-    expect(await items.count()).toBeGreaterThan(0);
+    // A bullet that starts with a word always gives an item; a heading, a link definition or an
+    // empty bullet may give none, so only the former is required.
+    if (/^[ \t]{0,3}(?:[-*+]|\d{1,9}[.)])[ \t]+(?:\[[ xX]\][ \t]+)?[\p{L}\p{N}]/mu.test(body))
+      expect(await items.count()).toBeGreaterThan(0);
     for (const text of await items.allInnerTexts())
       expect(text.replace(`[${copy.ticker.tags.now}]`, '').trim()).not.toBe('');
+  });
+
+  test('the About grid holds exactly the cards content fills', async ({ page, isMobile }) => {
+    test.skip(isMobile, 'desktop projects resize the viewport themselves');
+    const projects = readdirSync('content/projects')
+      .filter((f) => f.endsWith('.md'))
+      .map((f) =>
+        parse(/^---\n([\s\S]*?)\n---/.exec(readFileSync(`content/projects/${f}`, 'utf8'))![1]!),
+      );
+    const cards = aboutCards({
+      interests: interests.items,
+      aviation,
+      building: projects.some((p) => p.end === 'present'),
+    });
+    // The custom property each layout reads, and its grid on screen (quotes normalised).
+    const areas = (rows: string[]) => gridAreas(rows).replace(/'/g, '"');
+    for (const [width, rows] of [
+      [1440, cards.areas.lg],
+      [1024, cards.areas.md],
+      [390, cards.areas.sm],
+    ] as const) {
+      await page.setViewportSize({ width, height: 900 });
+      await page.goto(V2);
+      const grid = page.locator('.inv');
+      expect(
+        await grid.evaluate((el) => getComputedStyle(el).gridTemplateAreas),
+        `${width}px`,
+      ).toBe(areas(rows));
+    }
+    await expect(page.locator('.inv__stack--one')).toHaveCount(cards.stackOne ? 1 : 0);
+    await expect(page.locator('.about-card--now')).toHaveCount(cards.stackOne ? 0 : 1);
+    await expect(page.locator('.about-card--off')).toHaveCount(cards.offClock.length ? 1 : 0);
+    await expect(page.locator('.about-card--av')).toHaveCount(cards.avgeek ? 1 : 0);
   });
 
   test('hero links to the résumé', async ({ page }) => {

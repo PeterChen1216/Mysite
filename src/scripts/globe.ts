@@ -59,6 +59,12 @@ export function initGlobes(): void {
     });
     globe.addEventListener('pointermove', (e) => {
       if (!drag) return;
+      // Reduced motion turned on mid-drag cancels the spin. Touching the cancelled animation
+      // would bring it back outside CSS control, so the drag just ends.
+      if (spin() !== drag.anim) {
+        drag = undefined;
+        return;
+      }
       const t = drag.startTime + (e.clientX - drag.startX) * drag.msPerPx;
       drag.anim.currentTime = ((t % LOOP.globeTurnMs) + LOOP.globeTurnMs) % LOOP.globeTurnMs;
     });
@@ -68,7 +74,7 @@ export function initGlobes(): void {
       drag = undefined;
       if (globe.hasPointerCapture(e.pointerId)) globe.releasePointerCapture(e.pointerId);
       // Cancelled meanwhile (reduced motion turned on): leave it stopped.
-      if (anim.playState !== 'idle' && inView) anim.play();
+      if (spin() === anim && inView) anim.play();
     };
     globe.addEventListener('pointerup', end);
     globe.addEventListener('pointercancel', end);
