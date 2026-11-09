@@ -23,6 +23,9 @@ export const getProfile = async () =>
   required(await getEntry('profile', 'profile'), 'content/profile.yaml').data;
 export const getInterests = async () =>
   required(await getEntry('interests', 'interests'), 'content/interests.yaml').data;
+export const getCopy = async () =>
+  required(await getEntry('copy', 'copy'), 'content/copy.yaml').data;
+
 export const getSkills = async () =>
   required(await getEntry('skills', 'skills'), 'content/skills.yaml').data;
 

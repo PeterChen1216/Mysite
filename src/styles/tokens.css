@@ -27,13 +27,11 @@
   --color-block-stone: #8d8d8d;
   --color-block-water: #2457c5;
 
-  /* ── font families (all SIL OFL 1.1, self-hosted via @fontsource) ── */
-  --font-pixel: 'Pixelify Sans', ui-monospace, monospace; /* display / headlines */
-  --font-8bit:
-    'Press Start 2P', ui-monospace, monospace; /* 8-bit labels & buttons; 8/10/12 px only */
-  --font-term: 'VT323', ui-monospace, monospace; /* terminal output */
-  --font-code:
-    'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; /* body & code */
+  /* ── font families ──────────────────────────────────
+   * --font-pixel (Pixelify Sans: display/headlines), --font-8bit (Press Start 2P: 8-bit labels &
+   * buttons, 8/10/12 px only), --font-term (VT323: terminal output), --font-code (JetBrains Mono:
+   * body & code) are defined by Astro's Fonts API (astro.config.mjs → fonts) together with
+   * metric-matched fallbacks. All four are SIL OFL 1.1, self-hosted. */
 
   /* ── text styles ─────────────────────────────────────── */
   /* Pixel/Display — Pixelify Sans Bold 84 */

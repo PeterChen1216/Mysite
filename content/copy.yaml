@@ -1,0 +1,69 @@
+# Interface text: section headings, prompts and button labels, taken from the Figma design.
+# No facts about Peter live here — those come from the other content files and are filled in
+# by the page (GPA, dates, roles, emails…). Edit any line freely.
+# In `headline`, [brackets] mark the highlighted (green) word.
+
+nav:
+  links:
+    - { label: '~/about', href: '#about' }
+    - { label: '~/projects', href: '#projects' }
+    - { label: '~/experience', href: '#experience' }
+    - { label: '~/contact', href: '#contact' }
+  status: online · SEA
+  resume: RESUME
+  say_hi: SAY HI
+
+hero:
+  headline:
+    - Crafting [data]
+    - into things
+    - people love[_]
+  terminal_title: 'peter@zhic.me: ~ — zsh'
+  summon: '/summon pixel_globe ~ ~ ~ {rotate:1b}'
+  summon_ok: 'Summoned PixelGlobe. Chunks loaded: 36/36.'
+  cta_projects: SEE PROJECTS
+  cta_resume: DOWNLOAD RESUME
+  avgeek_badge: AvGeek  ✈  routes · seats · mileage
+
+about:
+  cmd: cat ~/about.md
+  title: ['Player stats &', 'loaded chunks']
+  blurb: Who I am, what I’m studying, and what I get up to when I’m not shipping something. All stats self-reported, no cheats.
+  whoami_title: Hi, I’m Peter — a senior at the UW Information School.
+  card_whoami: whoami
+  card_gpa: gpa --level
+  card_now: now --building
+  card_education: education
+  card_off: off --the-clock
+  card_avgeek: avgeek
+  card_skills: inventory --skills
+  avgeek_title: Routes, seats, mileage runs.
+  now_link: Open in the App Store
+
+projects:
+  cmd: ls ~/projects --sort=shipping
+  title: ['Builds, shipped', '& in progress']
+  blurb: Things I’ve made or am making. Featured build first, then the rest of the inventory.
+  featured: ★ FEATURED
+  next_label: next --chunk
+  next_title: '??? (loading…)'
+  next_body: Chunk not yet generated — check back after a few more commits.
+  next_progress: generating chunk (-1, 3)…
+
+experience:
+  cmd: git log --oneline --graph ~/career
+  title: [Commit history]
+  blurb: Where I’ve been, in chronological order. HEAD points at whatever comes next.
+  head_hint: say hi ↓
+
+contact:
+  cmd: ping peter --count 1
+  title: ['Let’s craft', 'something.']
+  say_hi: SAY HI · EMAIL
+  github: GITHUB
+  linkedin: LINKEDIN
+  resume: RESUME.PDF
+
+footer:
+  tagline: built with voxels, coffee & too many flights
+  back_to_top: ▲ back to spawn

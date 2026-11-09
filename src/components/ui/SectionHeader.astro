@@ -1,0 +1,83 @@
+---
+/** Section header (Figma "SectionHeader"): `$ command` eyebrow, pixel H2, blurb on the right. */
+interface Props {
+  id: string;
+  cmd: string;
+  title: string[];
+  blurb?: string;
+}
+const { id, cmd, title, blurb } = Astro.props;
+---
+
+<header class="sh">
+  <div class="sh__title">
+    <p class="sh__cmd" aria-hidden="true"><span class="sh__dollar">$</span> {cmd}</p>
+    <h2 id={id} class="sh__h">
+      {
+        title.map((line, i) => (
+          <>
+            {line}
+            {i < title.length - 1 && <br />}
+          </>
+        ))
+      }
+    </h2>
+  </div>
+  {blurb && <p class="sh__blurb">{blurb}</p>}
+</header>
+
+<style>
+  .sh {
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+    gap: var(--space-8);
+    width: 100%;
+  }
+  .sh__title {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    min-width: 0;
+  }
+  .sh__cmd {
+    margin: 0;
+    font: var(--type-code-label);
+    letter-spacing: var(--type-code-label-tracking);
+    text-transform: uppercase;
+    color: var(--color-accent-diamond);
+  }
+  .sh__dollar {
+    color: var(--color-accent-terminal-green);
+  }
+  .sh__h {
+    margin: 0;
+    font: var(--type-pixel-h2);
+    letter-spacing: var(--type-pixel-h2-tracking);
+    color: var(--color-text-hi);
+    text-shadow: 4px 4px 0 rgb(0 0 0 / 0.85);
+  }
+  .sh__blurb {
+    margin: 0;
+    max-width: 380px;
+    font: var(--type-code-body);
+    color: var(--color-text-mid);
+  }
+  @media (max-width: 1023px) {
+    .sh {
+      flex-direction: column;
+      align-items: flex-start;
+      gap: var(--space-4);
+    }
+    .sh__blurb {
+      max-width: 60ch;
+    }
+  }
+  @media (max-width: 767px) {
+    .sh__h {
+      font: var(--type-pixel-h3);
+      font-size: 36px;
+      line-height: 1.05;
+    }
+  }
+</style>

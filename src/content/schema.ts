@@ -112,10 +112,14 @@ export const educationSchema = z
   .object({
     id,
     school: text,
+    /** Short label for tight spots, e.g. "UW iSchool". */
+    short: text.optional(),
     url: httpUrl.optional(),
     department: text.optional(),
     department_url: httpUrl.optional(),
     degree: text,
+    /** The subject alone, e.g. "Informatics" (used in one-line summaries). */
+    major: text.optional(),
     track: text.optional(),
     minor: text.optional(),
     start: yearMonth,
@@ -185,6 +189,13 @@ export const interestsSchema = z
           .object({
             name: text,
             note: text.optional(),
+            /** Short label for the terminal and chips, e.g. "gen-ai". */
+            tag: z
+              .string()
+              .regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/, 'Use lowercase words joined by hyphens, e.g. gen-ai')
+              .optional(),
+            /** An emoji; items with one also appear on the "off the clock" card. */
+            icon: z.string().trim().min(1).max(8).optional(),
           })
           .strict(),
       )
@@ -323,6 +334,74 @@ export const skillsSchema = z
   })
   .strict();
 
+// ----------------------------------------------------------------- copy.yaml
+// Interface text from the Figma design. Facts never live here (PLAN §2.4).
+const lines = z.array(text).min(1);
+const navLink = z.object({ label: text, href: text }).strict();
+export const copySchema = z
+  .object({
+    id,
+    nav: z
+      .object({ links: z.array(navLink).min(1), status: text, resume: text, say_hi: text })
+      .strict(),
+    hero: z
+      .object({
+        /** [brackets] mark the highlighted word. */
+        headline: lines,
+        terminal_title: text,
+        summon: text,
+        summon_ok: text,
+        cta_projects: text,
+        cta_resume: text,
+        avgeek_badge: text,
+      })
+      .strict(),
+    about: z
+      .object({
+        cmd: text,
+        title: lines,
+        blurb: text,
+        whoami_title: text,
+        card_whoami: text,
+        card_gpa: text,
+        card_now: text,
+        card_education: text,
+        card_off: text,
+        card_avgeek: text,
+        card_skills: text,
+        avgeek_title: text,
+        now_link: text,
+      })
+      .strict(),
+    projects: z
+      .object({
+        cmd: text,
+        title: lines,
+        blurb: text,
+        featured: text,
+        next_label: text,
+        next_title: text,
+        next_body: text,
+        next_progress: text,
+      })
+      .strict(),
+    experience: z
+      .object({ cmd: text, title: lines, blurb: text, head_hint: text })
+      .strict(),
+    contact: z
+      .object({
+        cmd: text,
+        title: lines,
+        say_hi: text,
+        github: text,
+        linkedin: text,
+        resume: text,
+      })
+      .strict(),
+    footer: z.object({ tagline: text, back_to_top: text }).strict(),
+  })
+  .strict();
+
 // ------------------------------------------------ about.md / now.md (no frontmatter)
 export const proseSchema = z.object({}).strict();
 
@@ -332,4 +411,5 @@ export type Honor = z.infer<typeof honorSchema>;
 export type Interests = z.infer<typeof interestsSchema>;
 export type Aviation = z.infer<typeof aviationSchema>;
 export type Skills = z.infer<typeof skillsSchema>;
+export type Copy = z.infer<typeof copySchema>;
 export type Project = z.infer<ReturnType<typeof projectSchema>>;

@@ -1,0 +1,42 @@
+---
+/** Enchanted-tooltip chip (Figma "Chip"): purple border on near-black, 8-bit label. */
+interface Props {
+  tone?: 'enchant' | 'diamond' | 'gold' | 'grass' | 'redstone' | 'white';
+  as?: 'span' | 'li';
+}
+const { tone = 'diamond', as: Tag = 'span' } = Astro.props;
+---
+
+<Tag class:list={['chip', `chip--${tone}`]}><slot /></Tag>
+
+<style>
+  .chip {
+    display: inline-flex;
+    align-items: flex-start;
+    padding: 6px 8px;
+    border: 2px solid #5000ff;
+    background: rgb(16 0 16 / 0.9);
+    font: var(--type-pixel-tiny);
+    letter-spacing: var(--type-pixel-tiny-tracking);
+    white-space: nowrap;
+  }
+  /* Figma's enchant purple #a335ee is 4.3:1 on this background; lightened to pass AA. */
+  .chip--enchant {
+    color: #b866f5;
+  }
+  .chip--diamond {
+    color: var(--color-accent-diamond);
+  }
+  .chip--gold {
+    color: var(--color-accent-gold);
+  }
+  .chip--grass {
+    color: var(--color-accent-terminal-green);
+  }
+  .chip--redstone {
+    color: var(--color-accent-redstone);
+  }
+  .chip--white {
+    color: #fff;
+  }
+</style>
