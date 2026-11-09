@@ -4,6 +4,7 @@ tagline: Research Studio Project
 status: completed
 platform: [research]
 role: Group Leader, University of Washington, INFO 494 (Saveski-Lab)
+location: Seattle, WA
 links:
   other:
     - label: Saveski-Lab
@@ -13,7 +14,7 @@ end: 2025-12
 stack: [Python]
 year: 2025
 featured: true
-source: Resume.pdf (2026-11-03)
+source: Resume.pdf (2026-11-03); status from the closed date range, featured = listed on the résumé
 ---
 
 - Led the technical analysis of 30,000+ X Community Notes records, integrating note, user, and modeling-group datasets to examine latent-factor patterns across user populations.

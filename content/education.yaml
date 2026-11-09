@@ -3,12 +3,13 @@
   url: https://www.washington.edu/
   department: Information School
   department_url: https://ischool.uw.edu/
-  degree: B.S. in Informatics
+  degree: Bachelor of Science in Informatics
   track: Data Science
   start: 2023-09
   end: 2027-03
   expected: true
   gpa: 3.84/4.00
+  gpa_label: Cumulative GPA
   honors:
     - Annual Dean's List, 2024–2025 and 2025–2026
   coursework:
@@ -18,4 +19,4 @@
     - Recommendation Systems & Search
     - Scientific Computing
     - GIS & Mapping
-  source: Resume.pdf (2026-11-03); school/department links, start date and track from legacy index.html
+  source: Resume.pdf (2026-11-03); department, school/department links, start date and track from legacy index.html

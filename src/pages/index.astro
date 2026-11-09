@@ -208,7 +208,11 @@ const hasAvgeek =
             {formatYearMonth(e.start)} – {formatYearMonth(e.end)}
             {e.expected && ' (expected)'}
           </p>
-          {e.gpa && <p>GPA: {e.gpa}</p>}
+          {e.gpa && (
+            <p>
+              {e.gpa_label}: {e.gpa}
+            </p>
+          )}
           {e.honors.length > 0 && (
             <ul>
               {e.honors.map((h) => (
@@ -250,7 +254,7 @@ const hasAvgeek =
             <Image src={data.icon} alt="" width={48} height={48} class="project-icon" />
           )}
           <h3>{data.title}</h3>
-          <p>{data.tagline}</p>
+          {data.tagline && <p>{data.tagline}</p>}
           {data.cover && (
             <Image src={data.cover} alt={data.cover_alt ?? ''} width={640} class="project-cover" />
           )}
@@ -258,11 +262,15 @@ const hasAvgeek =
             {data.year} · {data.platform.map((p) => PLATFORM_LABEL[p]).join(', ')} ·{' '}
             {STATUS_LABEL[data.status]}
           </p>
-          {(data.role || data.start) && (
+          {(data.role || data.location || data.start) && (
             <p class="meta">
-              {data.role}
-              {data.role && data.start && ' · '}
-              {data.start && formatRange(data.start, data.end ?? 'present')}
+              {[
+                data.role,
+                data.location,
+                data.start && formatRange(data.start, data.end ?? 'present'),
+              ]
+                .filter(Boolean)
+                .join(' · ')}
             </p>
           )}
           {data.stack.length > 0 && <p class="meta">Stack: {data.stack.join(', ')}</p>}
@@ -338,7 +346,10 @@ const hasAvgeek =
         {skills.groups.map((g) => (
           <>
             <dt>{g.name}</dt>
-            <dd>{g.items.join(', ')}</dd>
+            <dd>
+              {g.items.join(', ')}
+              {g.basic.length > 0 && `; basic ${g.basic.join(', ')}`}
+            </dd>
           </>
         ))}
       </dl>

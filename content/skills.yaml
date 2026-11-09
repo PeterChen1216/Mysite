@@ -3,7 +3,8 @@ groups:
   - name: Frameworks & Techs
     items: [React, Agno Agent, SQLite]
   - name: Programming
-    items: [Python, R, SQL, Swift (SwiftUI), JavaScript, HTML/CSS, basic Java]
+    items: [Python, R, SQL, Swift (SwiftUI), JavaScript, HTML/CSS]
+    basic: [Java]
   - name: Languages
     items: [Mandarin Chinese (Native), English (Professional Working Proficiency)]
   - name: Tools

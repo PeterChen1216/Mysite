@@ -126,6 +126,8 @@ export const educationSchema = z
       .string()
       .regex(/^\d\.\d{1,2}\/\d\.\d{1,2}$/, 'Use the form 3.81/4.0')
       .optional(),
+    /** How the GPA is labelled, e.g. "Cumulative GPA". */
+    gpa_label: text.default('GPA'),
     honors: z.array(text).default([]),
     coursework: z.array(text).default([]),
     source,
@@ -262,12 +264,14 @@ export const projectSchema = <I extends z.ZodType>(image: ImageHelper<I>) =>
   z
     .object({
       title: text,
-      tagline: text.max(120),
+      /** One line in your own words. Optional: leave it out rather than invent one. */
+      tagline: text.max(120).optional(),
       /** `completed` = a finished course/research project (not a product you keep shipping). */
       status: z.enum(['idea', 'wip', 'testflight', 'shipped', 'completed', 'archived']),
       platform: z.array(z.enum(['ios', 'web', 'cli', 'research'])).min(1),
       /** Your role, as written on the résumé, e.g. "Group Leader, University of Washington, INFO 494". */
       role: text.optional(),
+      location: text.optional(),
       start: yearMonth.optional(),
       end: yearMonth.or(z.literal('present')).optional(),
       links: z
@@ -308,6 +312,8 @@ export const skillsSchema = z
           .object({
             name: text,
             items: z.array(looseText).min(1),
+            /** Shown after a semicolon as "; basic …" (e.g. Java). */
+            basic: z.array(looseText).default([]),
           })
           .strict(),
       )

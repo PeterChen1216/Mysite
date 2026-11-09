@@ -69,7 +69,7 @@ test.describe('content/ renders completely', () => {
     for (const e of education) {
       expected.push(e.school, e.degree, e.track, e.minor, e.department);
       expected.push(`${formatYearMonth(String(e.start))} – ${formatYearMonth(String(e.end))}`);
-      if (e.gpa) expected.push(`GPA: ${e.gpa}`);
+      if (e.gpa) expected.push(`${e.gpa_label ?? 'GPA'}: ${e.gpa}`);
       expected.push(...((e.honors as string[]) ?? []), ...((e.coursework as string[]) ?? []));
     }
     for (const h of honors) expected.push(`${h.name}, ${h.org}, ${h.year}`, h.note);
@@ -98,6 +98,7 @@ test.describe('content/ renders completely', () => {
           fm.tagline,
           fm.year,
           fm.role,
+          fm.location,
           ...(fm.start ? [formatRange(String(fm.start), String(fm.end ?? 'present'))] : []),
           ...(fm.stack ?? []),
           ...body,
@@ -123,8 +124,9 @@ test.describe('content/ renders completely', () => {
   test('every skill group and item', async ({ page }) => {
     await page.goto(V2);
     const text = await visibleText(page, '#skills');
-    for (const g of skills.groups as { name: string; items: unknown[] }[]) {
-      expect(missing(text, [g.name, ...g.items]), g.name).toEqual([]);
+    for (const g of skills.groups as { name: string; items: unknown[]; basic?: unknown[] }[]) {
+      const basic = g.basic?.length ? [`; basic ${g.basic.join(', ')}`] : [];
+      expect(missing(text, [g.name, ...g.items, ...basic]), g.name).toEqual([]);
     }
   });
 

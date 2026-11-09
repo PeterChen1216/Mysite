@@ -187,6 +187,14 @@ describe('schemas reject mistakes an owner could make', () => {
     ).toThrow();
   });
 
+  it('education GPA label defaults to "GPA"; tagline and location are optional', () => {
+    const edu = list('education.yaml')(read('education.yaml'))[0] as Record<string, unknown>;
+    const { gpa_label: _label, ...rest } = edu;
+    expect(educationSchema.parse(rest).gpa_label).toBe('GPA');
+    const p = { title: 't', status: 'wip', platform: ['web'], year: 2026, source: 's' };
+    expect(projectSchema(image).parse({ ...p, location: 'Seattle, WA' }).tagline).toBeUndefined();
+  });
+
   it('skills need at least one group with items; numbers become text', () => {
     expect(() => skillsSchema.parse({ groups: [], source: 's' })).toThrow();
     expect(() => skillsSchema.parse({ groups: [{ name: 'X', items: [] }], source: 's' })).toThrow();
