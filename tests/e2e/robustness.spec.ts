@@ -108,6 +108,30 @@ function runningLoops(page: Page) {
   );
 }
 
+/**
+ * Every running animation, named with its element, so a failure says what is still moving.
+ * Assertions poll it until it is empty: a stray loop (a revived globe spin) never stops, while a
+ * transition or intro step that is just finishing does.
+ */
+function runningAnimations(page: Page) {
+  return page.evaluate(() =>
+    document
+      .getAnimations()
+      .filter((a) => a.playState === 'running')
+      .map((a) => {
+        const target = (a.effect as KeyframeEffect | null)?.target as Element | null | undefined;
+        const name =
+          (a as CSSAnimation).animationName ||
+          (a as CSSTransition).transitionProperty ||
+          a.constructor.name;
+        const where = target
+          ? `${target.tagName.toLowerCase()}${target.classList[0] ? `.${target.classList[0]}` : ''}`
+          : '?';
+        return `${name} on ${where}`;
+      }),
+  );
+}
+
 test.describe('motion', () => {
   test('focus pauses the ticker; it is a named region', async ({ page }) => {
     await page.goto(V2);
@@ -146,12 +170,7 @@ test.describe('motion', () => {
     await page.mouse.down();
     await page.mouse.move(box.x + box.width / 2 + 40, box.y + box.height / 2);
     await page.mouse.up();
-    await page.waitForTimeout(300);
-    expect(
-      await page.evaluate(
-        () => document.getAnimations().filter((a) => a.playState === 'running').length,
-      ),
-    ).toBe(0);
+    await expect.poll(() => runningAnimations(page), { timeout: 3000 }).toEqual([]);
     // The ticker stands still, keeps one copy of its items and scrolls by hand instead.
     const ticker = page.locator('.ticker');
     await expect(ticker).toHaveCSS('overflow-x', 'auto');
@@ -244,12 +263,7 @@ test.describe('globe drag and reduced motion', () => {
     await page.emulateMedia({ reducedMotion: 'reduce' });
     await page.mouse.move(x + 80, y, { steps: 5 });
     await page.mouse.up();
-    await page.waitForTimeout(300);
-    expect(
-      await page.evaluate(
-        () => document.getAnimations().filter((a) => a.playState === 'running').length,
-      ),
-    ).toBe(0);
+    await expect.poll(() => runningAnimations(page), { timeout: 3000 }).toEqual([]);
   });
 });
 
