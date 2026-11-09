@@ -371,6 +371,21 @@ export const copySchema = z
         card_skills: text,
         avgeek_title: text,
         now_link: text,
+        gpa_out_of: text,
+        track_suffix: text,
+        minor_prefix: text,
+        coursework: text,
+        /** Panel headings, keyed like aviation.yaml. */
+        avgeek_panels: z
+          .object({
+            watching: text,
+            seat_rules: text,
+            favorite_cabins: text,
+            news: text,
+            fare_examples: text,
+            tools: text,
+          })
+          .strict(),
       })
       .strict(),
     projects: z

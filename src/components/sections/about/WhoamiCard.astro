@@ -1,0 +1,184 @@
+---
+/**
+ * Card/Whoami (Figma 20:837): greeting, profile tagline, the owner's about.md (verbatim — the
+ * designer's rewrite is only a suggestion), interests no other card shows, and one chip per
+ * interest tag (plus the education track). Bookshelf block pokes out of the top edge.
+ */
+import Card from '../../ui/Card.astro';
+import CardTitle from '../../ui/CardTitle.astro';
+import Chip from '../../ui/Chip.astro';
+import VoxelBlock from '../../ui/VoxelBlock.astro';
+import type { PageData } from '../../../lib/page-data';
+
+interface Props {
+  data: PageData;
+  /** Interests that no other card shows. */
+  others: PageData['interests']['items'];
+}
+const { data, others } = Astro.props;
+const { copy, profile, edu, hero, About } = data;
+
+const slug = (s: string) =>
+  s
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-|-$/g, '');
+const tags = [...new Set([...(edu.track ? [slug(edu.track)] : []), ...hero.tags])];
+// Chip colours in turn, as in the design (data-science diamond, gen-ai enchant, aviation cyan,
+// ios/vibe-coding gold, table-tennis redstone, choir white).
+const TONES = ['diamond', 'enchant', 'cyan', 'gold', 'redstone', 'white'] as const;
+---
+
+<Card class="about-card about-card--who" labelledby="about-whoami">
+  <div class="who">
+    <div class="who__shelf" aria-hidden="true">
+      <VoxelBlock name="bookshelf" size={100} />
+    </div>
+    <div class="who__main">
+      <CardTitle label={copy.about.card_whoami} />
+      <h3 id="about-whoami" class="who__title">
+        {copy.about.whoami_title}
+      </h3>
+      <p class="who__tagline">
+        <span aria-hidden="true">// </span>
+        {profile.tagline}
+      </p>
+      {About && (
+        <div class="who__body">
+          <About />
+        </div>
+      )}
+    </div>
+    <div class="who__foot">
+      {others.length > 0 && (
+        <ul class="who__more">
+          {others.map((i) => (
+            <li>
+              {i.name}
+              {i.note && ` — ${i.note}`}
+            </li>
+          ))}
+        </ul>
+      )}
+      {tags.length > 0 && (
+        <ul class="who__tags">
+          {tags.map((t, i) => {
+            const tone = TONES[i % TONES.length]!;
+            return (
+              <li class:list={['who__tag', { 'who__tag--cyan': tone === 'cyan' }]}>
+                <Chip tone={tone === 'cyan' ? 'diamond' : tone}>{t}</Chip>
+              </li>
+            );
+          })}
+        </ul>
+      )}
+    </div>
+  </div>
+</Card>
+
+<style>
+  .who {
+    flex: 1 1 auto;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    gap: 24px;
+  }
+  /* Figma: 99.8 × 115.2 at x 698 / y −12 of the 868 px card → 66 px from the right edge. */
+  .who__shelf {
+    position: absolute;
+    top: -12px;
+    right: 66px;
+  }
+  .who__main {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    min-width: 0;
+  }
+  .who__title {
+    max-width: min(620px, calc(100% - 140px));
+    margin: 0;
+    font: var(--type-pixel-h3);
+    letter-spacing: var(--type-pixel-h3-tracking);
+    color: var(--color-text-hi);
+  }
+  .who__tagline {
+    margin: 0;
+    font: var(--type-pixel-label);
+    letter-spacing: var(--type-pixel-label-tracking);
+    text-transform: uppercase;
+    color: var(--color-accent-diamond);
+  }
+  .who__body {
+    max-width: 640px;
+    font: var(--type-code-body);
+    color: var(--color-text-mid);
+  }
+  .who__body :global(p) {
+    margin: 0;
+  }
+  .who__body :global(p + p) {
+    margin-top: 12px;
+  }
+  /* Links inside running text: underlined, not colour alone (WCAG 1.4.1). */
+  .who__body :global(a) {
+    color: var(--color-accent-diamond);
+    text-decoration: underline;
+    text-decoration-thickness: 1px;
+    text-underline-offset: 3px;
+  }
+  .who__body :global(a:hover),
+  .who__body :global(a:focus-visible) {
+    color: var(--color-accent-gold);
+  }
+  .who__foot {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+  }
+  .who__more {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+    font: var(--type-term-md);
+    color: var(--color-accent-diamond);
+  }
+  .who__more li::before {
+    content: '> ';
+    content: '> ' / '';
+    color: var(--color-accent-terminal-green);
+  }
+  .who__tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+  .who__tag {
+    display: flex;
+  }
+  /* Figma's aviation chip is #55ffff — Chip.astro has no cyan tone (see integration notes). */
+  .who__tag--cyan :global(.chip) {
+    color: #55ffff;
+  }
+  @media (max-width: 767px) {
+    .who__shelf {
+      top: -8px;
+      right: 12px;
+    }
+    .who__shelf :global(.voxel) {
+      width: 64px;
+      height: auto;
+    }
+    .who__title {
+      max-width: calc(100% - 64px);
+      font-size: 26px;
+    }
+  }
+</style>

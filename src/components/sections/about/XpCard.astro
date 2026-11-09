@@ -1,0 +1,113 @@
+---
+/**
+ * Card/XP (Figma 20:914): the GPA as a level number with a 20-cell XP bar, then every honor
+ * from honors.yaml (#honors). The bar is decoration; the numbers are the text.
+ */
+import Card from '../../ui/Card.astro';
+import CardTitle from '../../ui/CardTitle.astro';
+import { gpaRatio } from '../../../lib/derive';
+import type { PageData } from '../../../lib/page-data';
+
+interface Props {
+  data: PageData;
+}
+const { data } = Astro.props;
+const { copy, edu, honors } = data;
+
+const [level, max] = edu.gpa ? edu.gpa.split('/') : [];
+const CELLS = 20;
+const filled = Math.round((gpaRatio(edu.gpa) ?? 0) * CELLS);
+---
+
+<Card class="about-card about-card--xp" labelledby="about-xp">
+  <div class="xp">
+    <CardTitle as="h3" id="about-xp" label={copy.about.card_gpa} />
+    {level && (
+      <>
+        <p class="xp__level">{level}</p>
+        <div class="xp__bar" aria-hidden="true">
+          {Array.from({ length: CELLS }, (_, i) => (
+            <span class:list={['xp__cell', { 'xp__cell--on': i < filled }]} />
+          ))}
+        </div>
+        <p class="xp__of">
+          {copy.about.gpa_out_of} {max} · {edu.gpa_label}
+        </p>
+      </>
+    )}
+    <ul class="xp__honors" id="honors">
+      {honors.map((h) => (
+        <li>
+          {h.name}, {h.org}, {h.year}
+          {h.note && ` — ${h.note}`}
+        </li>
+      ))}
+    </ul>
+  </div>
+</Card>
+
+<style>
+  .xp {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+  }
+  .xp__level {
+    margin: 0;
+    font: var(--type-pixel-h2);
+    letter-spacing: var(--type-pixel-h2-tracking);
+    color: var(--color-accent-terminal-green);
+    text-shadow: 3px 3px 0 rgb(0 0 0 / 0.8);
+  }
+  /* Figma XPBar: 16 px tall, 2 px black border, 14 px cells 4 px apart, two greens. */
+  .xp__bar {
+    display: grid;
+    grid-template-columns: repeat(20, minmax(0, 1fr));
+    gap: 4px;
+    height: 16px;
+    padding: 2px;
+    background: var(--color-bg-terminal);
+    border: 2px solid #000;
+  }
+  .xp__cell {
+    height: 8px;
+    background: var(--color-border-line);
+  }
+  .xp__cell--on {
+    background: #7cf35f;
+  }
+  .xp__cell--on:nth-child(even) {
+    background: var(--color-accent-terminal-green);
+  }
+  .xp__of {
+    margin: 0;
+    font: var(--type-code-sm);
+    color: var(--color-text-mid);
+  }
+  .xp__honors {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    margin: 0;
+    padding: 14px 0 0;
+    border-top: 2px dashed var(--color-border-edge);
+    list-style: none;
+    font: var(--type-code-sm);
+    color: var(--color-text-hi);
+  }
+  .xp__honors li {
+    position: relative;
+    padding-left: 18px;
+  }
+  /* Gold pixel bullet (no glyph: the code font's subset has no ★). */
+  .xp__honors li::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: 7px;
+    width: 8px;
+    height: 8px;
+    background: var(--color-accent-gold);
+    box-shadow: 2px 2px 0 rgb(0 0 0 / 0.6);
+  }
+</style>

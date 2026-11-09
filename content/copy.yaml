@@ -39,6 +39,19 @@ about:
   card_skills: inventory --skills
   avgeek_title: Routes, seats, mileage runs.
   now_link: Open in the App Store
+  # Small labels around facts on the About cards (the facts themselves come from the other files).
+  gpa_out_of: out of # "out of 4.00 · Cumulative GPA"
+  track_suffix: track # "Data Science track"
+  minor_prefix: Minor in # "Minor in …"
+  coursework: Relevant coursework
+  # Headings of the AvGeek panels; a panel only appears when aviation.yaml has entries for it.
+  avgeek_panels:
+    watching: Watching
+    seat_rules: Seat rules
+    favorite_cabins: Favorite cabins
+    news: Route news
+    fare_examples: Fare lab
+    tools: Tools I use
 
 projects:
   cmd: ls ~/projects --sort=shipping
