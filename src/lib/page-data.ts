@@ -22,6 +22,7 @@ import {
 import {
   displayUrl,
   experienceRows,
+  fillTemplate,
   gitLog,
   githubHandle,
   gpaBadge,
@@ -89,6 +90,14 @@ export async function getPageData() {
   const building = nowProject(projectFacts);
   const stamp = contentStamp();
   const year = new Date().getFullYear();
+  const templateVars = {
+    first: profile.name.display.split(' ')[0],
+    city: profile.location.split(',')[0]?.trim(),
+    major: edu.major,
+    department: edu.department,
+    school: edu.school,
+    short: edu.short,
+  };
 
   return {
     site,
@@ -119,7 +128,7 @@ export async function getPageData() {
     githubHandle: githubHandle(profile.socials),
     hero: {
       eyebrow: heroEyebrow(profile.name.display, edu, profile.location),
-      whoami: whoamiLine(profile.name.full, edu),
+      whoami: whoamiLine(profile.name.full, edu, copy.labels.class_of),
       tags: interests.items.map((i) => i.tag).filter((t): t is string => Boolean(t)),
       gpaBadge: gpaBadge(edu, honors),
       projectBadge: projectBadge(featured),
@@ -139,11 +148,16 @@ export async function getPageData() {
     log: gitLog({
       status: profile.status,
       headHint: copy.experience.head_hint,
-      currentYear: year,
+      headDates: copy.experience.head_dates,
       experience,
       education,
+      nowLabel: copy.labels.now,
+      expectedLabel: copy.labels.expected,
     }),
-    communityLog: experienceRows(community),
+    communityLog: experienceRows(community, copy.labels.now),
+    /** copy.yaml strings with {placeholders} filled from content (no facts live in copy.yaml). */
+    navStatus: fillTemplate(copy.nav.status, templateVars),
+    whoamiTitle: fillTemplate(copy.about.whoami_title, templateVars),
     ping: pingLines(primaryEmail),
     footer: {
       copyright: `${copyrightYears(site.footer.copyright_start, year)} ${site.footer.copyright_holder}`,

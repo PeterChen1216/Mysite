@@ -97,8 +97,14 @@ html.motion [data-loop='blink'] {
 html.motion [data-loop='orbit'] {
   animation: loop-spin 54s linear infinite;
 }
-html.motion [data-loop='orbit-reverse'] {
-  animation: loop-spin 72s linear infinite reverse;
+/* Figma sways the tilted second ring by −30° (17:127); a full spin of an ellipse looks wrong. */
+html.motion [data-loop='orbit-sway'] {
+  animation: loop-sway 6s ease-in-out infinite alternate;
+}
+@keyframes loop-sway {
+  to {
+    rotate: -30deg;
+  }
 }
 @keyframes loop-spin {
   to {

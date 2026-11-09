@@ -52,7 +52,7 @@ export function projectView(p: Project, copy: ProjectsCopy): ProjectView {
     status,
     stat: `${p.year} · ${platforms.join(', ')} · ${status}`,
     when: when || undefined,
-    stack: p.stack.length > 0 ? `Stack: ${p.stack.join(', ')}` : undefined,
+    stack: p.stack.length > 0 ? `${copy.stack_label} ${p.stack.join(', ')}` : undefined,
     links,
   };
 }

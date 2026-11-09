@@ -59,7 +59,7 @@ const block = BLOCK[p.platform[0] ?? ''] ?? 'gold';
   </div>
   {p.stack.length > 0 && (
     <p class="meta pc__stack">
-      <span class="pc__stack-label">Stack: </span>
+      <span class="pc__stack-label">{copy.stack_label} </span>
       {p.stack.map((item, i) => (
         <Chip tone="diamond">
           {item}

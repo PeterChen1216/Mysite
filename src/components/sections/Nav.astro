@@ -29,7 +29,7 @@ const { copy, links } = data;
   <div class="nav__actions">
     <p class="nav__status">
       <span class="nav__dot" aria-hidden="true"></span>
-      {copy.nav.status}
+      {data.navStatus}
     </p>
     <McButton href={links.resume} external>
       {copy.nav.resume}
@@ -143,8 +143,18 @@ const { copy, links } = data;
     .nav__actions :global(.mc-btn:first-of-type) {
       display: none;
     }
+    .nav__links ul {
+      justify-content: space-between;
+      gap: 0;
+    }
     .nav__links a {
-      padding: 6px 10px;
+      padding: 6px 4px;
+    }
+  }
+  @media (max-width: 369px) {
+    .nav__links ul {
+      flex-wrap: wrap;
+      overflow-x: visible;
     }
   }
 </style>

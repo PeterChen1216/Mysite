@@ -2,6 +2,8 @@
 # No facts about Peter live here — those come from the other content files and are filled in
 # by the page (GPA, dates, roles, emails…). Edit any line freely.
 # In `headline`, [brackets] mark the highlighted (green) word.
+# {placeholders} are filled in from your content: {first} = first name, {city} = first part of
+# profile location, {major}, {department}, {school}, {short} = education fields.
 
 nav:
   links:
@@ -9,7 +11,7 @@ nav:
     - { label: '~/projects', href: '#projects' }
     - { label: '~/experience', href: '#experience' }
     - { label: '~/contact', href: '#contact' }
-  status: online · SEA
+  status: online · {city}
   resume: RESUME
   say_hi: SAY HI
 
@@ -19,6 +21,9 @@ hero:
     - into things
     - people love[_]
   terminal_title: 'peter@zhic.me: ~ — zsh'
+  cmd_whoami: whoami
+  cmd_interests: cat ~/interests.txt
+  ok: '[OK]'
   summon: '/summon pixel_globe ~ ~ ~ {rotate:1b}'
   summon_ok: 'Summoned PixelGlobe. Chunks loaded: 36/36.'
   cta_projects: SEE PROJECTS
@@ -29,7 +34,7 @@ about:
   cmd: cat ~/about.md
   title: ['Player stats &', 'loaded chunks']
   blurb: Who I am, what I’m studying, and what I get up to when I’m not shipping something. All stats self-reported, no cheats.
-  whoami_title: Hi, I’m Peter — a senior at the UW Information School.
+  whoami_title: Hi, I’m {first} — {major} at the {department}.
   card_whoami: whoami
   card_gpa: gpa --level
   card_now: now --building
@@ -37,8 +42,9 @@ about:
   card_off: off --the-clock
   card_avgeek: avgeek
   card_skills: inventory --skills
-  avgeek_title: Routes, seats, mileage runs.
+  avgeek_title: Routes, seats, mileage plans.
   now_link: Open in the App Store
+  skills_basic: basic # "…; basic Java"
   # Small labels around facts on the About cards (the facts themselves come from the other files).
   gpa_out_of: out of # "out of 4.00 · Cumulative GPA"
   track_suffix: track # "Data Science track"
@@ -58,6 +64,7 @@ projects:
   title: ['Builds, shipped', '& in progress']
   blurb: Things I’ve made or am making. Featured build first, then the rest of the inventory.
   featured: ★ FEATURED
+  stack_label: 'Stack:'
   # The featured build's status terminal: window title (the project's file name is appended,
   # e.g. ~/projects/clock-stamp) and the command shown on its first line.
   status_title: '~/projects'
@@ -83,8 +90,9 @@ projects:
 experience:
   cmd: git log --oneline --graph ~/career
   title: [Commit history]
-  blurb: Where I’ve been, in chronological order. HEAD points at whatever comes next.
+  blurb: Where I’ve been, newest first. HEAD points at whatever comes next.
   head_hint: say hi ↓
+  head_dates: now →
   # The smaller log below the commit history: entries with `kind: volunteer` in experience.yaml.
   community_cmd: git log --oneline ~/community
   community_title: Community
@@ -103,3 +111,12 @@ contact:
 footer:
   tagline: built with voxels, coffee & too many flights
   back_to_top: ▲ back to spawn
+  rights: All rights reserved.
+  updated: updated
+
+# Small words used inside dates and lists.
+labels:
+  now: now # end of an ongoing entry in the commit history
+  expected: (expected) # graduation date not reached yet
+  class_of: class of
+  new_tab: (opens in a new tab) # read out by screen readers only

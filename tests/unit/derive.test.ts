@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import {
+  fillTemplate,
   classYear,
   displayUrl,
   educationDates,
@@ -101,7 +102,7 @@ describe('facts come only from content', () => {
   });
   it('GPA badge uses the latest honor and real GPA', () => {
     expect(latestHonor(honors)?.year).toBe('2025-2026');
-    expect(gpaBadge(edu, honors)).toBe("GPA 3.84  ★  Dean's List 2025–26");
+    expect(gpaBadge(edu, honors)).toBe("GPA 3.84  ★  Annual Dean's List 2025–26");
     expect(gpaBadge({ ...edu, gpa: undefined }, honors)).toBeUndefined();
     expect(gpaRatio('3.84/4.00')).toBeCloseTo(0.96);
     expect(gpaRatio(undefined)).toBeUndefined();
@@ -119,6 +120,9 @@ describe('facts come only from content', () => {
     expect(nowProject([a, b, c])?.id).toBe('c');
     expect(nowProject([a, b])?.id).toBe('b');
     expect(nowProject([a])).toBeUndefined();
+    // A finished featured project is never shown as "now building".
+    const done = project({ id: 'done', featured: true, status: 'completed', end: '2025-12' });
+    expect(nowProject([done])).toBeUndefined();
   });
   it('status bars', () => {
     expect(statusBar('shipped')).toEqual({ filled: 10, total: 10, label: 'shipped' });
@@ -152,13 +156,13 @@ describe('ticker', () => {
       email: 'a@b.c',
     });
     expect(items).toEqual([
-      { tag: 'XP', text: "Cumulative GPA 3.84/4.00 · Dean's List 2025–26" },
-      { tag: 'NOW', text: 'Writing my thesis' },
-      { tag: 'WORK', text: 'TA @ iSchool' },
-      { tag: 'iOS', text: 'Clock Stamp · shipped' },
-      { tag: 'UW', text: 'Informatics · Data Science ’27' },
-      { tag: 'CHOIR', text: 'Choir' },
-      { tag: 'PING', text: 'a@b.c' },
+      { tag: 'XP', text: "Cumulative GPA 3.84/4.00 · Annual Dean's List 2025–26", tone: 'green' },
+      { tag: 'NOW', text: 'Writing my thesis', tone: 'gold' },
+      { tag: 'WORK', text: 'TA @ iSchool', tone: 'enchant' },
+      { tag: 'iOS', text: 'Clock Stamp · shipped', tone: 'gold' },
+      { tag: 'UW', text: 'Informatics · Data Science ’27', tone: 'diamond' },
+      { tag: 'CHOIR', text: 'Choir', tone: 'enchant' },
+      { tag: 'PING', text: 'a@b.c', tone: 'green' },
     ]);
   });
 });
@@ -167,7 +171,8 @@ describe('git log', () => {
   const rows = gitLog({
     status: 'Open to internships & collaborations',
     headHint: 'say hi ↓',
-    currentYear: 2026,
+    headDates: 'now →',
+    expectedLabel: '(expected)',
     experience: [
       {
         company: 'HashKey Global',
@@ -194,7 +199,7 @@ describe('git log', () => {
     expect(rows[0]).toMatchObject({
       hash: 'HEAD -> main',
       head: true,
-      dates: '2026 →',
+      dates: 'now →',
       title: 'Open to internships & collaborations',
     });
   });
@@ -207,6 +212,8 @@ describe('git log', () => {
     ]);
     expect(rows.at(-1)?.hash).toBe('init');
     expect(rows[1]?.dates).toBe('2026-10 → now');
+    // Education still in progress keeps its "(expected)" marker.
+    expect(rows.at(-1)?.dates).toBe('2023-09 → 2027-03 (expected)');
   });
   it('picks icons by kind and keeps logos', () => {
     expect(rows.map((r) => r.icon)).toEqual(['diamond', 'command', 'logo', 'grass', 'bookshelf']);
@@ -246,5 +253,19 @@ describe('experienceRows', () => {
       ['B · Y', 'grass'],
       ['A · X', 'grass'],
     ]);
+  });
+});
+
+describe('fillTemplate', () => {
+  it('fills {placeholders} from content', () => {
+    expect(fillTemplate('online · {city}', { city: 'Seattle' })).toBe('online · Seattle');
+    expect(
+      fillTemplate('Hi, I’m {first} — {major}.', { first: 'Peter', major: 'Informatics' }),
+    ).toBe('Hi, I’m Peter — Informatics.');
+    expect(fillTemplate('no placeholders', {})).toBe('no placeholders');
+  });
+  it('fails on unknown or empty placeholders instead of printing them', () => {
+    expect(() => fillTemplate('Hi {nmae}', { name: 'x' })).toThrow(/\{nmae\}/);
+    expect(() => fillTemplate('Hi {first}', { first: '' })).toThrow(/empty/);
   });
 });

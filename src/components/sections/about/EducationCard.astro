@@ -45,7 +45,7 @@ const programme = (e: PageData['edu']) =>
               {e.department_url ? <a href={e.department_url}>{e.department}</a> : e.department}
             </p>
           )}
-          <p class="edu__line">{educationDates(e)}</p>
+          <p class="edu__line">{educationDates(e, data.copy.labels.expected)}</p>
           {e.gpa && (
             <p class="edu__line">
               {e.gpa_label}: <span class="edu__gpa">{e.gpa}</span>

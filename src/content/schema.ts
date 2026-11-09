@@ -349,6 +349,9 @@ export const copySchema = z
         /** [brackets] mark the highlighted word. */
         headline: lines,
         terminal_title: text,
+        cmd_whoami: text,
+        cmd_interests: text,
+        ok: text,
         summon: text,
         summon_ok: text,
         cta_projects: text,
@@ -371,6 +374,7 @@ export const copySchema = z
         card_skills: text,
         avgeek_title: text,
         now_link: text,
+        skills_basic: text,
         gpa_out_of: text,
         track_suffix: text,
         minor_prefix: text,
@@ -394,6 +398,7 @@ export const copySchema = z
         title: lines,
         blurb: text,
         featured: text,
+        stack_label: text,
         /** Status terminal title; the featured project's id is appended (`~/projects/<id>`). */
         status_title: text,
         status_cmd: text,
@@ -433,6 +438,7 @@ export const copySchema = z
         title: lines,
         blurb: text,
         head_hint: text,
+        head_dates: text,
         /** Heading of the community log (volunteer entries), shown below the commit history. */
         community_cmd: text,
         community_title: text,
@@ -452,7 +458,15 @@ export const copySchema = z
         emails_label: text,
       })
       .strict(),
-    footer: z.object({ tagline: text, back_to_top: text }).strict(),
+    footer: z.object({ tagline: text, back_to_top: text, rights: text, updated: text }).strict(),
+    labels: z
+      .object({
+        now: text,
+        expected: text,
+        class_of: text,
+        new_tab: text,
+      })
+      .strict(),
   })
   .strict();
 

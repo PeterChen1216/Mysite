@@ -5,6 +5,8 @@
  * Colours are darkened slightly from Figma to meet WCAG AA (white on Figma's grass #5d9c3a is
  * 3.2:1, yellow on its hover blue #7b8dff 2.9:1); see docs/M1-PLAN.md §4.
  */
+import { getCopy } from '../../lib/content';
+
 interface Props {
   href: string;
   kind?: 'stone' | 'grass';
@@ -22,6 +24,7 @@ const {
   class: cls,
   ariaLabel,
 } = Astro.props;
+const newTab = external ? (await getCopy()).labels.new_tab : '';
 ---
 
 <a
@@ -35,7 +38,7 @@ const {
   <span class="mc-btn__label">
     <slot />
   </span>
-  {external && <span class="visually-hidden"> (opens in a new tab)</span>}
+  {external && <span class="visually-hidden"> {newTab}</span>}
 </a>
 
 <style>

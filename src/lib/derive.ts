@@ -82,9 +82,22 @@ export function githubHandle(socials: SocialLike[]): string | undefined {
   return gh ? new URL(gh.url).pathname.split('/').filter(Boolean)[0] : undefined;
 }
 
-/** `2024-07`, `2024-09` → `2024-07 → 2024-09`; `present` → `now`. */
-export function logRange(start: string, end: string): string {
-  return `${start} → ${end === 'present' ? 'now' : end}`;
+/** `2024-07`, `2024-09` → `2024-07 → 2024-09`; `present` → `now` (label from copy.yaml). */
+export function logRange(start: string, end: string, nowLabel = 'now'): string {
+  return `${start} → ${end === 'present' ? nowLabel : end}`;
+}
+
+/**
+ * Fill `{placeholders}` in an interface string from copy.yaml. An unknown or empty placeholder
+ * fails the build, so a typo in copy.yaml can't put a raw `{name}` on the page.
+ */
+export function fillTemplate(template: string, vars: Record<string, string | undefined>): string {
+  return template.replace(/\{(\w+)\}/g, (_, key: string) => {
+    const value = vars[key];
+    if (!value)
+      throw new Error(`copy.yaml: unknown or empty placeholder {${key}} in "${template}"`);
+    return value;
+  });
 }
 
 /** Deterministic 7-char pseudo commit hash for a log row (decoration, stable across builds). */
@@ -143,19 +156,17 @@ export function heroEyebrow(name: string, edu: EducationLike, location: string):
 }
 
 /** `Zhicheng (Peter) Chen — Informatics · Data Science @ University of Washington, Seattle, class of ’27.` */
-export function whoamiLine(fullName: string, edu: EducationLike): string {
+export function whoamiLine(fullName: string, edu: EducationLike, classOf = 'class of'): string {
   const what = [edu.major ?? edu.degree, edu.track].filter(Boolean).join(' · ');
-  return `${fullName} — ${what} @ ${edu.school}, class of ${classYear(edu.end)}.`;
+  return `${fullName} — ${what} @ ${edu.school}, ${classOf} ${classYear(edu.end)}.`;
 }
 
-/** `GPA 3.84  ★  Dean’s List 2025–26`. */
+/** `GPA 3.84  ★  Annual Dean’s List 2025–26` — the honor keeps its own name from content/. */
 export function gpaBadge(edu: EducationLike, honors: HonorLike[]): string | undefined {
   if (!edu.gpa) return undefined;
   const gpa = edu.gpa.split('/')[0];
   const honor = latestHonor(honors);
-  return honor
-    ? `GPA ${gpa}  ★  ${honor.name.replace(/^Annual /, '')} ${shortAcademicYear(honor.year)}`
-    : `GPA ${gpa}`;
+  return honor ? `GPA ${gpa}  ★  ${honor.name} ${shortAcademicYear(honor.year)}` : `GPA ${gpa}`;
 }
 
 /** `Clock Stamp · iOS  [SHIPPED → App Store]`. */
@@ -166,10 +177,13 @@ export function projectBadge(p: ProjectLike): string {
   return `${p.title} · ${platform}  [${status}${where}]`;
 }
 
-/** The project shown as "now building": an ongoing one (end: present), featured first. */
+/**
+ * The project shown as "now building": an ongoing one (end: present), featured first. None when
+ * nothing is ongoing — a finished project must never be presented as current work.
+ */
 export function nowProject<P extends ProjectLike>(projects: P[]): P | undefined {
   const ongoing = projects.filter((p) => p.end === 'present');
-  return ongoing.find((p) => p.featured) ?? ongoing[0] ?? projects.find((p) => p.featured);
+  return ongoing.find((p) => p.featured) ?? ongoing[0];
 }
 
 /** `[■■■■■■■■■■]` style bar for a status, plus the label. */
@@ -188,10 +202,23 @@ export function gpaRatio(gpa: string | undefined): number | undefined {
   return have && max ? Math.min(1, have / max) : undefined;
 }
 
+export type TickerTone = 'green' | 'enchant' | 'gold' | 'diamond' | 'redstone';
+
 export interface TickerItem {
   tag: string;
   text: string;
+  /** Tag colour, following the design's ticker ([XP] green, [GEN-AI] purple, [iOS] gold…). */
+  tone: TickerTone;
 }
+
+/** Interest tag → ticker colour (design: gen-ai/choir purple, aviation cyan, table-tennis red). */
+const INTEREST_TONE: Record<string, TickerTone> = {
+  'gen-ai': 'enchant',
+  choir: 'enchant',
+  aviation: 'diamond',
+  'table-tennis': 'redstone',
+  'vibe-coding': 'gold',
+};
 
 /** The scrolling ticker: built only from content facts and now.md lines. */
 export function tickerItems(input: {
@@ -209,25 +236,31 @@ export function tickerItems(input: {
     const honor = latestHonor(input.honors);
     items.push({
       tag: 'XP',
-      text: `${edu.gpa_label} ${edu.gpa}${honor ? ` · ${honor.name.replace(/^Annual /, '')} ${shortAcademicYear(honor.year)}` : ''}`,
+      text: `${edu.gpa_label} ${edu.gpa}${honor ? ` · ${honor.name} ${shortAcademicYear(honor.year)}` : ''}`,
+      tone: 'green',
     });
   }
-  for (const line of input.now) items.push({ tag: 'NOW', text: line });
+  for (const line of input.now) items.push({ tag: 'NOW', text: line, tone: 'gold' });
   for (const x of input.experience.filter((e) => e.end === 'present' && e.kind !== 'volunteer')) {
-    items.push({ tag: 'WORK', text: `${x.role} @ ${x.company}` });
+    items.push({ tag: 'WORK', text: `${x.role} @ ${x.company}`, tone: 'enchant' });
   }
   for (const p of input.projects.filter((p) => p.featured)) {
     const platform = p.platform.map((x) => PLATFORM_LABEL[x] ?? x).join('/');
-    items.push({ tag: platform, text: `${p.title} · ${STATUS_LABEL[p.status]}` });
+    items.push({ tag: platform, text: `${p.title} · ${STATUS_LABEL[p.status]}`, tone: 'gold' });
   }
   items.push({
     tag: (edu.short ?? 'EDU').split(' ')[0]!.toUpperCase(),
     text: `${[edu.major, edu.track].filter(Boolean).join(' · ') || edu.degree} ${classYear(edu.end)}`,
+    tone: 'diamond',
   });
   for (const i of input.interests.filter((i) => i.tag)) {
-    items.push({ tag: i.tag!.toUpperCase(), text: i.name });
+    items.push({
+      tag: i.tag!.toUpperCase(),
+      text: i.name,
+      tone: INTEREST_TONE[i.tag!] ?? 'diamond',
+    });
   }
-  if (input.email) items.push({ tag: 'PING', text: input.email });
+  if (input.email) items.push({ tag: 'PING', text: input.email, tone: 'green' });
   return items;
 }
 
@@ -248,12 +281,12 @@ export interface LogRow {
 type LoggedExperience = ExperienceLike & { logo?: unknown; logo_alt?: string | undefined };
 
 /** One `git log` row per experience entry, newest first (no HEAD / init markers). */
-export function experienceRows(experience: LoggedExperience[]): LogRow[] {
+export function experienceRows(experience: LoggedExperience[], nowLabel = 'now'): LogRow[] {
   return experience
     .map((x): LogRow => ({
       hash: pseudoHash(`${x.company}|${x.role}|${x.start}`),
       head: false,
-      dates: logRange(x.start, x.end),
+      dates: logRange(x.start, x.end, nowLabel),
       title: x.role,
       sub: `${x.company} · ${x.location}`,
       icon: x.logo
@@ -276,16 +309,20 @@ export function experienceRows(experience: LoggedExperience[]): LogRow[] {
 export function gitLog(input: {
   status: string;
   headHint: string;
-  currentYear: number;
+  /** Dates column of the HEAD row (copy.yaml experience.head_dates) — never a build-time year. */
+  headDates: string;
   experience: LoggedExperience[];
   education: EducationLike[];
+  nowLabel?: string;
+  expectedLabel?: string;
 }): LogRow[] {
-  const rows: LogRow[] = experienceRows(input.experience);
+  const rows: LogRow[] = experienceRows(input.experience, input.nowLabel);
   for (const e of input.education) {
+    const range = logRange(e.start, e.end, input.nowLabel);
     rows.push({
       hash: pseudoHash(`${e.school}|${e.degree}|${e.start}`),
       head: false,
-      dates: logRange(e.start, e.end),
+      dates: e.expected ? `${range} ${input.expectedLabel ?? '(expected)'}` : range,
       title: [e.degree, e.track].filter(Boolean).join(' · '),
       sub: [e.school, e.department].filter(Boolean).join(' · '),
       icon: 'bookshelf',
@@ -299,7 +336,7 @@ export function gitLog(input: {
     {
       hash: 'HEAD -> main',
       head: true,
-      dates: `${input.currentYear} →`,
+      dates: input.headDates,
       title: input.status,
       sub: input.headHint,
       icon: 'diamond',
@@ -319,6 +356,6 @@ export function pingLines(email: string): string[] {
 }
 
 /** `Sep 2023 – Mar 2027 (expected)`. */
-export function educationDates(e: EducationLike): string {
-  return `${formatYearMonth(e.start)} – ${formatYearMonth(e.end)}${e.expected ? ' (expected)' : ''}`;
+export function educationDates(e: EducationLike, expectedLabel = '(expected)'): string {
+  return `${formatYearMonth(e.start)} – ${formatYearMonth(e.end)}${e.expected ? ` ${expectedLabel}` : ''}`;
 }

@@ -26,16 +26,17 @@ const headline = copy.hero.headline.map((line) =>
 
 // Terminal lines type one after another; pace from src/motion/params.ts.
 const lines = [
-  { kind: 'cmd', text: 'whoami' },
+  { kind: 'cmd', text: copy.hero.cmd_whoami },
   { kind: 'out', text: hero.whoami },
-  { kind: 'cmd', text: 'cat ~/interests.txt' },
+  { kind: 'cmd', text: copy.hero.cmd_interests },
   { kind: 'tags', text: hero.tags.map((t) => `${t}/`).join('   ') },
   { kind: 'cmd', text: copy.hero.summon },
   { kind: 'ok', text: `${copy.hero.summon_ok} ${profile.status}.` },
 ] as const;
 let at = INTRO.typing.startMs;
 const typed = lines.map((l) => {
-  const chars = l.text.length + (l.kind === 'cmd' ? 2 : l.kind === 'ok' ? 5 : 0);
+  const chars =
+    l.text.length + (l.kind === 'cmd' ? 2 : l.kind === 'ok' ? copy.hero.ok.length + 1 : 0);
   const dur = Math.max(
     INTRO.typing.minLineMs,
     Math.min(INTRO.typing.maxLineMs, chars * INTRO.typing.msPerChar),
@@ -74,7 +75,7 @@ const cursorDelay = at;
           style={`--steps:${l.steps};--dur:${l.dur}ms;--d:${l.delay}ms`}
         >
           {l.kind === 'cmd' && <span class="g">$ </span>}
-          {l.kind === 'ok' && <span class="g">[OK] </span>}
+          {l.kind === 'ok' && <span class="g">{copy.hero.ok} </span>}
           {l.text}
         </p>
       ))}
@@ -235,7 +236,7 @@ const cursorDelay = at;
     .hero__h1 {
       font-size: 44px;
     }
-    .hero__term :global(.term__body) {
+    .hero__copy :global(.hero__term .term__body) {
       font-size: 20px;
       padding: 14px;
     }

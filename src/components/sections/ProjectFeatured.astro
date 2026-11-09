@@ -93,7 +93,12 @@ const withPhone = p.platform.includes('ios');
           <span>]</span>
         </span>
         <span class="pf__g">{bar.label}</span>
-        {v.when && <span class="meta pf__when">{v.when}</span>}
+        {v.when && (
+          <>
+            <span class="visually-hidden"> · </span>
+            <span class="meta pf__when">{v.when}</span>
+          </>
+        )}
       </p>
     </TerminalWindow>
     {v.links.length > 0 && (

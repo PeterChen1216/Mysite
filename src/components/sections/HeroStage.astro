@@ -44,7 +44,7 @@ const blocks: Array<{ name: BlockName; x: number; y: number; w: number; glow?: s
       width="540"
       height="200"
       alt=""
-      data-loop="orbit-reverse"
+      data-loop="orbit-sway"
     />
     <div class="stage__globe" data-intro="globe">
       <PixelGlobe size={324} interactive />
@@ -84,7 +84,7 @@ const blocks: Array<{ name: BlockName; x: number; y: number; w: number; glow?: s
     </figure>
     {data.githubHandle && (
       <p class="stage__tag" data-intro="rise" style="--i:2">
-        {data.githubHandle}
+        <span class="stage__tag-in">{data.githubHandle}</span>
       </p>
     )}
     {data.hero.gpaBadge && (
@@ -123,19 +123,27 @@ const blocks: Array<{ name: BlockName; x: number; y: number; w: number; glow?: s
     transform-origin: 0 0;
     margin-bottom: calc(640px * (var(--s) - 1));
   }
+  /* --inv undoes the stage scale for the badges' text so it never drops below 8 px; below
+     0.78 scale the badges and name tag are hidden (their facts are in About and Projects). */
   @container (max-width: 559px) {
     .stage {
       --s: 0.89;
+      --inv: 1.124;
     }
   }
   @container (max-width: 499px) {
     .stage {
       --s: 0.78;
+      --inv: 1.282;
     }
   }
   @container (max-width: 439px) {
     .stage {
       --s: 0.67;
+    }
+    .stage__tip,
+    .stage__tag {
+      display: none;
     }
   }
   @container (max-width: 379px) {
@@ -158,13 +166,14 @@ const blocks: Array<{ name: BlockName; x: number; y: number; w: number; glow?: s
     height: 460px;
     max-width: none;
   }
+  /* Figma: a 540×200 ring centred in a 575×357 box at (−41.8, 200), tilted +18° (17:127). */
   .stage__orbit2 {
-    left: 20px;
-    top: 200px;
+    left: -24.1px;
+    top: 278.5px;
     width: 540px;
     height: 200px;
     max-width: none;
-    transform: rotate(-18deg);
+    transform: rotate(18deg);
   }
   .stage__globe {
     left: 128px;
@@ -217,11 +226,19 @@ const blocks: Array<{ name: BlockName; x: number; y: number; w: number; glow?: s
     left: 18px;
     top: 408px;
     margin: 0;
+  }
+  .stage__tag-in {
+    display: block;
     padding: 6px 8px;
     background: rgb(0 0 0 / 0.55);
     font: var(--type-pixel-tiny);
     letter-spacing: var(--type-pixel-tiny-tracking);
     color: #fff;
+    zoom: var(--inv, 1);
+  }
+  /* Zoom the badge itself (not its positioned wrapper, whose offsets must not scale). */
+  .stage__tip > :global(.tooltip) {
+    zoom: var(--inv, 1);
   }
   @media (prefers-reduced-motion: reduce) {
     .stage__photo {
