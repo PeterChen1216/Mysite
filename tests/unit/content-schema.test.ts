@@ -2,8 +2,9 @@ import { readFileSync, readdirSync } from 'node:fs';
 import { join } from 'node:path';
 import { z } from 'astro/zod';
 import { parse } from 'yaml';
-import { describe, expect, it } from 'vitest';
-import { list, singleton } from '../../src/content/parsers';
+import { describe, expect, it, vi } from 'vitest';
+import { assertCommentsClosed } from '../../src/content/guards';
+import { list, parseYaml, singleton } from '../../src/content/parsers';
 import {
   aviationSchema,
   educationSchema,
@@ -62,7 +63,7 @@ describe('real content/ files validate against their schemas', () => {
   it('projects/*.md', () => {
     const files = readdirSync(join(CONTENT, 'projects')).filter((f) => f.endsWith('.md'));
     expect(files.length).toBeGreaterThan(0);
-    for (const f of files) projectSchema.parse(frontmatter(read(`projects/${f}`)));
+    for (const f of files) projectSchema(image).parse(frontmatter(read(`projects/${f}`)));
   });
 });
 
@@ -103,10 +104,10 @@ describe('schemas reject mistakes an owner could make', () => {
   it('experience needs at least one highlight', () => {
     expect(() => experienceSchema(image).parse({ ...validJob, highlights: [] })).toThrow();
   });
-  it('logo requires alt text', () => {
+  it('a logo is decorative, so alt text is optional', () => {
     expect(() =>
       experienceSchema(image).parse({ ...validJob, logo: './images/hashkey.webp' }),
-    ).toThrow();
+    ).not.toThrow();
   });
 
   const validProfile = singleton('profile')(read('profile.yaml'))[0] as Record<string, unknown>;
@@ -136,9 +137,9 @@ describe('schemas reject mistakes an owner could make', () => {
       year: 2026,
       source: 's',
     };
-    expect(() => projectSchema.parse(p)).not.toThrow();
-    expect(() => projectSchema.parse({ ...p, tagline: 'x'.repeat(121) })).toThrow();
-    expect(() => projectSchema.parse({ ...p, status: 'done' })).toThrow();
+    expect(() => projectSchema(image).parse(p)).not.toThrow();
+    expect(() => projectSchema(image).parse({ ...p, tagline: 'x'.repeat(121) })).toThrow();
+    expect(() => projectSchema(image).parse({ ...p, status: 'done' })).toThrow();
   });
 
   it('aviation: IATA codes, ISO dates, max 6 watched routes', () => {
@@ -151,10 +152,66 @@ describe('schemas reject mistakes an owner could make', () => {
     expect(() => aviationSchema.parse({ news: [{ ...news, date: '11/01/2026' }] })).toThrow();
   });
 
+  it('aviation: numeric aircraft are accepted, news is not capped in the file', () => {
+    const route = { from: 'SEA', to: 'NRT', airline: 'A', aircraft: 787, why: 'w' };
+    expect(aviationSchema.parse({ watching: [route] }).watching[0]?.aircraft).toBe('787');
+    const news = { date: '2026-11-01', headline: 'h', url: 'https://example.com/' };
+    expect(() => aviationSchema.parse({ news: Array(8).fill(news) })).not.toThrow();
+  });
+
+  it('project cover needs alt text; icon is decorative', () => {
+    const p = {
+      title: 't',
+      tagline: 'x',
+      status: 'wip',
+      platform: ['web'],
+      year: 2026,
+      source: 's',
+    };
+    expect(() => projectSchema(image).parse({ ...p, icon: './images/hashkey.webp' })).not.toThrow();
+    expect(() => projectSchema(image).parse({ ...p, cover: './images/hashkey.webp' })).toThrow(
+      /cover_alt/,
+    );
+  });
+
+  it('site: domain must be a bare hostname', () => {
+    const site = singleton('site')(read('site.yaml'))[0] as Record<string, unknown>;
+    expect(() => siteSchema.parse({ ...site, domain: 'https://zhic.me' })).toThrow(/Hostname/);
+    expect(() => siteSchema.parse({ ...site, domain: 'zhic.me/' })).toThrow();
+  });
+
   it('site: semver version and boolean launched', () => {
     const site = singleton('site')(read('site.yaml'))[0] as Record<string, unknown>;
     expect(() => siteSchema.parse({ ...site, version: '1.0' })).toThrow();
     expect(() => siteSchema.parse({ ...site, launched: 'yes' })).toThrow();
+  });
+});
+
+describe('YAML parsing guards', () => {
+  it('rejects a value cut off by an unquoted " #"', () => {
+    expect(() => parseYaml('why: the #1 seat on the A350\n')).toThrow(/cut off at "#"/);
+    expect(() => parseYaml('items:\n  - name: row #12\n')).toThrow(/quotes/);
+  });
+  it('allows real trailing comments and quoted hashes', () => {
+    expect(parseYaml('version: 0.1.0 # bump for structural changes\n')).toEqual({
+      version: '0.1.0',
+    });
+    expect(parseYaml('why: "the #1 seat"\n')).toEqual({ why: 'the #1 seat' });
+  });
+  it('rejects YAML syntax errors instead of guessing', () => {
+    expect(() => parseYaml('a: [1, 2\n')).toThrow();
+    expect(() => parseYaml('a: 1\na: 2\n')).toThrow();
+  });
+  it('prints the file name and reason before failing (Astro hides thrown errors)', () => {
+    const spy = vi.spyOn(console, 'error').mockImplementation(() => {});
+    expect(() => singleton('profile')('name: [oops')).toThrow();
+    expect(spy.mock.calls[0]?.[0]).toMatch(/^✖ content\/profile\.yaml: /);
+    spy.mockRestore();
+  });
+  it('unclosed HTML comments in Markdown fail the build', () => {
+    expect(() => assertCommentsClosed('a <!-- b', 'content/now.md')).toThrow(/never closed/);
+    expect(() => assertCommentsClosed('<!-- a --> b <!-- c -->', 'x')).not.toThrow();
+    expect(() => assertCommentsClosed(undefined, 'x')).not.toThrow();
   });
 });
 
@@ -163,7 +220,9 @@ describe('YAML parsers', () => {
     expect(singleton('x')('a: 1')).toEqual([{ a: 1, id: 'x' }]);
   });
   it('singleton rejects a list', () => {
-    expect(() => singleton('x')('- a: 1')).toThrow(/mapping/);
+    vi.spyOn(console, 'error').mockImplementation(() => {});
+    expect(() => singleton('x')('- a: 1')).toThrow(/key: value/);
+    vi.restoreAllMocks();
   });
   it('list numbers entries in order and keeps explicit ids', () => {
     expect(list('f')('- a: 1\n- id: custom\n  a: 2')).toEqual([
@@ -172,8 +231,10 @@ describe('YAML parsers', () => {
     ]);
   });
   it('list rejects a mapping and scalar items', () => {
+    vi.spyOn(console, 'error').mockImplementation(() => {});
     expect(() => list('f')('a: 1')).toThrow(/list/);
-    expect(() => list('f')('- just text')).toThrow(/mapping/);
+    expect(() => list('f')('- just text')).toThrow(/key: value/);
+    vi.restoreAllMocks();
   });
   it('YAML dates and year-months stay strings (YAML 1.2 core schema)', () => {
     expect(singleton('x')('d: 2026-11-01\nm: 2024-07')).toEqual([

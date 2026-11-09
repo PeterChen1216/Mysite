@@ -83,10 +83,13 @@ jobs:
           retention-days: 7
           if-no-files-found: ignore
 
-  lighthouse:
-    name: Lighthouse (mobile)
+  launch:
+    name: launch configuration · Lighthouse + E2E
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    timeout-minutes: 20
+    env:
+      # Build, assemble and test exactly what flipping `launched: true` would deploy.
+      SITE_STAGE: launched
     steps:
       - uses: actions/checkout@v5
         with:
@@ -101,14 +104,20 @@ jobs:
 
       - run: pnpm install --frozen-lockfile
 
-      # Measure the page at "/" exactly as it will ship after launch.
-      - name: Build (launch configuration)
+      - name: Build (launch configuration, base /)
         run: pnpm build
-        env:
-          SITE_STAGE: launched
 
       - name: Lighthouse CI (perf/a11y/best-practices/SEO ≥ 95)
         run: pnpm lhci
+
+      - name: Assemble Pages artifact (launched)
+        run: pnpm assemble
+
+      - name: Install Playwright Chromium
+        run: pnpm exec playwright install --with-deps chromium
+
+      - name: E2E (launched layout)
+        run: pnpm test:e2e --project=chromium
 
       - name: Upload Lighthouse reports
         if: always()

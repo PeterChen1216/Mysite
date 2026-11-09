@@ -21,6 +21,7 @@
     "format:check": "prettier --check .",
     "test": "vitest run --coverage",
     "test:e2e": "playwright test --trace off",
+    "test:migration": "CHECK_LEGACY_MIGRATION=1 playwright test --trace off --project=chromium migration",
     "content:check": "node scripts/check-content.mjs",
     "size": "size-limit",
     "lhci": "lhci autorun",

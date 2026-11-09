@@ -47,6 +47,13 @@ jobs:
       - name: Assemble Pages artifact
         run: pnpm assemble
 
+      # Smoke-test the exact artifact before it replaces the live site.
+      - name: Install Playwright Chromium
+        run: pnpm exec playwright install --with-deps chromium
+
+      - name: E2E smoke test (Chromium)
+        run: pnpm test:e2e --project=chromium
+
       - uses: actions/configure-pages@v5
 
       - uses: actions/upload-pages-artifact@v4

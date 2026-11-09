@@ -11,6 +11,7 @@ export default defineConfig({
         'src/lib/paths.ts',
         'src/lib/build-info.ts',
         'src/content/parsers.ts',
+        'src/content/guards.ts',
         'src/content/schema.ts',
       ],
       // PLAN §9.1: key utility functions ≥ 80 %.

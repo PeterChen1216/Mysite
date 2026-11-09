@@ -2,7 +2,7 @@ import { mkdirSync, mkdtempSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
-import { findPlaceholders, isStrict } from '../../scripts/check-content.mjs';
+import { findBreakage, findPlaceholders, isStrict } from '../../scripts/check-content.mjs';
 import { loadSiteConfig } from '../../site.config.mjs';
 
 function fixture(files: Record<string, string>): string {
@@ -34,8 +34,34 @@ describe('content guard', () => {
     });
     expect(findPlaceholders(dir)).toEqual([]);
   });
-  it('the real content/ folder is clean', () => {
+  it('matches TODO in any form, but not ordinary words', () => {
+    const dir = fixture({
+      'a.yaml': 'a: "TODO：x"\nb: x # TODO\nc: TODO\nd: My Todo app\ne: todos are fine\n',
+    });
+    expect(findPlaceholders(dir).map((h: string) => h.split(':')[1])).toEqual(['1', '2', '3']);
+  });
+  it('the real content/ folder has no breakage (placeholders are branch-dependent)', () => {
+    expect(findBreakage(join(import.meta.dirname, '../../content'))).toEqual([]);
+  });
+  it.runIf(isStrict())('the real content/ folder has no placeholders (main only)', () => {
     expect(findPlaceholders(join(import.meta.dirname, '../../content'))).toEqual([]);
+  });
+});
+
+describe('content breakage (always an error)', () => {
+  it('flags an unclosed HTML comment in Markdown with its line', () => {
+    const dir = fixture({ 'now.md': 'line one\n<!-- note\nrest of page\n', 'ok.md': '<!-- a -->' });
+    expect(findBreakage(dir)).toEqual(['content/now.md:2: "<!--" is never closed with "-->"']);
+  });
+  it('flags project files that are not lowercase-hyphen slugs', () => {
+    const dir = fixture({
+      'projects/clock-stamp.md': 'x',
+      'projects/Clock Stamp.md': 'x',
+      'projects/notes.txt': 'x',
+    });
+    const problems = findBreakage(dir);
+    expect(problems).toHaveLength(2);
+    expect(problems.join('\n')).toMatch(/Clock Stamp\.md/);
   });
   it('is strict on main and PRs into main only', () => {
     expect(isStrict({ GITHUB_REF: 'refs/heads/main' }, [])).toBe(true);

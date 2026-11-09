@@ -1,7 +1,16 @@
 {
   "extends": "astro/tsconfigs/strict",
   "include": [".astro/types.d.ts", "**/*"],
-  "exclude": ["dist", "_site", "legacy", "node_modules", ".lighthouseci"],
+  "exclude": [
+    "dist",
+    "_site",
+    "legacy",
+    "node_modules",
+    ".lighthouseci",
+    "coverage",
+    "test-results",
+    "playwright-report"
+  ],
   "compilerOptions": {
     "checkJs": true
   }

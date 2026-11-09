@@ -8,7 +8,9 @@
 //   launched (launched: true)
 //     _site/            ← dist/
 //     _site/legacy/     ← legacy/            (kept ≥ 30 days, PLAN M5)
-//     _site/work/Resume.pdf ← content/resume/Resume.pdf (old résumé URL keeps working)
+//
+// In both stages the résumé has one source, content/resume/Resume.pdf: it is copied to
+// /work/Resume.pdf (the old URL, linked by the legacy page) and /legacy/work/Resume.pdf.
 import { cpSync, existsSync, mkdirSync, rmSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -31,8 +33,6 @@ mkdirSync(out, { recursive: true });
 if (site.stage === 'launched') {
   cpSync(dist, out, { recursive: true });
   cpSync(legacy, join(out, 'legacy'), { recursive: true });
-  mkdirSync(join(out, 'work'), { recursive: true });
-  cpSync(join(root, 'content/resume/Resume.pdf'), join(out, 'work/Resume.pdf'));
   writeFileSync(join(out, 'robots.txt'), 'User-agent: *\nDisallow: /legacy/\n');
 } else {
   cpSync(legacy, out, { recursive: true });
@@ -40,6 +40,12 @@ if (site.stage === 'launched') {
   cpSync(dist, join(out, site.previewPath.replaceAll('/', '')), { recursive: true });
   // Keep the unfinished preview out of search results.
   writeFileSync(join(out, 'robots.txt'), `User-agent: *\nDisallow: ${site.previewPath}\n`);
+}
+
+const resume = join(root, 'content/resume/Resume.pdf');
+for (const dir of ['work', 'legacy/work']) {
+  mkdirSync(join(out, dir), { recursive: true });
+  cpSync(resume, join(out, dir, 'Resume.pdf'));
 }
 
 writeFileSync(join(out, 'CNAME'), `${site.domain}\n`);

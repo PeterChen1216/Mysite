@@ -14,12 +14,18 @@ module.exports = {
     assert: {
       assertions: {
         // M0 acceptance: mobile performance ≥ 95 (no scene yet). §9.1: A11y/BP/SEO ≥ 95.
-        'categories:performance': ['error', { minScore: 0.95 }],
-        'categories:accessibility': ['error', { minScore: 0.95 }],
-        'categories:best-practices': ['error', { minScore: 0.95 }],
-        'categories:seo': ['error', { minScore: 0.95 }],
-        'largest-contentful-paint': ['error', { maxNumericValue: 2500 }],
-        'cumulative-layout-shift': ['error', { maxNumericValue: 0.1 }],
+        'categories:performance': ['error', { minScore: 0.95, aggregationMethod: 'median-run' }],
+        'categories:accessibility': ['error', { minScore: 0.95, aggregationMethod: 'median-run' }],
+        'categories:best-practices': ['error', { minScore: 0.95, aggregationMethod: 'median-run' }],
+        'categories:seo': ['error', { minScore: 0.95, aggregationMethod: 'median-run' }],
+        'largest-contentful-paint': [
+          'error',
+          { maxNumericValue: 2500, aggregationMethod: 'median-run' },
+        ],
+        'cumulative-layout-shift': [
+          'error',
+          { maxNumericValue: 0.1, aggregationMethod: 'median-run' },
+        ],
       },
     },
     upload: {
