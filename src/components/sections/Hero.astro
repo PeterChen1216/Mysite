@@ -199,24 +199,32 @@ const cursorDelay = at;
     text-decoration: underline;
   }
   @media (max-width: 1279px) {
+    /* Stay side by side down to 1024: the stage scales via its container queries. */
     .hero {
-      flex-direction: column;
-      align-items: stretch;
       padding: 48px 32px 56px;
+      gap: 32px;
     }
     .hero__h1 {
       font-size: 64px;
     }
-    :global(.stage-wrap) {
-      align-self: center;
+    .hero :global(.stage-wrap) {
+      width: clamp(380px, 40vw, 560px);
     }
   }
   @media (max-width: 1023px) {
+    .hero {
+      flex-direction: column;
+      align-items: stretch;
+    }
     .hero__h1 {
       font-size: 56px;
     }
     .hero__copy :global(.hero__term) {
       width: 100%;
+    }
+    .hero :global(.stage-wrap) {
+      width: 560px;
+      align-self: center;
     }
   }
   @media (max-width: 767px) {
