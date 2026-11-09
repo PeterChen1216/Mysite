@@ -16,6 +16,7 @@ const experience: Record<string, unknown>[] = yaml('experience.yaml');
 const honors: Record<string, unknown>[] = yaml('honors.yaml');
 const interests = yaml('interests.yaml');
 const aviation = yaml('aviation.yaml');
+const skills = yaml('skills.yaml');
 
 const straight = (s: string) =>
   s.replace(/[‘’]/g, "'").replace(/[“”]/g, '"').replace(/\s+/g, ' ').trim();
@@ -92,11 +93,38 @@ test.describe('content/ renders completely', () => {
         .split('\n')
         .filter((l) => l.trim());
       expect(
-        missing(text, [fm.title, fm.tagline, fm.year, ...(fm.stack ?? []), ...body]),
+        missing(text, [
+          fm.title,
+          fm.tagline,
+          fm.year,
+          fm.role,
+          ...(fm.start ? [formatRange(String(fm.start), String(fm.end ?? 'present'))] : []),
+          ...(fm.stack ?? []),
+          ...body,
+        ]),
         card,
       ).toEqual([]);
-      for (const url of Object.values(fm.links ?? {}))
+      const { other = [], ...named } = fm.links ?? {};
+      for (const url of Object.values(named))
         await expect(page.locator(`${card} a[href="${url}"]`)).toHaveCount(1);
+      for (const l of other as { label: string; url: string }[])
+        await expect(page.locator(`${card} a[href="${l.url}"]`)).toHaveText(l.label);
+    }
+  });
+
+  test('work and volunteer entries land in their own sections', async ({ page }) => {
+    await page.goto(V2);
+    for (const x of experience) {
+      const section = x.kind === 'volunteer' ? '#community' : '#experience';
+      await expect(page.locator(section)).toContainText(String(x.company));
+    }
+  });
+
+  test('every skill group and item', async ({ page }) => {
+    await page.goto(V2);
+    const text = await visibleText(page, '#skills');
+    for (const g of skills.groups as { name: string; items: unknown[] }[]) {
+      expect(missing(text, [g.name, ...g.items]), g.name).toEqual([]);
     }
   });
 

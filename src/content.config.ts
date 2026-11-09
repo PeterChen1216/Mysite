@@ -12,6 +12,7 @@ import {
   projectSchema,
   proseSchema,
   siteSchema,
+  skillsSchema,
 } from './content/schema';
 
 // Paths are relative to the project root. Owners only ever edit content/ (PLAN §7).
@@ -40,12 +41,16 @@ export const collections = {
     loader: strictFile('content/interests.yaml', singleton('interests')),
     schema: interestsSchema,
   }),
+  skills: defineCollection({
+    loader: strictFile('content/skills.yaml', singleton('skills')),
+    schema: skillsSchema,
+  }),
   aviation: defineCollection({
     loader: strictFile('content/aviation.yaml', singleton('aviation')),
     schema: aviationSchema,
   }),
   projects: defineCollection({
-    // id = file name exactly (e.g. time-stamp.md → time-stamp), never a slugified guess,
+    // id = file name exactly (e.g. clock-stamp.md → clock-stamp), never a slugified guess,
     // so two files can't collapse into one id and /projects/<id> URLs (M3) stay stable.
     loader: glob({
       pattern: '*.md',

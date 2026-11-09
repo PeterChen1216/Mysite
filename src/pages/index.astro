@@ -7,6 +7,7 @@ import { Image } from 'astro:assets';
 import BaseLayout from '../layouts/BaseLayout.astro';
 import {
   getAviation,
+  getCommunity,
   getEducation,
   getExperience,
   getHonors,
@@ -15,6 +16,7 @@ import {
   getProjects,
   getProse,
   getSite,
+  getSkills,
   render,
 } from '../lib/content';
 import { contentStamp, formatVersion } from '../lib/build-info';
@@ -22,19 +24,33 @@ import { copyrightYears, formatRange, formatYearMonth } from '../lib/format';
 import { withBase } from '../lib/paths';
 import type { Project } from '../content/schema';
 
-const [site, profile, education, experience, honors, interests, aviation, projects, about, now] =
-  await Promise.all([
-    getSite(),
-    getProfile(),
-    getEducation(),
-    getExperience(),
-    getHonors(),
-    getInterests(),
-    getAviation(),
-    getProjects(),
-    getProse('about'),
-    getProse('now'),
-  ]);
+const [
+  site,
+  profile,
+  education,
+  experience,
+  community,
+  honors,
+  interests,
+  skills,
+  aviation,
+  projects,
+  about,
+  now,
+] = await Promise.all([
+  getSite(),
+  getProfile(),
+  getEducation(),
+  getExperience(),
+  getCommunity(),
+  getHonors(),
+  getInterests(),
+  getSkills(),
+  getAviation(),
+  getProjects(),
+  getProse('about'),
+  getProse('now'),
+]);
 
 const renderedProjects = await Promise.all(
   projects.map(async (p) => ({ id: p.id, data: p.data, Body: (await render(p)).Content })),
@@ -56,6 +72,7 @@ const STATUS_LABEL: Record<Project['status'], string> = {
   wip: 'in progress',
   testflight: 'TestFlight',
   shipped: 'shipped',
+  completed: 'completed',
   archived: 'archived',
 };
 const hasAvgeek =
@@ -86,6 +103,14 @@ const hasAvgeek =
         </li>
         <li>
           <a href="#experience">Experience</a>
+        </li>
+        {community.length > 0 && (
+          <li>
+            <a href="#community">Community</a>
+          </li>
+        )}
+        <li>
+          <a href="#skills">Skills</a>
         </li>
         {hasAvgeek && (
           <li>
@@ -233,6 +258,13 @@ const hasAvgeek =
             {data.year} · {data.platform.map((p) => PLATFORM_LABEL[p]).join(', ')} ·{' '}
             {STATUS_LABEL[data.status]}
           </p>
+          {(data.role || data.start) && (
+            <p class="meta">
+              {data.role}
+              {data.role && data.start && ' · '}
+              {data.start && formatRange(data.start, data.end ?? 'present')}
+            </p>
+          )}
           {data.stack.length > 0 && <p class="meta">Stack: {data.stack.join(', ')}</p>}
           <Body />
           {data.links && (
@@ -252,6 +284,11 @@ const hasAvgeek =
                   <a href={data.links.appstore}>App Store</a>
                 </li>
               )}
+              {data.links.other.map((l) => (
+                <li>
+                  <a href={l.url}>{l.label}</a>
+                </li>
+              ))}
             </ul>
           )}
         </article>
@@ -274,6 +311,37 @@ const hasAvgeek =
           </ul>
         </article>
       ))}
+    </section>
+
+    {community.length > 0 && (
+      <section id="community" aria-labelledby="community-title">
+        <h2 id="community-title">Community</h2>
+        {community.map((x) => (
+          <article>
+            <h3>
+              {x.role} @ {x.url ? <a href={x.url}>{x.company}</a> : x.company}, {x.location}
+            </h3>
+            <p class="dates">{formatRange(x.start, x.end)}</p>
+            <ul>
+              {x.highlights.map((h) => (
+                <li>{h}</li>
+              ))}
+            </ul>
+          </article>
+        ))}
+      </section>
+    )}
+
+    <section id="skills" aria-labelledby="skills-title">
+      <h2 id="skills-title">Skills</h2>
+      <dl class="skills">
+        {skills.groups.map((g) => (
+          <>
+            <dt>{g.name}</dt>
+            <dd>{g.items.join(', ')}</dd>
+          </>
+        ))}
+      </dl>
     </section>
 
     {hasAvgeek && (
@@ -484,6 +552,26 @@ const hasAvgeek =
     display: inline-block;
     vertical-align: -4px;
     margin-right: var(--space-2);
+  }
+  .skills {
+    display: grid;
+    grid-template-columns: max-content 1fr;
+    gap: var(--space-2) var(--space-4);
+    margin: 0;
+  }
+  .skills dt {
+    font: var(--type-code-bold);
+  }
+  .skills dd {
+    margin: 0;
+  }
+  @media (max-width: 480px) {
+    .skills {
+      grid-template-columns: 1fr;
+    }
+    .skills dd {
+      margin-bottom: var(--space-2);
+    }
   }
   .site-footer {
     margin-top: var(--space-16);

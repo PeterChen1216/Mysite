@@ -23,6 +23,9 @@ export const getProfile = async () =>
   required(await getEntry('profile', 'profile'), 'content/profile.yaml').data;
 export const getInterests = async () =>
   required(await getEntry('interests', 'interests'), 'content/interests.yaml').data;
+export const getSkills = async () =>
+  required(await getEntry('skills', 'skills'), 'content/skills.yaml').data;
+
 /** AvGeek data; `news` is shown newest first and capped at 5, so the owner can just append. */
 export async function getAviation() {
   const data = required(await getEntry('aviation', 'aviation'), 'content/aviation.yaml').data;
@@ -34,8 +37,20 @@ export async function getEducation() {
   return (await nonEmpty('education')).map((e) => e.data).sort(byStartDesc);
 }
 
+/** Work entries (everything except `kind: volunteer`), newest first. */
 export async function getExperience() {
-  return (await nonEmpty('experience')).map((e) => e.data).sort(byStartDesc);
+  return (await nonEmpty('experience'))
+    .map((e) => e.data)
+    .filter((e) => e.kind !== 'volunteer')
+    .sort(byStartDesc);
+}
+
+/** Community / volunteer entries (`kind: volunteer`), newest first. May be empty. */
+export async function getCommunity() {
+  return (await getCollection('experience'))
+    .map((e) => e.data)
+    .filter((e) => e.kind === 'volunteer')
+    .sort(byStartDesc);
 }
 
 export async function getHonors() {
