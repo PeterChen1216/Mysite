@@ -271,14 +271,16 @@ export const aviationSchema = z
   .strict();
 
 // --------------------------------------------------------- projects/*.md
+/** `completed` = a finished course/research project (not a product you keep shipping). */
+const projectStatus = z.enum(['idea', 'wip', 'testflight', 'shipped', 'completed', 'archived']);
+
 export const projectSchema = <I extends z.ZodType>(image: ImageHelper<I>) =>
   z
     .object({
       title: text,
       /** One line in your own words. Optional: leave it out rather than invent one. */
       tagline: text.max(120).optional(),
-      /** `completed` = a finished course/research project (not a product you keep shipping). */
-      status: z.enum(['idea', 'wip', 'testflight', 'shipped', 'completed', 'archived']),
+      status: projectStatus,
       platform: z.array(z.enum(['ios', 'web', 'cli', 'research'])).min(1),
       /** Your role, as written on the résumé, e.g. "Group Leader, University of Washington, INFO 494". */
       role: text.optional(),
@@ -484,8 +486,14 @@ export const copySchema = z
     labels: z
       .object({
         now: text,
+        /** End of an ongoing project on its card (`Mar 2026 – Present`). */
+        present: text,
         expected: text,
         class_of: text,
+        /** Short GPA label on the hero badge. */
+        gpa: text,
+        /** One word per project status (every status in projects/*.md needs one). */
+        status: z.record(projectStatus, text),
         new_tab: text,
         skip_link: text,
       })

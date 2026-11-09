@@ -5,7 +5,7 @@ import NewTab from '../ui/NewTab.astro';
 import TerminalWindow from '../ui/TerminalWindow.astro';
 import HeroStage from './HeroStage.astro';
 import { highlightParts, isDecorative } from '../../lib/derive';
-import { INTRO } from '../../motion/params';
+import { INTRO, typingMs } from '../../motion/params';
 import type { PageData } from '../../lib/page-data';
 
 interface Props {
@@ -38,15 +38,12 @@ let at = INTRO.typing.startMs;
 const typed = lines.map((l) => {
   const chars =
     l.text.length + (l.kind === 'cmd' ? 2 : l.kind === 'ok' ? copy.hero.ok.length + 1 : 0);
-  const dur = Math.max(
-    INTRO.typing.minLineMs,
-    Math.min(INTRO.typing.maxLineMs, chars * INTRO.typing.msPerChar),
-  );
-  const out = { ...l, steps: chars, dur, delay: at };
-  at += dur;
+  const out = { ...l, steps: chars, dur: typingMs(chars), delay: at };
+  at += out.dur;
   return out;
 });
-const cursorDelay = at;
+// The last line, `$ █`, types like the others before the cursor starts blinking.
+const cursor = { steps: 3, dur: typingMs(3), delay: at };
 ---
 
 <section class="hero" aria-labelledby="hero-title" id="top">
@@ -64,7 +61,7 @@ const cursorDelay = at;
                 data-intro="word"
                 class:list={{ hi: t.hi }}
                 style={`--i:${t.i}`}
-                aria-hidden={isDecorative(t.text) ? 'true' : undefined}
+                aria-hidden={t.hi && isDecorative(t.text) ? 'true' : undefined}
               >
                 {t.text}
               </span>
@@ -89,7 +86,7 @@ const cursorDelay = at;
         class="hero__ln"
         aria-hidden="true"
         data-intro="type"
-        style={`--steps:3;--dur:250ms;--d:${cursorDelay}ms`}
+        style={`--steps:${cursor.steps};--dur:${cursor.dur}ms;--d:${cursor.delay}ms`}
       >
         <span class="g">$ </span>
         <span class="hero__cursor" data-loop="blink">

@@ -1,8 +1,10 @@
 ---
 /**
  * Scrolling status ticker (Figma "Ticker"): items built from content by derive.tickerItems.
- * The band is a named, focusable region: keyboard focus pauses the scroll (WCAG 2.2.2), and
- * without motion it scrolls sideways with the arrow keys.
+ * The band is a named, focusable region. Hovering it pauses the scroll, and so does focusing it
+ * — by Tab, or a click or tap — until focus moves on (WCAG 2.2.2). Without motion (no JS, or
+ * reduced motion, also when turned on while the page is open) it stands still and scrolls
+ * sideways by hand or with the arrow keys.
  */
 import type { PageData } from '../../lib/page-data';
 import { LOOP } from '../../motion/params';
@@ -113,5 +115,17 @@ const seconds = Math.round(widthPx / LOOP.tickerPxPerSecond);
     overflow-x: auto;
     scrollbar-width: thin;
     scrollbar-color: var(--color-border-edge) transparent;
+  }
+  /* Reduced motion turned on while the page is open: html keeps .motion but every animation is
+     cancelled (src/styles/motion.css), so drop the copy and scroll by hand as above. */
+  @media (prefers-reduced-motion: reduce) {
+    :global(html.motion) .ticker {
+      overflow-x: auto;
+      scrollbar-width: thin;
+      scrollbar-color: var(--color-border-edge) transparent;
+    }
+    :global(html.motion) .ticker__track--dup {
+      display: none;
+    }
   }
 </style>

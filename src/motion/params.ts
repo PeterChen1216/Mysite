@@ -28,6 +28,20 @@ export const INTRO = {
   cards: { delayMs: 1300, staggerMs: 120, durationMs: 350, risePx: 14 },
 } as const;
 
+/** How long a typed terminal line of `chars` characters takes (INTRO.typing). */
+export function typingMs(chars: number): number {
+  const t = INTRO.typing;
+  return Math.max(t.minLineMs, Math.min(t.maxLineMs, chars * t.msPerChar));
+}
+
+/** Small interface transitions, in stepped (pixel-art) timing. */
+export const UI = {
+  /** Button hover: the classic blue/yellow highlight in 3 steps over 120 ms (PLAN §5.2). */
+  buttonHover: { ms: 120, steps: 3 },
+  /** Hero player card: the real photo replaces the pixel portrait in 4 steps. */
+  photoSwap: { ms: 200, steps: 4 },
+} as const;
+
 export const LOOP = {
   /** One full globe rotation (PLAN §5.2: 12 s / turn). */
   globeTurnMs: 12_000,
@@ -88,6 +102,8 @@ export function motionCssVars(): string {
     '--m-sway-deg': `${LOOP.orbitSwayDeg}deg`,
     '--m-globe-turn': ms(LOOP.globeTurnMs),
     '--m-globe-tile': px(GLOBE_TILE_PX),
+    '--m-btn-hover': `${ms(UI.buttonHover.ms)} steps(${UI.buttonHover.steps})`,
+    '--m-photo-swap': `${ms(UI.photoSwap.ms)} steps(${UI.photoSwap.steps})`,
   };
   return Object.entries(vars)
     .map(([k, v]) => `${k}:${v}`)

@@ -16,7 +16,7 @@ interface Props {
 }
 const { data, project } = Astro.props;
 const { copy } = data;
-const bar = statusBar(project.status);
+const bar = statusBar(project.status, copy.labels.status);
 const store = project.links?.appstore;
 ---
 

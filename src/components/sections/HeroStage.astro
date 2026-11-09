@@ -219,7 +219,8 @@ const blocks: Array<{ name: BlockName; x: number; y: number; w: number; glow?: s
   }
   .stage__photo {
     opacity: 0;
-    transition: opacity 200ms steps(4);
+    /* src/motion/params.ts UI.photoSwap */
+    transition: opacity var(--m-photo-swap);
   }
   .stage__card:hover .stage__photo,
   .stage__card:focus-visible .stage__photo {
@@ -247,14 +248,17 @@ const blocks: Array<{ name: BlockName; x: number; y: number; w: number; glow?: s
     color: #fff;
     zoom: var(--inv, 1);
   }
-  /* GPA badge: right-anchored so a long honor name can't run off the page. From 1280 px the
-     gutter is ≥ 64 px and the badge overhangs the stage by 40 px as in Figma (its right edge at
-     1416 of 1440), which also keeps it clear of the gold block. */
+  /* GPA badge: right-anchored so a long honor name can't run off the page. It is longer than
+     Figma's (the honor's full name comes from content), so where there is room beside the
+     unscaled stage — side by side from 1280 px, centred and stacked at 672–1023 px — it
+     overhangs the stage by 40 px (Figma: 24 px) to stay clear of the gold block. Elsewhere the
+     stage is scaled down or the margin is too narrow, and the badge, kept at its full text size,
+     sits over the top of the gold block (docs/STATUS.md D). */
   .stage__tip--gpa {
     right: 0;
     top: 8px;
   }
-  @media (min-width: 1280px) {
+  @media (min-width: 1280px), (min-width: 672px) and (max-width: 1023px) {
     .stage__tip--gpa {
       right: -40px;
     }

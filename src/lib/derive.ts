@@ -88,6 +88,12 @@ export function logRange(start: string, end: string, nowLabel = 'now'): string {
 }
 
 /**
+ * A `{name}` placeholder: one word (letters, digits, `_`, `-`), spaces inside the braces allowed.
+ * Text such as `{rotate:1b}` is not a placeholder and stays as written.
+ */
+const PLACEHOLDER = /\{\s*([\w-]+)\s*\}/g;
+
+/**
  * Fill `{placeholders}` in an interface string from copy.yaml. An unknown or empty placeholder
  * fails the build, so a typo in copy.yaml can't put a raw `{name}` on the page. Names in `keep`
  * are left as they are, for templates that are filled later with their own values.
@@ -96,26 +102,44 @@ export function fillTemplate(
   template: string,
   vars: Record<string, string | undefined>,
   keep: readonly string[] = [],
+  where = 'copy.yaml',
 ): string {
-  return template.replace(/\{(\w+)\}/g, (whole, key: string) => {
+  return template.replace(PLACEHOLDER, (whole, key: string) => {
     if (keep.includes(key)) return whole;
     const value = vars[key];
-    if (!value)
-      throw new Error(`copy.yaml: unknown or empty placeholder {${key}} in "${template}"`);
+    if (!value) throw new Error(`${where}: unknown or empty placeholder {${key}} in "${template}"`);
     return value;
   });
 }
 
-/** Placeholders filled per use rather than page-wide: `hero.avgeek_route` takes {from} and {to}. */
-export const LOCAL_PLACEHOLDERS = ['from', 'to'] as const;
+/**
+ * Placeholders filled per use rather than page-wide, by copy.yaml key: `hero.avgeek_route` takes
+ * {from} and {to} (its airports). Anywhere else they are unknown and fail the build.
+ */
+export const LOCAL_PLACEHOLDERS: Readonly<Record<string, readonly string[]>> = {
+  'hero.avgeek_route': ['from', 'to'],
+};
 
-/** Every string in copy.yaml with its page-wide `{placeholders}` filled (see fillTemplate). */
-export function fillCopy<T>(value: T, vars: Record<string, string | undefined>): T {
-  if (typeof value === 'string') return fillTemplate(value, vars, LOCAL_PLACEHOLDERS) as T;
-  if (Array.isArray(value)) return value.map((v: unknown) => fillCopy(v, vars)) as T;
+/**
+ * Every string in copy.yaml with its page-wide `{placeholders}` filled (see fillTemplate).
+ * `path` is the key of `value` in copy.yaml (`hero.avgeek_route`), used for LOCAL_PLACEHOLDERS
+ * and in error messages.
+ */
+export function fillCopy<T>(value: T, vars: Record<string, string | undefined>, path = ''): T {
+  if (typeof value === 'string')
+    return fillTemplate(
+      value,
+      vars,
+      LOCAL_PLACEHOLDERS[path] ?? [],
+      path ? `copy.yaml ${path}` : 'copy.yaml',
+    ) as T;
+  if (Array.isArray(value)) return value.map((v: unknown) => fillCopy(v, vars, path)) as T;
   if (value && typeof value === 'object')
     return Object.fromEntries(
-      Object.entries(value).map(([k, v]) => [k, fillCopy(v as unknown, vars)]),
+      Object.entries(value).map(([k, v]) => [
+        k,
+        fillCopy(v as unknown, vars, path ? `${path}.${k}` : k),
+      ]),
     ) as T;
   return value;
 }
@@ -146,81 +170,95 @@ export function copyVars(input: {
   };
 }
 
-/** True when a string is only symbols or punctuation (`_`, `↓`, `▲`): decoration, not words. */
+/**
+ * True when a string is only symbols or punctuation (`_`, `↓`, `▲`). Hero.astro hides such a
+ * word from screen readers only when it is highlighted (the `[_]` cursor); a plain `&` or `+` in
+ * the headline is part of the sentence and stays readable.
+ */
 export function isDecorative(text: string): boolean {
   return /^[^\p{L}\p{N}]+$/u.test(text.trim());
 }
 
 /**
+ * One decorative glyph: a non-ASCII symbol (▲ ↓ ★ ✈ →, emoji) with any emoji presentation
+ * selector and zero-width-joined parts (`✈️`, `👩‍💻`). ASCII symbols (`+ ~ < = > | ^`) are
+ * never decoration: `C++` and `cd ~` keep them.
+ */
+const GLYPH = String.raw`(?:(?!\p{ASCII})[\p{So}\p{Sm}\p{Sk}][\u{FE0E}\u{FE0F}]?(?:\u{200D}(?!\p{ASCII})[\p{So}\p{Sm}\p{Sk}][\u{FE0E}\u{FE0F}]?)*)`;
+// One glyph per repetition, so a long run of symbols can't make the match backtrack.
+const LEAD_GLYPHS = new RegExp(String.raw`^(?:${GLYPH}\s*)*`, 'u');
+const TRAIL_GLYPHS = new RegExp(String.raw`(?:\s*${GLYPH})*$`, 'u');
+
+/**
  * Split decorative symbols off the ends of a label (`▲ back to spawn` → lead `▲ `), so they can be
- * hidden from screen readers while the words stay readable.
+ * hidden from screen readers while the words stay readable. Ordinary punctuation such as
+ * `(loading…)` belongs to the words.
  */
 export function glyphParts(label: string): { lead: string; text: string; trail: string } {
-  // Symbols only (▲ ↓ ★ ✈ →); ordinary punctuation such as `(loading…)` belongs to the words.
-  const lead = /^(?:[\p{So}\p{Sm}\p{Sk}]+\s*)*/u.exec(label)?.[0] ?? '';
+  const lead = LEAD_GLYPHS.exec(label)?.[0] ?? '';
   const rest = label.slice(lead.length);
-  const trail = /(?:\s*[\p{So}\p{Sm}\p{Sk}]+)*$/u.exec(rest)?.[0] ?? '';
+  const trail = TRAIL_GLYPHS.exec(rest)?.[0] ?? '';
   const text = rest.slice(0, rest.length - trail.length);
   return text ? { lead, text, trail } : { lead: '', text: label, trail: '' };
 }
 
-/**
- * now.md → one plain line per bullet (or paragraph). HTML comments, headings and rules are
- * dropped, hard-wrapped lines are joined, and inline Markdown is reduced to its text, so the
- * ticker never shows raw `[links](…)` or `**stars**`.
- */
-export function nowLines(markdown: string): string[] {
-  const out: string[] = [];
-  let current: string | undefined;
-  const flush = () => {
-    const text = current === undefined ? '' : inlineText(current);
-    if (text) out.push(text);
-    current = undefined;
-  };
-  for (const raw of markdown.replace(/<!--[\s\S]*?-->/g, '').split('\n')) {
-    const line = raw.trim();
-    if (!line || /^#{1,6}(\s|$)/.test(line) || /^([-*_])(\s*\1){2,}$/.test(line)) {
-      flush();
-      continue;
-    }
-    const bullet = /^(?:[-*+]|\d+[.)])\s+(.*)$/.exec(line);
-    if (bullet) {
-      flush();
-      current = bullet[1];
-    } else {
-      current = current === undefined ? line : `${current} ${line}`;
-    }
-  }
-  flush();
-  return out;
+// ---------------------------------------------------------------- now.md → ticker lines
+/** An HTML tag whose name matches `names`; quoted attribute values may contain `>`. */
+const tagsNamed = (names: string) =>
+  new RegExp(String.raw`<\/?(?:${names})(?![\w-])(?:[^>"']|"[^"]*"|'[^']*')*>`, 'gi');
+const ANY_TAG = tagsNamed('[a-z][\\w-]*');
+/** Tags that start a new line of their own: each list item and paragraph is one ticker item. */
+const BLOCK_TAGS = tagsNamed(
+  'address|article|aside|blockquote|dd|details|div|dl|dt|figcaption|figure|footer|header|hr|li|main|nav|ol|p|pre|section|summary|table|tbody|tfoot|thead|tr|ul',
+);
+/** Tags that separate words without starting a new item (a hard line break, table cells). */
+const SPACE_TAGS = tagsNamed('br|td|th');
+
+const NAMED_ENTITIES: Record<string, string> = {
+  amp: '&',
+  lt: '<',
+  gt: '>',
+  quot: '"',
+  apos: "'",
+  nbsp: ' ',
+};
+/** `&#x26;` `&#38;` `&amp;` → `&`; an unknown named reference stays as written. */
+function decodeEntities(text: string): string {
+  return text.replace(
+    /&(?:#x([0-9a-f]+)|#(\d+)|([a-z]+));/gi,
+    (whole: string, hex?: string, dec?: string, name?: string) => {
+      if (name) return NAMED_ENTITIES[name] ?? whole;
+      const cp = hex ? parseInt(hex, 16) : Number(dec);
+      return cp > 0 && cp <= 0x10ffff ? String.fromCodePoint(cp) : whole;
+    },
+  );
 }
 
-/** Inline Markdown → plain text (code spans keep their content verbatim). */
-export function inlineText(markdown: string): string {
-  const plain = (s: string) => {
-    // Backslash escapes (`\*`) are set aside first so they can't pair up as emphasis.
-    const escaped: string[] = [];
-    return s
-      .replace(
-        /\\([\\`*_{}[\]()#+\-.!~|>])/g,
-        (_, c: string) => `\uE000${escaped.push(c) - 1}\uE001`,
-      )
-      .replace(/!\[([^\]]*)\]\([^)]*\)/g, '$1')
-      .replace(/\[([^\]]+)\]\([^)]*\)/g, '$1')
-      .replace(/\[([^\]]+)\]\[[^\]]*\]/g, '$1')
-      .replace(/<\/?[a-z][^>]*>/gi, '')
-      .replace(/(\*\*|__)(.+?)\1/g, '$2')
-      .replace(/\*(\S(?:.*?\S)?)\*/g, '$1')
-      .replace(/(^|[^\p{L}\p{N}])_(\S(?:.*?\S)?)_(?![\p{L}\p{N}])/gu, '$1$2')
-      .replace(/~~(.+?)~~/g, '$1')
-      .replace(/\uE000(\d+)\uE001/g, (_, i: string) => escaped[Number(i)] ?? '');
-  };
-  return markdown
-    .split(/(`[^`]+`)/g)
-    .map((part, i) => (i % 2 ? part.slice(1, -1) : plain(part)))
-    .join('')
+/**
+ * now.md, as rendered by Astro's Markdown pipeline (the CommonMark + GFM used for every page),
+ * → one plain line per list item or paragraph, for the ticker. Working from the rendered HTML
+ * rather than the Markdown source means links, autolinks, reference links, emphasis, code spans,
+ * escapes and entities are already resolved exactly as Markdown defines them. Headings,
+ * comments and footnotes are dropped, an image becomes its alt text, and line breaks inside an
+ * item become spaces.
+ */
+export function nowLines(html: string): string[] {
+  return html
+    .replace(/<!--[\s\S]*?-->/g, '')
+    .replace(/<(h[1-6]|script|style|template)\b[\s\S]*?<\/\1\s*>/gi, '\n')
+    .replace(/<section\b[^>]*\sdata-footnotes\b[\s\S]*?<\/section\s*>/gi, '\n')
+    .replace(/<sup\b[^>]*>\s*<a\b[^>]*\sdata-footnote-ref\b[\s\S]*?<\/sup\s*>/gi, '')
+    .replace(tagsNamed('img'), (img) => {
+      const alt = /\salt\s*=\s*(?:"([^"]*)"|'([^']*)')/i.exec(img);
+      return ` ${alt?.[1] ?? alt?.[2] ?? ''} `;
+    })
     .replace(/\s+/g, ' ')
-    .trim();
+    .replace(BLOCK_TAGS, '\n')
+    .replace(SPACE_TAGS, ' ')
+    .replace(ANY_TAG, '')
+    .split('\n')
+    .map((line) => decodeEntities(line).replace(/\s+/g, ' ').trim())
+    .filter(Boolean);
 }
 
 /** Deterministic 7-char pseudo commit hash for a log row (decoration, stable across builds). */
@@ -242,6 +280,38 @@ export function highlightParts(line: string): Array<{ text: string; hi: boolean 
   return parts;
 }
 
+/**
+ * Grid areas of the About bento for the cards that are there — off-the-clock (`off`) and AvGeek
+ * (`av`) are optional — at three columns (≥ 1280 px), two (≥ 768) and one, so no cell is ever
+ * left empty. One string per grid row.
+ */
+export function aboutAreas(has: { off: boolean; av: boolean }): {
+  lg: string[];
+  md: string[];
+  sm: string[];
+} {
+  const side = [has.off && 'off', has.av && 'av'].filter((a): a is string => typeof a === 'string');
+  return {
+    lg: [
+      'who who stack',
+      ...(side.length === 2 ? [`edu ${side.join(' ')}`] : side.map((a) => `edu ${a} ${a}`)),
+      'edu skills skills',
+    ],
+    md: [
+      'who who',
+      'stack stack',
+      ...side.map((a) => `edu ${a}`),
+      side.length > 0 ? 'skills skills' : 'edu skills',
+    ],
+    sm: ['who', 'stack', 'edu', ...side, 'skills'],
+  };
+}
+
+/** Grid rows → a `grid-template-areas` value: `'who who stack' 'edu off av'`. */
+export function gridAreas(rows: string[]): string {
+  return rows.map((r) => `'${r}'`).join(' ');
+}
+
 // ---------------------------------------------------------------- labels
 export const PLATFORM_LABEL: Record<string, string> = {
   ios: 'iOS',
@@ -249,7 +319,9 @@ export const PLATFORM_LABEL: Record<string, string> = {
   cli: 'CLI',
   research: 'Research',
 };
-export const STATUS_LABEL: Record<ProjectLike['status'], string> = {
+/** Project status words; the page passes copy.yaml `labels.status` (these are the defaults). */
+export type StatusLabels = Record<ProjectLike['status'], string>;
+export const STATUS_LABEL: StatusLabels = {
   idea: 'idea',
   wip: 'in progress',
   testflight: 'TestFlight',
@@ -289,18 +361,29 @@ export function whoamiLine(fullName: string, edu: EducationLike, classOf = 'clas
   return `${fullName} — ${what} @ ${edu.school}, ${classOf} ${classYear(edu.end)}.`;
 }
 
-/** `GPA 3.84  ★  Annual Dean’s List 2025–26` — the honor keeps its own name from content/. */
-export function gpaBadge(edu: EducationLike, honors: HonorLike[]): string | undefined {
+/**
+ * `GPA 3.84  ★  Annual Dean’s List 2025–26` — the honor keeps its own name from content/; the
+ * `GPA` label comes from copy.yaml.
+ */
+export function gpaBadge(
+  edu: EducationLike,
+  honors: HonorLike[],
+  gpaLabel = 'GPA',
+): string | undefined {
   if (!edu.gpa) return undefined;
-  const gpa = edu.gpa.split('/')[0];
+  const gpa = `${gpaLabel} ${edu.gpa.split('/')[0]}`;
   const honor = latestHonor(honors);
-  return honor ? `GPA ${gpa}  ★  ${honor.name} ${shortAcademicYear(honor.year)}` : `GPA ${gpa}`;
+  return honor ? `${gpa}  ★  ${honor.name} ${shortAcademicYear(honor.year)}` : gpa;
 }
 
-/** `Clock Stamp · iOS  [SHIPPED → App Store]` (store label from copy.yaml). */
-export function projectBadge(p: ProjectLike, appStoreLabel = 'App Store'): string {
+/** `Clock Stamp · iOS  [SHIPPED → App Store]` (store label and status words from copy.yaml). */
+export function projectBadge(
+  p: ProjectLike,
+  appStoreLabel = 'App Store',
+  statusLabels: StatusLabels = STATUS_LABEL,
+): string {
   const platform = p.platform.map((x) => PLATFORM_LABEL[x] ?? x).join('/');
-  const status = STATUS_LABEL[p.status].toUpperCase();
+  const status = statusLabels[p.status].toUpperCase();
   const where = p.links?.appstore ? ` → ${appStoreLabel}` : '';
   return `${p.title} · ${platform}  [${status}${where}]`;
 }
@@ -314,13 +397,16 @@ export function nowProject<P extends ProjectLike>(projects: P[]): P | undefined 
   return ongoing.find((p) => p.featured) ?? ongoing[0];
 }
 
-/** `[■■■■■■■■■■]` style bar for a status, plus the label. */
-export function statusBar(status: ProjectLike['status']): {
+/** `[■■■■■■■■■■]` style bar for a status, plus the label (copy.yaml `labels.status`). */
+export function statusBar(
+  status: ProjectLike['status'],
+  labels: StatusLabels = STATUS_LABEL,
+): {
   filled: number;
   total: number;
   label: string;
 } {
-  return { filled: STATUS_PROGRESS[status], total: 10, label: STATUS_LABEL[status] };
+  return { filled: STATUS_PROGRESS[status], total: 10, label: labels[status] };
 }
 
 /** GPA as a fraction for the XP bar (`3.84/4.00` → 0.96). */
@@ -368,10 +454,12 @@ export function tickerItems(input: {
   now: string[];
   email?: string | undefined;
   tags?: TickerTags;
+  statusLabels?: StatusLabels;
 }): TickerItem[] {
   const items: TickerItem[] = [];
   const { edu } = input;
   const tags = input.tags ?? DEFAULT_TAGS;
+  const statusLabels = input.statusLabels ?? STATUS_LABEL;
   if (edu.gpa) {
     const honor = latestHonor(input.honors);
     items.push({
@@ -386,7 +474,7 @@ export function tickerItems(input: {
   }
   for (const p of input.projects.filter((p) => p.featured)) {
     const platform = p.platform.map((x) => PLATFORM_LABEL[x] ?? x).join('/');
-    items.push({ tag: platform, text: `${p.title} · ${STATUS_LABEL[p.status]}`, tone: 'gold' });
+    items.push({ tag: platform, text: `${p.title} · ${statusLabels[p.status]}`, tone: 'gold' });
   }
   items.push({
     tag: (edu.short?.split(' ')[0] || tags.edu).toUpperCase(),

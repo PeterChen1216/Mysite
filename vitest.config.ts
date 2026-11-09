@@ -13,6 +13,7 @@ export default defineConfig({
         'src/lib/build-info.ts',
         'src/lib/derive.ts',
         'src/components/sections/projects-view.ts',
+        'src/motion/params.ts',
         'src/content/parsers.ts',
         'src/content/guards.ts',
         'src/content/schema.ts',

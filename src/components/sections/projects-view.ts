@@ -3,12 +3,14 @@
  * Every string here is built from one project's frontmatter plus interface labels from
  * content/copy.yaml; the formats are the content contract checked by tests/e2e/content.spec.ts.
  */
-import { PLATFORM_LABEL, STATUS_LABEL } from '../../lib/derive';
+import { PLATFORM_LABEL } from '../../lib/derive';
 import { formatRange } from '../../lib/format';
 import type { PageData } from '../../lib/page-data';
 
 export type Project = PageData['projects'][number];
 export type ProjectsCopy = PageData['copy']['projects'];
+/** copy.yaml `labels` used on the cards: status words and the end of an ongoing project. */
+export type ProjectLabels = Pick<PageData['copy']['labels'], 'status' | 'present'>;
 
 export interface ProjectLink {
   kind: 'appstore' | 'live' | 'repo' | 'other';
@@ -32,12 +34,11 @@ export interface ProjectView {
   links: ProjectLink[];
 }
 
-export function projectView(p: Project, copy: ProjectsCopy): ProjectView {
+export function projectView(p: Project, copy: ProjectsCopy, labels: ProjectLabels): ProjectView {
   const platforms = p.platform.map((x) => PLATFORM_LABEL[x] ?? x);
-  const status = STATUS_LABEL[p.status];
-  const when = [p.role, p.location, p.start && p.end ? formatRange(p.start, p.end) : undefined]
-    .filter(Boolean)
-    .join(' · ');
+  const status = labels.status[p.status];
+  const range = p.start && p.end ? formatRange(p.start, p.end, labels.present) : undefined;
+  const when = [p.role, p.location, range].filter(Boolean).join(' · ');
   const links: ProjectLink[] = [];
   if (p.links?.appstore)
     links.push({ kind: 'appstore', url: p.links.appstore, label: copy.link_appstore });

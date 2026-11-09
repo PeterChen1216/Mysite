@@ -232,6 +232,17 @@ describe('schemas reject mistakes an owner could make', () => {
     expect(() => copySchema.parse(withZone('Asia/Shanghai'))).not.toThrow();
     expect(() => copySchema.parse(withZone('Seattle'))).toThrow(/IANA/);
   });
+  it('copy: every project status has exactly one label', () => {
+    const copy = copySchema.parse(singleton('copy')(read('copy.yaml'))[0]);
+    const withStatus = (status: Record<string, string>) => ({
+      ...copy,
+      labels: { ...copy.labels, status },
+    });
+    const { wip: _wip, ...missing } = copy.labels.status;
+    expect(() => copySchema.parse(withStatus(missing))).toThrow();
+    expect(() => copySchema.parse(withStatus({ ...copy.labels.status, beta: 'beta' }))).toThrow();
+    expect(() => copySchema.parse(withStatus({ ...copy.labels.status, wip: ' ' }))).toThrow();
+  });
   it('copy: every {placeholder} in copy.yaml is one the page can fill', () => {
     const copy = copySchema.parse(singleton('copy')(read('copy.yaml'))[0]);
     const vars = copyVars({

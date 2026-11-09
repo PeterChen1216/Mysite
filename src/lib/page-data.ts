@@ -112,8 +112,8 @@ export async function getPageData() {
       eyebrow: heroEyebrow(profile.name.display, edu, profile.location, copy.hero.eyebrow_prefix),
       whoami: whoamiLine(profile.name.full, edu, copy.labels.class_of),
       tags: interests.items.map((i) => i.tag).filter((t): t is string => Boolean(t)),
-      gpaBadge: gpaBadge(edu, honors),
-      projectBadge: projectBadge(featured, copy.projects.link_appstore),
+      gpaBadge: gpaBadge(edu, honors, copy.labels.gpa),
+      projectBadge: projectBadge(featured, copy.projects.link_appstore, copy.labels.status),
       avgeekBadge: route
         ? fillTemplate(copy.hero.avgeek_route, { from: route.from, to: route.to })
         : copy.hero.avgeek_badge,
@@ -127,6 +127,7 @@ export async function getPageData() {
       now,
       email: primaryEmail,
       tags: copy.ticker.tags,
+      statusLabels: copy.labels.status,
     }),
     log: gitLog({
       status: profile.status,

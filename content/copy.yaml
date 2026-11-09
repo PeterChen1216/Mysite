@@ -136,7 +136,17 @@ footer:
 # Small words used inside dates and lists.
 labels:
   now: now # end of an ongoing entry in the commit history
+  present: Present # end of an ongoing project on its card ("Mar 2026 – Present")
   expected: (expected) # graduation date not reached yet
   class_of: class of
+  gpa: GPA # on the hero badge ("GPA 3.84 ★ …")
+  # Project status words (projects/*.md `status`), shown on the cards, badge and ticker.
+  status:
+    idea: idea
+    wip: in progress
+    testflight: TestFlight
+    shipped: shipped
+    completed: completed
+    archived: archived
   new_tab: (opens in a new tab) # read out by screen readers only
   skip_link: Skip to content # first thing a keyboard user reaches

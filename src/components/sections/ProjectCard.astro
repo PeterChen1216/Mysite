@@ -13,14 +13,15 @@ import Card from '../ui/Card.astro';
 import Chip from '../ui/Chip.astro';
 import NewTab from '../ui/NewTab.astro';
 import VoxelBlock, { type BlockName } from '../ui/VoxelBlock.astro';
-import { projectView, type Project, type ProjectsCopy } from './projects-view';
+import { projectView, type Project, type ProjectLabels, type ProjectsCopy } from './projects-view';
 
 interface Props {
   project: Project;
   copy: ProjectsCopy;
+  labels: ProjectLabels;
 }
-const { project: p, copy } = Astro.props;
-const v = projectView(p, copy);
+const { project: p, copy, labels } = Astro.props;
+const v = projectView(p, copy, labels);
 const { Body } = p;
 /** Corner block by platform (Figma pairs "This website" with the Terminal block). */
 const BLOCK: Record<string, BlockName> = {

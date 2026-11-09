@@ -1,7 +1,8 @@
 ---
 /**
  * Minecraft-style button (Figma component MCButton, node 15:733): Stone (neutral) / Grass (primary).
- * Hover = classic blue/yellow highlight in 3 steps over 120 ms (PLAN §5.2).
+ * Hover = classic blue/yellow highlight in 3 steps over 120 ms (PLAN §5.2; `--m-btn-hover` from
+ * src/motion/params.ts UI.buttonHover).
  * Colours are darkened slightly from Figma to meet WCAG AA (white on Figma's grass #5d9c3a is
  * 3.2:1, yellow on its hover blue #7b8dff 2.9:1); see docs/M1-PLAN.md §4.
  */
@@ -61,8 +62,8 @@ const newTab = external ? (await getCopy()).labels.new_tab : '';
     text-decoration: none;
     white-space: nowrap;
     transition:
-      background-color 120ms steps(3),
-      color 120ms steps(3);
+      background-color var(--m-btn-hover),
+      color var(--m-btn-hover);
   }
   .mc-btn::before,
   .mc-btn::after {
@@ -71,7 +72,7 @@ const newTab = external ? (await getCopy()).labels.new_tab : '';
     left: 0;
     right: 0;
     pointer-events: none;
-    transition: background-color 120ms steps(3);
+    transition: background-color var(--m-btn-hover);
   }
   .mc-btn::before {
     top: 0;

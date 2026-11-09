@@ -7,8 +7,10 @@ import { V2 } from './site';
  * Text that is cut off or runs into its neighbours. Checks every visible word against the
  * viewport and against each ancestor that clips horizontally (`.page` is `overflow-x: clip`, so
  * the document itself never scrolls sideways and a scrollWidth check would always pass), and
- * every block of text against its own width. The ticker scrolls on purpose and is skipped, as
- * are screen-reader-only labels.
+ * every block of text against its own width. Text shortened on purpose with an ellipsis (the
+ * terminal title bars) is allowed when the element's title holds the full text and the element
+ * itself is on screen. The ticker scrolls on purpose and is skipped, as are screen-reader-only
+ * labels.
  */
 function textProblems(page: Page) {
   return page.evaluate(() => {
@@ -22,12 +24,19 @@ function textProblems(page: Page) {
       if (!el || !text.trim() || skip(el) || getComputedStyle(el).visibility === 'hidden') continue;
       let left = 0;
       let right = vw;
+      let shortened = false;
       for (let a: Element | null = el; a && a !== document.documentElement; a = a.parentElement) {
-        if (getComputedStyle(a).overflowX === 'visible') continue;
+        const cs = getComputedStyle(a);
+        if (cs.overflowX === 'visible') continue;
+        if (cs.textOverflow === 'ellipsis') {
+          shortened = true; // checked as a whole below
+          break;
+        }
         const r = a.getBoundingClientRect();
         left = Math.max(left, r.left);
         right = Math.min(right, r.right);
       }
+      if (shortened) continue;
       const range = document.createRange();
       for (const m of text.matchAll(/\S+/g)) {
         range.setStart(node, m.index);
@@ -40,7 +49,17 @@ function textProblems(page: Page) {
     }
     for (const el of document.querySelectorAll('body *')) {
       const cs = getComputedStyle(el);
-      if (skip(el) || cs.display.startsWith('inline') || cs.display === 'contents') continue;
+      if (skip(el)) continue;
+      if (cs.textOverflow === 'ellipsis' && cs.overflowX !== 'visible') {
+        const full = el.textContent?.trim() ?? '';
+        if (el.scrollWidth > el.clientWidth + 1 && el.getAttribute('title') !== full)
+          problems.push(`shortened without a title: "${full}"`);
+        const r = el.getBoundingClientRect();
+        if (r.width > 0 && (r.left < -1 || r.right > vw + 1))
+          problems.push(`cut off: "${full}" at ${Math.round(r.left)}–${Math.round(r.right)}`);
+        continue;
+      }
+      if (cs.display.startsWith('inline') || cs.display === 'contents') continue;
       if (cs.overflowX !== 'visible' || el.clientWidth === 0 || !el.textContent?.trim()) continue;
       // A block of running text: every child is inline (spans, links), so its text can only
       // run past the box sideways, into whatever sits next to it.
@@ -57,14 +76,25 @@ function textProblems(page: Page) {
 test.describe('layout holds at every width', () => {
   test.skip(({ isMobile }) => isMobile, 'desktop projects resize the viewport themselves');
   test.use({ reducedMotion: 'reduce' });
-  for (const width of [360, 390, 600, 768, 1024, 1100, 1280, 1440, 1920]) {
+  // 320 px is the WCAG 1.4.10 reflow width.
+  for (const width of [320, 360, 390, 600, 768, 1024, 1100, 1280, 1440, 1920]) {
     test(`no text is cut off or overlapping at ${width}px`, async ({ page }) => {
       await page.setViewportSize({ width, height: 900 });
       await page.goto(V2);
       await page.evaluate(() => document.fonts.ready);
       expect(await textProblems(page)).toEqual([]);
+      // The About grid template is valid for this width (an invalid one is dropped, and the
+      // cards fall back to auto-placement with holes).
+      const areas = await page
+        .locator('.inv')
+        .evaluate((el) => getComputedStyle(el).gridTemplateAreas);
+      expect(areas).not.toBe('none');
     });
   }
+  test('long skill lists wrap instead of running off the card', async ({ page }) => {
+    await page.goto(V2);
+    await expect(page.locator('.sk__basic').first()).toHaveCSS('flex-wrap', 'wrap');
+  });
 });
 
 /** CSS animations that are still running and never end (loops). */
@@ -79,11 +109,9 @@ function runningLoops(page: Page) {
 }
 
 test.describe('motion', () => {
-  test.skip(({ isMobile }) => isMobile, 'pointer and hover behaviour is desktop-only');
-
-  test('keyboard focus pauses the ticker; it is a named region', async ({ page }) => {
+  test('focus pauses the ticker; it is a named region', async ({ page }) => {
     await page.goto(V2);
-    const ticker = page.getByRole('region', { name: copy.ticker.label });
+    const ticker = page.getByRole('region', { name: copy.ticker.label, exact: true });
     await ticker.focus();
     const state = await page
       .locator('.ticker__track')
@@ -101,7 +129,10 @@ test.describe('motion', () => {
     await expect.poll(() => runningLoops(page)).toBe(0);
   });
 
-  test('turning on reduced motion mid-visit stops everything for good', async ({ page }) => {
+  test('reduced motion turned on mid-visit stops everything; turned off, nothing spins off screen', async ({
+    page,
+    isMobile,
+  }) => {
     await page.goto(V2);
     await expect.poll(() => runningLoops(page)).toBeGreaterThan(0);
     await page.emulateMedia({ reducedMotion: 'reduce' });
@@ -121,18 +152,32 @@ test.describe('motion', () => {
         () => document.getAnimations().filter((a) => a.playState === 'running').length,
       ),
     ).toBe(0);
-    // Hover bursts stay off too.
-    await page.locator('.hero .mc-btn').first().hover();
-    await page.waitForTimeout(100);
-    const painted = await page.evaluate(() => {
-      const canvas = document.querySelector<HTMLCanvasElement>('.particles-layer');
-      if (!canvas) return 0;
-      const data = canvas.getContext('2d')!.getImageData(0, 0, canvas.width, canvas.height).data;
-      let n = 0;
-      for (let i = 3; i < data.length; i += 4) if (data[i]) n++;
-      return n;
-    });
-    expect(painted).toBe(0);
+    // The ticker stands still, keeps one copy of its items and scrolls by hand instead.
+    const ticker = page.locator('.ticker');
+    await expect(ticker).toHaveCSS('overflow-x', 'auto');
+    await expect(page.locator('.ticker__track--dup')).toBeHidden();
+    expect(await ticker.evaluate((el) => el.scrollWidth > el.clientWidth)).toBe(true);
+    if (!isMobile) {
+      // Hover bursts stay off too (there is no hover on touch screens).
+      await page.locator('.hero .mc-btn').first().hover();
+      await page.waitForTimeout(100);
+      const painted = await page.evaluate(() => {
+        const canvas = document.querySelector<HTMLCanvasElement>('.particles-layer');
+        if (!canvas) return 0;
+        const data = canvas.getContext('2d')!.getImageData(0, 0, canvas.width, canvas.height).data;
+        let n = 0;
+        for (let i = 3; i < data.length; i += 4) if (data[i]) n++;
+        return n;
+      });
+      expect(painted).toBe(0);
+    }
+    // Turned off again: the loops come back, but globes that are off screen stay paused.
+    await page.emulateMedia({ reducedMotion: 'no-preference' });
+    await expect.poll(() => runningLoops(page)).toBeGreaterThan(0);
+    await page.evaluate(() =>
+      document.getElementById('experience')!.scrollIntoView({ block: 'start' }),
+    );
+    await expect.poll(() => runningLoops(page)).toBe(0);
   });
 });
 

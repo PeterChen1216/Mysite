@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import {
   projectView,
   type Project,
+  type ProjectLabels,
   type ProjectsCopy,
 } from '../../src/components/sections/projects-view';
 
@@ -11,6 +12,19 @@ const copy = {
   link_repo: 'Source code',
   link_live: 'Live site',
 } as ProjectsCopy;
+
+/** copy.yaml `labels` as shipped. */
+const labels: ProjectLabels = {
+  present: 'Present',
+  status: {
+    idea: 'idea',
+    wip: 'in progress',
+    testflight: 'TestFlight',
+    shipped: 'shipped',
+    completed: 'completed',
+    archived: 'archived',
+  },
+};
 
 const project = (over: Partial<Project> = {}): Project =>
   ({
@@ -30,6 +44,7 @@ describe('projectView', () => {
     const v = projectView(
       project({ role: 'Solo developer', location: 'Seattle', start: '2026-03', end: 'present' }),
       copy,
+      labels,
     );
     expect(v).toMatchObject({
       anchor: 'project-clock-stamp',
@@ -53,6 +68,7 @@ describe('projectView', () => {
         },
       }),
       copy,
+      labels,
     );
     expect(v.links.map((l) => [l.kind, l.label])).toEqual([
       ['appstore', 'App Store'],
@@ -66,6 +82,7 @@ describe('projectView', () => {
       // The schema only allows known platforms; the label lookup still falls back safely.
       project({ stack: [], links: undefined, platform: ['web', 'zine'] as Project['platform'] }),
       copy,
+      labels,
     );
     expect(v.when).toBeUndefined();
     expect(v.stack).toBeUndefined();
@@ -73,6 +90,15 @@ describe('projectView', () => {
     // Unknown platforms are shown as written.
     expect(v.platforms).toEqual(['Web', 'zine']);
     // Only a start date (no end) is not a range.
-    expect(projectView(project({ start: '2026-03' }), copy).when).toBeUndefined();
+    expect(projectView(project({ start: '2026-03' }), copy, labels).when).toBeUndefined();
+  });
+  it('takes its status words and "Present" from copy.yaml labels', () => {
+    const v = projectView(project({ start: '2026-03', end: 'present' }), copy, {
+      present: 'ongoing',
+      status: { ...labels.status, shipped: 'live' },
+    });
+    expect(v.status).toBe('live');
+    expect(v.stat).toBe('2026 · iOS · live');
+    expect(v.when).toBe('Mar 2026 – ongoing');
   });
 });

@@ -16,16 +16,17 @@ import TerminalWindow from '../ui/TerminalWindow.astro';
 import VoxelBlock from '../ui/VoxelBlock.astro';
 import PhoneMockup from './PhoneMockup.astro';
 import { statusBar } from '../../lib/derive';
-import { projectView, type Project, type ProjectsCopy } from './projects-view';
+import { projectView, type Project, type ProjectLabels, type ProjectsCopy } from './projects-view';
 
 interface Props {
   project: Project;
   copy: ProjectsCopy;
+  labels: ProjectLabels;
 }
-const { project: p, copy } = Astro.props;
-const v = projectView(p, copy);
+const { project: p, copy, labels } = Astro.props;
+const v = projectView(p, copy, labels);
 const { Body } = p;
-const bar = statusBar(p.status);
+const bar = statusBar(p.status, labels.status);
 const cells = Array.from({ length: bar.total }, (_, i) => i < bar.filled);
 // Symbols outside the 8-bit font's Latin subset are drawn in a symbol font (as in Tooltip); the
 // parts share one <span> so the chip's flex box doesn't swallow the space after the symbol.

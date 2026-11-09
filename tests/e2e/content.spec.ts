@@ -1,7 +1,7 @@
 import { readFileSync, readdirSync } from 'node:fs';
 import { expect, test, type Page } from '@playwright/test';
 import { parse } from 'yaml';
-import { logRange, nowLines } from '../../src/lib/derive';
+import { logRange } from '../../src/lib/derive';
 import { formatRange, formatYearMonth } from '../../src/lib/format';
 import { copy, escapeRe } from './copy';
 import { V2 } from './site';
@@ -26,14 +26,10 @@ const PLATFORM: Record<string, string> = {
   cli: 'CLI',
   research: 'Research',
 };
-const STATUS: Record<string, string> = {
-  idea: 'idea',
-  wip: 'in progress',
-  testflight: 'TestFlight',
-  shipped: 'shipped',
-  completed: 'completed',
-  archived: 'archived',
-};
+const STATUS: Record<string, string> = copy.labels.status;
+/** A project's date range as its card shows it (copy.yaml labels.present for ongoing work). */
+const projectRange = (start: unknown, end: unknown) =>
+  formatRange(String(start), String(end), copy.labels.present);
 
 const straight = (s: string) =>
   s.replace(/[‘’]/g, "'").replace(/[“”]/g, '"').replace(/\s+/g, ' ').trim();
@@ -121,7 +117,7 @@ test.describe('content/ renders completely', () => {
           fm.year,
           fm.role,
           fm.location,
-          ...(fm.start ? [formatRange(String(fm.start), String(fm.end))] : []),
+          ...(fm.start && fm.end ? [projectRange(fm.start, fm.end)] : []),
           ...(fm.stack ?? []),
           ...body,
         ]),
@@ -132,12 +128,8 @@ test.describe('content/ renders completely', () => {
       await expect(page.locator(`${card} .meta`).first()).toHaveText(
         `${fm.year} · ${platforms} · ${STATUS[fm.status as string]}`,
       );
-      if (fm.role || fm.location || fm.start) {
-        const line = [
-          fm.role,
-          fm.location,
-          fm.start && formatRange(String(fm.start), String(fm.end)),
-        ]
+      if (fm.role || fm.location || (fm.start && fm.end)) {
+        const line = [fm.role, fm.location, fm.start && fm.end && projectRange(fm.start, fm.end)]
           .filter(Boolean)
           .join(' · ');
         await expect(page.locator(`${card} .meta`, { hasText: line })).toHaveCount(1);
@@ -231,13 +223,26 @@ test.describe('content/ renders completely', () => {
       expect(html).not.toContain(e.address.toLowerCase());
   });
 
-  test('now.md lines are in the ticker as plain text', async ({ page }) => {
+  test('now.md reaches the ticker: [NOW] items when it has lines, none when empty', async ({
+    page,
+  }) => {
+    // Wiring only. How Markdown becomes plain text (links, code, entities…) is unit-tested in
+    // tests/unit/derive.test.ts against Astro's real rendering of a now.md that uses it all.
     await page.goto(V2);
-    const ticker = page.locator('.ticker__track').first();
-    const lines = nowLines(readFileSync('content/now.md', 'utf8'));
-    for (const line of lines)
-      await expect(ticker).toContainText(`[${copy.ticker.tags.now}] ${line}`);
-    await expect(ticker).not.toContainText(/\]\(|\*\*/);
+    const items = page
+      .locator('.ticker__track')
+      .first()
+      .locator('.ticker__item', { hasText: `[${copy.ticker.tags.now}]` });
+    const body = readFileSync('content/now.md', 'utf8')
+      .replace(/<!--[\s\S]*?-->/g, '')
+      .trim();
+    if (!body) {
+      await expect(items).toHaveCount(0);
+      return;
+    }
+    expect(await items.count()).toBeGreaterThan(0);
+    for (const text of await items.allInnerTexts())
+      expect(text.replace(`[${copy.ticker.tags.now}]`, '').trim()).not.toBe('');
   });
 
   test('hero links to the résumé', async ({ page }) => {

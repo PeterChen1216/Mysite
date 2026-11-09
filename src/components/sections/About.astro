@@ -16,6 +16,7 @@ import OffClockCard from './about/OffClockCard.astro';
 import SkillsCard from './about/SkillsCard.astro';
 import WhoamiCard from './about/WhoamiCard.astro';
 import XpCard from './about/XpCard.astro';
+import { aboutAreas, gridAreas } from '../../lib/derive';
 import type { PageData } from '../../lib/page-data';
 
 interface Props {
@@ -42,22 +43,7 @@ const shownElsewhere = new Set([
 const otherInterests = interests.items.filter((i) => !shownElsewhere.has(i));
 
 // Grid areas for the cards present: three columns (≥ 1280), two (≥ 768), one.
-const side = [offClock.length > 0 && 'off', hasAvgeek && 'av'].filter(
-  (a): a is string => typeof a === 'string',
-);
-const rows = (list: string[]) => list.map((r) => `'${r}'`).join(' ');
-const areasLg = rows([
-  'who who stack',
-  ...(side.length === 2 ? [`edu ${side.join(' ')}`] : side.map((a) => `edu ${a} ${a}`)),
-  'edu skills skills',
-]);
-const areasMd = rows([
-  'who who',
-  'stack stack',
-  ...side.map((a) => `edu ${a}`),
-  side.length > 0 ? 'skills skills' : 'edu skills',
-]);
-const areasSm = rows(['who', 'stack', 'edu', ...side, 'skills']);
+const areas = aboutAreas({ off: offClock.length > 0, av: hasAvgeek });
 ---
 
 <section class="about" id="about" aria-labelledby="about-title">
@@ -73,7 +59,10 @@ const areasSm = rows(['who', 'stack', 'edu', ...side, 'skills']);
     title={copy.about.title}
     blurb={copy.about.blurb}
   />
-  <div class="inv" style={`--areas-lg:${areasLg};--areas-md:${areasMd};--areas-sm:${areasSm}`}>
+  <div
+    class="inv"
+    style={`--areas-lg:${gridAreas(areas.lg)};--areas-md:${gridAreas(areas.md)};--areas-sm:${gridAreas(areas.sm)}`}
+  >
     <WhoamiCard data={data} others={otherInterests} />
     <div class:list={['inv__stack', { 'inv__stack--one': !building }]}>
       <XpCard data={data} />

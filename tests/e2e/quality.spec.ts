@@ -59,7 +59,7 @@ test.describe('accessibility & robustness', () => {
     test.skip(browserName === 'webkit', 'Safari does not Tab to links by default');
     await page.goto(V2);
     await page.keyboard.press('Tab');
-    const skip = page.getByRole('link', { name: copy.labels.skip_link });
+    const skip = page.getByRole('link', { name: copy.labels.skip_link, exact: true });
     await expect(skip).toBeFocused();
     await expect(skip).toBeVisible();
   });

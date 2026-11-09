@@ -109,12 +109,19 @@ export async function getProse(name: 'about' | 'now') {
   return { Content };
 }
 
-/** now.md as plain lines for the ticker (derive.nowLines); empty when the file has no bullets. */
+/**
+ * now.md as plain lines for the ticker: Astro's rendering of the file, reduced to text by
+ * derive.nowLines. Empty when the file has nothing but comments.
+ */
 export async function getNowLines() {
   const entry = await getEntry('prose', 'now');
   if (!entry) throw new Error('content/now.md is missing');
   assertCommentsClosed(entry.body, 'content/now.md');
-  return nowLines(entry.body ?? '');
+  const hasBody = entry.body?.replace(/<!--[\s\S]*?-->/g, '').trim();
+  if (!hasBody) return [];
+  const html = entry.rendered?.html;
+  if (html === undefined) throw new Error('content/now.md was not rendered as Markdown');
+  return nowLines(html);
 }
 
 export { render };

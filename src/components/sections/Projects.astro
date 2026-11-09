@@ -33,10 +33,10 @@ const layout = cards === 3 ? 'stack' : cards % 2 === 1 ? 'strip' : 'pairs';
     <VoxelBlock name="diamond" size={55} />
   </span>
   <SectionHeader id="projects-title" cmd={copy.cmd} title={copy.title} blurb={copy.blurb} />
-  <ProjectFeatured project={featured} copy={copy} />
+  <ProjectFeatured project={featured} copy={copy} labels={data.copy.labels} />
   <div class="projects__grid" data-layout={layout}>
     {others.map((p) => (
-      <ProjectCard project={p} copy={copy} />
+      <ProjectCard project={p} copy={copy} labels={data.copy.labels} />
     ))}
     <Card as="article" dashed class="pc pc--next" labelledby="projects-next-title">
       <span class="next__block" aria-hidden="true">

@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import {
+  aboutAreas,
   classYear,
   copyVars,
   displayUrl,
@@ -12,9 +13,9 @@ import {
   glyphParts,
   gpaBadge,
   gpaRatio,
+  gridAreas,
   heroEyebrow,
   highlightParts,
-  inlineText,
   isDecorative,
   latestHonor,
   logRange,
@@ -115,6 +116,16 @@ describe('formatters', () => {
   });
 });
 
+/** copy.yaml labels.status as shipped (the defaults in derive.ts are the same words). */
+const STATUS_WORDS = {
+  idea: 'idea',
+  wip: 'in progress',
+  testflight: 'TestFlight',
+  shipped: 'shipped',
+  completed: 'completed',
+  archived: 'archived',
+};
+
 describe('facts come only from content', () => {
   it('hero eyebrow and whoami', () => {
     expect(heroEyebrow('Peter Chen', edu, 'Seattle, Washington')).toBe(
@@ -133,6 +144,8 @@ describe('facts come only from content', () => {
     expect(latestHonor([])).toBeUndefined();
     expect(gpaBadge(edu, honors)).toBe("GPA 3.84  ★  Annual Dean's List 2025–26");
     expect(gpaBadge(edu, [])).toBe('GPA 3.84');
+    // The label is copy.yaml labels.gpa.
+    expect(gpaBadge(edu, [], 'Grade')).toBe('Grade 3.84');
     expect(gpaBadge({ ...edu, gpa: undefined }, honors)).toBeUndefined();
     expect(gpaRatio('3.84/4.00')).toBeCloseTo(0.96);
     expect(gpaRatio('4.2/4.0')).toBe(1);
@@ -148,6 +161,10 @@ describe('facts come only from content', () => {
     // A platform without a label is shown as written; no links at all is fine.
     expect(projectBadge(project({ platform: ['ios', 'watch'], links: undefined }))).toBe(
       'Clock Stamp · iOS/watch  [SHIPPED]',
+    );
+    // Status words come from copy.yaml labels.status.
+    expect(projectBadge(project(), 'Store', { ...STATUS_WORDS, shipped: 'live' })).toBe(
+      'Clock Stamp · iOS  [LIVE → Store]',
     );
   });
   it('now-building prefers ongoing featured projects', () => {
@@ -166,6 +183,7 @@ describe('facts come only from content', () => {
     expect(statusBar('shipped')).toEqual({ filled: 10, total: 10, label: 'shipped' });
     expect(statusBar('wip').filled).toBeLessThan(10);
     expect(statusBar('idea').label).toBe('idea');
+    expect(statusBar('wip', { ...STATUS_WORDS, wip: 'building' }).label).toBe('building');
   });
   it('education dates', () => {
     expect(educationDates(edu)).toBe('Sep 2023 – Mar 2027 (expected)');
@@ -216,6 +234,7 @@ describe('ticker', () => {
       interests: [{ name: 'Rock climbing', tag: 'climbing' }],
       now: [],
       tags: { xp: 'LVL', now: 'NOW', work: 'JOB', ping: 'MAIL', edu: 'SCHOOL' },
+      statusLabels: STATUS_WORDS,
     });
     // No GPA → no XP item; no short name → the EDU tag word; degree when there is no major;
     // an interest without a design colour is diamond; no email → no ping item.
@@ -226,6 +245,17 @@ describe('ticker', () => {
     expect(
       tickerItems({ edu, honors: [], projects: [], experience, interests: [], now: [] })[0],
     ).toEqual({ tag: 'XP', text: 'Cumulative GPA 3.84/4.00', tone: 'green' });
+    // The featured project's status word comes from copy.yaml labels.status.
+    const featured = tickerItems({
+      edu: bareEdu,
+      honors: [],
+      projects: [project()],
+      experience: [],
+      interests: [],
+      now: [],
+      statusLabels: { ...STATUS_WORDS, shipped: 'live' },
+    });
+    expect(featured[0]).toEqual({ tag: 'iOS', text: 'Clock Stamp · live', tone: 'gold' });
   });
 });
 
@@ -346,6 +376,11 @@ describe('copy.yaml templates', () => {
   it('fails on unknown or empty placeholders instead of printing them', () => {
     expect(() => fillTemplate('Hi {nmae}', { name: 'x' })).toThrow(/\{nmae\}/);
     expect(() => fillTemplate('Hi {first}', { first: '' })).toThrow(/empty/);
+    // Hyphenated names are placeholders too, so a typo like {first-name} can't print raw.
+    expect(() => fillTemplate('Hi {first-name}', { first: 'x' })).toThrow(/\{first-name\}/);
+  });
+  it('allows spaces inside the braces', () => {
+    expect(fillTemplate('built in { city }', { city: 'Seattle' })).toBe('built in Seattle');
   });
   it('keeps placeholders that are filled later', () => {
     expect(fillTemplate('{from} ⇄ {to} in {city}', { city: 'SEA' }, ['from', 'to'])).toBe(
@@ -367,9 +402,17 @@ describe('copy.yaml templates', () => {
       count: 3,
       on: true,
     });
+    // The error names the copy.yaml key.
     expect(() => fillCopy({ footer: { tagline: 'built in {cty}' } }, { city: 'x' })).toThrow(
-      /\{cty\}/,
+      /copy\.yaml footer\.tagline: .*\{cty\}/,
     );
+  });
+  it('keeps {from} and {to} only where they are filled later', () => {
+    // hero.avgeek_route takes them; anywhere else they are unknown, like any typo.
+    expect(() =>
+      fillCopy({ hero: { avgeek_badge: 'AvGeek ✈ {from} ⇄ {to}' } }, { city: 'x' }),
+    ).toThrow(/hero\.avgeek_badge: .*\{from\}/);
+    expect(() => fillCopy({ footer: { tagline: 'flown {to} SEA' } }, {})).toThrow(/\{to\}/);
   });
   it('placeholder values come from content, with fallbacks for optional fields', () => {
     const base = { displayName: 'Peter Chen', location: 'Seattle, Washington', domain: 'zhic.me' };
@@ -418,39 +461,156 @@ describe('decorative symbols', () => {
     // Only symbols: nothing to read, keep it as it is.
     expect(glyphParts('→')).toEqual({ lead: '', text: '→', trail: '' });
   });
+  it('treats emoji with presentation selectors and joiners as one symbol', () => {
+    expect(glyphParts('say hi ✈️')).toEqual({ lead: '', text: 'say hi', trail: ' ✈️' });
+    expect(glyphParts('👩‍💻 hire me')).toEqual({ lead: '👩‍💻 ', text: 'hire me', trail: '' });
+  });
+  it('never treats ASCII symbols as decoration', () => {
+    expect(glyphParts('C++')).toEqual({ lead: '', text: 'C++', trail: '' });
+    expect(glyphParts('cd ~')).toEqual({ lead: '', text: 'cd ~', trail: '' });
+    expect(glyphParts('a <=> b')).toEqual({ lead: '', text: 'a <=> b', trail: '' });
+  });
+  it('stays fast on long runs of symbols', () => {
+    const start = performance.now();
+    expect(glyphParts(`${'★'.repeat(5000)} x`).text).toBe('x');
+    expect(glyphParts(`x ${'★'.repeat(5000)}a`).trail).toBe('');
+    expect(performance.now() - start).toBeLessThan(1000);
+  });
 });
 
 describe('now.md lines', () => {
-  it('turns bullets into plain ticker lines', () => {
-    const md = [
-      "<!-- What you're doing right now -->",
-      '# Now',
-      '',
-      '- Shipping [Clock Stamp](https://apps.apple.com/app/id1) 1.2 with **home-screen widgets**',
-      '* TA for `INFO_180` this quarter,',
-      '  helping with _R labs_',
-      '+ Reading ~~less~~ more',
-      '1. Numbered works too',
-      '---',
-      'A loose paragraph',
-      'over two lines.',
-    ].join('\n');
-    expect(nowLines(md)).toEqual([
-      'Shipping Clock Stamp 1.2 with home-screen widgets',
-      'TA for INFO_180 this quarter, helping with R labs',
-      'Reading less more',
-      'Numbered works too',
-      'A loose paragraph over two lines.',
+  // What Astro's Markdown pipeline (CommonMark + GFM + smartypants) renders for a now.md that
+  // uses most of Markdown, captured from a real build of this site.
+  const rendered = [
+    "<!-- What you're doing right now -->",
+    '<h1 id="now">Now</h1>',
+    '<ul class="contains-task-list">',
+    '<li>Shipping <a href="https://apps.apple.com/us/app/clock-stamp/id6800348277">Clock Stamp</a> <strong>1.2</strong></li>',
+    '<li>Notes at <a href="https://zhic.me/notes">https://zhic.me/notes</a> and <a href="mailto:peter@example.com">peter@example.com</a></li>',
+    '<li>Shipping <a href="https://apps.apple.com/us/app/clock-stamp/id6800348277">Clock Stamp</a> 1.2</li>',
+    '<li><a href="https://en.wikipedia.org/wiki/Foo_(bar)">Foo</a> wiki</li>',
+    '<li class="task-list-item"><input type="checkbox" checked disabled> Ship 1.2 task</li>',
+    '<li>Teaching <code>**kwargs</code> in the INFO 180 Python labs</li>',
+    '<li>Tom &amp; Jerry — “quotes” – dashes… it’s a &lt; b &amp; c</li>',
+    '<li>Escaped *not em* and snake_case_name</li>',
+    '<li>A line',
+    'wrapped onto two</li>',
+    '<li>Hard break<br>',
+    'here</li>',
+    '<li><img src="https://zhic.me/x.png" alt="logo"> image alt</li>',
+    '<li>Nested parent',
+    '<ul>',
+    '<li>Nested child</li>',
+    '</ul>',
+    '</li>',
+    '<li>Footnote ref<sup><a href="#user-content-fn-1" id="user-content-fnref-1" data-footnote-ref aria-describedby="footnote-label">1</a></sup></li>',
+    '</ul>',
+    '<blockquote>',
+    '<p>Quote line</p>',
+    '</blockquote>',
+    '<p>Paragraph outside a list with <del>strike</del> and <em>em</em>.</p>',
+    '<h1 id="setext-heading">Setext Heading</h1>',
+    '<table>',
+    '<thead>',
+    '<tr>',
+    '<th>a</th>',
+    '<th>b</th>',
+    '</tr>',
+    '</thead>',
+    '<tbody>',
+    '<tr>',
+    '<td>c</td>',
+    '<td>d</td>',
+    '</tr>',
+    '</tbody>',
+    '</table>',
+    '<section data-footnotes class="footnotes"><h2 class="sr-only" id="footnote-label">Footnotes</h2>',
+    '<ol>',
+    '<li id="user-content-fn-1">',
+    '<p>The footnote text. <a href="#user-content-fnref-1" data-footnote-backref="" aria-label="Back to reference 1" class="data-footnote-backref">↩</a></p>',
+    '</li>',
+    '</ol>',
+    '</section>',
+  ].join('\n');
+
+  it('gives one plain line per list item or paragraph', () => {
+    expect(nowLines(rendered)).toEqual([
+      'Shipping Clock Stamp 1.2',
+      'Notes at https://zhic.me/notes and peter@example.com',
+      'Shipping Clock Stamp 1.2',
+      'Foo wiki',
+      'Ship 1.2 task',
+      'Teaching **kwargs in the INFO 180 Python labs',
+      'Tom & Jerry — “quotes” – dashes… it’s a < b & c',
+      'Escaped *not em* and snake_case_name',
+      'A line wrapped onto two',
+      'Hard break here',
+      'logo image alt',
+      'Nested parent',
+      'Nested child',
+      'Footnote ref',
+      'Quote line',
+      'Paragraph outside a list with strike and em.',
+      'a b',
+      'c d',
     ]);
   });
   it('is empty for a file with only its comment', () => {
     expect(nowLines('<!-- one line per bullet -->\n')).toEqual([]);
     expect(nowLines('')).toEqual([]);
   });
-  it('reduces inline Markdown to its words', () => {
-    expect(inlineText('![logo](x.png) [docs][1] <b>bold</b> *em* snake_case_name')).toBe(
-      'logo docs bold em snake_case_name',
-    );
-    expect(inlineText('`2*3*4` stays \\*literal\\*')).toBe('2*3*4 stays *literal*');
+  it('decodes character references and keeps unknown ones as written', () => {
+    expect(
+      nowLines('<p>&#x26; &#38; &quot;x&quot; &apos;y&apos; a&nbsp;b &copy; &#0; &#x110000;</p>'),
+    ).toEqual(['& & "x" \'y\' a b &copy; &#0; &#x110000;']);
+  });
+  it('reads tags whose quoted attributes contain ">"', () => {
+    expect(
+      nowLines('<p><img alt="a > b" src="x.png"> and <span title=\'1 > 0\'>more</span></p>'),
+    ).toEqual(['a > b and more']);
+  });
+});
+
+describe('About grid areas', () => {
+  /** Problems with a grid-template-areas value: ragged rows, empty cells, non-rectangles. */
+  function gridProblems(rows: string[]): string[] {
+    const cells = rows.map((r) => r.split(/\s+/));
+    const problems: string[] = [];
+    if (new Set(cells.map((r) => r.length)).size !== 1) problems.push('rows differ in length');
+    for (const name of new Set(cells.flat())) {
+      if (name === '.') problems.push('empty cell');
+      const at = cells.flatMap((r, y) => r.flatMap((n, x) => (n === name ? [[x, y]] : [])));
+      const xs = at.map(([x]) => x!);
+      const ys = at.map(([, y]) => y!);
+      const w = Math.max(...xs) - Math.min(...xs) + 1;
+      const h = Math.max(...ys) - Math.min(...ys) + 1;
+      if (w * h !== at.length) problems.push(`${name} is not a rectangle`);
+    }
+    return problems;
+  }
+
+  for (const off of [true, false])
+    for (const av of [true, false])
+      it(`places every card with no holes (off-the-clock ${off}, AvGeek ${av})`, () => {
+        const areas = aboutAreas({ off, av });
+        const cards = [
+          'who',
+          'stack',
+          'edu',
+          'skills',
+          ...(off ? ['off'] : []),
+          ...(av ? ['av'] : []),
+        ];
+        for (const [layout, rows] of Object.entries(areas)) {
+          expect(gridProblems(rows), layout).toEqual([]);
+          expect(new Set(rows.join(' ').split(/\s+/)), layout).toEqual(new Set(cards));
+        }
+        expect(areas.lg[0]!.split(' ')).toHaveLength(3);
+        expect(areas.md[0]!.split(' ')).toHaveLength(2);
+        expect(areas.sm[0]!.split(' ')).toHaveLength(1);
+      });
+
+  it('writes the CSS value', () => {
+    expect(gridAreas(['who who', 'edu av'])).toBe("'who who' 'edu av'");
   });
 });
