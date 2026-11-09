@@ -32,4 +32,4 @@ SITE_STAGE=launched pnpm build && pnpm lhci
 
 ## License
 
-Code: MIT (see [`LICENSE`](LICENSE)). Content — text, photos, résumé and logos in `content/` and `legacy/` — © Peter Chen, all rights reserved.
+Code: MIT (see [`LICENSE`](LICENSE)). Content — Peter's own text, photos and résumé in `content/` and `legacy/` — © Peter Chen, all rights reserved. Third-party logos (currently HashKey) are trademarks of their owners, used for identification only. Vendored files in `legacy/` (`css/bootstrap.css`, `font-awesome/`) keep the licenses stated in their headers.

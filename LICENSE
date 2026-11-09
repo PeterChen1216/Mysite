@@ -2,9 +2,13 @@ MIT License
 
 Copyright (c) 2025-2026 Peter Chen
 
-This license applies to the source code in this repository. It does not cover the
-content in content/ and legacy/ (text, photographs, résumé, logos), which remains
-© Peter Chen, all rights reserved, unless stated otherwise.
+This license applies to the source code in this repository. It does not cover:
+- Peter Chen's own content in content/ and legacy/ (text, photographs, résumé),
+  which remains © Peter Chen, all rights reserved;
+- third-party logos (e.g. HashKey), which are trademarks of their owners and are
+  used for identification only;
+- vendored files in legacy/ (css/bootstrap.css, font-awesome/), which keep the
+  licenses stated in their headers.
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
