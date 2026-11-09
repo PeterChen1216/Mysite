@@ -132,7 +132,7 @@ sitemap.xml, robots.txt, og.png（自动生成）
 | 经历 | 公司、职位、起止、城市、logo、1–3 条要点 | 仅 HashKey 一条，要点缺 |
 | 项目 | 名称、一句话、状态、平台、链接、封面/图标、技术栈、时间 | Clock Stamp 仅名称 → **TODO** |
 | 荣誉 | 名称、机构、年份 | 1 条 |
-| 兴趣/彩蛋 | 航空（常飞航线、里程计划）、乒乓、合唱 | 需 Peter 补"可聊"细节 |
+| 兴趣/彩蛋 | 航空（AvGeek 控制台：关注航线、座位规则、航线新闻、票价代码）、乒乓、合唱 | 结构已定（DECISIONS.md），数据由 Peter 两周一补 |
 | 联系 | 邮箱、GitHub、LinkedIn、X | 有 |
 | 元信息 | 最近更新日期（自动）、版本号（自动） | 手写 → 自动 |
 
@@ -144,7 +144,8 @@ content/
   experience.yaml     # 数组，每项含 highlights[]
   projects/*.md       # frontmatter + 正文；slug = 文件名
   honors.yaml
-  interests.yaml      # 含 aviation.routes[]（供地球航线）
+  interests.yaml
+  aviation.yaml       # AvGeek 控制台：watching[] 航线、seat_rules、news[]、fare_examples[]（见 DECISIONS.md）
   now.md              # "现在在做什么"，驱动 hero 终端输出
   resume/Resume.pdf
   site.yaml           # 域名、主题、功能开关（scene: true/false）
@@ -217,7 +218,7 @@ content/
 ```
 
 ### 6.4 关键实现要点
-- **地球**：经纬网格 36×18（后续替换为 Natural Earth GeoJSON 栅格化到 10°→5°）；陆地/海洋/冰三色 + 面向光照的明暗；图钉与航线来自 `interests.yaml → aviation.routes[]`，大圆插值 CatmullRom；SEA⇄PVG 为首条。
+- **地球**：经纬网格 36×18（后续替换为 Natural Earth GeoJSON 栅格化到 10°→5°）；陆地/海洋/冰三色 + 面向光照的明暗；图钉与航线来自 `aviation.yaml → watching[]`（业主正在关注的真实航线，手动维护），大圆插值 CatmullRom；不展示虚构的"飞过的航线"。
 - **相机**：`stops[]` 存 position/target/fov；`progress = clamp(scrollY / (docHeight - vh))`；取相邻两 stop 做 smoothstep 插值；再对结果做阻尼。窗口的"出现"用同一 progress 的阈值区间驱动，不监听各自元素位置，保证与相机同步。
 - **自适应画质**：移动中若帧时间 > 20 ms，`renderer.setPixelRatio` 阶梯下调（1.0→0.75→0.5），静止 1 s 后恢复；在绘制前切换以免闪黑帧。
 - **窗口拖拽**：Pointer Events；边界限制在"桌面"区域；最近屏幕中线的窗口持有硬阴影（阈值 1/6 屏高防抖）。
@@ -351,14 +352,20 @@ content/
 
 ## 13. 决策记录（ADR，追加式）
 - **ADR-001** 选 Astro + React islands 而非 Next.js：静态托管、内容集合、体积可控。（2026-11-09）
+- **ADR-005** 预览环境 Cloudflare Pages；分析 Cloudflare Web Analytics。（2026-11-09，业主确认）
+- **ADR-006** 航空模块不展示虚构航线；改为手动策展的 AvGeek 控制台，不爬取第三方站点。（2026-11-09）
+- **ADR-007** M1 完成即上线替换旧站；移动端先静态，WebGL 重启按 DECISIONS.md §16 触发器。（2026-11-09）
 - **ADR-002** 主站采用"单场景 + 相机停靠 + 漂浮窗口"范式；长页面版作为同内容源的降级/移动端基线。（2026-11-09）
 - **ADR-003** 像素字体体系：Pixelify Sans / Press Start 2P / VT323 / JetBrains Mono，整数倍像素尺寸。（2026-11-09）
 - **ADR-004** 内容以 Git 为 CMS，不做后台 UI；提供网页编辑指南与 Claude 对话更新路径。（2026-11-09）
-- 待补：ADR-005 分析工具选型；ADR-006 预览环境方案；ADR-007 中文支持。
+- 待补：ADR-008 中文支持（v3）。
 
 ---
 
 ## 14. 待业主决定的问题（请逐条回答，可写"按建议"）
+
+> **2026-11-09 已回答一轮，结论见 `docs/DECISIONS.md`（含 AvGeek 模块重设计与移动端 WebGL 重启触发器）。以 DECISIONS.md 为准；本节保留原问题供追溯。**
+
 1. **上线节奏**：M1 完成即替换旧站（先稳后酷），还是等 M3 场景版一起上？建议：M1 先上。
 2. **移动端策略**：A) 轻量 WebGL 场景（更酷、风险 R1）；B) 静态像素插画 + 长页面（更稳）。建议：先 B，M5 视数据加 A。
 3. **语言**：仅英文；还是中英双语（内容翻倍、维护成本 ×1.6）？建议：v2 英文，v3 再议。
