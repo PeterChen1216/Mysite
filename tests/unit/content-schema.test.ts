@@ -14,6 +14,7 @@ import {
   profileSchema,
   projectSchema,
   siteSchema,
+  skillsSchema,
 } from '../../src/content/schema';
 
 const CONTENT = join(import.meta.dirname, '../../content');
@@ -56,6 +57,9 @@ describe('real content/ files validate against their schemas', () => {
   });
   it('interests.yaml', () => {
     interestsSchema.parse(singleton('interests')(read('interests.yaml'))[0]);
+  });
+  it('skills.yaml', () => {
+    skillsSchema.parse(singleton('skills')(read('skills.yaml'))[0]);
   });
   it('aviation.yaml', () => {
     aviationSchema.parse(singleton('aviation')(read('aviation.yaml'))[0]);
@@ -157,6 +161,46 @@ describe('schemas reject mistakes an owner could make', () => {
     expect(aviationSchema.parse({ watching: [route] }).watching[0]?.aircraft).toBe('787');
     const news = { date: '2026-11-01', headline: 'h', url: 'https://example.com/' };
     expect(() => aviationSchema.parse({ news: Array(8).fill(news) })).not.toThrow();
+  });
+
+  it('project role, dates and extra links', () => {
+    const p = {
+      title: 't',
+      tagline: 'x',
+      status: 'completed',
+      platform: ['research'],
+      year: 2025,
+      source: 's',
+    };
+    const ok = { ...p, role: 'Group Leader', start: '2025-09', end: '2025-12' };
+    expect(() => projectSchema(image).parse(ok)).not.toThrow();
+    expect(() => projectSchema(image).parse({ ...ok, end: 'present' })).not.toThrow();
+    expect(() => projectSchema(image).parse({ ...ok, end: '2025-01' })).toThrow(/start/);
+    expect(() => projectSchema(image).parse({ ...p, end: '2025-12' })).toThrow(/needs a `start`/);
+    expect(() => projectSchema(image).parse({ ...p, start: '2025-09' })).toThrow(/needs an `end`/);
+    const links = { other: [{ label: 'Lab', url: 'https://example.edu/lab/' }] };
+    expect(projectSchema(image).parse({ ...p, links }).links?.other).toHaveLength(1);
+    expect(() =>
+      projectSchema(image).parse({
+        ...p,
+        links: { other: [{ label: 'Lab', url: 'example.edu' }] },
+      }),
+    ).toThrow();
+  });
+
+  it('education GPA label defaults to "GPA"; tagline and location are optional', () => {
+    const edu = list('education.yaml')(read('education.yaml'))[0] as Record<string, unknown>;
+    const { gpa_label: _label, ...rest } = edu;
+    expect(educationSchema.parse(rest).gpa_label).toBe('GPA');
+    const p = { title: 't', status: 'wip', platform: ['web'], year: 2026, source: 's' };
+    expect(projectSchema(image).parse({ ...p, location: 'Seattle, WA' }).tagline).toBeUndefined();
+  });
+
+  it('skills need at least one group with items; numbers become text', () => {
+    expect(() => skillsSchema.parse({ groups: [], source: 's' })).toThrow();
+    expect(() => skillsSchema.parse({ groups: [{ name: 'X', items: [] }], source: 's' })).toThrow();
+    const parsed = skillsSchema.parse({ groups: [{ name: 'Excel', items: [2016] }], source: 's' });
+    expect(parsed.groups[0]?.items).toEqual(['2016']);
   });
 
   it('project cover needs alt text; icon is decorative', () => {

@@ -7,10 +7,13 @@ location: Seattle, Washington
 status: Open to internships & collaborations
 
 emails:
-  - address: zchen75@uw.edu
+  # DECISIONS 2026-11-09 (round 2): Outlook is the main address (as on the résumé); uw.edu also shown.
+  - address: peterchenzc@outlook.com
     primary: true
     public: true
-  # DECISIONS Q6: shown on the site only if you set public: true
+  - address: zchen75@uw.edu
+    public: true
+  # Shown on the site only if you set public: true
   - address: peter_chen1216@163.com
     public: false
 

@@ -72,3 +72,16 @@ tools:   # 页面上的外链"工具栏"
 4. 业主主动提出。
 
 评估内容：轻量场景（≤ 600 体素实例、无粒子、固定相机 2 停靠）的成本/收益；通过则列为 M6。
+
+---
+
+## 2026-11-09 · 第二轮（Peter，新简历 2026-11-03 上传后）
+
+| # | 问题 | 决定 | 对内容的影响 |
+|---|---|---|---|
+| R2-1 | 站点展示哪个邮箱（新简历只写 Outlook） | **Outlook 为主，uw.edu 同时展示**；163 仍不展示 | `profile.yaml`：`peterchenzc@outlook.com` primary + public，`zchen75@uw.edu` public；About 段落的 email 链接指向 Outlook（替代 Q6 的"只放 uw.edu"） |
+| R2-2 | About 段落与新简历冲突（Junior / June of 2027 vs 简历 Expected Mar 2027） | **只改这两处事实**：Junior → Senior，June of 2027 → March of 2027；其余措辞保持原文 | `content/about.md` |
+| R2-3 | 兴趣第 3 条已过期（Clock Stamp 已上架） | **更新**为 "Vibe Coder, released my first iOS app, Clock Stamp, on the App Store." | `content/interests.yaml` |
+| R2-4 | 新简历更新是否直接上线 | **评审 + CI 通过后以业主账号 squash 合并上线**（合并提交只署业主名） | 旧首页的 `/work/Resume.pdf` 同步变为新简历 |
+
+同时由新简历确定：项目正式名为 **Clock Stamp**（已上架 App Store），研究项目 X Community Notes、TA、Merit Interactive 实习、志愿经历与技能均按简历原文迁入。

@@ -1,6 +1,30 @@
 # One item per role, any order (the site sorts by date).
+# kind: volunteer entries are shown under "Community" instead of "Experience".
+- company: Information School, University of Washington
+  role: "Undergraduate Teaching Assistant, INFO 180: Introduction to Data Science"
+  start: 2026-10
+  end: present
+  location: Seattle, WA
+  url: https://ischool.uw.edu/
+  highlights:
+    - Host office hours, helping students debug R code and work through data-analysis problems.
+    - Grade quizzes, labs, and data assignments and give feedback to 80 students.
+  source: Resume.pdf (2026-11-03); iSchool link from legacy index.html
+
+- company: Merit Interactive Co., Ltd
+  role: Agent Development Intern
+  kind: internship
+  start: 2026-07
+  end: 2026-08
+  location: Hangzhou, China
+  highlights:
+    - Implemented patent retrieval and comparison workflows to help users identify related prior patents and generate structured comparisons for disclosure drafting.
+    - Built an internal patent-disclosure tool with Python, FastAPI, React, and DeepSeek API; tested by 15 users and reduced manual drafting effort by ~70%.
+    - Built Tongren Coding’s customer-support IM module with Python, SQLite, and JavaScript; deployed on Android and web.
+  source: Resume.pdf (2026-11-03)
+
 - company: HashKey Global
-  role: Operation Intern
+  role: Operations Intern (Summer)
   kind: internship
   start: 2024-07
   end: 2024-09
@@ -9,9 +33,16 @@
   logo: ./images/hashkey.webp
   logo_alt: HashKey Global logo
   highlights:
-    - Data & Liquidity analysis for Sales
-    - Customer service on the official website, Telegram, apps
-    - Reviewing materials and opening of accounts on behalf of clients
-    - Data Review/Analyst for weekly report
-    - Doing KYC with the HashKey Hong Kong Office
-  source: legacy index.html; highlights from Resume.pdf (2026-03-31)
+    - Analyzed daily trading volume and liquidity data in Excel to support sales analysis and dynamic fee-rate adjustments.
+    - Supported approximately 70 web users and 150 Telegram leads daily while developing an AI-assisted workflow for inquiry classification.
+  source: Resume.pdf (2026-11-03); company link from legacy index.html
+
+- company: North Helpline Food Bank (Lake City)
+  role: Volunteer
+  kind: volunteer
+  start: 2023-10
+  end: 2024-04
+  location: Seattle, WA
+  highlights:
+    - Volunteered 5 hours weekly in food distribution and sorting operations serving the local community.
+  source: Resume.pdf (2026-11-03)

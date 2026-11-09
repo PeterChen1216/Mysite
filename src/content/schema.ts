@@ -65,7 +65,7 @@ const emailEntry = z
     address: z.email(),
     label: text.optional(),
     primary: z.boolean().default(false),
-    /** DECISIONS Q6: only the primary (uw.edu) address is shown unless the owner opts in. */
+    /** DECISIONS R2-1: the hero shows the primary address; Contact shows every `public: true` one. */
     public: z.boolean().default(false),
   })
   .strict();
@@ -126,6 +126,8 @@ export const educationSchema = z
       .string()
       .regex(/^\d\.\d{1,2}\/\d\.\d{1,2}$/, 'Use the form 3.81/4.0')
       .optional(),
+    /** How the GPA is labelled, e.g. "Cumulative GPA". */
+    gpa_label: text.default('GPA'),
     honors: z.array(text).default([]),
     coursework: z.array(text).default([]),
     source,
@@ -262,14 +264,25 @@ export const projectSchema = <I extends z.ZodType>(image: ImageHelper<I>) =>
   z
     .object({
       title: text,
-      tagline: text.max(120),
-      status: z.enum(['idea', 'wip', 'testflight', 'shipped', 'archived']),
+      /** One line in your own words. Optional: leave it out rather than invent one. */
+      tagline: text.max(120).optional(),
+      /** `completed` = a finished course/research project (not a product you keep shipping). */
+      status: z.enum(['idea', 'wip', 'testflight', 'shipped', 'completed', 'archived']),
       platform: z.array(z.enum(['ios', 'web', 'cli', 'research'])).min(1),
+      /** Your role, as written on the résumé, e.g. "Group Leader, University of Washington, INFO 494". */
+      role: text.optional(),
+      location: text.optional(),
+      start: yearMonth.optional(),
+      end: yearMonth.or(z.literal('present')).optional(),
       links: z
         .object({
           appstore: httpUrl.optional(),
           repo: httpUrl.optional(),
           live: httpUrl.optional(),
+          /** Any other link, shown with its own label (e.g. a lab or course page). */
+          other: z
+            .array(z.object({ label: text, url: httpUrl }).strict())
+            .default([]),
         })
         .strict()
         .optional(),
@@ -283,7 +296,32 @@ export const projectSchema = <I extends z.ZodType>(image: ImageHelper<I>) =>
       source,
     })
     .strict()
-    .refine((p) => !p.cover || !!p.cover_alt, { message: '`cover_alt` is required with `cover`' });
+    .refine((p) => !p.cover || !!p.cover_alt, { message: '`cover_alt` is required with `cover`' })
+    .refine((p) => !p.end || !!p.start, { message: '`end` needs a `start`' })
+    .refine((p) => !p.start || !!p.end, { message: '`start` needs an `end` (YYYY-MM or present)' })
+    .refine((p) => !p.start || !p.end || p.end === 'present' || p.start <= p.end, {
+      message: '`start` must not be after `end`',
+    });
+
+// --------------------------------------------------------------- skills.yaml
+export const skillsSchema = z
+  .object({
+    id,
+    groups: z
+      .array(
+        z
+          .object({
+            name: text,
+            items: z.array(looseText).min(1),
+            /** Shown after a semicolon as "; basic …" (e.g. Java). */
+            basic: z.array(looseText).default([]),
+          })
+          .strict(),
+      )
+      .min(1),
+    source,
+  })
+  .strict();
 
 // ------------------------------------------------ about.md / now.md (no frontmatter)
 export const proseSchema = z.object({}).strict();
@@ -293,4 +331,5 @@ export type Education = z.infer<typeof educationSchema>;
 export type Honor = z.infer<typeof honorSchema>;
 export type Interests = z.infer<typeof interestsSchema>;
 export type Aviation = z.infer<typeof aviationSchema>;
+export type Skills = z.infer<typeof skillsSchema>;
 export type Project = z.infer<ReturnType<typeof projectSchema>>;

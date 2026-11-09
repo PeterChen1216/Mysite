@@ -7,6 +7,7 @@ import { Image } from 'astro:assets';
 import BaseLayout from '../layouts/BaseLayout.astro';
 import {
   getAviation,
+  getCommunity,
   getEducation,
   getExperience,
   getHonors,
@@ -15,6 +16,7 @@ import {
   getProjects,
   getProse,
   getSite,
+  getSkills,
   render,
 } from '../lib/content';
 import { contentStamp, formatVersion } from '../lib/build-info';
@@ -22,19 +24,33 @@ import { copyrightYears, formatRange, formatYearMonth } from '../lib/format';
 import { withBase } from '../lib/paths';
 import type { Project } from '../content/schema';
 
-const [site, profile, education, experience, honors, interests, aviation, projects, about, now] =
-  await Promise.all([
-    getSite(),
-    getProfile(),
-    getEducation(),
-    getExperience(),
-    getHonors(),
-    getInterests(),
-    getAviation(),
-    getProjects(),
-    getProse('about'),
-    getProse('now'),
-  ]);
+const [
+  site,
+  profile,
+  education,
+  experience,
+  community,
+  honors,
+  interests,
+  skills,
+  aviation,
+  projects,
+  about,
+  now,
+] = await Promise.all([
+  getSite(),
+  getProfile(),
+  getEducation(),
+  getExperience(),
+  getCommunity(),
+  getHonors(),
+  getInterests(),
+  getSkills(),
+  getAviation(),
+  getProjects(),
+  getProse('about'),
+  getProse('now'),
+]);
 
 const renderedProjects = await Promise.all(
   projects.map(async (p) => ({ id: p.id, data: p.data, Body: (await render(p)).Content })),
@@ -56,6 +72,7 @@ const STATUS_LABEL: Record<Project['status'], string> = {
   wip: 'in progress',
   testflight: 'TestFlight',
   shipped: 'shipped',
+  completed: 'completed',
   archived: 'archived',
 };
 const hasAvgeek =
@@ -86,6 +103,14 @@ const hasAvgeek =
         </li>
         <li>
           <a href="#experience">Experience</a>
+        </li>
+        {community.length > 0 && (
+          <li>
+            <a href="#community">Community</a>
+          </li>
+        )}
+        <li>
+          <a href="#skills">Skills</a>
         </li>
         {hasAvgeek && (
           <li>
@@ -183,7 +208,11 @@ const hasAvgeek =
             {formatYearMonth(e.start)} – {formatYearMonth(e.end)}
             {e.expected && ' (expected)'}
           </p>
-          {e.gpa && <p>GPA: {e.gpa}</p>}
+          {e.gpa && (
+            <p>
+              {e.gpa_label}: {e.gpa}
+            </p>
+          )}
           {e.honors.length > 0 && (
             <ul>
               {e.honors.map((h) => (
@@ -225,7 +254,7 @@ const hasAvgeek =
             <Image src={data.icon} alt="" width={48} height={48} class="project-icon" />
           )}
           <h3>{data.title}</h3>
-          <p>{data.tagline}</p>
+          {data.tagline && <p>{data.tagline}</p>}
           {data.cover && (
             <Image src={data.cover} alt={data.cover_alt ?? ''} width={640} class="project-cover" />
           )}
@@ -233,27 +262,47 @@ const hasAvgeek =
             {data.year} · {data.platform.map((p) => PLATFORM_LABEL[p]).join(', ')} ·{' '}
             {STATUS_LABEL[data.status]}
           </p>
+          {(data.role || data.location || data.start) && (
+            <p class="meta">
+              {[
+                data.role,
+                data.location,
+                data.start && data.end && formatRange(data.start, data.end),
+              ]
+                .filter(Boolean)
+                .join(' · ')}
+            </p>
+          )}
           {data.stack.length > 0 && <p class="meta">Stack: {data.stack.join(', ')}</p>}
           <Body />
-          {data.links && (
-            <ul class="links">
-              {data.links.live && (
-                <li>
-                  <a href={data.links.live}>Live site</a>
-                </li>
-              )}
-              {data.links.repo && (
-                <li>
-                  <a href={data.links.repo}>Source code</a>
-                </li>
-              )}
-              {data.links.appstore && (
-                <li>
-                  <a href={data.links.appstore}>App Store</a>
-                </li>
-              )}
-            </ul>
-          )}
+          {data.links &&
+            (data.links.live ||
+              data.links.repo ||
+              data.links.appstore ||
+              data.links.other.length > 0) && (
+              <ul class="links">
+                {data.links.live && (
+                  <li>
+                    <a href={data.links.live}>Live site</a>
+                  </li>
+                )}
+                {data.links.repo && (
+                  <li>
+                    <a href={data.links.repo}>Source code</a>
+                  </li>
+                )}
+                {data.links.appstore && (
+                  <li>
+                    <a href={data.links.appstore}>App Store</a>
+                  </li>
+                )}
+                {data.links.other.map((l) => (
+                  <li>
+                    <a href={l.url}>{l.label}</a>
+                  </li>
+                ))}
+              </ul>
+            )}
         </article>
       ))}
     </section>
@@ -274,6 +323,41 @@ const hasAvgeek =
           </ul>
         </article>
       ))}
+    </section>
+
+    {community.length > 0 && (
+      <section id="community" aria-labelledby="community-title">
+        <h2 id="community-title">Community</h2>
+        {community.map((x) => (
+          <article>
+            <h3>
+              {x.logo && <Image src={x.logo} alt="" width={24} height={24} class="logo" />}
+              {x.role} @ {x.url ? <a href={x.url}>{x.company}</a> : x.company}, {x.location}
+            </h3>
+            <p class="dates">{formatRange(x.start, x.end)}</p>
+            <ul>
+              {x.highlights.map((h) => (
+                <li>{h}</li>
+              ))}
+            </ul>
+          </article>
+        ))}
+      </section>
+    )}
+
+    <section id="skills" aria-labelledby="skills-title">
+      <h2 id="skills-title">Skills</h2>
+      <dl class="skills">
+        {skills.groups.map((g) => (
+          <>
+            <dt>{g.name}</dt>
+            <dd>
+              {g.items.join(', ')}
+              {g.basic.length > 0 && `; basic ${g.basic.join(', ')}`}
+            </dd>
+          </>
+        ))}
+      </dl>
     </section>
 
     {hasAvgeek && (
@@ -393,6 +477,9 @@ const hasAvgeek =
     margin-inline: auto;
     padding-inline: var(--space-4);
   }
+  /* The nav uses the monospace body font, whose width matches its fallback, so the line breaks
+     are the same before and after the web font loads (the 8-bit font is ~1.7× wider than its
+     fallback and made the wrapped nav grow → CLS 0.28). M1 replaces this nav. */
   .site-header ul {
     display: flex;
     flex-wrap: wrap;
@@ -400,8 +487,7 @@ const hasAvgeek =
     list-style: none;
     margin: 0;
     padding: var(--space-4) 0;
-    font: var(--type-pixel-label);
-    letter-spacing: var(--type-pixel-label-tracking);
+    font: var(--type-code-sm);
   }
   .hero {
     display: flex;
@@ -484,6 +570,26 @@ const hasAvgeek =
     display: inline-block;
     vertical-align: -4px;
     margin-right: var(--space-2);
+  }
+  .skills {
+    display: grid;
+    grid-template-columns: max-content 1fr;
+    gap: var(--space-2) var(--space-4);
+    margin: 0;
+  }
+  .skills dt {
+    font: var(--type-code-bold);
+  }
+  .skills dd {
+    margin: 0;
+  }
+  @media (max-width: 480px) {
+    .skills {
+      grid-template-columns: 1fr;
+    }
+    .skills dd {
+      margin-bottom: var(--space-2);
+    }
   }
   .site-footer {
     margin-top: var(--space-16);

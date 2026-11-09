@@ -3,24 +3,20 @@
   url: https://www.washington.edu/
   department: Information School
   department_url: https://ischool.uw.edu/
-  degree: B.S. in Informatics
+  degree: Bachelor of Science in Informatics
   track: Data Science
-  minor: Applied Mathematics
   start: 2023-09
-  end: 2027-06
+  end: 2027-03
   expected: true
-  gpa: 3.81/4.0
+  gpa: 3.84/4.00
+  gpa_label: Cumulative GPA
   honors:
-    - Annual Dean's List (2024-2025)
+    - Annual Dean's List, 2024–2025 and 2025–2026
   coursework:
+    - Data Programming & Mining
     - Computer Programming I
-    - Introduction to Data Science
-    - Data Programming
-    - Data Science Foundations
-    - Introducing Machine Learning
-    - Recommendation System and Search
-    - Beginning on Scientific Computing
-    - Calculus with Analytic Geometry II & III
-    - Environmental Health Media
-    - GIS and Mapping
-  source: legacy index.html; minor and coursework from Resume.pdf (2026-03-31)
+    - Machine Learning
+    - Recommendation Systems & Search
+    - Scientific Computing
+    - GIS & Mapping
+  source: Resume.pdf (2026-11-03); department, school/department links, start date and track from legacy index.html
