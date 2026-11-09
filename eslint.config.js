@@ -8,6 +8,7 @@ import tseslint from 'typescript-eslint';
 export default defineConfig(
   {
     ignores: [
+      '.claude/',
       'coverage/',
       'dist/',
       '_site/',
