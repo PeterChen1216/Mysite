@@ -1,0 +1,83 @@
+---
+/**
+ * Card/OffTheClock (Figma 20:1071): interests with an icon, each in an inventory slot. The note
+ * line appears only when interests.yaml gives one (the design's flavour lines are suggestions).
+ */
+import Card from '../../ui/Card.astro';
+import CardTitle from '../../ui/CardTitle.astro';
+import type { PageData } from '../../../lib/page-data';
+
+interface Props {
+  data: PageData;
+  items: PageData['interests']['items'];
+}
+const { data, items } = Astro.props;
+---
+
+<Card class="about-card about-card--off" labelledby="about-off">
+  <div class="off">
+    <CardTitle as="h3" id="about-off" label={data.copy.about.card_off} />
+    <ul class="off__list">
+      {items.map((i) => (
+        <li class="off__item">
+          <span class="off__slot" aria-hidden="true">
+            {i.icon}
+          </span>
+          <p class="off__text">
+            <span class="off__name">{i.name}</span>
+            {i.note && <span class="off__note">{i.note}</span>}
+          </p>
+        </li>
+      ))}
+    </ul>
+  </div>
+</Card>
+
+<style>
+  .off {
+    display: flex;
+    flex-direction: column;
+    gap: 18px;
+  }
+  .off__list {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+  .off__item {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+  }
+  /* Figma Slot: 44 px, terminal background, edge border. */
+  .off__slot {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex: none;
+    width: 44px;
+    height: 44px;
+    background: var(--color-bg-terminal);
+    border: 2px solid var(--color-border-edge);
+    font-size: 20px;
+    line-height: 1;
+  }
+  .off__text {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    min-width: 0;
+    margin: 0;
+  }
+  .off__name {
+    font: var(--type-code-bold);
+    color: var(--color-text-hi);
+  }
+  .off__note {
+    font: var(--type-code-sm);
+    color: var(--color-text-mid);
+  }
+</style>

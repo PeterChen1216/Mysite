@@ -1,0 +1,263 @@
+---
+/**
+ * Card/AvGeek (Figma 20:1094, #avgeek): the aviation interest in the owner's words, a mini pixel
+ * globe, and the AvGeek console panels from aviation.yaml — each panel only when it has
+ * entries (DECISIONS "AvGeek 模块重设计"). The design's SEA ⇄ PVG route line was rejected (Q4);
+ * routes appear here once `watching` has any.
+ */
+import Card from '../../ui/Card.astro';
+import CardTitle from '../../ui/CardTitle.astro';
+import PixelGlobe from '../../ui/PixelGlobe.astro';
+import type { PageData } from '../../../lib/page-data';
+
+interface Props {
+  data: PageData;
+  /** The interests.yaml item tagged `aviation`, if any. */
+  interest?: PageData['interests']['items'][number] | undefined;
+}
+const { data, interest } = Astro.props;
+const { copy, aviation } = data;
+const label = copy.about.avgeek_panels;
+---
+
+<Card class="about-card about-card--av" id="avgeek" labelledby="about-avgeek">
+  <div class="av">
+    <div class="av__head">
+      <div class="av__intro">
+        <CardTitle label={copy.about.card_avgeek} />
+        <h3 id="about-avgeek" class="av__title">
+          {copy.about.avgeek_title}
+        </h3>
+        {interest && (
+          <p class="av__body">
+            {interest.name}
+            {interest.note && ` — ${interest.note}`}
+          </p>
+        )}
+      </div>
+      <div class="av__globe">
+        <PixelGlobe size={128} />
+      </div>
+    </div>
+    <div class="av__panels">
+      {aviation.watching.length > 0 && (
+        <div class="av__panel">
+          <h4 class="av__label">{label.watching}</h4>
+          <ul class="av__routes">
+            {aviation.watching.map((r) => (
+              <li>
+                <span class="av__route">
+                  {r.from} <span class="av__sym">→</span> {r.to}
+                </span>
+                <span class="av__detail">
+                  {r.airline} {r.aircraft} — {r.why}
+                </span>
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
+      {aviation.seat_rules.length > 0 && (
+        <div class="av__panel">
+          <h4 class="av__label">{label.seat_rules}</h4>
+          <ul class="av__list">
+            {aviation.seat_rules.map((rule) => (
+              <li>{rule}</li>
+            ))}
+          </ul>
+        </div>
+      )}
+      {aviation.favorite_cabins.length > 0 && (
+        <div class="av__panel">
+          <h4 class="av__label">{label.favorite_cabins}</h4>
+          <ul class="av__list">
+            {aviation.favorite_cabins.map((c) => (
+              <li>
+                {c.aircraft} · {c.cabin} — {c.why}
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
+      {aviation.news.length > 0 && (
+        <div class="av__panel">
+          <h4 class="av__label">{label.news}</h4>
+          <ul class="av__list">
+            {aviation.news.map((n) => (
+              <li>
+                <time datetime={n.date}>{n.date}</time> <a href={n.url}>{n.headline}</a>
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
+      {aviation.fare_examples.length > 0 && (
+        <div class="av__panel">
+          <h4 class="av__label">{label.fare_examples}</h4>
+          <ul class="av__list">
+            {aviation.fare_examples.map((f) => (
+              <li>
+                <code class="av__code">{f.code}</code> {f.route} — {f.notes}
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
+      {aviation.tools.length > 0 && (
+        <div class="av__panel">
+          <h4 class="av__label">{label.tools}</h4>
+          <ul class="av__tools">
+            {aviation.tools.map((t) => (
+              <li>
+                <a class="av__tool" href={t.url} target="_blank" rel="noopener">
+                  {t.name}
+                </a>
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
+    </div>
+  </div>
+</Card>
+
+<style>
+  .av {
+    flex: 1 1 auto;
+    display: flex;
+    flex-direction: column;
+    gap: 18px;
+  }
+  /* Figma: the 129.6 px globe sits top-right (x 266 / y 22 of the 424 px card), text beside it. */
+  .av__head {
+    container-type: inline-size;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    align-items: start;
+    column-gap: 8px;
+  }
+  .av__intro {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+    min-width: 0;
+  }
+  .av__globe {
+    margin: -6px -4px 0 0;
+  }
+  /* Static without JS, like the rest of the motion system (PixelGlobe spins on its own). */
+  :global(html:not(.motion)) .av__globe :global(.globe__strip) {
+    animation: none;
+    transform: translateX(-324px);
+  }
+  /* Narrower cards (1280 px, tablet, phone) keep room for the text: 96 px globe. */
+  @container (max-width: 359px) {
+    .av__globe {
+      zoom: 0.75;
+    }
+  }
+  .av__title {
+    margin: 0;
+    font: var(--type-pixel-h4);
+    letter-spacing: var(--type-pixel-h4-tracking);
+    color: var(--color-text-hi);
+  }
+  .av__body {
+    margin: 0;
+    font: var(--type-code-sm);
+    color: var(--color-text-mid);
+  }
+  .av__panels {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    margin-top: auto;
+  }
+  .av__panel {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+  .av__label {
+    margin: 0;
+    font: var(--type-code-label);
+    letter-spacing: var(--type-code-label-tracking);
+    text-transform: uppercase;
+    color: var(--color-text-mid);
+  }
+  .av__label::before {
+    content: '> ';
+    content: '> ' / '';
+    color: var(--color-accent-terminal-green);
+  }
+  .av__routes,
+  .av__list,
+  .av__tools {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+  .av__routes {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+  .av__routes li {
+    display: flex;
+    flex-direction: column;
+  }
+  /* Figma's route line: VT323 22, diamond. */
+  .av__route {
+    font: var(--type-term-md);
+    color: var(--color-accent-diamond);
+  }
+  .av__sym {
+    font-family: 'Segoe UI Symbol', 'Apple Symbols', 'Noto Sans Symbols 2', system-ui, sans-serif;
+    font-size: 0.8em;
+  }
+  .av__detail,
+  .av__list {
+    font: var(--type-code-sm);
+    color: var(--color-text-mid);
+  }
+  .av__list {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+  .av__list a {
+    color: var(--color-accent-diamond);
+    text-decoration: underline;
+  }
+  .av__code {
+    color: var(--color-accent-gold);
+  }
+  .av__tools {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+  /* Toolbar keys: inventory-slot look, diamond label, gold on hover / focus. */
+  .av__tool {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 5px 10px;
+    background: var(--color-bg-terminal);
+    border: 2px solid var(--color-border-edge);
+    font: var(--type-code-sm);
+    color: var(--color-accent-diamond);
+    text-decoration: none;
+    white-space: nowrap;
+  }
+  .av__tool::after {
+    content: '↗';
+    content: '↗' / '';
+    font-size: 0.85em;
+  }
+  .av__tool:hover,
+  .av__tool:focus-visible {
+    border-color: var(--color-accent-diamond);
+    color: var(--color-accent-gold);
+  }
+</style>

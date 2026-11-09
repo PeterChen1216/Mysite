@@ -1,0 +1,186 @@
+---
+/**
+ * Card/Education (Figma 20:1008, #education): every school in education.yaml — name (linked),
+ * degree and track, minor, department (linked), dates, GPA, honors and coursework.
+ */
+import Card from '../../ui/Card.astro';
+import CardTitle from '../../ui/CardTitle.astro';
+import VoxelBlock from '../../ui/VoxelBlock.astro';
+import { educationDates } from '../../../lib/derive';
+import type { PageData } from '../../../lib/page-data';
+
+interface Props {
+  data: PageData;
+}
+const { data } = Astro.props;
+const { copy, education } = data;
+
+/** `Bachelor of Science in Informatics · Data Science track` (major only when the degree lacks it). */
+const programme = (e: PageData['edu']) =>
+  [
+    e.degree,
+    e.major && !e.degree.includes(e.major) ? e.major : undefined,
+    e.track ? `${e.track} ${copy.about.track_suffix}` : undefined,
+  ]
+    .filter(Boolean)
+    .join(' · ');
+---
+
+<Card class="about-card about-card--edu" id="education" labelledby="about-education">
+  <div class="edu">
+    <CardTitle id="about-education" label={copy.about.card_education} />
+    <VoxelBlock name="bookshelf" size={69} />
+    {education.map((e) => (
+      <div class="edu__entry">
+        <div class="edu__head">
+          <h3 class="edu__school">{e.url ? <a href={e.url}>{e.school}</a> : e.school}</h3>
+          <p class="edu__line">{programme(e)}</p>
+          {e.minor && (
+            <p class="edu__line">
+              {copy.about.minor_prefix} {e.minor}
+            </p>
+          )}
+          {e.department && (
+            <p class="edu__line">
+              {e.department_url ? <a href={e.department_url}>{e.department}</a> : e.department}
+            </p>
+          )}
+          <p class="edu__line">{educationDates(e)}</p>
+          {e.gpa && (
+            <p class="edu__line">
+              {e.gpa_label}: <span class="edu__gpa">{e.gpa}</span>
+            </p>
+          )}
+        </div>
+        {e.honors.length > 0 && (
+          <ul class="edu__honors">
+            {e.honors.map((h) => (
+              <li>{h}</li>
+            ))}
+          </ul>
+        )}
+        {e.coursework.length > 0 && (
+          <div class="edu__courses">
+            <h4 class="edu__label">{copy.about.coursework}</h4>
+            <ul class="edu__course-list">
+              {e.coursework.map((c) => (
+                <li>{c}</li>
+              ))}
+            </ul>
+          </div>
+        )}
+      </div>
+    ))}
+  </div>
+</Card>
+
+<style>
+  .edu {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 18px;
+  }
+  .edu__entry {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    width: 100%;
+  }
+  .edu__entry + .edu__entry {
+    padding-top: 18px;
+    border-top: 2px dashed var(--color-border-edge);
+  }
+  .edu__head {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+  .edu__school {
+    margin: 0;
+    font: var(--type-pixel-h4);
+    letter-spacing: var(--type-pixel-h4-tracking);
+    color: var(--color-text-hi);
+  }
+  .edu__school a {
+    color: inherit;
+    text-decoration: underline;
+    text-decoration-thickness: 2px;
+    text-decoration-color: var(--color-border-edge);
+    text-underline-offset: 5px;
+  }
+  .edu__school a:hover,
+  .edu__school a:focus-visible {
+    color: var(--color-accent-diamond);
+    text-decoration-color: currentColor;
+  }
+  .edu__line {
+    margin: 0;
+    font: var(--type-code-sm);
+    color: var(--color-text-mid);
+  }
+  .edu__line a {
+    color: var(--color-accent-diamond);
+    text-decoration: underline;
+    text-decoration-thickness: 1px;
+  }
+  .edu__line a:hover,
+  .edu__line a:focus-visible {
+    color: var(--color-accent-gold);
+  }
+  .edu__gpa {
+    color: var(--color-accent-terminal-green);
+  }
+  .edu__honors {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+    font: var(--type-code-sm);
+    color: var(--color-text-hi);
+  }
+  .edu__honors li {
+    position: relative;
+    padding-left: 18px;
+  }
+  .edu__honors li::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: 7px;
+    width: 8px;
+    height: 8px;
+    background: var(--color-accent-gold);
+    box-shadow: 2px 2px 0 rgb(0 0 0 / 0.6);
+  }
+  .edu__courses {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+  .edu__label {
+    margin: 0;
+    font: var(--type-code-label);
+    letter-spacing: var(--type-code-label-tracking);
+    text-transform: uppercase;
+    color: var(--color-text-mid);
+  }
+  .edu__course-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+  /* Inventory slots, like the off-the-clock icons. */
+  .edu__course-list li {
+    padding: 3px 8px;
+    background: var(--color-bg-terminal);
+    border: 2px solid var(--color-border-edge);
+    font: var(--type-code-sm);
+    color: var(--color-text-hi);
+  }
+</style>
