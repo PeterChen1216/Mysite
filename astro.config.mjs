@@ -18,13 +18,15 @@ export default defineConfig({
   devToolbar: { enabled: false },
   // Self-hosted OFL fonts (PLAN §5.1, ADR-003). Astro generates metric-matched fallback faces
   // (size-adjust etc.) for the generic family listed last, so text doesn't reflow — and the page
-  // doesn't shift (CLS) — when the web fonts finish loading.
+  // doesn't shift (CLS) — when the web fonts finish loading. Those faces use Courier New and
+  // Arial, which Android, Linux and ChromeOS lack; the "… Fallback" families named below
+  // (src/styles/global.css) give the same metrics to fonts those systems do have.
   fonts: [
     {
       provider: fontProviders.local(),
       name: 'Pixelify Sans',
       cssVariable: '--font-pixel',
-      fallbacks: ['sans-serif'],
+      fallbacks: ['Pixelify Fallback', 'sans-serif'],
       options: {
         variants: [
           {
@@ -44,7 +46,7 @@ export default defineConfig({
       provider: fontProviders.local(),
       name: 'Press Start 2P',
       cssVariable: '--font-8bit',
-      fallbacks: ['monospace'],
+      fallbacks: ['Press Start 2P Fallback', 'monospace'],
       options: {
         variants: [
           {
@@ -59,7 +61,7 @@ export default defineConfig({
       provider: fontProviders.local(),
       name: 'VT323',
       cssVariable: '--font-term',
-      fallbacks: ['monospace'],
+      fallbacks: ['VT323 Fallback', 'monospace'],
       options: {
         variants: [
           { src: [fs('vt323', 'vt323-latin-400-normal.woff2')], weight: 400, style: 'normal' },

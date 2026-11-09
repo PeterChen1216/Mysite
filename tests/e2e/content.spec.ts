@@ -3,7 +3,9 @@ import { expect, test, type Page } from '@playwright/test';
 import { parse } from 'yaml';
 import { aboutCards, gridAreas, logRange } from '../../src/lib/derive';
 import { formatRange, formatYearMonth } from '../../src/lib/format';
+import { stripComments } from '../../src/content/guards';
 import { copy, escapeRe } from './copy';
+import { hasWordBullet } from './now';
 import { V2 } from './site';
 
 /**
@@ -35,8 +37,7 @@ const straight = (s: string) =>
   s.replace(/[‘’]/g, "'").replace(/[“”]/g, '"').replace(/\s+/g, ' ').trim();
 /** Markdown → visible text (links keep their label; list markers, comments and emphasis dropped). */
 const mdText = (md: string) =>
-  md
-    .replace(/<!--[\s\S]*?-->/g, '')
+  stripComments(md)
     .replace(/\[([^\]]+)\]\([^)]+\)/g, '$1')
     .replace(/^\s*[-*]\s+/gm, '')
     .replace(/[*_`]/g, '');
@@ -69,8 +70,14 @@ test.describe('content/ renders completely', () => {
         profile.status,
         ...publicEmails.map((e: { address: string }) => e.address),
         ...profile.socials.map((s: { label: string }) => s.label),
-        ...interests.items.map((i: { name: string }) => i.name),
       ]),
+    ).toEqual([]);
+    // Every interest is on an About card (the ticker repeats some, so look in #about only).
+    expect(
+      missing(
+        await visibleText(page, '#about'),
+        interests.items.map((i: { name: string }) => i.name),
+      ),
     ).toEqual([]);
     for (const paragraph of mdText(readFileSync('content/about.md', 'utf8')).split(/\n{2,}/)) {
       if (paragraph.trim()) expect(text).toContain(straight(paragraph));
@@ -84,7 +91,7 @@ test.describe('content/ renders completely', () => {
     for (const e of education) {
       expected.push(e.school, e.degree, e.track, e.minor, e.department);
       expected.push(`${formatYearMonth(String(e.start))} – ${formatYearMonth(String(e.end))}`);
-      if (e.gpa) expected.push(`${e.gpa_label ?? 'GPA'}: ${e.gpa}`);
+      if (e.gpa) expected.push(`${e.gpa_label ?? copy.labels.gpa}: ${e.gpa}`);
       expected.push(...((e.honors as string[]) ?? []), ...((e.coursework as string[]) ?? []));
     }
     for (const h of honors) expected.push(`${h.name}, ${h.org}, ${h.year}`, h.note);
@@ -233,15 +240,12 @@ test.describe('content/ renders completely', () => {
       .locator('.ticker__track')
       .first()
       .locator('.ticker__item', { hasText: `[${copy.ticker.tags.now}]` });
-    const body = readFileSync('content/now.md', 'utf8').replace(/<!--[\s\S]*?-->/g, '');
+    const body = stripComments(readFileSync('content/now.md', 'utf8'));
     if (!body.trim()) {
       await expect(items).toHaveCount(0);
       return;
     }
-    // A bullet that starts with a word always gives an item; a heading, a link definition or an
-    // empty bullet may give none, so only the former is required.
-    if (/^[ \t]{0,3}(?:[-*+]|\d{1,9}[.)])[ \t]+(?:\[[ xX]\][ \t]+)?[\p{L}\p{N}]/mu.test(body))
-      expect(await items.count()).toBeGreaterThan(0);
+    if (hasWordBullet(body)) expect(await items.count()).toBeGreaterThan(0);
     for (const text of await items.allInnerTexts())
       expect(text.replace(`[${copy.ticker.tags.now}]`, '').trim()).not.toBe('');
   });

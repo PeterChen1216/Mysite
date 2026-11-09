@@ -3,7 +3,7 @@
  * required file is missing or empty, so a broken content/ never deploys silently.
  */
 import { getCollection, getEntry, render, type CollectionKey } from 'astro:content';
-import { assertCommentsClosed } from '../content/guards';
+import { assertCommentsClosed, stripComments } from '../content/guards';
 import { copyVars, fillCopy, nowLines } from './derive';
 import { byStartDesc } from './format';
 
@@ -103,7 +103,7 @@ export async function getProse(name: 'about' | 'now') {
   const entry = await getEntry('prose', name);
   if (!entry) throw new Error(`content/${name}.md is missing`);
   assertCommentsClosed(entry.body, `content/${name}.md`);
-  const hasBody = entry.body?.replace(/<!--[\s\S]*?-->/g, '').trim();
+  const hasBody = stripComments(entry.body ?? '').trim();
   if (!hasBody) return { Content: null };
   const { Content } = await render(entry);
   return { Content };
@@ -117,7 +117,7 @@ export async function getNowLines() {
   const entry = await getEntry('prose', 'now');
   if (!entry) throw new Error('content/now.md is missing');
   assertCommentsClosed(entry.body, 'content/now.md');
-  const hasBody = entry.body?.replace(/<!--[\s\S]*?-->/g, '').trim();
+  const hasBody = stripComments(entry.body ?? '').trim();
   if (!hasBody) return [];
   const html = entry.rendered?.html;
   if (html === undefined) throw new Error('content/now.md was not rendered as Markdown');

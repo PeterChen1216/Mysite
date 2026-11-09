@@ -19,7 +19,8 @@ export interface EducationLike {
   end: string;
   expected: boolean;
   gpa?: string | undefined;
-  gpa_label: string;
+  /** Optional in education.yaml; the page fills it from copy.yaml `labels.gpa` (page-data.ts). */
+  gpa_label?: string | undefined;
   honors: string[];
 }
 export interface HonorLike {
@@ -212,11 +213,13 @@ export function glyphParts(label: string): { lead: string; text: string; trail: 
 
 // ---------------------------------------------------------------- now.md → ticker lines
 /**
- * One HTML comment, or one tag: `</`?, its name, then its attributes up to the closing `>`.
- * Quoted attribute values may hold `<` and `>` (Astro does not escape them), so a whole tag is
- * always read as one token.
+ * One HTML comment (`<!-->` and `<!--->` are empty ones), or one tag: `</`?, its name, then its
+ * attributes up to the closing `>`. Quoted attribute values may hold `<` and `>` (Astro does not
+ * escape them), so a whole tag is always read as one token. The name can't give characters back
+ * and the attribute run is bounded, so stray `<word` text in raw HTML costs little.
  */
-const HTML_TOKEN = /<!--[\s\S]*?(?:-->|$)|<(\/?)([a-z][\w-]*)((?:[^>"']|"[^"]*"|'[^']*')*)>/gi;
+const HTML_TOKEN =
+  /<!--(?:-?>|[\s\S]*?(?:-->|$))|<(\/?)([a-z][\w-]*)(?![\w-])((?:[^>"']|"[^"]*"|'[^']*'){0,4096})>/gi;
 /** Elements that end one ticker item and start the next: each list item and paragraph is one. */
 const BLOCK = new Set(
   'address article aside blockquote dd details div dl dt figcaption figure footer header hr li main nav ol p pre section summary table tbody tfoot thead tr ul'.split(
@@ -229,14 +232,18 @@ const SPACE = new Set(['br', 'td', 'th']);
 const DROP = new Set(['script', 'style', 'template']);
 const HEADING = /^h[1-6]$/;
 
-/** An attribute's decoded value from a tag's attribute text. */
+/** A tag's attributes in order: a name, then its value if it has one. */
+const ATTRIBUTE = /([^\s"'>/=]+)(?:\s*=\s*(?:"([^"]*)"|'([^']*)'|([^\s"'=<>\x60]+)))?/g;
+
+/**
+ * An attribute's decoded value (`''` when it has none), or undefined when the tag lacks it.
+ * Attributes are read in order, so text inside another attribute's quoted value never matches.
+ */
 function attribute(attrs: string, name: string): string | undefined {
-  const m = new RegExp(
-    String.raw`(?:^|\s)${name}\s*=\s*(?:"([^"]*)"|'([^']*)'|([^\s"'=<>\x60]+))`,
-    'i',
-  ).exec(attrs);
-  const raw = m?.[1] ?? m?.[2] ?? m?.[3];
-  return raw === undefined ? undefined : decodeHTMLAttribute(raw);
+  const wanted = name.toLowerCase(); // attribute names are case-insensitive in HTML
+  for (const m of attrs.matchAll(ATTRIBUTE))
+    if (m[1]!.toLowerCase() === wanted) return decodeHTMLAttribute(m[2] ?? m[3] ?? m[4] ?? '');
+  return undefined;
 }
 
 /** An image's text: its alt, also for a local image, whose alt Astro keeps in a marker attribute. */
@@ -283,13 +290,15 @@ export function nowLines(html: string): string[] {
       !close &&
       (DROP.has(name) ||
         (HEADING.test(name) && listDepth === 0) ||
-        (name === 'section' && /(?:^|\s)data-footnotes\b/i.test(attrs)) ||
-        (name === 'a' && /(?:^|\s)data-footnote-ref\b/i.test(attrs)));
+        (name === 'section' && attribute(attrs, 'data-footnotes') !== undefined) ||
+        (name === 'a' && attribute(attrs, 'data-footnote-ref') !== undefined));
     if (dropped) {
-      // Skip to the end tag (none of these nest in rendered Markdown).
+      // Skip to the end tag (none of these nest in rendered Markdown). Without one, as in a
+      // status line that mentions a raw `<style>` tag, only the tag itself is left out.
       const end = new RegExp(String.raw`<\/${name}\s*>`, 'gi');
       end.lastIndex = at;
-      at = end.exec(html) ? end.lastIndex : html.length;
+      if (!end.exec(html)) continue;
+      at = end.lastIndex;
       token.lastIndex = at;
       // A heading or the footnotes block ends the item before it; a script inside one does not.
       if (HEADING.test(name) || name === 'section') endItem();
@@ -393,6 +402,39 @@ export function aboutCards<I extends InterestLike>(input: {
     stackOne: !input.building,
     areas: aboutAreas({ off: offClock.length > 0, av: avgeek }),
   };
+}
+
+/** A word of the hero headline, or the space between two words. */
+export type HeadlineToken =
+  | { space: true }
+  | {
+      text: string;
+      /** Inside `[brackets]`: drawn in the highlight colour. */
+      hi: boolean;
+      /** A highlighted part made only of symbols (the `[_]` cursor): hidden from screen readers. */
+      deco: boolean;
+      /** Position in the word-by-word intro. */
+      i: number;
+    };
+
+/**
+ * copy.yaml `hero.headline` lines → their words, numbered across lines for the word-by-word
+ * intro. Only a highlighted part that is all symbols is decoration; `&` or `+` in the sentence
+ * or inside a highlighted phrase (`[data & design]`) is read.
+ */
+export function headlineWords(lines: string[]): HeadlineToken[][] {
+  let i = 0;
+  return lines.map((line) =>
+    highlightParts(line).flatMap((part) => {
+      const deco = part.hi && isDecorative(part.text);
+      return part.text
+        .split(/(\s+)/)
+        .filter(Boolean)
+        .map((t): HeadlineToken =>
+          /^\s+$/.test(t) ? { space: true } : { text: t, hi: part.hi, deco, i: i++ },
+        );
+    }),
+  );
 }
 
 // ---------------------------------------------------------------- labels
@@ -524,7 +566,7 @@ export interface TickerTags {
 
 /** The scrolling ticker: built only from content facts and now.md lines. */
 export function tickerItems(input: {
-  edu: EducationLike;
+  edu: EducationLike & { gpa_label: string };
   honors: HonorLike[];
   projects: ProjectLike[];
   experience: ExperienceLike[];

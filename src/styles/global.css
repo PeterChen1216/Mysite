@@ -99,3 +99,68 @@ img {
     scroll-behavior: auto !important;
   }
 }
+
+/*
+ * Stand-ins for the pixel fonts where Courier New and Arial are missing (Android, Linux,
+ * ChromeOS), so text doesn't reflow when a late web font arrives. Astro's own fallback faces
+ * (`… fallback: Courier New / Arial`, generated from astro.config.mjs) don't load there; these
+ * reuse their numbers with fonts of the same widths: Liberation Mono, Cousine, Droid Sans Mono,
+ * Roboto Mono, Noto Sans Mono and DejaVu Sans Mono share Courier New's 0.6 em advance;
+ * Liberation Sans, Arimo and Roboto are about as wide as Arial. Only the web fonts' own Latin
+ * range is covered, so other symbols (the █ cursor, ★ ✈ →) keep their system glyphs.
+ */
+@font-face {
+  font-family: 'VT323 Fallback';
+  src:
+    local('Liberation Mono'), local('LiberationMono'), local('Cousine'), local('Droid Sans Mono'),
+    local('DroidSansMono'), local('Roboto Mono'), local('RobotoMono-Regular'),
+    local('Noto Sans Mono'), local('NotoSansMono-Regular'), local('DejaVu Sans Mono'),
+    local('DejaVuSansMono');
+  unicode-range:
+    U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+2000-206F, U+20AC,
+    U+2122;
+  size-adjust: 66.6558%;
+  ascent-override: 120.0195%;
+  descent-override: 30.0049%;
+}
+@font-face {
+  font-family: 'Press Start 2P Fallback';
+  src:
+    local('Liberation Mono'), local('LiberationMono'), local('Cousine'), local('Droid Sans Mono'),
+    local('DroidSansMono'), local('Roboto Mono'), local('RobotoMono-Regular'),
+    local('Noto Sans Mono'), local('NotoSansMono-Regular'), local('DejaVu Sans Mono'),
+    local('DejaVuSansMono');
+  unicode-range:
+    U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+2000-206F, U+20AC,
+    U+2122;
+  size-adjust: 166.6395%;
+  ascent-override: 60.0098%;
+}
+@font-face {
+  font-family: 'Pixelify Fallback';
+  font-weight: 600;
+  src:
+    local('Liberation Sans'), local('LiberationSans'), local('Arimo'), local('Roboto'),
+    local('Roboto-Regular');
+  unicode-range:
+    U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+2000-206F, U+20AC,
+    U+2122;
+  size-adjust: 114.8495%;
+  ascent-override: 80.1048%;
+  descent-override: 24.3797%;
+  line-gap-override: 0%;
+}
+@font-face {
+  font-family: 'Pixelify Fallback';
+  font-weight: 700;
+  src:
+    local('Liberation Sans Bold'), local('LiberationSans-Bold'), local('Arimo Bold'),
+    local('Arimo-Bold'), local('Roboto Bold'), local('Roboto-Bold');
+  unicode-range:
+    U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+2000-206F, U+20AC,
+    U+2122;
+  size-adjust: 106.671%;
+  ascent-override: 86.2465%;
+  descent-override: 26.2489%;
+  line-gap-override: 0%;
+}

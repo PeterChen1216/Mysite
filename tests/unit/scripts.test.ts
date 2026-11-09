@@ -52,6 +52,10 @@ describe('content breakage (always an error)', () => {
   it('flags an unclosed HTML comment in Markdown with its line', () => {
     const dir = fixture({ 'now.md': 'line one\n<!-- note\nrest of page\n', 'ok.md': '<!-- a -->' });
     expect(findBreakage(dir)).toEqual(['content/now.md:2: "<!--" is never closed with "-->"']);
+    // `<!-->` and `<!--->` are complete, empty comments; an open one after them is still found.
+    const empty = fixture({ 'now.md': 'a <!--> b\n<!---> c\nnext <!-- open\n' });
+    expect(findBreakage(empty)).toEqual(['content/now.md:3: "<!--" is never closed with "-->"']);
+    expect(findBreakage(fixture({ 'now.md': 'a <!--> b <!---> c\n' }))).toEqual([]);
   });
   it('flags project files that are not lowercase-hyphen slugs', () => {
     const dir = fixture({

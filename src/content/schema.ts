@@ -130,8 +130,8 @@ export const educationSchema = z
       .string()
       .regex(/^\d\.\d{1,2}\/\d\.\d{1,2}$/, 'Use the form 3.81/4.0')
       .optional(),
-    /** How the GPA is labelled, e.g. "Cumulative GPA". */
-    gpa_label: text.default('GPA'),
+    /** How the GPA is labelled (e.g. "Cumulative GPA"); without it, copy.yaml `labels.gpa`. */
+    gpa_label: text.optional(),
     honors: z.array(text).default([]),
     coursework: z.array(text).default([]),
     source,

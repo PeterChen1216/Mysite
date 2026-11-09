@@ -3,7 +3,7 @@ import { join } from 'node:path';
 import { z } from 'astro/zod';
 import { parse } from 'yaml';
 import { describe, expect, it, vi } from 'vitest';
-import { assertCommentsClosed } from '../../src/content/guards';
+import { assertCommentsClosed, stripComments } from '../../src/content/guards';
 import { list, parseYaml, singleton } from '../../src/content/parsers';
 import { copyVars, fillCopy } from '../../src/lib/derive';
 import {
@@ -193,10 +193,11 @@ describe('schemas reject mistakes an owner could make', () => {
     ).toThrow();
   });
 
-  it('education GPA label defaults to "GPA"; tagline and location are optional', () => {
+  it('education GPA label is optional (the page uses copy.yaml); tagline and location too', () => {
     const edu = list('education.yaml')(read('education.yaml'))[0] as Record<string, unknown>;
     const { gpa_label: _label, ...rest } = edu;
-    expect(educationSchema.parse(rest).gpa_label).toBe('GPA');
+    // No built-in English default: page-data.ts fills it from copy.yaml labels.gpa.
+    expect(educationSchema.parse(rest).gpa_label).toBeUndefined();
     const p = { title: 't', status: 'wip', platform: ['web'], year: 2026, source: 's' };
     expect(projectSchema(image).parse({ ...p, location: 'Seattle, WA' }).tagline).toBeUndefined();
   });
@@ -300,6 +301,10 @@ describe('YAML parsing guards', () => {
     expect(() => assertCommentsClosed('a <!-- b', 'content/now.md')).toThrow(/never closed/);
     expect(() => assertCommentsClosed('<!-- a --> b <!-- c -->', 'x')).not.toThrow();
     expect(() => assertCommentsClosed(undefined, 'x')).not.toThrow();
+    // `<!-->` and `<!--->` are complete (empty) comments in Markdown and HTML.
+    expect(() => assertCommentsClosed('one <!--> two <!---> three', 'x')).not.toThrow();
+    expect(() => assertCommentsClosed('a <!--> b <!-- c', 'x')).toThrow(/never closed/);
+    expect(stripComments('a<!-- x -->b<!-->c<!--->d')).toBe('abcd');
   });
 });
 

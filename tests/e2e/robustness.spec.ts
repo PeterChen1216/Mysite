@@ -225,6 +225,34 @@ test.describe('globe drag', () => {
   }
 });
 
+test.describe('globe drag and reduced motion', () => {
+  test.skip(({ isMobile }) => isMobile, 'mouse drag on the desktop layouts');
+  test('reduced motion turned on during a drag leaves the globe still', async ({ page }) => {
+    await page.goto(V2);
+    const globe = page.locator('.stage [data-globe]');
+    await globe.evaluate((el) =>
+      Promise.all(
+        (el.closest('[data-intro]') ?? el).getAnimations().map((a) => a.finished.catch(() => {})),
+      ),
+    );
+    const box = (await globe.boundingBox())!;
+    const x = box.x + box.width / 2;
+    const y = box.y + box.height / 2;
+    await page.mouse.move(x, y);
+    await page.mouse.down();
+    await page.mouse.move(x + 30, y, { steps: 3 });
+    await page.emulateMedia({ reducedMotion: 'reduce' });
+    await page.mouse.move(x + 80, y, { steps: 5 });
+    await page.mouse.up();
+    await page.waitForTimeout(300);
+    expect(
+      await page.evaluate(
+        () => document.getAnimations().filter((a) => a.playState === 'running').length,
+      ),
+    ).toBe(0);
+  });
+});
+
 test.describe('keyboard and screen readers', () => {
   test.use({ reducedMotion: 'reduce' });
 

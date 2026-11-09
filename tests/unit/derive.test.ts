@@ -15,6 +15,7 @@ import {
   gpaBadge,
   gpaRatio,
   gridAreas,
+  headlineWords,
   heroEyebrow,
   highlightParts,
   isDecorative,
@@ -32,7 +33,8 @@ import {
   type ProjectLike,
 } from '../../src/lib/derive';
 
-const edu: EducationLike = {
+type Edu = EducationLike & { gpa_label: string };
+const edu: Edu = {
   school: 'University of Washington, Seattle',
   short: 'UW iSchool',
   department: 'Information School',
@@ -47,7 +49,7 @@ const edu: EducationLike = {
   honors: [],
 };
 /** The same school with every optional field left out. */
-const bareEdu: EducationLike = {
+const bareEdu: Edu = {
   school: 'Some College',
   degree: 'BA',
   start: '2020-09',
@@ -114,6 +116,35 @@ describe('formatters', () => {
       { text: ' end', hi: false },
     ]);
     expect(highlightParts('plain')).toEqual([{ text: 'plain', hi: false }]);
+  });
+});
+
+describe('hero headline', () => {
+  const words = (lines: string[]) =>
+    headlineWords(lines).map((line) =>
+      line
+        .map((t) => ('space' in t ? ' ' : `${t.text}${t.hi ? '*' : ''}${t.deco ? '!' : ''}`))
+        .join(''),
+    );
+  it('numbers words across lines and marks the highlighted ones', () => {
+    const lines = headlineWords(['Crafting [data]', 'people love[_]']);
+    expect(
+      lines
+        .flat()
+        .filter((t) => !('space' in t))
+        .map((t) => ('i' in t ? t.i : -1)),
+    ).toEqual([0, 1, 2, 3, 4]);
+    expect(words(['Crafting [data]', 'people love[_]'])).toEqual([
+      'Crafting data*',
+      'people love_*!',
+    ]);
+  });
+  it('hides only a highlighted part that is all symbols', () => {
+    expect(words(['Crafting [data & design]', 'AI + [data] & ops', 'into [→] things'])).toEqual([
+      'Crafting data* &* design*',
+      'AI + data* & ops',
+      'into →*! things',
+    ]);
   });
 });
 
@@ -647,6 +678,53 @@ describe('now.md lines', () => {
       '<template><p>hidden</p></template>',
     ].join('\n');
     expect(nowLines(html)).toEqual(['Q12 heading in item', 'Plain item']);
+  });
+  it('leaves out only the tag when a dropped element is never closed', () => {
+    // A status line that mentions a raw tag ("Fixing <style> leaks") must not hide the rest.
+    const html = [
+      '<ul>',
+      '<li>C01 Fixing <style> leaks in Astro</li>',
+      '<li>C02 Teaching the <script> tag</li>',
+      '<li>C03 Reading about <template> elements</li>',
+      '</ul>',
+      '<p>C04 Teaching <h1> to <h6> today</p>',
+      '<ul>',
+      '<li>C05 last bullet</li>',
+      '</ul>',
+    ].join('\n');
+    expect(nowLines(html)).toEqual([
+      'C01 Fixing leaks in Astro',
+      'C02 Teaching the tag',
+      'C03 Reading about elements',
+      'C04 Teaching to today',
+      'C05 last bullet',
+    ]);
+  });
+  it('reads attribute names only outside other attributes’ values', () => {
+    const marker =
+      '{&quot;src&quot;:&quot;./now-pic.jpg&quot;,&quot;alt&quot;:&quot;Orbit&quot;,&quot;title&quot;:&quot;old alt=new&quot;}';
+    expect(
+      nowLines(
+        `<p>A06 local title <img __ASTRO_IMAGE_="${marker}"> end</p>\n<p>Read <a href="https://x.y" title="why data-footnote-ref matters">the guide</a> today</p>`,
+      ),
+    ).toEqual(['A06 local title Orbit end', 'Read the guide today']);
+  });
+  it('decodes text and attribute values exactly once', () => {
+    // A code span showing `&lt;b&gt;` renders as `&amp;lt;b&amp;gt;`: the reader sees "&lt;b&gt;".
+    const html =
+      '<p><code>&amp;lt;b&amp;gt;</code> <img alt="&amp;amp; &amp;lt;"> <img __ASTRO_IMAGE_="{&quot;alt&quot;:&quot;&amp;lt;&quot;}"> &amp;lt;</p>';
+    expect(nowLines(html)).toEqual(['&lt;b&gt; &amp; &lt; &lt; &lt;']);
+  });
+  it('treats <!--> and <!---> as empty comments', () => {
+    expect(
+      nowLines('<ul>\n<li>D01 one <!--> two</li>\n<li>D02 three <!---> four</li>\n</ul>'),
+    ).toEqual(['D01 one two', 'D02 three four']);
+  });
+  it('stays fast on stray unterminated tags in raw HTML', () => {
+    const start = performance.now();
+    nowLines(`<p>${'<abc '.repeat(20_000)}</p>`);
+    nowLines(`<div>${'x <longtagname '.repeat(5_000)}`);
+    expect(performance.now() - start).toBeLessThan(2000);
   });
 });
 

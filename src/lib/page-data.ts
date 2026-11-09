@@ -40,7 +40,7 @@ export async function getPageData() {
     site,
     copy,
     profile,
-    education,
+    educationEntries,
     experience,
     community,
     honors,
@@ -66,6 +66,11 @@ export async function getPageData() {
     getNowLines(),
   ]);
 
+  // An education entry without its own GPA label uses copy.yaml's (no built-in English).
+  const education = educationEntries.map((e) => ({
+    ...e,
+    gpa_label: e.gpa_label ?? copy.labels.gpa,
+  }));
   const edu = education[0]!;
   const primaryEmail = profile.emails.find((e) => e.primary)!.address;
   const publicEmails = profile.emails.filter((e) => e.public).map((e) => e.address);
