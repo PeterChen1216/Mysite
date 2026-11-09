@@ -472,9 +472,14 @@ const hasAvgeek =
     margin-inline: auto;
     padding-inline: var(--space-4);
   }
+  /* One line at every width: the 8-bit font is much wider than its fallback, so a wrapping
+     nav would change height when the font loads and shift the whole page (CLS). */
   .site-header ul {
     display: flex;
-    flex-wrap: wrap;
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    scrollbar-width: none;
+    white-space: nowrap;
     gap: var(--space-2) var(--space-4);
     list-style: none;
     margin: 0;
