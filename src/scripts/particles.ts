@@ -1,8 +1,8 @@
 /**
  * Hover burst (PLAN §5.2): 16 square pixel particles (4 or 6 px) fly out radially from the pointer
  * over 300–400 ms when it enters an element marked `data-particles`. One fixed canvas overlay,
- * pointer-events: none; only runs while particles are alive. Off for reduced motion and for
- * devices without a hover-capable fine pointer.
+ * pointer-events: none; only runs while particles are alive. Off for reduced motion (also when
+ * it is turned on while the page is open) and for devices without a hover-capable fine pointer.
  */
 import { PARTICLES } from '../motion/params';
 
@@ -22,6 +22,7 @@ const rand = (min: number, max: number) => min + Math.random() * (max - min);
 export function initParticles(): void {
   if (!document.documentElement.classList.contains('motion')) return;
   if (!matchMedia('(hover: hover) and (pointer: fine)').matches) return;
+  const reduce = matchMedia('(prefers-reduced-motion: reduce)');
 
   const canvas = document.createElement('canvas');
   canvas.setAttribute('aria-hidden', 'true');
@@ -86,7 +87,7 @@ export function initParticles(): void {
   document.addEventListener(
     'pointerover',
     (e) => {
-      if (e.pointerType !== 'mouse') return;
+      if (e.pointerType !== 'mouse' || reduce.matches) return;
       const el = (e.target as Element | null)?.closest('[data-particles]') ?? null;
       if (el && el !== current) burst(e.clientX, e.clientY);
       current = el;

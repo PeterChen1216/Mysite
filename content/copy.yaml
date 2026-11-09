@@ -2,8 +2,11 @@
 # No facts about Peter live here — those come from the other content files and are filled in
 # by the page (GPA, dates, roles, emails…). Edit any line freely.
 # In `headline`, [brackets] mark the highlighted (green) word.
-# {placeholders} are filled in from your content: {first} = first name, {city} = first part of
-# profile location, {major}, {department}, {school}, {short} = education fields.
+# {placeholders} work in every line and are filled in from your content:
+#   {first} = first name, {host} = first name in lower case, {city} = first part of the profile
+#   location, {email} = primary email, {domain} = site domain, {major} {department} {school}
+#   {short} = education fields (a missing one falls back to degree / school).
+# Symbols at the start or end of a link label (▲ ↓ ★) are hidden from screen readers.
 
 nav:
   links:
@@ -14,13 +17,16 @@ nav:
   status: online · {city}
   resume: RESUME
   say_hi: SAY HI
+  # Read out by screen readers only.
+  logo_label: '{domain} — back to top'
+  sections_label: Sections
 
 hero:
   headline:
     - Crafting [data]
     - into things
     - people love[_]
-  terminal_title: 'peter@zhic.me: ~ — zsh'
+  terminal_title: '{host}@{domain}: ~ — zsh'
   cmd_whoami: whoami
   cmd_interests: cat ~/interests.txt
   ok: '[OK]'
@@ -28,7 +34,15 @@ hero:
   summon_ok: 'Summoned PixelGlobe. Chunks loaded: 36/36.'
   cta_projects: SEE PROJECTS
   cta_resume: DOWNLOAD RESUME
+  eyebrow_prefix: '// player:' # "// player: Peter Chen · UW iSchool ’27 · Seattle, Washington"
   avgeek_badge: AvGeek  ✈  routes · seats · mileage
+  # Replaces avgeek_badge once aviation.yaml `watching` has a route ({from}/{to}: its airports).
+  avgeek_route: AvGeek  ✈  {from} ⇄ {to}
+
+# The scrolling band under the hero. Platform and interest tags come from your content.
+ticker:
+  label: Status # read out by screen readers only
+  tags: { xp: XP, now: NOW, work: WORK, ping: PING, edu: EDU }
 
 about:
   cmd: cat ~/about.md
@@ -98,7 +112,7 @@ experience:
   community_title: Community
 
 contact:
-  cmd: ping peter --count 1
+  cmd: ping {host} --count 1
   title: ['Let’s craft', 'something.']
   say_hi: SAY HI · EMAIL
   github: GITHUB
@@ -106,6 +120,11 @@ contact:
   resume: RESUME.PDF
   # Title bar of the ping terminal, and the words before the list of public email addresses.
   terminal_title: '~/contact — zsh'
+  ping:
+    request: 'PING {host} ({email}): 56 data bytes'
+    reply: '64 bytes from {email}: icmp_seq=0 ttl=64 time=0.27 ms'
+    summary: '--- 1 packet transmitted, 1 received, 0% packet loss ---'
+  open_cmd: 'open mailto:{email}'
   emails_label: or write to
 
 footer:
@@ -120,3 +139,4 @@ labels:
   expected: (expected) # graduation date not reached yet
   class_of: class of
   new_tab: (opens in a new tab) # read out by screen readers only
+  skip_link: Skip to content # first thing a keyboard user reaches

@@ -1,9 +1,10 @@
 ---
 /** Hero (Figma "Hero" 17:94): eyebrow, headline, typed terminal, CTAs, links + the stage. */
 import McButton from '../ui/McButton.astro';
+import NewTab from '../ui/NewTab.astro';
 import TerminalWindow from '../ui/TerminalWindow.astro';
 import HeroStage from './HeroStage.astro';
-import { highlightParts } from '../../lib/derive';
+import { highlightParts, isDecorative } from '../../lib/derive';
 import { INTRO } from '../../motion/params';
 import type { PageData } from '../../lib/page-data';
 
@@ -59,7 +60,12 @@ const cursorDelay = at;
             'space' in t ? (
               ' '
             ) : (
-              <span data-intro="word" class:list={{ hi: t.hi }} style={`--i:${t.i}`}>
+              <span
+                data-intro="word"
+                class:list={{ hi: t.hi }}
+                style={`--i:${t.i}`}
+                aria-hidden={isDecorative(t.text) ? 'true' : undefined}
+              >
                 {t.text}
               </span>
             ),
@@ -104,6 +110,7 @@ const cursorDelay = at;
         <li>
           <a href={s.url} rel="me noopener" target="_blank">
             {s.display} <span aria-hidden="true">↗</span>
+            <NewTab />
           </a>
         </li>
       ))}

@@ -1,5 +1,9 @@
 ---
-/** Scrolling status ticker (Figma "Ticker"): items built from content by derive.tickerItems. */
+/**
+ * Scrolling status ticker (Figma "Ticker"): items built from content by derive.tickerItems.
+ * The band is a named, focusable region: keyboard focus pauses the scroll (WCAG 2.2.2), and
+ * without motion it scrolls sideways with the arrow keys.
+ */
 import type { PageData } from '../../lib/page-data';
 import { LOOP } from '../../motion/params';
 
@@ -13,8 +17,15 @@ const widthPx = items.reduce((n, it) => n + (it.tag.length + it.text.length + 4)
 const seconds = Math.round(widthPx / LOOP.tickerPxPerSecond);
 ---
 
-<div class="ticker" style={`--ticker-s:${seconds}s`}>
-  <ul class="ticker__track" aria-label="Status">
+<div
+  class="ticker"
+  style={`--ticker-s:${seconds}s`}
+  role="region"
+  aria-label={data.copy.ticker.label}
+  tabindex="0"
+  data-loop-host
+>
+  <ul class="ticker__track">
     {items.map((it) => (
       <li class="ticker__item">
         <span class={`ticker__tag ticker__tag--${it.tone}`}>[{it.tag}]</span> {it.text}
@@ -88,7 +99,8 @@ const seconds = Math.round(widthPx / LOOP.tickerPxPerSecond);
   :global(html.motion) .ticker__track {
     animation: ticker var(--ticker-s, 60s) linear infinite;
   }
-  .ticker:hover .ticker__track {
+  .ticker:hover .ticker__track,
+  .ticker:focus-within .ticker__track {
     animation-play-state: paused;
   }
   @keyframes ticker {

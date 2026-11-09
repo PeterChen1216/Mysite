@@ -1,7 +1,7 @@
 ---
 /**
  * Contact (Figma "Contact" 22:1612): `$ ping` eyebrow, the big pixel heading, the ping terminal
- * (derive.pingLines + `open mailto:` with a blinking cursor), the MC buttons and every public
+ * (copy.yaml contact.ping + `open mailto:` with a blinking cursor), the MC buttons and every public
  * email address as a mailto link. The floating blocks are decorative (aria-hidden).
  */
 import McButton from '../ui/McButton.astro';
@@ -14,8 +14,7 @@ interface Props {
 }
 const { data } = Astro.props;
 const { copy, links } = data;
-/** derive.pingLines: request, reply, summary — the reply is green, as in Figma. */
-const REPLY = 1;
+const { ping } = copy.contact;
 ---
 
 <section id="contact" class="contact" aria-labelledby="contact-title">
@@ -52,11 +51,12 @@ const REPLY = 1;
   </div>
 
   <TerminalWindow title={copy.contact.terminal_title} font="code" class="contact__term">
-    {data.ping.map((line, i) => (
-      <p class:list={['ping', { 'ping--ok': i === REPLY }]}>{line}</p>
-    ))}
+    <p class="ping">{ping.request}</p>
+    <p class="ping ping--ok">{ping.reply}</p>
+    <p class="ping">{ping.summary}</p>
     <p class="ping ping--cmd">
-      <span class="g">$ </span>open mailto:{data.primaryEmail}
+      <span class="g">$ </span>
+      {copy.contact.open_cmd}
       <span class="cursor" data-loop="blink" aria-hidden="true"></span>
     </p>
   </TerminalWindow>

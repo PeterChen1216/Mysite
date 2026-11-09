@@ -89,15 +89,138 @@ export function logRange(start: string, end: string, nowLabel = 'now'): string {
 
 /**
  * Fill `{placeholders}` in an interface string from copy.yaml. An unknown or empty placeholder
- * fails the build, so a typo in copy.yaml can't put a raw `{name}` on the page.
+ * fails the build, so a typo in copy.yaml can't put a raw `{name}` on the page. Names in `keep`
+ * are left as they are, for templates that are filled later with their own values.
  */
-export function fillTemplate(template: string, vars: Record<string, string | undefined>): string {
-  return template.replace(/\{(\w+)\}/g, (_, key: string) => {
+export function fillTemplate(
+  template: string,
+  vars: Record<string, string | undefined>,
+  keep: readonly string[] = [],
+): string {
+  return template.replace(/\{(\w+)\}/g, (whole, key: string) => {
+    if (keep.includes(key)) return whole;
     const value = vars[key];
     if (!value)
       throw new Error(`copy.yaml: unknown or empty placeholder {${key}} in "${template}"`);
     return value;
   });
+}
+
+/** Placeholders filled per use rather than page-wide: `hero.avgeek_route` takes {from} and {to}. */
+export const LOCAL_PLACEHOLDERS = ['from', 'to'] as const;
+
+/** Every string in copy.yaml with its page-wide `{placeholders}` filled (see fillTemplate). */
+export function fillCopy<T>(value: T, vars: Record<string, string | undefined>): T {
+  if (typeof value === 'string') return fillTemplate(value, vars, LOCAL_PLACEHOLDERS) as T;
+  if (Array.isArray(value)) return value.map((v: unknown) => fillCopy(v, vars)) as T;
+  if (value && typeof value === 'object')
+    return Object.fromEntries(
+      Object.entries(value).map(([k, v]) => [k, fillCopy(v as unknown, vars)]),
+    ) as T;
+  return value;
+}
+
+/**
+ * The values copy.yaml `{placeholders}` can use, all taken from content/. Optional education
+ * fields fall back to a required one, so leaving a field out never breaks the build.
+ */
+export function copyVars(input: {
+  displayName: string;
+  location: string;
+  domain: string;
+  email: string;
+  edu: EducationLike;
+}): Record<string, string> {
+  const first = input.displayName.split(' ')[0] || input.displayName;
+  return {
+    first,
+    /** Lower-case first name, the "host" in the terminal prompts (`peter@zhic.me`, `ping peter`). */
+    host: first.toLowerCase(),
+    city: input.location.split(',')[0]?.trim() || input.location,
+    domain: input.domain,
+    email: input.email,
+    major: input.edu.major ?? input.edu.degree,
+    department: input.edu.department ?? input.edu.school,
+    school: input.edu.school,
+    short: input.edu.short ?? input.edu.school,
+  };
+}
+
+/** True when a string is only symbols or punctuation (`_`, `↓`, `▲`): decoration, not words. */
+export function isDecorative(text: string): boolean {
+  return /^[^\p{L}\p{N}]+$/u.test(text.trim());
+}
+
+/**
+ * Split decorative symbols off the ends of a label (`▲ back to spawn` → lead `▲ `), so they can be
+ * hidden from screen readers while the words stay readable.
+ */
+export function glyphParts(label: string): { lead: string; text: string; trail: string } {
+  // Symbols only (▲ ↓ ★ ✈ →); ordinary punctuation such as `(loading…)` belongs to the words.
+  const lead = /^(?:[\p{So}\p{Sm}\p{Sk}]+\s*)*/u.exec(label)?.[0] ?? '';
+  const rest = label.slice(lead.length);
+  const trail = /(?:\s*[\p{So}\p{Sm}\p{Sk}]+)*$/u.exec(rest)?.[0] ?? '';
+  const text = rest.slice(0, rest.length - trail.length);
+  return text ? { lead, text, trail } : { lead: '', text: label, trail: '' };
+}
+
+/**
+ * now.md → one plain line per bullet (or paragraph). HTML comments, headings and rules are
+ * dropped, hard-wrapped lines are joined, and inline Markdown is reduced to its text, so the
+ * ticker never shows raw `[links](…)` or `**stars**`.
+ */
+export function nowLines(markdown: string): string[] {
+  const out: string[] = [];
+  let current: string | undefined;
+  const flush = () => {
+    const text = current === undefined ? '' : inlineText(current);
+    if (text) out.push(text);
+    current = undefined;
+  };
+  for (const raw of markdown.replace(/<!--[\s\S]*?-->/g, '').split('\n')) {
+    const line = raw.trim();
+    if (!line || /^#{1,6}(\s|$)/.test(line) || /^([-*_])(\s*\1){2,}$/.test(line)) {
+      flush();
+      continue;
+    }
+    const bullet = /^(?:[-*+]|\d+[.)])\s+(.*)$/.exec(line);
+    if (bullet) {
+      flush();
+      current = bullet[1];
+    } else {
+      current = current === undefined ? line : `${current} ${line}`;
+    }
+  }
+  flush();
+  return out;
+}
+
+/** Inline Markdown → plain text (code spans keep their content verbatim). */
+export function inlineText(markdown: string): string {
+  const plain = (s: string) => {
+    // Backslash escapes (`\*`) are set aside first so they can't pair up as emphasis.
+    const escaped: string[] = [];
+    return s
+      .replace(
+        /\\([\\`*_{}[\]()#+\-.!~|>])/g,
+        (_, c: string) => `\uE000${escaped.push(c) - 1}\uE001`,
+      )
+      .replace(/!\[([^\]]*)\]\([^)]*\)/g, '$1')
+      .replace(/\[([^\]]+)\]\([^)]*\)/g, '$1')
+      .replace(/\[([^\]]+)\]\[[^\]]*\]/g, '$1')
+      .replace(/<\/?[a-z][^>]*>/gi, '')
+      .replace(/(\*\*|__)(.+?)\1/g, '$2')
+      .replace(/\*(\S(?:.*?\S)?)\*/g, '$1')
+      .replace(/(^|[^\p{L}\p{N}])_(\S(?:.*?\S)?)_(?![\p{L}\p{N}])/gu, '$1$2')
+      .replace(/~~(.+?)~~/g, '$1')
+      .replace(/\uE000(\d+)\uE001/g, (_, i: string) => escaped[Number(i)] ?? '');
+  };
+  return markdown
+    .split(/(`[^`]+`)/g)
+    .map((part, i) => (i % 2 ? part.slice(1, -1) : plain(part)))
+    .join('')
+    .replace(/\s+/g, ' ')
+    .trim();
 }
 
 /** Deterministic 7-char pseudo commit hash for a log row (decoration, stable across builds). */
@@ -150,9 +273,14 @@ export function latestHonor(honors: HonorLike[]): HonorLike | undefined {
   return [...honors].sort((a, b) => b.year.localeCompare(a.year))[0];
 }
 
-/** `// player: Peter Chen · UW iSchool ’27 · Seattle, Washington`. */
-export function heroEyebrow(name: string, edu: EducationLike, location: string): string {
-  return `// player: ${name}  ·  ${edu.short ?? edu.school} ${classYear(edu.end)}  ·  ${location}`;
+/** `// player: Peter Chen · UW iSchool ’27 · Seattle, Washington` (prefix from copy.yaml). */
+export function heroEyebrow(
+  name: string,
+  edu: EducationLike,
+  location: string,
+  prefix = '// player:',
+): string {
+  return `${prefix} ${name}  ·  ${edu.short ?? edu.school} ${classYear(edu.end)}  ·  ${location}`;
 }
 
 /** `Zhicheng (Peter) Chen — Informatics · Data Science @ University of Washington, Seattle, class of ’27.` */
@@ -169,11 +297,11 @@ export function gpaBadge(edu: EducationLike, honors: HonorLike[]): string | unde
   return honor ? `GPA ${gpa}  ★  ${honor.name} ${shortAcademicYear(honor.year)}` : `GPA ${gpa}`;
 }
 
-/** `Clock Stamp · iOS  [SHIPPED → App Store]`. */
-export function projectBadge(p: ProjectLike): string {
+/** `Clock Stamp · iOS  [SHIPPED → App Store]` (store label from copy.yaml). */
+export function projectBadge(p: ProjectLike, appStoreLabel = 'App Store'): string {
   const platform = p.platform.map((x) => PLATFORM_LABEL[x] ?? x).join('/');
   const status = STATUS_LABEL[p.status].toUpperCase();
-  const where = p.links?.appstore ? ' → App Store' : '';
+  const where = p.links?.appstore ? ` → ${appStoreLabel}` : '';
   return `${p.title} · ${platform}  [${status}${where}]`;
 }
 
@@ -220,6 +348,16 @@ const INTEREST_TONE: Record<string, TickerTone> = {
   'vibe-coding': 'gold',
 };
 
+/** Ticker tag words (copy.yaml `ticker.tags`); platform and interest tags come from content. */
+export interface TickerTags {
+  xp: string;
+  now: string;
+  work: string;
+  ping: string;
+  edu: string;
+}
+const DEFAULT_TAGS: TickerTags = { xp: 'XP', now: 'NOW', work: 'WORK', ping: 'PING', edu: 'EDU' };
+
 /** The scrolling ticker: built only from content facts and now.md lines. */
 export function tickerItems(input: {
   edu: EducationLike;
@@ -229,27 +367,29 @@ export function tickerItems(input: {
   interests: InterestLike[];
   now: string[];
   email?: string | undefined;
+  tags?: TickerTags;
 }): TickerItem[] {
   const items: TickerItem[] = [];
   const { edu } = input;
+  const tags = input.tags ?? DEFAULT_TAGS;
   if (edu.gpa) {
     const honor = latestHonor(input.honors);
     items.push({
-      tag: 'XP',
+      tag: tags.xp,
       text: `${edu.gpa_label} ${edu.gpa}${honor ? ` · ${honor.name} ${shortAcademicYear(honor.year)}` : ''}`,
       tone: 'green',
     });
   }
-  for (const line of input.now) items.push({ tag: 'NOW', text: line, tone: 'gold' });
+  for (const line of input.now) items.push({ tag: tags.now, text: line, tone: 'gold' });
   for (const x of input.experience.filter((e) => e.end === 'present' && e.kind !== 'volunteer')) {
-    items.push({ tag: 'WORK', text: `${x.role} @ ${x.company}`, tone: 'enchant' });
+    items.push({ tag: tags.work, text: `${x.role} @ ${x.company}`, tone: 'enchant' });
   }
   for (const p of input.projects.filter((p) => p.featured)) {
     const platform = p.platform.map((x) => PLATFORM_LABEL[x] ?? x).join('/');
     items.push({ tag: platform, text: `${p.title} · ${STATUS_LABEL[p.status]}`, tone: 'gold' });
   }
   items.push({
-    tag: (edu.short ?? 'EDU').split(' ')[0]!.toUpperCase(),
+    tag: (edu.short?.split(' ')[0] || tags.edu).toUpperCase(),
     text: `${[edu.major, edu.track].filter(Boolean).join(' · ') || edu.degree} ${classYear(edu.end)}`,
     tone: 'diamond',
   });
@@ -260,7 +400,7 @@ export function tickerItems(input: {
       tone: INTEREST_TONE[i.tag!] ?? 'diamond',
     });
   }
-  if (input.email) items.push({ tag: 'PING', text: input.email, tone: 'green' });
+  if (input.email) items.push({ tag: tags.ping, text: input.email, tone: 'green' });
   return items;
 }
 
@@ -269,7 +409,10 @@ export type LogIcon = 'diamond' | 'command' | 'terminal' | 'bookshelf' | 'grass'
 export interface LogRow {
   hash: string;
   head: boolean;
+  /** `2024-07 → 2024-09`; kept on one line. */
   dates: string;
+  /** Shown after the dates and free to wrap, e.g. `(expected)` for a degree in progress. */
+  note?: string;
   title: string;
   sub: string;
   icon: LogIcon;
@@ -318,11 +461,11 @@ export function gitLog(input: {
 }): LogRow[] {
   const rows: LogRow[] = experienceRows(input.experience, input.nowLabel);
   for (const e of input.education) {
-    const range = logRange(e.start, e.end, input.nowLabel);
     rows.push({
       hash: pseudoHash(`${e.school}|${e.degree}|${e.start}`),
       head: false,
-      dates: e.expected ? `${range} ${input.expectedLabel ?? '(expected)'}` : range,
+      dates: logRange(e.start, e.end, input.nowLabel),
+      ...(e.expected ? { note: input.expectedLabel ?? '(expected)' } : {}),
       title: [e.degree, e.track].filter(Boolean).join(' · '),
       sub: [e.school, e.department].filter(Boolean).join(' · '),
       icon: 'bookshelf',
@@ -343,15 +486,6 @@ export function gitLog(input: {
       sortKey: '9999',
     },
     ...rows,
-  ];
-}
-
-/** `ping` transcript lines for the contact terminal. */
-export function pingLines(email: string): string[] {
-  return [
-    `PING peter (${email}): 56 data bytes`,
-    `64 bytes from ${email}: icmp_seq=0 ttl=64 time=0.27 ms`,
-    '--- 1 packet transmitted, 1 received, 0% packet loss ---',
   ];
 }
 

@@ -1,8 +1,9 @@
 import { readFileSync, readdirSync } from 'node:fs';
 import { expect, test, type Page } from '@playwright/test';
 import { parse } from 'yaml';
-import { logRange } from '../../src/lib/derive';
+import { logRange, nowLines } from '../../src/lib/derive';
 import { formatRange, formatYearMonth } from '../../src/lib/format';
+import { copy, escapeRe } from './copy';
 import { V2 } from './site';
 
 /**
@@ -92,10 +93,10 @@ test.describe('content/ renders completely', () => {
     }
     for (const h of honors) expected.push(`${h.name}, ${h.org}, ${h.year}`, h.note);
     // Experience is a `git log` (M1): each commit reads role, then `company · location`, then
-    // its dates as derive.logRange prints them (`2024-07 → 2024-09`; `present` → `now`).
+    // its dates as derive.logRange prints them (`2024-07 → 2024-09`; `present` → labels.now).
     for (const x of experience) {
       expected.push(
-        `${x.role} ${x.company} · ${x.location} ${logRange(String(x.start), String(x.end))}`,
+        `${x.role} ${x.company} · ${x.location} ${logRange(String(x.start), String(x.end), copy.labels.now)}`,
       );
       expected.push(...(x.highlights as string[]));
     }
@@ -142,14 +143,16 @@ test.describe('content/ renders completely', () => {
         await expect(page.locator(`${card} .meta`, { hasText: line })).toHaveCount(1);
       }
       if (fm.stack?.length)
-        await expect(page.locator(`${card} .meta`, { hasText: 'Stack:' })).toHaveText(
-          `Stack: ${fm.stack.join(', ')}`,
-        );
+        await expect(
+          page.locator(`${card} .meta`, { hasText: copy.projects.stack_label }),
+        ).toHaveText(`${copy.projects.stack_label} ${fm.stack.join(', ')}`);
       const { other = [], ...named } = fm.links ?? {};
       for (const url of Object.values(named))
         await expect(page.locator(`${card} a[href="${url}"]`)).toHaveCount(1);
       for (const l of other as { label: string; url: string }[])
-        await expect(page.locator(`${card} a[href="${l.url}"]`)).toHaveText(l.label);
+        await expect(page.locator(`${card} a[href="${l.url}"]`)).toHaveAccessibleName(
+          new RegExp(`^${escapeRe(l.label)}(\\s|$)`),
+        );
     }
   });
 
@@ -171,7 +174,8 @@ test.describe('content/ renders completely', () => {
     await expect(page.locator('#skills dd')).toHaveText(
       groups.map(
         (g) =>
-          g.items.map(String).join(', ') + (g.basic?.length ? `; basic ${g.basic.join(', ')}` : ''),
+          g.items.map(String).join(', ') +
+          (g.basic?.length ? `; ${copy.about.skills_basic} ${g.basic.join(', ')}` : ''),
       ),
     );
   });
@@ -187,7 +191,9 @@ test.describe('content/ renders completely', () => {
       return;
     }
     for (const t of aviation.tools ?? [])
-      await expect(section.locator(`a[href="${t.url}"]`)).toHaveText(t.name);
+      await expect(section.locator(`a[href="${t.url}"]`)).toHaveAccessibleName(
+        new RegExp(`^${escapeRe(t.name)}(\\s|$)`),
+      );
     for (const r of aviation.seat_rules ?? []) await expect(section).toContainText(r);
   });
 
@@ -208,9 +214,10 @@ test.describe('content/ renders completely', () => {
   test('footer: copyright line, update note, automatic date and version', async ({ page }) => {
     await page.goto(V2);
     const footer = page.locator('footer');
-    const holder = site.footer.copyright_holder.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    const holder = escapeRe(site.footer.copyright_holder);
+    const rights = escapeRe(copy.footer.rights);
     await expect(footer).toContainText(
-      new RegExp(`© ${site.footer.copyright_start}(–\\d{4})? ${holder}\\. All rights reserved\\.`),
+      new RegExp(`© ${site.footer.copyright_start}(–\\d{4})? ${holder}\\. ${rights}`),
     );
     if (site.footer.update_note) await expect(footer).toContainText(site.footer.update_note);
     await expect(footer.locator('time')).toHaveAttribute('datetime', /^\d{4}-\d{2}-\d{2}$/);
@@ -222,6 +229,15 @@ test.describe('content/ renders completely', () => {
     const html = (await page.content()).toLowerCase();
     for (const e of profile.emails.filter((x: { public?: boolean }) => !x.public))
       expect(html).not.toContain(e.address.toLowerCase());
+  });
+
+  test('now.md lines are in the ticker as plain text', async ({ page }) => {
+    await page.goto(V2);
+    const ticker = page.locator('.ticker__track').first();
+    const lines = nowLines(readFileSync('content/now.md', 'utf8'));
+    for (const line of lines)
+      await expect(ticker).toContainText(`[${copy.ticker.tags.now}] ${line}`);
+    await expect(ticker).not.toContainText(/\]\(|\*\*/);
   });
 
   test('hero links to the résumé', async ({ page }) => {

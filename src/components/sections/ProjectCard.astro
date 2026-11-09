@@ -11,6 +11,7 @@
 import { Image } from 'astro:assets';
 import Card from '../ui/Card.astro';
 import Chip from '../ui/Chip.astro';
+import NewTab from '../ui/NewTab.astro';
 import VoxelBlock, { type BlockName } from '../ui/VoxelBlock.astro';
 import { projectView, type Project, type ProjectsCopy } from './projects-view';
 
@@ -75,8 +76,10 @@ const block = BLOCK[p.platform[0] ?? ''] ?? 'gold';
           <span class="pc__prompt" aria-hidden="true">
             &gt;
           </span>
-          <a href={l.url} target="_blank" rel="noopener" aria-label={`${l.label} — ${p.title}`}>
+          <a href={l.url} target="_blank" rel="noopener">
             {l.label}
+            <span class="visually-hidden"> — {p.title}</span>
+            <NewTab />
           </a>
         </li>
       ))}

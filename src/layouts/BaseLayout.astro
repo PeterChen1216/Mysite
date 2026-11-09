@@ -3,22 +3,23 @@ import { Font } from 'astro:assets';
 import '../styles/tokens.css';
 import '../styles/global.css';
 import '../styles/motion.css';
-import { getSite } from '../lib/content';
+import { getCopy, getSite } from '../lib/content';
 import { withBase } from '../lib/paths';
+import { motionCssVars } from '../motion/params';
 
 interface Props {
   title?: string;
   description?: string;
 }
 
-const site = await getSite();
+const [site, copy] = await Promise.all([getSite(), getCopy()]);
 const title = Astro.props.title ?? site.meta.title;
 const description = Astro.props.description ?? site.meta.description;
 const canonical = new URL(Astro.url.pathname, Astro.site);
 ---
 
 <!doctype html>
-<html lang="en">
+<html lang="en" style={motionCssVars()}>
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
@@ -49,7 +50,7 @@ const canonical = new URL(Astro.url.pathname, Astro.site);
   </head>
   <body>
     <a class="skip-link" href="#main">
-      Skip to content
+      {copy.labels.skip_link}
     </a>
     <slot />
   </body>

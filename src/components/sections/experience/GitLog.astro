@@ -11,6 +11,7 @@
  */
 import { Image } from 'astro:assets';
 import type { ImageMetadata } from 'astro';
+import Glyphs from '../../ui/Glyphs.astro';
 import VoxelBlock from '../../ui/VoxelBlock.astro';
 import type { LogRow } from '../../../lib/derive';
 import type { PageData } from '../../../lib/page-data';
@@ -62,7 +63,9 @@ const commits = rows.map((row) => {
           <h3 class="commit__title">{row.title}</h3>
           <p class="commit__sub">
             {row.head && headHref ? (
-              <a href={headHref}>{row.sub}</a>
+              <a href={headHref}>
+                <Glyphs text={row.sub} />
+              </a>
             ) : entry ? (
               <>
                 {entry.url ? <a href={entry.url}>{entry.company}</a> : entry.company} ·{' '}
@@ -74,12 +77,15 @@ const commits = rows.map((row) => {
           </p>
         </div>
         <p class="commit__dates">
-          {row.dates.split('→').map((part, i) => (
-            <>
-              {i > 0 && <span class="arrow">→</span>}
-              {part}
-            </>
-          ))}
+          <span class="commit__range">
+            {row.dates.split('→').map((part, i) => (
+              <>
+                {i > 0 && <span class="arrow">→</span>}
+                {part}
+              </>
+            ))}
+          </span>
+          {row.note && <span class="commit__note"> {row.note}</span>}
         </p>
         <p class="commit__hash" aria-hidden="true">
           {row.hash}
@@ -193,12 +199,15 @@ const commits = rows.map((row) => {
     color: var(--c);
     white-space: nowrap;
   }
-  /* Figma: text/lo (3.0:1) → text/mid for AA. */
+  /* Figma: text/lo (3.0:1) → text/mid for AA. The range stays on one line; a note such as
+     "(expected)" wraps below it when the column is narrow. */
   .commit__dates {
     grid-area: dates;
     margin: 0;
     font: var(--type-code-sm);
     color: var(--color-text-mid);
+  }
+  .commit__range {
     white-space: nowrap;
   }
   /* The self-hosted JetBrains Mono subset has no U+2192, so the fallback font drew a small, low
@@ -360,7 +369,7 @@ const commits = rows.map((row) => {
       font-size: 20px;
     }
     /* Very narrow screens (< 360 px) may wrap the dates rather than overflow. */
-    .commit__dates {
+    .commit__range {
       white-space: normal;
     }
     .commit__block :global(.voxel) {

@@ -1,5 +1,6 @@
 ---
 /** Footer (Figma "Footer"): copyright · domain, tagline, version · last updated, back to top. */
+import Glyphs from '../ui/Glyphs.astro';
 import type { PageData } from '../../lib/page-data';
 
 interface Props {
@@ -21,7 +22,7 @@ const { footer, copy, site } = data;
       {site.footer.update_note && <span class="foot__note"> · {site.footer.update_note}</span>}
     </p>
     <a class="foot__top" href="#top">
-      {copy.footer.back_to_top}
+      <Glyphs text={copy.footer.back_to_top} />
     </a>
   </div>
 </footer>

@@ -1,6 +1,6 @@
 # STATUS（会话交接 · PLAN §15.6）
 
-> 更新：2026-11-09 夜 · 分支 `claude/affectionate-dirac-6zpbqu`
+> 更新：2026-11-09（第二轮评审修复后）· 分支 `claude/affectionate-dirac-6zpbqu`
 
 ## 当前状态
 | 里程碑 | 状态 |
@@ -31,6 +31,8 @@
 - Experience HEAD 行日期列 "now →"（Figma 写 "2026 →"；按 DECISIONS Q7 不写年份）；说明句改为 "newest first"（Figma 写 "in chronological order"，与倒序列表不符）
 - 页脚："built with voxels, coffee & too many flights"（PLAN §5.4 举过的例子）
 - "next --chunk ??? (loading…)" 预告卡
+- 第二轮评审后新增的界面文字（以前写死在代码里，现在都在 copy.yaml，可改）：读屏用的名称（跳转链接 "Skip to content"、导航 "Sections"、logo "zhic.me — back to top"、滚动条 "Status"）、Hero 眉题前缀 "// player:"、有航线时的徽章模板 `AvGeek ✈ {from} ⇄ {to}`、滚动条标签词 XP/NOW/WORK/PING/EDU、ping 终端的三行输出与 `open mailto:{email}`
+- `{占位符}` 现在在 copy.yaml 的**每一行**都能用（新增 `{host}` = 小写名字、`{domain}`、`{email}`）；写错的占位符会让构建失败，不会出现在页面上。终端里的 "peter@zhic.me" 和 "ping peter" 都来自 `{host}@{domain}`
 
 ### C. Figma 里关于你本人的文案（**没有上页面**；你同意的我再加）
 1. Whoami 改写版："Informatics, Data Science track, graduating June 2027. Huge tech fan…"（若采用需改为 March 2027）——目前页面用你的 about.md 原文；卡片标题 Figma 原文 "Hi, I’m Peter — a junior at the UW Information School."（若要写年级，改模板即可）
@@ -55,6 +57,8 @@
 - Grass 按钮 hover：Figma 组件是浅绿底黄字（PLAN §5.2 文字写"蓝底黄字"）——按 Figma 组件实现并为 AA 加深；Stone 按钮 hover 为蓝底黄字
 - 第二条轨道环：Figma 是倾斜 18° 的椭圆并摆动 30°；实现为来回摆动（整圈旋转的椭圆看起来不对）
 - Hero 舞台在 1024–1279 缩小显示；徽章文字始终 ≥ 8 px，缩到 0.78 以下（1024 附近与手机）时徽章隐藏（同样的事实在 About / Projects 里都有）
+- GPA 徽章：真实荣誉名更长（"Annual Dean's List 2025–26"），按 Figma 的 left 300 会在 1100–1440 被页面右边裁掉。现改为靠右对齐：≥ 1280 时像 Figma 一样伸出舞台 40 px（右缘 1416/1440，与金块不重叠）；1100–1279 时盖住金块的上半（纯装饰，徽章在上层）
+- 玩家卡可以用键盘 Tab 选中，选中时显示真人照片（原来只有鼠标悬停能看到，Q7）；滚动条是可聚焦的命名区域，键盘聚焦时暂停滚动
 
 ### E. 之前还没答的问题
 1. Classmate Map：新简历没写，是否保留？
@@ -72,8 +76,14 @@
 - **事实**：全部来自 `content/`，由 `src/lib/derive.ts`（16 个单测）与 `src/lib/page-data.ts` 计算；界面文案在 `content/copy.yaml`。
 - **动效**：CSS 优先，`html.motion` 仅在 JS 可用且未开启 reduced-motion 时添加；开场序列按 Figma 参数单次播放；hover 像素粒子；地球 hover 减速、拖拽旋转、离屏暂停。无 JS 与 reduced-motion 下页面完整静止。
 - **字体**：Astro Fonts API + 度量匹配 fallback（CLS ≈ 0）。
-- **质量**：单测 74、E2E 42（Chromium / 移动 Chromium，CI 另跑 WebKit）、axe 0 严重、构建零警告、首屏 JS 2.0 KB gz（预算 180 KB）、Lighthouse 移动端 99–100 / 100 / 100 / 100、LCP ≈ 0.76 s；1440/1024/768/390 无横向滚动。
-- **流程**：3 个分区 agent 并行实现（独立 worktree），我集成；独立评审（事实 / 视觉：18 条发现，16 条已修，2 条按 Figma 组件驳回；无障碍 / 代码：见 PR），修复后全部检查重新通过。
+- **质量**：单测 91（覆盖率门槛按文件 ≥ 80%，现已包含 derive.ts 与 projects-view.ts）、E2E 64（Chromium / 移动 Chromium，CI 另跑 WebKit）；axe 0 严重——正常动效、reduced-motion、无 JS 三种情况都测；构建零警告、首屏 JS 2.2 KB gz（预算 180 KB）、Lighthouse 移动端 99–100 / 100 / 100 / 100、LCP ≈ 0.76 s。新增布局测试：360–1920 共 9 个宽度逐词检查文字不被裁切、不溢出到相邻元素（旧的"无横向滚动"测试因 `.page{overflow-x:clip}` 永远通过，已替换）。
+- **流程**：3 个分区 agent 并行实现（独立 worktree），我集成；两轮独立评审 + 对抗式复核。第一轮（事实 / 视觉）18 条：16 条已修，2 条按 Figma 组件驳回。第二轮（无障碍 / 代码）25 条：24 条确认、1 条驳回；23 条产品问题全部修复（见下），另 1 条是评审流程自身的问题（评审副本共用 node_modules 缓存，已改流程，主仓库未受影响）。
+
+### 第二轮评审修复（无障碍 / 动效 / 代码）
+- 无障碍：滚动条在 reduced-motion / 无 JS 下是无名称、键盘无法滚动的区域（axe 严重）→ 命名区域 + 可聚焦；键盘聚焦暂停滚动（WCAG 2.2.2）；页面打开后再开启"减少动态效果"时，地球会因滚动 / 拖拽重新转起来、悬停粒子仍会出现 → 已修；h1 末尾的 `_` 光标、"▲ back to spawn"、"say hi ↓" 的符号不再被读出；11 个新标签页链接补上"(opens in a new tab)"
+- 布局：GPA 徽章在 1100–1440 被裁切；教育行 "(expected)" 在 1024–1279 压在学校名上 → 日期保持一行、"(expected)" 换到下一行；About 卡片缺席时（无兴趣图标 / 无航空数据 / 无进行中项目）网格留空洞 → 按实际卡片生成网格；技能 basic 组在窄屏不换行
+- 内容管线：now.md 原样把 Markdown（`[链接](…)`、`**粗体**`、标题）送进滚动条 → 新解析器只保留文字（有单测）；now.md 注释写的是"驱动 Hero 终端"，实际只进滚动条 → 已更正
+- 动效与性能：`src/motion/params.ts` 现在真正驱动 CSS（以 `--m-*` 自定义属性注入），删掉未用 / 已漂移的参数；离屏的循环动画（光标、轨道、滚动条）暂停，页面静止时不再每秒画 60 帧；开场动画结束后不再残留 22 个合成层，也不会让打字行停在最后一步
 
 ## M1 验收（PLAN §8）
 | 验收项 | 结果 |
@@ -83,7 +93,7 @@
 | 2.5D 像素地球（无 WebGL） | ✅ CSS 条带法 |
 | hover 粒子、打字机、reduced-motion 全覆盖 | ✅ |
 | 响应式 390 / 768 / 1024 / 1440 | ✅ |
-| 移动端 LCP ≤ 2.5 s、axe 0 严重、键盘可达 | ✅（LCP ≈ 0.76 s） |
+| 移动端 LCP ≤ 2.5 s、axe 0 严重、键盘可达 | ✅（LCP ≈ 0.76 s；axe 覆盖动效 / reduced-motion / 无 JS；照片与滚动条可用键盘操作） |
 | 业主人工验收 | ⏳ 早上 |
 
 ## 与计划的偏离

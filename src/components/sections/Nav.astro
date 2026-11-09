@@ -12,12 +12,12 @@ const { copy, links } = data;
 ---
 
 <header class="nav">
-  <a class="nav__logo" href="#top" aria-label={`${data.site.domain} — back to top`}>
+  <a class="nav__logo" href="#top" aria-label={copy.nav.logo_label}>
     <VoxelBlock name="terminal" size={39} shadow={false} eager />
     <span class="nav__name">{data.site.domain}</span>
     <span class="nav__cursor" data-loop="blink" aria-hidden="true"></span>
   </a>
-  <nav class="nav__links" aria-label="Sections">
+  <nav class="nav__links" aria-label={copy.nav.sections_label}>
     <ul>
       {copy.nav.links.map((l) => (
         <li>
@@ -29,7 +29,7 @@ const { copy, links } = data;
   <div class="nav__actions">
     <p class="nav__status">
       <span class="nav__dot" aria-hidden="true"></span>
-      {data.navStatus}
+      {copy.nav.status}
     </p>
     <McButton href={links.resume} external>
       {copy.nav.resume}

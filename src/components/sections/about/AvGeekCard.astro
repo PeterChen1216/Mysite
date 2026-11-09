@@ -7,6 +7,7 @@
  */
 import Card from '../../ui/Card.astro';
 import CardTitle from '../../ui/CardTitle.astro';
+import NewTab from '../../ui/NewTab.astro';
 import PixelGlobe from '../../ui/PixelGlobe.astro';
 import type { PageData } from '../../../lib/page-data';
 
@@ -111,6 +112,7 @@ const label = copy.about.avgeek_panels;
               <li>
                 <a class="av__tool" href={t.url} target="_blank" rel="noopener">
                   {t.name}
+                  <NewTab />
                 </a>
               </li>
             ))}

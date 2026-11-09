@@ -3,7 +3,8 @@
  * Hero stage (Figma "HeroStage" 17:125, 560×640): pixel globe with orbit rings, ten voxel blocks
  * that drop in, the player card (pixel portrait; hover shows the real photo — DECISIONS Q7), and
  * three tooltips whose text comes from content/ via src/lib/derive.ts. Decorative except the
- * tooltips, which repeat facts available elsewhere on the page.
+ * tooltips, which repeat facts available elsewhere on the page, and the player card: it takes
+ * keyboard focus so the photo can be revealed without a mouse.
  */
 import { Image } from 'astro:assets';
 import orbit from '../../assets/voxel/hero/orbit.png';
@@ -67,7 +68,14 @@ const blocks: Array<{ name: BlockName; x: number; y: number; w: number; glow?: s
         <VoxelBlock name={b.name} size={b.w} shadow={false} eager />
       </div>
     ))}
-    <figure class="stage__card" data-intro="rise" style="--i:1" data-particles>
+    <figure
+      class="stage__card"
+      data-intro="rise"
+      style="--i:1"
+      data-particles
+      tabindex="0"
+      aria-labelledby="stage-photo-caption"
+    >
       <img class="stage__portrait" src={portrait.src} width="156" height="195" alt="" />
       <Image
         class="stage__photo"
@@ -80,19 +88,21 @@ const blocks: Array<{ name: BlockName; x: number; y: number; w: number; glow?: s
         loading="lazy"
       />
       <span class="stage__xp" aria-hidden="true"></span>
-      <figcaption class="visually-hidden">{data.profile.avatar_alt}</figcaption>
+      <figcaption id="stage-photo-caption" class="visually-hidden">
+        {data.profile.avatar_alt}
+      </figcaption>
     </figure>
     {data.githubHandle && (
       <p class="stage__tag" data-intro="rise" style="--i:2">
         <span class="stage__tag-in">{data.githubHandle}</span>
       </p>
     )}
+    <!-- Badges are anchored to the right edge: their text length depends on content. -->
     {data.hero.gpaBadge && (
-      <div class="stage__tip" style="left:300px;top:8px" data-intro="rise" data-particles>
+      <div class="stage__tip stage__tip--gpa" data-intro="rise" data-particles>
         <Tooltip tone="gold" text={data.hero.gpaBadge} />
       </div>
     )}
-    <!-- Anchored to the right edge: badge text length depends on content. -->
     <div class="stage__tip" style="right:0;top:118px" data-intro="rise" data-particles>
       <Tooltip tone="white" text={data.hero.avgeekBadge} />
     </div>
@@ -211,7 +221,8 @@ const blocks: Array<{ name: BlockName; x: number; y: number; w: number; glow?: s
     opacity: 0;
     transition: opacity 200ms steps(4);
   }
-  .stage__card:hover .stage__photo {
+  .stage__card:hover .stage__photo,
+  .stage__card:focus-visible .stage__photo {
     opacity: 1;
   }
   .stage__xp {
@@ -235,6 +246,18 @@ const blocks: Array<{ name: BlockName; x: number; y: number; w: number; glow?: s
     letter-spacing: var(--type-pixel-tiny-tracking);
     color: #fff;
     zoom: var(--inv, 1);
+  }
+  /* GPA badge: right-anchored so a long honor name can't run off the page. From 1280 px the
+     gutter is ≥ 64 px and the badge overhangs the stage by 40 px as in Figma (its right edge at
+     1416 of 1440), which also keeps it clear of the gold block. */
+  .stage__tip--gpa {
+    right: 0;
+    top: 8px;
+  }
+  @media (min-width: 1280px) {
+    .stage__tip--gpa {
+      right: -40px;
+    }
   }
   /* Zoom the badge itself (not its positioned wrapper, whose offsets must not scale). */
   .stage__tip > :global(.tooltip) {

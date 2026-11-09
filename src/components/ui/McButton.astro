@@ -32,7 +32,7 @@ const newTab = external ? (await getCopy()).labels.new_tab : '';
   href={href}
   {...(external ? { target: '_blank', rel: 'noopener' } : {})}
   {...(download ? { download: '' } : {})}
-  {...(ariaLabel ? { 'aria-label': ariaLabel } : {})}
+  {...(ariaLabel ? { 'aria-label': external ? `${ariaLabel} ${newTab}` : ariaLabel } : {})}
   data-particles
 >
   <span class="mc-btn__label">

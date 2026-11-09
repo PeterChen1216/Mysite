@@ -5,6 +5,7 @@
  */
 import Card from '../../ui/Card.astro';
 import CardTitle from '../../ui/CardTitle.astro';
+import NewTab from '../../ui/NewTab.astro';
 import VoxelBlock from '../../ui/VoxelBlock.astro';
 import { statusBar } from '../../../lib/derive';
 import type { PageData } from '../../../lib/page-data';
@@ -45,6 +46,7 @@ const store = project.links?.appstore;
       <a class="now__link" href={store} target="_blank" rel="noopener">
         {copy.about.now_link}
         <span aria-hidden="true"> →</span>
+        <NewTab />
       </a>
     )}
   </div>

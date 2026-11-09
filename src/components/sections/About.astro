@@ -3,7 +3,9 @@
  * About bento (Figma "About" 20:715): section header, then the "Inventory" grid —
  * whoami (2 columns) beside GPA + now-building, then education beside off-the-clock and
  * AvGeek, with the skills inventory (not in Figma, same visual language) under those two.
- * Every fact comes from PageData; the cards in ./about/ only lay it out.
+ * Every fact comes from PageData; the cards in ./about/ only lay it out. Now-building,
+ * off-the-clock and AvGeek appear only when content has something for them, so the grid
+ * template is built from the cards that are actually there (no empty cells).
  */
 import SectionHeader from '../ui/SectionHeader.astro';
 import VoxelBlock from '../ui/VoxelBlock.astro';
@@ -38,6 +40,24 @@ const shownElsewhere = new Set([
   ...(hasAvgeek && aviationInterest ? [aviationInterest] : []),
 ]);
 const otherInterests = interests.items.filter((i) => !shownElsewhere.has(i));
+
+// Grid areas for the cards present: three columns (≥ 1280), two (≥ 768), one.
+const side = [offClock.length > 0 && 'off', hasAvgeek && 'av'].filter(
+  (a): a is string => typeof a === 'string',
+);
+const rows = (list: string[]) => list.map((r) => `'${r}'`).join(' ');
+const areasLg = rows([
+  'who who stack',
+  ...(side.length === 2 ? [`edu ${side.join(' ')}`] : side.map((a) => `edu ${a} ${a}`)),
+  'edu skills skills',
+]);
+const areasMd = rows([
+  'who who',
+  'stack stack',
+  ...side.map((a) => `edu ${a}`),
+  side.length > 0 ? 'skills skills' : 'edu skills',
+]);
+const areasSm = rows(['who', 'stack', 'edu', ...side, 'skills']);
 ---
 
 <section class="about" id="about" aria-labelledby="about-title">
@@ -53,9 +73,9 @@ const otherInterests = interests.items.filter((i) => !shownElsewhere.has(i));
     title={copy.about.title}
     blurb={copy.about.blurb}
   />
-  <div class="inv">
+  <div class="inv" style={`--areas-lg:${areasLg};--areas-md:${areasMd};--areas-sm:${areasSm}`}>
     <WhoamiCard data={data} others={otherInterests} />
-    <div class="inv__stack">
+    <div class:list={['inv__stack', { 'inv__stack--one': !building }]}>
       <XpCard data={data} />
       {building && <NowCard data={data} project={building} />}
     </div>
@@ -93,10 +113,8 @@ const otherInterests = interests.items.filter((i) => !shownElsewhere.has(i));
   .inv {
     display: grid;
     grid-template-columns: repeat(3, minmax(0, 1fr));
-    grid-template-areas:
-      'who who stack'
-      'edu off av'
-      'edu skills skills';
+    /* e.g. 'who who stack' 'edu off av' 'edu skills skills' — built in the frontmatter. */
+    grid-template-areas: var(--areas-lg);
     gap: 20px;
   }
   .inv__stack {
@@ -143,16 +161,14 @@ const otherInterests = interests.items.filter((i) => !shownElsewhere.has(i));
     }
     .inv {
       grid-template-columns: repeat(2, minmax(0, 1fr));
-      grid-template-areas:
-        'who who'
-        'stack stack'
-        'edu off'
-        'edu av'
-        'skills skills';
+      grid-template-areas: var(--areas-md);
     }
     .inv__stack {
       display: grid;
       grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+    .inv__stack--one {
+      grid-template-columns: minmax(0, 1fr);
     }
   }
   @media (max-width: 767px) {
@@ -169,7 +185,7 @@ const otherInterests = interests.items.filter((i) => !shownElsewhere.has(i));
     }
     .inv {
       grid-template-columns: minmax(0, 1fr);
-      grid-template-areas: 'who' 'stack' 'edu' 'off' 'av' 'skills';
+      grid-template-areas: var(--areas-sm);
     }
     .inv__stack {
       grid-template-columns: minmax(0, 1fr);

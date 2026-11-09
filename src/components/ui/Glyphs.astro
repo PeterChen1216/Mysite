@@ -1,0 +1,18 @@
+---
+/**
+ * A copy.yaml label whose leading or trailing symbols (`▲ back to spawn`, `say hi ↓`) are shown
+ * but hidden from screen readers, so links are read by their words (derive.glyphParts).
+ */
+import { glyphParts } from '../../lib/derive';
+
+interface Props {
+  text: string;
+}
+const { lead, text, trail } = glyphParts(Astro.props.text);
+---
+
+{[
+  lead && <span aria-hidden="true">{lead}</span>,
+  text,
+  trail && <span aria-hidden="true">{trail}</span>,
+]}

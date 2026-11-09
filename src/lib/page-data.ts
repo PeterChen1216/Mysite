@@ -2,7 +2,6 @@
  * Everything the voxel page shows, gathered once at build time. Sections receive this object and
  * only lay it out; every fact is taken from content/ directly or computed by src/lib/derive.ts.
  */
-import { getEntry } from 'astro:content';
 import { contentStamp, formatVersion } from './build-info';
 import {
   getAviation,
@@ -12,6 +11,7 @@ import {
   getExperience,
   getHonors,
   getInterests,
+  getNowLines,
   getProfile,
   getProjects,
   getProse,
@@ -28,23 +28,12 @@ import {
   gpaBadge,
   heroEyebrow,
   nowProject,
-  pingLines,
   projectBadge,
   tickerItems,
   whoamiLine,
 } from './derive';
 import { copyrightYears } from './format';
 import { withBase } from './paths';
-
-/** Bullet lines of now.md (HTML comments ignored). */
-async function nowLines(): Promise<string[]> {
-  const entry = await getEntry('prose', 'now');
-  return (entry?.body ?? '')
-    .replace(/<!--[\s\S]*?-->/g, '')
-    .split('\n')
-    .map((l) => l.replace(/^\s*[-*]\s+/, '').trim())
-    .filter(Boolean);
-}
 
 export async function getPageData() {
   const [
@@ -74,7 +63,7 @@ export async function getPageData() {
     getAviation(),
     getProjects(),
     getProse('about'),
-    nowLines(),
+    getNowLines(),
   ]);
 
   const edu = education[0]!;
@@ -90,14 +79,7 @@ export async function getPageData() {
   const building = nowProject(projectFacts);
   const stamp = contentStamp();
   const year = new Date().getFullYear();
-  const templateVars = {
-    first: profile.name.display.split(' ')[0],
-    city: profile.location.split(',')[0]?.trim(),
-    major: edu.major,
-    department: edu.department,
-    school: edu.school,
-    short: edu.short,
-  };
+  const route = aviation.watching[0];
 
   return {
     site,
@@ -127,13 +109,13 @@ export async function getPageData() {
     socials: profile.socials.map((s) => ({ ...s, display: displayUrl(s.url) })),
     githubHandle: githubHandle(profile.socials),
     hero: {
-      eyebrow: heroEyebrow(profile.name.display, edu, profile.location),
+      eyebrow: heroEyebrow(profile.name.display, edu, profile.location, copy.hero.eyebrow_prefix),
       whoami: whoamiLine(profile.name.full, edu, copy.labels.class_of),
       tags: interests.items.map((i) => i.tag).filter((t): t is string => Boolean(t)),
       gpaBadge: gpaBadge(edu, honors),
-      projectBadge: projectBadge(featured),
-      avgeekBadge: aviation.watching[0]
-        ? `AvGeek  ✈  ${aviation.watching[0].from} ⇄ ${aviation.watching[0].to}`
+      projectBadge: projectBadge(featured, copy.projects.link_appstore),
+      avgeekBadge: route
+        ? fillTemplate(copy.hero.avgeek_route, { from: route.from, to: route.to })
         : copy.hero.avgeek_badge,
     },
     ticker: tickerItems({
@@ -144,6 +126,7 @@ export async function getPageData() {
       interests: interests.items,
       now,
       email: primaryEmail,
+      tags: copy.ticker.tags,
     }),
     log: gitLog({
       status: profile.status,
@@ -155,10 +138,6 @@ export async function getPageData() {
       expectedLabel: copy.labels.expected,
     }),
     communityLog: experienceRows(community, copy.labels.now),
-    /** copy.yaml strings with {placeholders} filled from content (no facts live in copy.yaml). */
-    navStatus: fillTemplate(copy.nav.status, templateVars),
-    whoamiTitle: fillTemplate(copy.about.whoami_title, templateVars),
-    ping: pingLines(primaryEmail),
     footer: {
       copyright: `${copyrightYears(site.footer.copyright_start, year)} ${site.footer.copyright_holder}`,
       version: formatVersion(site.version, stamp),

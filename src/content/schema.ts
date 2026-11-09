@@ -342,7 +342,15 @@ export const copySchema = z
   .object({
     id,
     nav: z
-      .object({ links: z.array(navLink).min(1), status: text, resume: text, say_hi: text })
+      .object({
+        links: z.array(navLink).min(1),
+        status: text,
+        resume: text,
+        say_hi: text,
+        /** Screen-reader names of the logo link and of the section links. */
+        logo_label: text,
+        sections_label: text,
+      })
       .strict(),
     hero: z
       .object({
@@ -356,7 +364,18 @@ export const copySchema = z
         summon_ok: text,
         cta_projects: text,
         cta_resume: text,
+        eyebrow_prefix: text,
         avgeek_badge: text,
+        /** Badge once aviation.yaml `watching` has a route; {from} and {to} are its airports. */
+        avgeek_route: text,
+      })
+      .strict(),
+    ticker: z
+      .object({
+        /** Screen-reader name of the band. */
+        label: text,
+        /** Tag words; platform and interest tags come from content. */
+        tags: z.object({ xp: text, now: text, work: text, ping: text, edu: text }).strict(),
       })
       .strict(),
     about: z
@@ -454,6 +473,9 @@ export const copySchema = z
         resume: text,
         /** Title bar of the ping terminal. */
         terminal_title: text,
+        /** The ping terminal's output (the reply line is green) and its last command. */
+        ping: z.object({ request: text, reply: text, summary: text }).strict(),
+        open_cmd: text,
         /** Shown before the list of public email addresses. */
         emails_label: text,
       })
@@ -465,6 +487,7 @@ export const copySchema = z
         expected: text,
         class_of: text,
         new_tab: text,
+        skip_link: text,
       })
       .strict(),
   })

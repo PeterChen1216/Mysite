@@ -5,8 +5,10 @@ import { parse } from 'yaml';
 import { describe, expect, it, vi } from 'vitest';
 import { assertCommentsClosed } from '../../src/content/guards';
 import { list, parseYaml, singleton } from '../../src/content/parsers';
+import { copyVars, fillCopy } from '../../src/lib/derive';
 import {
   aviationSchema,
+  copySchema,
   educationSchema,
   experienceSchema,
   honorSchema,
@@ -63,6 +65,9 @@ describe('real content/ files validate against their schemas', () => {
   });
   it('aviation.yaml', () => {
     aviationSchema.parse(singleton('aviation')(read('aviation.yaml'))[0]);
+  });
+  it('copy.yaml', () => {
+    expect(() => copySchema.parse(singleton('copy')(read('copy.yaml'))[0])).not.toThrow();
   });
   it('projects/*.md', () => {
     const files = readdirSync(join(CONTENT, 'projects')).filter((f) => f.endsWith('.md'));
@@ -218,6 +223,34 @@ describe('schemas reject mistakes an owner could make', () => {
     );
   });
 
+  it('copy: the phone clock needs a real IANA time zone', () => {
+    const copy = copySchema.parse(singleton('copy')(read('copy.yaml'))[0]);
+    const withZone = (time_zone: string) => ({
+      ...copy,
+      projects: { ...copy.projects, phone: { ...copy.projects.phone, time_zone } },
+    });
+    expect(() => copySchema.parse(withZone('Asia/Shanghai'))).not.toThrow();
+    expect(() => copySchema.parse(withZone('Seattle'))).toThrow(/IANA/);
+  });
+  it('copy: every {placeholder} in copy.yaml is one the page can fill', () => {
+    const copy = copySchema.parse(singleton('copy')(read('copy.yaml'))[0]);
+    const vars = copyVars({
+      displayName: 'A B',
+      location: 'C, D',
+      domain: 'e.f',
+      email: 'g@h.i',
+      edu: {
+        school: 'S',
+        degree: 'D',
+        start: '2020-09',
+        end: '2024-06',
+        expected: false,
+        gpa_label: 'GPA',
+        honors: [],
+      },
+    });
+    expect(() => fillCopy(copy, vars)).not.toThrow();
+  });
   it('site: domain must be a bare hostname', () => {
     const site = singleton('site')(read('site.yaml'))[0] as Record<string, unknown>;
     expect(() => siteSchema.parse({ ...site, domain: 'https://zhic.me' })).toThrow(/Hostname/);

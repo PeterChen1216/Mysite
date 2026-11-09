@@ -4,6 +4,7 @@
  */
 import { getCollection, getEntry, render, type CollectionKey } from 'astro:content';
 import { assertCommentsClosed } from '../content/guards';
+import { copyVars, fillCopy, nowLines } from './derive';
 import { byStartDesc } from './format';
 
 function required<T>(entry: T | undefined, file: string): T {
@@ -23,8 +24,31 @@ export const getProfile = async () =>
   required(await getEntry('profile', 'profile'), 'content/profile.yaml').data;
 export const getInterests = async () =>
   required(await getEntry('interests', 'interests'), 'content/interests.yaml').data;
-export const getCopy = async () =>
-  required(await getEntry('copy', 'copy'), 'content/copy.yaml').data;
+
+/**
+ * copy.yaml with every page-wide `{placeholder}` filled from content (derive.fillCopy), so no
+ * component can print a raw `{name}`; an unknown placeholder fails the build.
+ */
+export async function getCopy() {
+  const [entry, profile, education, site] = await Promise.all([
+    getEntry('copy', 'copy'),
+    getProfile(),
+    getEducation(),
+    getSite(),
+  ]);
+  const copy = required(entry, 'content/copy.yaml').data;
+  const email = (profile.emails.find((e) => e.primary) ?? profile.emails[0])?.address ?? '';
+  return fillCopy(
+    copy,
+    copyVars({
+      displayName: profile.name.display,
+      location: profile.location,
+      domain: site.domain,
+      email,
+      edu: education[0]!,
+    }),
+  );
+}
 
 export const getSkills = async () =>
   required(await getEntry('skills', 'skills'), 'content/skills.yaml').data;
@@ -83,6 +107,14 @@ export async function getProse(name: 'about' | 'now') {
   if (!hasBody) return { Content: null };
   const { Content } = await render(entry);
   return { Content };
+}
+
+/** now.md as plain lines for the ticker (derive.nowLines); empty when the file has no bullets. */
+export async function getNowLines() {
+  const entry = await getEntry('prose', 'now');
+  if (!entry) throw new Error('content/now.md is missing');
+  assertCommentsClosed(entry.body, 'content/now.md');
+  return nowLines(entry.body ?? '');
 }
 
 export { render };
