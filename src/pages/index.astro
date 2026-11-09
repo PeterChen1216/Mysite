@@ -20,6 +20,7 @@ import {
 import { contentStamp, formatVersion } from '../lib/build-info';
 import { copyrightYears, formatRange, formatYearMonth } from '../lib/format';
 import { withBase } from '../lib/paths';
+import type { Project } from '../content/schema';
 
 const [site, profile, education, experience, honors, interests, aviation, projects, about, now] =
   await Promise.all([
@@ -44,13 +45,19 @@ const primaryEmail = profile.emails.find((e) => e.primary)!;
 const stamp = contentStamp();
 const version = formatVersion(site.version, stamp);
 const resumeHref = withBase('resume.pdf');
-const STATUS_LABEL = {
+const PLATFORM_LABEL: Record<Project['platform'][number], string> = {
+  ios: 'iOS',
+  web: 'Web',
+  cli: 'CLI',
+  research: 'Research',
+};
+const STATUS_LABEL: Record<Project['status'], string> = {
   idea: 'idea',
   wip: 'in progress',
   testflight: 'TestFlight',
   shipped: 'shipped',
   archived: 'archived',
-} as const;
+};
 const hasAvgeek =
   aviation.watching.length +
     aviation.seat_rules.length +
@@ -214,10 +221,17 @@ const hasAvgeek =
       <h2 id="projects-title">Projects</h2>
       {renderedProjects.map(({ id, data, Body }) => (
         <article id={`project-${id}`}>
+          {data.icon && (
+            <Image src={data.icon} alt="" width={48} height={48} class="project-icon" />
+          )}
           <h3>{data.title}</h3>
           <p>{data.tagline}</p>
+          {data.cover && (
+            <Image src={data.cover} alt={data.cover_alt ?? ''} width={640} class="project-cover" />
+          )}
           <p class="meta">
-            {data.year} · {data.platform.join(', ')} · {STATUS_LABEL[data.status]}
+            {data.year} · {data.platform.map((p) => PLATFORM_LABEL[p]).join(', ')} ·{' '}
+            {STATUS_LABEL[data.status]}
           </p>
           {data.stack.length > 0 && <p class="meta">Stack: {data.stack.join(', ')}</p>}
           <Body />
@@ -249,9 +263,7 @@ const hasAvgeek =
       {experience.map((x) => (
         <article>
           <h3>
-            {x.logo && (
-              <Image src={x.logo} alt={x.logo_alt ?? ''} width={24} height={24} class="logo" />
-            )}
+            {x.logo && <Image src={x.logo} alt="" width={24} height={24} class="logo" />}
             {x.role} @ {x.url ? <a href={x.url}>{x.company}</a> : x.company}, {x.location}
           </h3>
           <p class="dates">{formatRange(x.start, x.end)}</p>
@@ -367,7 +379,7 @@ const hasAvgeek =
       {site.footer.update_note && <> · {site.footer.update_note}</>}
     </p>
     <p>
-      {copyrightYears(site.footer.copyright_start, new Date().getFullYear())}
+      {copyrightYears(site.footer.copyright_start, new Date().getFullYear())}{' '}
       {site.footer.copyright_holder}. All rights reserved. · <span class="version">{version}</span>
     </p>
   </footer>
@@ -456,6 +468,18 @@ const hasAvgeek =
   .inline-list li:last-child::after {
     content: '';
   }
+  .project-icon {
+    display: block;
+    image-rendering: pixelated;
+  }
+  .project-cover {
+    display: block;
+    width: 100%;
+    max-width: 640px;
+    height: auto;
+    border: 2px solid var(--color-border-edge);
+  }
+  /* Logos are decorative (alt=""): the company name is the adjacent text. */
   .logo {
     display: inline-block;
     vertical-align: -4px;

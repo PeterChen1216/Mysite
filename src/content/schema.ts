@@ -15,6 +15,8 @@ import { z } from 'astro/zod';
 export type ImageHelper<I extends z.ZodType = z.ZodType> = () => I;
 
 const text = z.string().trim().min(1);
+/** Free text that YAML may parse as a number (e.g. `aircraft: 787`). */
+const looseText = z.union([z.number(), z.string()]).transform(String).pipe(text);
 const httpUrl = z.url({ protocol: /^https?$/ });
 /** `YYYY-MM`, e.g. `2024-07`. */
 export const yearMonth = z
@@ -30,7 +32,12 @@ const id = z.string().optional();
 export const siteSchema = z
   .object({
     id,
-    domain: text,
+    domain: z
+      .string()
+      .regex(
+        /^(?=.{1,253}$)([a-z0-9](?:[a-z0-9-]*[a-z0-9])?\.)+[a-z]{2,}$/i,
+        'Hostname only, e.g. zhic.me (no https://, no slash)',
+      ),
     version: semver,
     /** false → legacy site stays at "/", v2 is served from /v2/ (DECISIONS Q1). */
     launched: z.boolean(),
@@ -139,6 +146,7 @@ export const experienceSchema = <I extends z.ZodType>(image: ImageHelper<I>) =>
       location: text,
       url: httpUrl.optional(),
       logo: image().optional(),
+      /** Optional: logos render as decorative next to the company name. */
       logo_alt: text.optional(),
       /** PLAN appendix A suggests 1–3; up to 5 are accepted so résumé bullets migrate verbatim. */
       highlights: z.array(text).min(1).max(5),
@@ -147,8 +155,7 @@ export const experienceSchema = <I extends z.ZodType>(image: ImageHelper<I>) =>
     .strict()
     .refine((e) => e.end === 'present' || e.start <= e.end, {
       message: '`start` must not be after `end`',
-    })
-    .refine((e) => !e.logo || !!e.logo_alt, { message: '`logo_alt` is required with `logo`' });
+    });
 
 // -------------------------------------------------------------- honors.yaml
 export const honorSchema = z
@@ -196,7 +203,7 @@ export const aviationSchema = z
             from: iata,
             to: iata,
             airline: text,
-            aircraft: text,
+            aircraft: looseText,
             why: text,
           })
           .strict(),
@@ -208,8 +215,8 @@ export const aviationSchema = z
       .array(
         z
           .object({
-            aircraft: text,
-            cabin: text,
+            aircraft: looseText,
+            cabin: looseText,
             why: text,
           })
           .strict(),
@@ -225,7 +232,6 @@ export const aviationSchema = z
           })
           .strict(),
       )
-      .max(5)
       .default([]),
     fare_examples: z
       .array(
@@ -252,26 +258,32 @@ export const aviationSchema = z
   .strict();
 
 // --------------------------------------------------------- projects/*.md
-export const projectSchema = z
-  .object({
-    title: text,
-    tagline: text.max(120),
-    status: z.enum(['idea', 'wip', 'testflight', 'shipped', 'archived']),
-    platform: z.array(z.enum(['ios', 'web', 'cli', 'research'])).min(1),
-    links: z
-      .object({
-        appstore: httpUrl.optional(),
-        repo: httpUrl.optional(),
-        live: httpUrl.optional(),
-      })
-      .strict()
-      .optional(),
-    stack: z.array(text).max(8).default([]),
-    year: z.number().int().min(2000).max(2100),
-    featured: z.boolean().default(false),
-    source,
-  })
-  .strict();
+export const projectSchema = <I extends z.ZodType>(image: ImageHelper<I>) =>
+  z
+    .object({
+      title: text,
+      tagline: text.max(120),
+      status: z.enum(['idea', 'wip', 'testflight', 'shipped', 'archived']),
+      platform: z.array(z.enum(['ios', 'web', 'cli', 'research'])).min(1),
+      links: z
+        .object({
+          appstore: httpUrl.optional(),
+          repo: httpUrl.optional(),
+          live: httpUrl.optional(),
+        })
+        .strict()
+        .optional(),
+      /** Small square icon (pixel art welcome), decorative. */
+      icon: image().optional(),
+      cover: image().optional(),
+      cover_alt: text.optional(),
+      stack: z.array(text).max(8).default([]),
+      year: z.number().int().min(2000).max(2100),
+      featured: z.boolean().default(false),
+      source,
+    })
+    .strict()
+    .refine((p) => !p.cover || !!p.cover_alt, { message: '`cover_alt` is required with `cover`' });
 
 // ------------------------------------------------ about.md / now.md (no frontmatter)
 export const proseSchema = z.object({}).strict();
@@ -281,4 +293,4 @@ export type Education = z.infer<typeof educationSchema>;
 export type Honor = z.infer<typeof honorSchema>;
 export type Interests = z.infer<typeof interestsSchema>;
 export type Aviation = z.infer<typeof aviationSchema>;
-export type Project = z.infer<typeof projectSchema>;
+export type Project = z.infer<ReturnType<typeof projectSchema>>;

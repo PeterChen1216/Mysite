@@ -1,6 +1,7 @@
 import { defineCollection } from 'astro:content';
-import { file, glob } from 'astro/loaders';
+import { glob } from 'astro/loaders';
 import { list, singleton } from './content/parsers';
+import { strictFile } from './content/strict-file';
 import {
   aviationSchema,
   educationSchema,
@@ -16,36 +17,42 @@ import {
 // Paths are relative to the project root. Owners only ever edit content/ (PLAN §7).
 export const collections = {
   site: defineCollection({
-    loader: file('content/site.yaml', { parser: singleton('site') }),
+    loader: strictFile('content/site.yaml', singleton('site')),
     schema: siteSchema,
   }),
   profile: defineCollection({
-    loader: file('content/profile.yaml', { parser: singleton('profile') }),
+    loader: strictFile('content/profile.yaml', singleton('profile')),
     schema: ({ image }) => profileSchema(image),
   }),
   education: defineCollection({
-    loader: file('content/education.yaml', { parser: list('education.yaml') }),
+    loader: strictFile('content/education.yaml', list('education.yaml')),
     schema: educationSchema,
   }),
   experience: defineCollection({
-    loader: file('content/experience.yaml', { parser: list('experience.yaml') }),
+    loader: strictFile('content/experience.yaml', list('experience.yaml')),
     schema: ({ image }) => experienceSchema(image),
   }),
   honors: defineCollection({
-    loader: file('content/honors.yaml', { parser: list('honors.yaml') }),
+    loader: strictFile('content/honors.yaml', list('honors.yaml')),
     schema: honorSchema,
   }),
   interests: defineCollection({
-    loader: file('content/interests.yaml', { parser: singleton('interests') }),
+    loader: strictFile('content/interests.yaml', singleton('interests')),
     schema: interestsSchema,
   }),
   aviation: defineCollection({
-    loader: file('content/aviation.yaml', { parser: singleton('aviation') }),
+    loader: strictFile('content/aviation.yaml', singleton('aviation')),
     schema: aviationSchema,
   }),
   projects: defineCollection({
-    loader: glob({ pattern: '*.md', base: 'content/projects' }),
-    schema: projectSchema,
+    // id = file name exactly (e.g. time-stamp.md → time-stamp), never a slugified guess,
+    // so two files can't collapse into one id and /projects/<id> URLs (M3) stay stable.
+    loader: glob({
+      pattern: '*.md',
+      base: 'content/projects',
+      generateId: ({ entry }) => entry.replace(/\.md$/, ''),
+    }),
+    schema: ({ image }) => projectSchema(image),
   }),
   prose: defineCollection({
     loader: glob({ pattern: ['about.md', 'now.md'], base: 'content' }),

@@ -16,7 +16,7 @@
   --color-border-edge: #2a3250;
   --color-text-hi: #e6edf3;
   --color-text-mid: #8b949e;
-  --color-text-lo: #556070; /* decorative only: 3.2:1 on bg-night, below WCAG AA for text */
+  --color-text-lo: #556070; /* decorative only: 3.0:1 on bg-night, 2.8:1 on bg-panel — not for text or UI boundaries */
   --color-accent-terminal-green: #39ff14;
   --color-accent-diamond: #4aedd9;
   --color-accent-gold: #fcdb05;

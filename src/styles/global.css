@@ -33,6 +33,14 @@ a:hover {
   outline-offset: 2px;
 }
 
+code,
+kbd,
+samp,
+pre {
+  font-family: var(--font-code);
+  font-size: inherit;
+}
+
 img {
   max-width: 100%;
   height: auto;
