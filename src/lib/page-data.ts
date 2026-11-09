@@ -31,6 +31,7 @@ import {
   projectBadge,
   tickerItems,
   whoamiLine,
+  withGpaLabel,
 } from './derive';
 import { copyrightYears } from './format';
 import { withBase } from './paths';
@@ -66,11 +67,7 @@ export async function getPageData() {
     getNowLines(),
   ]);
 
-  // An education entry without its own GPA label uses copy.yaml's (no built-in English).
-  const education = educationEntries.map((e) => ({
-    ...e,
-    gpa_label: e.gpa_label ?? copy.labels.gpa,
-  }));
+  const education = withGpaLabel(educationEntries, copy.labels.gpa);
   const edu = education[0]!;
   const primaryEmail = profile.emails.find((e) => e.primary)!.address;
   const publicEmails = profile.emails.filter((e) => e.public).map((e) => e.address);

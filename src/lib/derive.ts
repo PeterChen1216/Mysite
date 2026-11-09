@@ -61,6 +61,17 @@ export interface InterestLike {
   note?: string | undefined;
 }
 
+/**
+ * Education entries with their GPA label: an entry's own `gpa_label`, else copy.yaml
+ * `labels.gpa` — never built-in English.
+ */
+export function withGpaLabel<E extends EducationLike>(
+  entries: E[],
+  label: string,
+): Array<E & { gpa_label: string }> {
+  return entries.map((e) => ({ ...e, gpa_label: e.gpa_label ?? label }));
+}
+
 // ---------------------------------------------------------------- small formatters
 /** `2027-03` → `’27`. */
 export function classYear(end: string): string {
@@ -231,6 +242,8 @@ const SPACE = new Set(['br', 'td', 'th']);
 /** Elements dropped with their content: their text is not a status line. */
 const DROP = new Set(['script', 'style', 'template']);
 const HEADING = /^h[1-6]$/;
+/** Any block or heading tag, open or close, somewhere in a piece of HTML. */
+const BLOCK_TAG_IN = new RegExp(String.raw`<\/?(?:${[...BLOCK].join('|')}|h[1-6])(?![\w-])`, 'i');
 
 /** A tag's attributes in order: a name, then its value if it has one. */
 const ATTRIBUTE = /([^\s"'>/=]+)(?:\s*=\s*(?:"([^"]*)"|'([^']*)'|([^\s"'=<>\x60]+)))?/g;
@@ -279,7 +292,7 @@ export function nowLines(html: string): string[] {
   };
   const token = new RegExp(HTML_TOKEN.source, 'gi');
   let at = 0;
-  let listDepth = 0; // inside a list item, a heading is the item's own text
+  let listDepth = 0; // inside a list, a heading is its item's own text
   for (let m = token.exec(html); m; m = token.exec(html)) {
     line += decodeHTML(html.slice(at, m.index));
     at = token.lastIndex;
@@ -294,17 +307,22 @@ export function nowLines(html: string): string[] {
         (name === 'a' && attribute(attrs, 'data-footnote-ref') !== undefined));
     if (dropped) {
       // Skip to the end tag (none of these nest in rendered Markdown). Without one, as in a
-      // status line that mentions a raw `<style>` tag, only the tag itself is left out.
+      // status line that mentions a raw `<style>` tag, only the tag itself is left out. A
+      // heading's own text never spans blocks, so an end tag found past another block belongs
+      // to a later heading: the `<h2>` here was only mentioned, and is left out on its own.
       const end = new RegExp(String.raw`<\/${name}\s*>`, 'gi');
       end.lastIndex = at;
-      if (!end.exec(html)) continue;
+      const found = end.exec(html);
+      if (!found) continue;
+      if (HEADING.test(name) && BLOCK_TAG_IN.test(html.slice(at, found.index))) continue;
       at = end.lastIndex;
       token.lastIndex = at;
       // A heading or the footnotes block ends the item before it; a script inside one does not.
       if (HEADING.test(name) || name === 'section') endItem();
       continue;
     }
-    if (name === 'li') listDepth = Math.max(0, listDepth + (close ? -1 : 1));
+    // Lists, not items, are counted: a mentioned `<li>` must not make later headings list text.
+    if (name === 'ul' || name === 'ol') listDepth = Math.max(0, listDepth + (close ? -1 : 1));
     if (BLOCK.has(name) || HEADING.test(name)) endItem();
     else if (SPACE.has(name)) line += ' ';
     else if (name === 'img') line += ` ${imageText(attrs)} `;

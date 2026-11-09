@@ -56,6 +56,8 @@ describe('content breakage (always an error)', () => {
     const empty = fixture({ 'now.md': 'a <!--> b\n<!---> c\nnext <!-- open\n' });
     expect(findBreakage(empty)).toEqual(['content/now.md:3: "<!--" is never closed with "-->"']);
     expect(findBreakage(fixture({ 'now.md': 'a <!--> b <!---> c\n' }))).toEqual([]);
+    // Each on its own, with no later "-->" that could close a comment read the old way.
+    expect(findBreakage(fixture({ 'now.md': 'a <!--> b\n', 'b.md': 'c <!---> d\n' }))).toEqual([]);
   });
   it('flags project files that are not lowercase-hyphen slugs', () => {
     const dir = fixture({

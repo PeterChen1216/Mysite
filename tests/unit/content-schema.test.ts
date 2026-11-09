@@ -305,6 +305,9 @@ describe('YAML parsing guards', () => {
     expect(() => assertCommentsClosed('one <!--> two <!---> three', 'x')).not.toThrow();
     expect(() => assertCommentsClosed('a <!--> b <!-- c', 'x')).toThrow(/never closed/);
     expect(stripComments('a<!-- x -->b<!-->c<!--->d')).toBe('abcd');
+    // Removing a comment must not join the text around it into a new "<!--".
+    expect(() => assertCommentsClosed('a <!-<!-- x -->- b', 'x')).not.toThrow();
+    expect(() => assertCommentsClosed('<!<!---->--', 'x')).not.toThrow();
   });
 });
 

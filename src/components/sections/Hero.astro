@@ -196,6 +196,14 @@ const cursor = { steps: 3, dur: typingMs(3), delay: at };
     color: var(--color-accent-diamond);
     text-decoration: underline;
   }
+  /* Where the column is just too narrow for the longest headline line ("Crafting data") at the
+     design size, a slightly smaller size keeps it on one line. Otherwise it would wrap only once
+     the pixel font arrives (its stand-in is narrower), and the hero would jump (CLS ≈ 0.18). */
+  @media (min-width: 1280px) and (max-width: 1319px) {
+    .hero__h1 {
+      font-size: 78px;
+    }
+  }
   @media (max-width: 1279px) {
     /* Stay side by side down to 1024: the stage scales via its container queries. */
     .hero {
@@ -236,6 +244,12 @@ const cursor = { steps: 3, dur: typingMs(3), delay: at };
     .hero__copy :global(.hero__term .term__body) {
       font-size: 20px;
       padding: 14px;
+    }
+  }
+  /* The same for the narrowest phones (see the 1280–1319 rule above). */
+  @media (max-width: 341px) {
+    .hero__h1 {
+      font-size: 40px;
     }
   }
 </style>

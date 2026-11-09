@@ -17,7 +17,9 @@ export function stripComments(text: string): string {
  * build stays green, so treat it as a build error.
  */
 export function assertCommentsClosed(body: string | undefined, file: string): void {
-  if (body && stripComments(body).includes('<!--')) {
+  // Blank complete comments out (rather than delete them) so text around one can't join into a
+  // new `<!--`, exactly as scripts/check-content.mjs does.
+  if (body && body.replace(COMMENT, ' ').includes('<!--')) {
     throw new Error(`${file}: "<!--" is never closed with "-->" — it would hide the rest of the page`);
   }
 }

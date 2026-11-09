@@ -29,6 +29,7 @@ import {
   statusBar,
   tickerItems,
   whoamiLine,
+  withGpaLabel,
   type EducationLike,
   type ProjectLike,
 } from '../../src/lib/derive';
@@ -230,6 +231,13 @@ describe('facts come only from content', () => {
     expect(statusBar('wip', STATUS_WORDS).filled).toBeLessThan(10);
     expect(statusBar('idea', STATUS_WORDS).label).toBe('idea');
     expect(statusBar('wip', { ...STATUS_WORDS, wip: 'building' }).label).toBe('building');
+  });
+  it('GPA label: the entry’s own, else copy.yaml’s', () => {
+    const { gpa_label: _own, ...unlabelled } = bareEdu;
+    expect(withGpaLabel([edu, unlabelled], 'Notenschnitt').map((e) => e.gpa_label)).toEqual([
+      'Cumulative GPA',
+      'Notenschnitt',
+    ]);
   });
   it('education dates', () => {
     expect(educationDates(edu, '(expected)')).toBe('Sep 2023 – Mar 2027 (expected)');
@@ -725,6 +733,40 @@ describe('now.md lines', () => {
     nowLines(`<p>${'<abc '.repeat(20_000)}</p>`);
     nowLines(`<div>${'x <longtagname '.repeat(5_000)}`);
     expect(performance.now() - start).toBeLessThan(2000);
+  });
+  it('treats a heading tag mentioned in text as text, not as the start of a heading', () => {
+    // "Rewriting the site's <h2> styles" followed later by a real "## Later" heading.
+    const html = [
+      '<p>Rewriting the site’s <h2> styles</p>',
+      '<ul>',
+      '<li>C01 Shipping Clock Stamp 1.2</li>',
+      '<li>C02 TA for INFO 180</li>',
+      '</ul>',
+      '<h2 id="later">Later</h2>',
+      '<ul>',
+      '<li>C03 Trip to Tokyo</li>',
+      '</ul>',
+    ].join('\n');
+    expect(nowLines(html)).toEqual([
+      'Rewriting the site’s styles',
+      'C01 Shipping Clock Stamp 1.2',
+      'C02 TA for INFO 180',
+      'C03 Trip to Tokyo',
+    ]);
+  });
+  it('a mentioned <li> does not turn later headings into ticker lines', () => {
+    const html = [
+      '<ul>',
+      '<li>C01 Learning <li> semantics</li>',
+      '<li>C02 Shipping Clock Stamp 1.2</li>',
+      '</ul>',
+      '<h2 id="notes">Notes</h2>',
+      '<ul>',
+      '<li>C03 Trip to Tokyo</li>',
+      '</ul>',
+    ].join('\n');
+    expect(nowLines(html)).not.toContain('Notes');
+    expect(nowLines(html)).toContain('C03 Trip to Tokyo');
   });
 });
 
