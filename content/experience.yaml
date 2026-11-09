@@ -1,0 +1,17 @@
+# One item per role, any order (the site sorts by date).
+- company: HashKey Global
+  role: Operation Intern
+  kind: internship
+  start: 2024-07
+  end: 2024-09
+  location: Shanghai, China
+  url: https://global.hashkey.com/en-US/
+  logo: ./images/hashkey.webp
+  logo_alt: HashKey Global logo
+  highlights:
+    - Data & Liquidity analysis for Sales
+    - Customer service on the official website, Telegram, apps
+    - Reviewing materials and opening of accounts on behalf of clients
+    - Data Review/Analyst for weekly report
+    - Doing KYC with the HashKey Hong Kong Office
+  source: legacy index.html; highlights from Resume.pdf (2026-03-31)

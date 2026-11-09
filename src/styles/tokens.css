@@ -1,0 +1,92 @@
+/*
+ * Design tokens — generated from Figma, do not hand-edit values without a Figma link in the PR.
+ * Source: https://www.figma.com/design/cA9xh6uSZZvmFCUzrAhxjk  (page "Home — Voxel" → 🎨 Style tile, node 27:2324)
+ * Variable collection: Voxel/Night · Text styles: Pixel/* Term/* Code/*
+ * Synced: 2026-11-09 (M0)
+ *
+ * Figma letterSpacing values are percentages → emitted here as em (6 → 0.06em).
+ * Figma lineHeight values are unitless multipliers.
+ */
+:root {
+  /* ── color · Voxel/Night ─────────────────────────────── */
+  --color-bg-night: #0b0f1a;
+  --color-bg-panel: #12172a;
+  --color-bg-terminal: #0a0e14;
+  --color-border-line: #1c2340;
+  --color-border-edge: #2a3250;
+  --color-text-hi: #e6edf3;
+  --color-text-mid: #8b949e;
+  --color-text-lo: #556070; /* decorative only: 3.2:1 on bg-night, below WCAG AA for text */
+  --color-accent-terminal-green: #39ff14;
+  --color-accent-diamond: #4aedd9;
+  --color-accent-gold: #fcdb05;
+  --color-accent-enchant: #a335ee;
+  --color-accent-redstone: #ff5555;
+  --color-block-grass: #7cbd4f;
+  --color-block-dirt: #8b5a2b;
+  --color-block-stone: #8d8d8d;
+  --color-block-water: #2457c5;
+
+  /* ── font families (all SIL OFL 1.1, self-hosted via @fontsource) ── */
+  --font-pixel: 'Pixelify Sans', ui-monospace, monospace; /* display / headlines */
+  --font-8bit:
+    'Press Start 2P', ui-monospace, monospace; /* 8-bit labels & buttons; 8/10/12 px only */
+  --font-term: 'VT323', ui-monospace, monospace; /* terminal output */
+  --font-code:
+    'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; /* body & code */
+
+  /* ── text styles ─────────────────────────────────────── */
+  /* Pixel/Display — Pixelify Sans Bold 84 */
+  --type-pixel-display: 700 84px / 1 var(--font-pixel);
+  --type-pixel-display-tracking: -0.01em;
+  /* Pixel/H2 — Pixelify Sans Bold 56 */
+  --type-pixel-h2: 700 56px / 1 var(--font-pixel);
+  --type-pixel-h2-tracking: -0.01em;
+  /* Pixel/H3 — Pixelify Sans SemiBold 30 */
+  --type-pixel-h3: 600 30px / 1.1 var(--font-pixel);
+  --type-pixel-h3-tracking: 0;
+  /* Pixel/H4 — Pixelify Sans SemiBold 22 */
+  --type-pixel-h4: 600 22px / 1.2 var(--font-pixel);
+  --type-pixel-h4-tracking: 0;
+  /* Pixel/Label — Press Start 2P 10 */
+  --type-pixel-label: 400 10px / 1.6 var(--font-8bit);
+  --type-pixel-label-tracking: 0.04em;
+  /* Pixel/Button — Press Start 2P 12 */
+  --type-pixel-button: 400 12px / 1 var(--font-8bit);
+  --type-pixel-button-tracking: 0;
+  /* Pixel/Tiny — Press Start 2P 8 */
+  --type-pixel-tiny: 400 8px / 1.5 var(--font-8bit);
+  --type-pixel-tiny-tracking: 0.02em;
+  /* Term/Lg — VT323 28 */
+  --type-term-lg: 400 28px / 1.15 var(--font-term);
+  --type-term-lg-tracking: 0;
+  /* Term/Md — VT323 22 */
+  --type-term-md: 400 22px / 1.25 var(--font-term);
+  --type-term-md-tracking: 0;
+  /* Code/Body — JetBrains Mono Regular 15 */
+  --type-code-body: 400 15px / 1.7 var(--font-code);
+  --type-code-body-tracking: 0;
+  /* Code/Bold — JetBrains Mono Bold 15 */
+  --type-code-bold: 700 15px / 1.6 var(--font-code);
+  --type-code-bold-tracking: 0;
+  /* Code/Sm — JetBrains Mono Regular 13 */
+  --type-code-sm: 400 13px / 1.6 var(--font-code);
+  --type-code-sm-tracking: 0;
+  /* Code/Label — JetBrains Mono Medium 12 */
+  --type-code-label: 500 12px / 1 var(--font-code);
+  --type-code-label-tracking: 0.06em;
+
+  /* ── provisional (not Figma variables yet; sync in M1) ── */
+  --space-unit: 4px; /* pixel grid */
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-6: 24px;
+  --space-8: 32px;
+  --space-12: 48px;
+  --space-16: 64px;
+  --shadow-hard: 4px 4px 0 0 #000; /* hard pixel shadow, no blur */
+  --radius: 0; /* voxel: square corners */
+  --content-max: 1312px; /* Style tile content width (1440 − 2×64) */
+}

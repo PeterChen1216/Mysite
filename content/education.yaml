@@ -1,0 +1,26 @@
+# One item per school, newest first.
+- school: University of Washington, Seattle
+  url: https://www.washington.edu/
+  department: Information School
+  department_url: https://ischool.uw.edu/
+  degree: B.S. in Informatics
+  track: Data Science
+  minor: Applied Mathematics
+  start: 2023-09
+  end: 2027-06
+  expected: true
+  gpa: 3.81/4.0
+  honors:
+    - Annual Dean's List (2024-2025)
+  coursework:
+    - Computer Programming I
+    - Introduction to Data Science
+    - Data Programming
+    - Data Science Foundations
+    - Introducing Machine Learning
+    - Recommendation System and Search
+    - Beginning on Scientific Computing
+    - Calculus with Analytic Geometry II & III
+    - Environmental Health Media
+    - GIS and Mapping
+  source: legacy index.html; minor and coursework from Resume.pdf (2026-03-31)

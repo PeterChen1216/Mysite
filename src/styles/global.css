@@ -1,0 +1,79 @@
+/* Base styles for the M0 plain page. Real section design lands in M1 (Figma "Home — Voxel / 1440"). */
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html {
+  color-scheme: dark;
+  background: var(--color-bg-night);
+  color: var(--color-text-hi);
+  font: var(--type-code-body);
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
+}
+
+body {
+  margin: 0;
+  min-height: 100svh;
+}
+
+a {
+  color: var(--color-accent-diamond);
+  text-underline-offset: 3px;
+}
+
+a:hover {
+  color: var(--color-accent-gold);
+}
+
+:focus-visible {
+  outline: 2px solid var(--color-accent-gold);
+  outline-offset: 2px;
+}
+
+img {
+  max-width: 100%;
+  height: auto;
+  image-rendering: auto;
+}
+
+.visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+  border: 0;
+}
+
+.skip-link {
+  position: absolute;
+  left: var(--space-4);
+  top: -100px;
+  padding: var(--space-2) var(--space-4);
+  background: var(--color-accent-gold);
+  color: var(--color-bg-night);
+  font: var(--type-pixel-button);
+  z-index: 10;
+}
+
+.skip-link:focus {
+  top: var(--space-4);
+  color: var(--color-bg-night);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}

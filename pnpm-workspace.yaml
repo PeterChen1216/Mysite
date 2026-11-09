@@ -1,0 +1,6 @@
+# pnpm settings (single-package repo; no workspace packages)
+onlyBuiltDependencies:
+  - esbuild
+  - sharp
+# Supply-chain hygiene: don't install versions published < 3 days ago.
+minimumReleaseAge: 4320

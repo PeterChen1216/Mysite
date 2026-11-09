@@ -1,0 +1,26 @@
+# Who you are and how to reach you.
+name:
+  display: Peter Chen
+  full: Zhicheng (Peter) Chen
+tagline: "Informatics: Data Science, UW 27'"
+location: Seattle, Washington
+status: Open to internships & collaborations
+
+emails:
+  - address: zchen75@uw.edu
+    primary: true
+    public: true
+  # DECISIONS Q6: shown on the site only if you set public: true
+  - address: peter_chen1216@163.com
+    public: false
+
+socials:
+  - network: github
+    label: GitHub
+    url: https://github.com/PeterChen1216
+  - network: linkedin
+    label: LinkedIn
+    url: https://www.linkedin.com/in/peterchen1216/
+
+avatar: ./images/avatar.jpg
+avatar_alt: Photo of Peter Chen

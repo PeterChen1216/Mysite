@@ -1,0 +1,28 @@
+# AvGeek console (DECISIONS.md). Everything here is hand-curated by you — the site never scrapes.
+# Panels with an empty list are simply hidden. You mainly maintain `watching` and `news`.
+
+# Routes you're currently watching (3–6). Fields: from, to (IATA codes), airline, aircraft, why
+watching: []
+
+# Your seat-picking rules, one per line
+seat_rules: []
+
+# Fields: aircraft, cabin, why
+favorite_cabins: []
+
+# Route news you noticed (up to 5). Fields: date (YYYY-MM-DD), headline, url
+news: []
+
+# Fare basis codes worth decoding. Fields: code, route, notes
+fare_examples: []
+
+# External links shown as the console's toolbar
+tools:
+  - name: Flightradar24
+    url: https://www.flightradar24.com/
+  - name: aerolopa
+    url: https://www.aerolopa.com/
+  - name: AeroRoutes
+    url: https://www.aeroroutes.com/
+  - name: ITA Matrix
+    url: https://matrix.itasoftware.com/

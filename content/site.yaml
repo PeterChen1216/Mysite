@@ -1,0 +1,22 @@
+# Site-wide settings. See docs/CONTENT-GUIDE.md (M4) for every field.
+domain: zhic.me
+version: 0.1.0 # bump only for structural changes; content changes are versioned automatically
+
+# false → the old site stays at https://zhic.me/ and v2 is previewed at https://zhic.me/v2/
+# Flip to true when M1 is accepted (DECISIONS Q1); the old site then moves to /legacy/.
+launched: false
+
+features:
+  scene: false # the WebGL camera scene arrives in M2
+
+meta:
+  title: Zhicheng (Peter) Chen
+  description: This is an personal/academic website
+  keywords:
+    - Zhicheng Chen
+    - Peter Chen
+
+footer:
+  copyright_holder: Peter Chen
+  copyright_start: 2025
+  update_note: Expected to updated by each 2 weeks.
