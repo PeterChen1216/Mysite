@@ -1,60 +1,92 @@
 # STATUS（会话交接 · PLAN §15.6）
 
-> 更新：2026-11-09 · 分支 `claude/affectionate-dirac-6zpbqu`
+> 更新：2026-11-09 夜 · 分支 `claude/affectionate-dirac-6zpbqu`
 
 ## 当前状态
-- **M0 · 项目骨架与内容迁移 — ✅ 已合并上线**（PeterChen1216/Mysite#2，squash 提交 `ea935de`）。
-  - https://zhic.me/ — 旧站（不变，直到 `launched: true`）
-  - https://zhic.me/v2/ — 新站预览（robots 屏蔽）
-  - https://zhic.me/legacy/ — 旧站永久副本
-- **内容更新：新简历（2026-11-03）— 本分支**，评审 + CI 通过后按业主决定（DECISIONS 第二轮 R2-4）以业主账号 squash 合并上线。
-- 下一个里程碑：**M1 · 长页面版**（未开始）。
+| 里程碑 | 状态 |
+|---|---|
+| M0 骨架与内容迁移 | ✅ 已上线（PeterChen1216/Mysite#2，`ea935de`） |
+| 内容更新：新简历 2026-11-03 | ✅ 已上线（PeterChen1216/Mysite#3，`e6f033c`；业主 R2-4 同意直接合并） |
+| **M1 长页面版（Figma `Home — Voxel / 1440`）** | 🟡 **实现完成、自动检查全绿，等待你早上审核**（draft PR，未合并；未改 `launched`；未改 Figma） |
+| M2 体素场景 / M3 窗口 | 未开始 |
 
-## 本次内容更新（新简历 2026-11-03）
-- `content/resume/Resume.pdf` 换成新版（旧版在 git 历史中）。新 PDF 不含电话、不含 163 邮箱，也没有旧版那条奇怪的 PDF 作者元数据。
-- 按简历**原文**迁入：GPA 3.84/4.00；预计毕业 Mar 2027；Dean's List 2025–2026；新的相关课程列表；
-  经历：UW iSchool 本科助教（INFO 180，Oct 2026 – Present）、Merit Interactive Agent Development Intern（Jul–Aug 2026）、HashKey 改为 "Operations Intern (Summer)" 与新的 2 条要点；
-  项目：**Clock Stamp**（已上架 App Store，原 "Time Stamp" 文件改名为 `clock-stamp.md`）、X Community Notes Latent-Factor Analysis（INFO 494，Saveski-Lab）；
-  新增 **Community**（North Helpline Food Bank 志愿）与 **Skills** 两个区块（`content/skills.yaml`）。
-- 业主决定（DECISIONS 第二轮）：邮箱 Outlook 为主 + uw.edu；About 只改 "Senior" 与 "March of 2027"；兴趣第 3 条更新为已上架。
-- 我做的取舍（请过目）：
-  - **辅修 Applied Mathematics 已移除**：只出现在旧简历，新简历没有；为避免展示可能已不成立的事实先去掉。若仍在修，告诉我即可恢复。
-  - **Classmate Map 保留**：新简历未列，但在线页面仍可访问；`featured: false`，排在最后。要删也只需删 `content/projects/classmate-map.md`。
-  - 2024–2025 Dean's List 的 "with 4 consecutive quarters" 保留（来源：旧简历，历史事实不会过期）。
-  - X Community Notes 的状态记为新增的 `completed`（已结束的课程/研究项目）；Clock Stamp 记为 `shipped`（App Store 页面已核实在线）。
-  - Data Science track 保留（来源：旧站与你的站点标语）。
-- schema：项目新增可选 `role` / `location` / `start`+`end`（成对出现）/ `links.other`、状态 `completed`，`tagline` 改为可选；教育新增 `gpa_label`（"Cumulative GPA"）；技能组新增 `basic`（"; basic Java"）；新增 `skills` 集合；`kind: volunteer` 的经历显示在 Community 区块。
-- 测试：M0 一次性迁移验收（逐字比对旧站）在内容按新简历更新后已不再适用，已移除（ADR-013）；常规 E2E 仍从 `content/` 读取全部期望值。
+线上：zhic.me/（旧站，不变）· zhic.me/v2/（目前仍是 M0 纯页面；M1 合并后更新）· zhic.me/legacy/。
 
-## M0 验收（PLAN §8）— 全部完成
+---
+
+## ☀️ 早上请审核 / 确认（按优先级）
+
+### A. 是否接受 M1
+1. 看 PR 描述里的截图（1440 / 390）或下载 CI 产物 `site-<sha>` 本地打开 `v2/index.html`。
+2. 接受 → 合并 PR（zhic.me/v2/ 更新；旧首页不变）。
+3. 是否同时 **正式上线**（`content/site.yaml` → `launched: true`，v2 替换旧首页，旧站移到 /legacy/）？DECISIONS Q1 说 "M1 完成即替换旧站"，但这一步我不会替你做。
+
+### B. 设计稿里的界面文案（`content/copy.yaml`，均为 Figma 原文、不含关于你的事实）——保留还是改？
+- Hero 标题："Crafting **data** into things people love_"
+- 区块标题与说明："Player stats & loaded chunks" / "Builds, shipped & in progress" / "Commit history" / "Let's craft something." 及各自右侧说明句
+- About 卡片标题："Hi, I'm Peter — a senior at the UW Information School."（由 R2-2 的 Senior 推导）
+- AvGeek 标题："Routes, seats, mileage runs."；Hero 徽章 "AvGeek ✈ routes · seats · mileage"（由你的兴趣原文推导）
+- 页脚："built with voxels, coffee & too many flights"（PLAN §5.4 举过的例子）
+- "next --chunk ??? (loading…)" 预告卡
+- ⚠️ Experience 说明句写的是 "in chronological order"，但列表是**最新在前**——建议改成 "newest first"
+
+### C. Figma 里关于你本人的文案（**没有上页面**；你同意的我再加）
+1. Whoami 改写版："Informatics, Data Science track, graduating June 2027. Huge tech fan…"（若采用需改为 March 2027）——目前页面用你的 about.md 原文
+2. 兴趣的风味描述（可写进 `interests.yaml` 的 `note:`）：table-tennis "forehand loops, late-night rallies"；choir "harmony beats a solo"；vibe-coding "weekend builds that occasionally ship"
+3. AvGeek："Flight routes, seat maps, aircraft types and mileage programs — I track them all for fun."
+4. Clock Stamp："first iOS app · solo build"、"My first iOS app, built solo from idea to App Store…"
+5. 预告卡："Something with generative AI." + gen-ai 标签
+6. HEAD 行："Next chapter · remote or Seattle · say hi ↓"（目前只显示 "say hi ↓"）
+7. init 行："Spawned in Seattle — git init — moved to Seattle for UW"（目前把最早的真实条目 UW 标为 `init`）
+8. "This website" 项目卡：需要新增 `content/projects/zhic-me.md`（真实技术栈是 Astro / TypeScript，不是设计稿写的 Next.js / Three.js / GSAP）
+9. AvGeek 关注航线：往 `aviation.yaml` 的 `watching` 加 3–6 条（SEA⇄PVG 已按 Q4 去掉），地球和徽章会自动显示
+
+### D. 与 Figma 的偏差（确认后应回写 Figma，PLAN §15.7；我没有改 Figma 文件）
+- **无障碍配色**（WCAG AA）：Grass 按钮 #5d9c3a→#44802a（白字 3.2:1→4.8:1）；按钮 hover 蓝 #7b8dff→#4f63e0（黄字 2.9:1→4.8:1）；附魔紫标签/hash #a335ee→#b866f5；所有用 `text/lo` 的正文改为 `text/mid`
+- **内容驱动的版式变化**：真实内容比设计稿多（3 段经历 + 志愿、3 个项目、技能、完整课程），页面从 4923 px 变为约 6500 px；新增 **Skills**（inventory 卡）与 **Community**（git log 风格）两个区块、每段经历下的要点、Contact 下的两个邮箱
+- 设计稿里过期/被否的事实全部改为 content 数据：GPA 3.81→3.84、junior→senior、June→March 2027、SEA⇄PVG 航线/图钉移除、"Operation Intern"→"Operations Intern (Summer)"、Clock Stamp "WIP/eta 2026"→已上架
+- 终端：Contact/Projects 用了带标题栏的终端（Figma 为无标题栏 MiniTerminal）；Contact 用等宽正文字体（VT323 22px 会让长邮箱换行）
+- HashKey 用真实 logo 文件（不是设计稿重绘的像素版，避免改动第三方商标）
+- 符号 ★ ✈ ⇄ → ↗：像素字体的 latin 子集里没有，改为系统符号字体或 CSS 像素绘制
+- 新增：导航随滚动高亮当前区块；页面宽于 1440 时内容居中（1312 px）
+
+### E. 之前还没答的问题
+1. Classmate Map：新简历没写，是否保留？
+2. 旧站页面（zhic.me/ 与 /legacy/）仍显示 163 邮箱和旧事实（GPA 3.81 等）——是否从旧站去掉 163？是否尽快上线 v2？
+3. `legacy/work/njzposts.pdf` 公开可访问、含社交账号，是否删除？
+4. `www.zhic.me` 无证书：需要的话在 DNS 加 `www` CNAME → `peterchen1216.github.io`
+5. Dean's List 2024–2025 的 "with 4 consecutive quarters"（仅旧简历有）是否保留？
+6. about.md 拼写："Tech fans"→"tech fan"、"colaboration"→"collaboration"；profile tagline "UW 27'" → "UW ’27"？
+
+---
+
+## M1 已完成（本次夜间）
+- **视觉合同**：Figma `17:2` 是 Code Layer，取得完整参考代码 + 55 个资产 + 动效时间线；转换为 Astro 组件 + scoped CSS + tokens（ADR-014）。
+- **区块**：Nav（滚动高亮）、Hero（逐词标题、打字终端、CTA、舞台：CSS 条带法像素地球 + 轨道 + 10 个下落方块 + 玩家卡（hover 显示真人照片，Q7）+ 3 个数据驱动徽章）、Ticker、About bento（whoami / GPA+荣誉 / now building / 教育 / off the clock / AvGeek / 技能）、Projects（精选 + 实时时钟手机样机 + 项目卡 + 预告卡）、Experience（git log）+ Community、Contact（ping 终端）、Footer。
+- **事实**：全部来自 `content/`，由 `src/lib/derive.ts`（16 个单测）与 `src/lib/page-data.ts` 计算；界面文案在 `content/copy.yaml`。
+- **动效**：CSS 优先，`html.motion` 仅在 JS 可用且未开启 reduced-motion 时添加；开场序列按 Figma 参数单次播放；hover 像素粒子；地球 hover 减速、拖拽旋转、离屏暂停。无 JS 与 reduced-motion 下页面完整静止。
+- **字体**：Astro Fonts API + 度量匹配 fallback（CLS ≈ 0）。
+- **质量**：单测 74、E2E 42（Chromium / 移动 Chromium，CI 另跑 WebKit）、axe 0 严重、构建零警告、首屏 JS 2.0 KB gz（预算 180 KB）、Lighthouse 移动端 99–100 / 100 / 100 / 100、LCP ≈ 0.76 s；1440/1024/768/390 无横向滚动。
+- **流程**：3 个分区 agent 并行实现（独立 worktree），我集成；独立四视角评审（事实 / 视觉 / 无障碍 / 代码）+ 对抗式复核，结果见 PR。
+
+## M1 验收（PLAN §8）
 | 验收项 | 结果 |
 |---|---|
-| `pnpm build` 零警告 | ✅ `scripts/build-strict.mjs` 把任何 WARN/ERROR 行当失败 |
-| schema 覆盖全部字段 | ✅ 全部 `.strict()`；单测验证真实 content 通过、常见错误被拒 |
-| 部署到预览 URL | ✅ https://zhic.me/v2/（自定义域名下 `*.github.io` 会跳转，见 ADR-010） |
-| Lighthouse 移动端 ≥ 95 | ✅ CI（上线配置，中位数）Perf 100 / A11y 100 / BP 100 / SEO 100，LCP ≈ 0.76 s |
-| 旧站内容 100% 迁入 | ✅ M0 合并时逐字验收通过（`ea935de`）；之后内容按业主更新演进 |
-
-## 仍待业主确认
-1. **拼写/语法**（按原文保留，等你改）：About 中 "Tech fans"、"colaboration"；footer "Expected to updated by each 2 weeks."；site 描述 "This is an personal/academic website"。
-2. **Classmate Map**：新简历未列，我转述的一句话简介已删除（不展示非你本人的措辞）；状态 `shipped`、平台 `web` 是根据在线页面推断的。保留还是删除？
-3. **163 邮箱仍出现在旧站页面**（zhic.me/ 与 /legacy/ 上的旧 index.html，各两处）。旧站是冻结副本，我没有改动；要不要从旧站页面里去掉？
-4. `legacy/work/njzposts.pdf` 没有被任何页面链接，但目前可通过 zhic.me/work/njzposts.pdf 公开访问（内容含社交账号信息）。是否删除？
-5. `www.zhic.me` 没有有效证书（只配置了 apex）。需要的话在 DNS 加 `www` CNAME → `peterchen1216.github.io`。
-6. 旧首页 zhic.me/ 在 `launched: true` 之前仍显示旧内容（如 GPA 3.81、只有 HashKey 一段经历）；其上的"简历"按钮已指向新 PDF。
+| 与 Figma `Home — Voxel / 1440` 一致（±4 px） | ✅ 固定几何在 ±2 px 内；高度随真实内容增加（见 D） |
+| MCButton / Tooltip / TerminalWindow / PixelBlock 组件 | ✅ `src/components/ui/` |
+| 2.5D 像素地球（无 WebGL） | ✅ CSS 条带法 |
+| hover 粒子、打字机、reduced-motion 全覆盖 | ✅ |
+| 响应式 390 / 768 / 1024 / 1440 | ✅ |
+| 移动端 LCP ≤ 2.5 s、axe 0 严重、键盘可达 | ✅（LCP ≈ 0.76 s） |
+| 业主人工验收 | ⏳ 早上 |
 
 ## 与计划的偏离
-记入 PLAN §13：ADR-009（Astro 7 / TS 6）、ADR-010（分阶段上线 /v2/）、ADR-011（简历作为事实来源）、ADR-012（M0 实现细节）、ADR-013（移除 M0 一次性迁移测试；新简历带来的 schema 扩展）。
-
-实现细节（未单独立 ADR）：
-- 分支名：会话指定 `claude/affectionate-dirac-6zpbqu`，未用 `feat/m0-*`；合并一律以业主账号 squash，合并提交不带 Claude 署名（业主要求）。
-- favicon：自绘 16×16 体素草方块 SVG（`public/favicon.svg`），用 `block/grass`、`block/dirt` 加两个手选暗部色 `#5f9a3a`、`#6e4520`（尚非 Figma 变量，M1 同步令牌时补进 Figma）；无 Mojang 素材。
-- 间距/阴影令牌 Figma 中尚无变量，`tokens.css` 中标注为 provisional，M1 同步。
+记入 PLAN §13：ADR-009 至 ADR-014。实现细节：分支名沿用会话指定的 `claude/affectionate-dirac-6zpbqu`；合并一律以业主账号 squash（业主要求）。
 
 ## 下一步（三条）
-1. 合并本次简历更新后打开 zhic.me/v2/ 与 zhic.me/work/Resume.pdf 确认。
-2. M1：按 Figma `Home — Voxel / 1440` 实现长页面全部区块与 UI 组件（MCButton/Tooltip/TerminalWindow/PixelBlock）、2.5D 像素地球、hover 粒子、打字机、响应式四档、视觉回归基线；Figma 需补 Skills / Community 区块。
-3. M1 验收后把 `content/site.yaml` 的 `launched` 改为 `true` 即正式替换旧站（DECISIONS Q1）。
+1. 你审核 M1（A–E），合并；决定是否 `launched: true`。
+2. 把确认后的偏差与文案回写 Figma（或告诉我，我来改）。
+3. M2：Three.js 体素场景与相机停靠（PLAN §8）。
 
 ## 移动端 WebGL 重启触发器（DECISIONS §16）
 未触发（场景版尚未上线）。
