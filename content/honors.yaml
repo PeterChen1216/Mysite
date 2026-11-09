@@ -1,6 +1,10 @@
-# One item per honor or award.
+# One item per honor or award, newest first.
+- name: Annual Dean's List
+  org: University of Washington
+  year: 2025-2026
+  source: Resume.pdf (2026-11-03)
 - name: Annual Dean's List
   org: University of Washington
   year: 2024-2025
   note: with 4 consecutive quarters
-  source: legacy index.html; note from Resume.pdf (2026-03-31)
+  source: legacy index.html; note from Resume.pdf (2026-03-31 version, in git history)

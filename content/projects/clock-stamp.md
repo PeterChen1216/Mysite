@@ -1,16 +1,17 @@
 ---
-title: Time Stamp
-tagline: An iOS application that shows multiple time zones in one clock frame.
-status: wip
+title: Clock Stamp
+tagline: Independent iOS Application
+status: shipped
 platform: [ios]
-stack: []
+links:
+  appstore: https://apps.apple.com/us/app/clock-stamp/id6800348277
+start: 2026-03
+end: present
+stack: [SwiftUI, MapKit, WeatherKit, Open-Meteo]
 year: 2026
 featured: true
-source: legacy index.html (ShowCase, incl. the links note); details from Resume.pdf (2026-03-31)
+source: Resume.pdf (2026-11-03)
 ---
 
-- Created an ios application show multiple time zone in one clock frame
-- Implemented my workflow on Claude Code, User A – B test.
-- Applied with OS and patch Skills, Old mac patch to newer OS, how to publish apps in AppStore(ongoing)
-
-Links will be update once publish in AppStore
+- Built a SwiftUI world-clock app with multi-city search, MapKit, WeatherKit, Open-Meteo fallback, and local preferences.
+- Conducted usability tests with ~15 users.

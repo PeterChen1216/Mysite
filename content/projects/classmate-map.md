@@ -8,7 +8,7 @@ links:
   live: https://peterchen1216.github.io/classmatemap/
 stack: []
 year: 2025
-source: Resume.pdf (2026-03-31)
+source: Resume.pdf (2026-03-31 version, in git history); not listed on the 2026-11-03 résumé
 ---
 
 - Created a map show the current schools/cities of one of my classes, use for connection or a place to think for travel

@@ -1,0 +1,11 @@
+# Skill groups shown in the Skills section, in this order.
+groups:
+  - name: Frameworks & Techs
+    items: [React, Agno Agent, SQLite]
+  - name: Programming
+    items: [Python, R, SQL, Swift (SwiftUI), JavaScript, HTML/CSS, basic Java]
+  - name: Languages
+    items: [Mandarin Chinese (Native), English (Professional Working Proficiency)]
+  - name: Tools
+    items: [GIS Mapping (QGIS & ArcGIS), Git, Xcode, Excel]
+source: Resume.pdf (2026-11-03)
