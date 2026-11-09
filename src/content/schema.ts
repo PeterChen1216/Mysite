@@ -65,7 +65,7 @@ const emailEntry = z
     address: z.email(),
     label: text.optional(),
     primary: z.boolean().default(false),
-    /** DECISIONS Q6: only the primary (uw.edu) address is shown unless the owner opts in. */
+    /** DECISIONS R2-1: the hero shows the primary address; Contact shows every `public: true` one. */
     public: z.boolean().default(false),
   })
   .strict();
@@ -298,6 +298,7 @@ export const projectSchema = <I extends z.ZodType>(image: ImageHelper<I>) =>
     .strict()
     .refine((p) => !p.cover || !!p.cover_alt, { message: '`cover_alt` is required with `cover`' })
     .refine((p) => !p.end || !!p.start, { message: '`end` needs a `start`' })
+    .refine((p) => !p.start || !!p.end, { message: '`start` needs an `end` (YYYY-MM or present)' })
     .refine((p) => !p.start || !p.end || p.end === 'present' || p.start <= p.end, {
       message: '`start` must not be after `end`',
     });

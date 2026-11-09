@@ -18,6 +18,21 @@ const interests = yaml('interests.yaml');
 const aviation = yaml('aviation.yaml');
 const skills = yaml('skills.yaml');
 
+const PLATFORM: Record<string, string> = {
+  ios: 'iOS',
+  web: 'Web',
+  cli: 'CLI',
+  research: 'Research',
+};
+const STATUS: Record<string, string> = {
+  idea: 'idea',
+  wip: 'in progress',
+  testflight: 'TestFlight',
+  shipped: 'shipped',
+  completed: 'completed',
+  archived: 'archived',
+};
+
 const straight = (s: string) =>
   s.replace(/[‘’]/g, "'").replace(/[“”]/g, '"').replace(/\s+/g, ' ').trim();
 /** Markdown → visible text (links keep their label; list markers, comments and emphasis dropped). */
@@ -99,12 +114,31 @@ test.describe('content/ renders completely', () => {
           fm.year,
           fm.role,
           fm.location,
-          ...(fm.start ? [formatRange(String(fm.start), String(fm.end ?? 'present'))] : []),
+          ...(fm.start ? [formatRange(String(fm.start), String(fm.end))] : []),
           ...(fm.stack ?? []),
           ...body,
         ]),
         card,
       ).toEqual([]);
+      // The year · platform · status line and the role · location · dates line, exactly.
+      const platforms = (fm.platform as string[]).map((p) => PLATFORM[p] ?? p).join(', ');
+      await expect(page.locator(`${card} .meta`).first()).toHaveText(
+        `${fm.year} · ${platforms} · ${STATUS[fm.status as string]}`,
+      );
+      if (fm.role || fm.location || fm.start) {
+        const line = [
+          fm.role,
+          fm.location,
+          fm.start && formatRange(String(fm.start), String(fm.end)),
+        ]
+          .filter(Boolean)
+          .join(' · ');
+        await expect(page.locator(`${card} .meta`, { hasText: line })).toHaveCount(1);
+      }
+      if (fm.stack?.length)
+        await expect(page.locator(`${card} .meta`, { hasText: 'Stack:' })).toHaveText(
+          `Stack: ${fm.stack.join(', ')}`,
+        );
       const { other = [], ...named } = fm.links ?? {};
       for (const url of Object.values(named))
         await expect(page.locator(`${card} a[href="${url}"]`)).toHaveCount(1);
@@ -116,18 +150,24 @@ test.describe('content/ renders completely', () => {
   test('work and volunteer entries land in their own sections', async ({ page }) => {
     await page.goto(V2);
     for (const x of experience) {
-      const section = x.kind === 'volunteer' ? '#community' : '#experience';
-      await expect(page.locator(section)).toContainText(String(x.company));
+      const [mine, other] =
+        x.kind === 'volunteer' ? ['#community', '#experience'] : ['#experience', '#community'];
+      await expect(page.locator(mine)).toContainText(String(x.company));
+      if ((await page.locator(other).count()) > 0)
+        await expect(page.locator(other)).not.toContainText(String(x.company));
     }
   });
 
   test('every skill group and item', async ({ page }) => {
     await page.goto(V2);
-    const text = await visibleText(page, '#skills');
-    for (const g of skills.groups as { name: string; items: unknown[]; basic?: unknown[] }[]) {
-      const basic = g.basic?.length ? [`; basic ${g.basic.join(', ')}`] : [];
-      expect(missing(text, [g.name, ...g.items, ...basic]), g.name).toEqual([]);
-    }
+    const groups = skills.groups as { name: string; items: unknown[]; basic?: unknown[] }[];
+    await expect(page.locator('#skills dt')).toHaveText(groups.map((g) => g.name));
+    await expect(page.locator('#skills dd')).toHaveText(
+      groups.map(
+        (g) =>
+          g.items.map(String).join(', ') + (g.basic?.length ? `; basic ${g.basic.join(', ')}` : ''),
+      ),
+    );
   });
 
   test('AvGeek panels show only what aviation.yaml has', async ({ page }) => {

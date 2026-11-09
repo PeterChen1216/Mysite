@@ -23,7 +23,7 @@
   - 2024–2025 Dean's List 的 "with 4 consecutive quarters" 保留（来源：旧简历，历史事实不会过期）。
   - X Community Notes 的状态记为新增的 `completed`（已结束的课程/研究项目）；Clock Stamp 记为 `shipped`（App Store 页面已核实在线）。
   - Data Science track 保留（来源：旧站与你的站点标语）。
-- schema：项目新增可选 `role` / `start` / `end` / `links.other`、状态 `completed`；新增 `skills` 集合；`kind: volunteer` 的经历显示在 Community 区块。
+- schema：项目新增可选 `role` / `location` / `start`+`end`（成对出现）/ `links.other`、状态 `completed`，`tagline` 改为可选；教育新增 `gpa_label`（"Cumulative GPA"）；技能组新增 `basic`（"; basic Java"）；新增 `skills` 集合；`kind: volunteer` 的经历显示在 Community 区块。
 - 测试：M0 一次性迁移验收（逐字比对旧站）在内容按新简历更新后已不再适用，已移除（ADR-013）；常规 E2E 仍从 `content/` 读取全部期望值。
 
 ## M0 验收（PLAN §8）— 全部完成
@@ -37,10 +37,11 @@
 
 ## 仍待业主确认
 1. **拼写/语法**（按原文保留，等你改）：About 中 "Tech fans"、"colaboration"；footer "Expected to updated by each 2 weeks."；site 描述 "This is an personal/academic website"。
-2. **Classmate Map** 的一句话简介是我根据旧简历转述的，请确认或改写（其余项目的简介均为新简历原文）。
-3. `legacy/work/njzposts.pdf` 没有被任何页面链接，但目前可通过 zhic.me/work/njzposts.pdf 公开访问（内容含社交账号信息）。是否删除？
-4. `www.zhic.me` 没有有效证书（只配置了 apex）。需要的话在 DNS 加 `www` CNAME → `peterchen1216.github.io`。
-5. 旧首页 zhic.me/ 在 `launched: true` 之前仍显示旧内容（如 GPA 3.81、只有 HashKey 一段经历）；其上的"简历"按钮已指向新 PDF。
+2. **Classmate Map**：新简历未列，我转述的一句话简介已删除（不展示非你本人的措辞）；状态 `shipped`、平台 `web` 是根据在线页面推断的。保留还是删除？
+3. **163 邮箱仍出现在旧站页面**（zhic.me/ 与 /legacy/ 上的旧 index.html，各两处）。旧站是冻结副本，我没有改动；要不要从旧站页面里去掉？
+4. `legacy/work/njzposts.pdf` 没有被任何页面链接，但目前可通过 zhic.me/work/njzposts.pdf 公开访问（内容含社交账号信息）。是否删除？
+5. `www.zhic.me` 没有有效证书（只配置了 apex）。需要的话在 DNS 加 `www` CNAME → `peterchen1216.github.io`。
+6. 旧首页 zhic.me/ 在 `launched: true` 之前仍显示旧内容（如 GPA 3.81、只有 HashKey 一段经历）；其上的"简历"按钮已指向新 PDF。
 
 ## 与计划的偏离
 记入 PLAN §13：ADR-009（Astro 7 / TS 6）、ADR-010（分阶段上线 /v2/）、ADR-011（简历作为事实来源）、ADR-012（M0 实现细节）、ADR-013（移除 M0 一次性迁移测试；新简历带来的 schema 扩展）。

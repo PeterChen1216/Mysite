@@ -177,6 +177,7 @@ describe('schemas reject mistakes an owner could make', () => {
     expect(() => projectSchema(image).parse({ ...ok, end: 'present' })).not.toThrow();
     expect(() => projectSchema(image).parse({ ...ok, end: '2025-01' })).toThrow(/start/);
     expect(() => projectSchema(image).parse({ ...p, end: '2025-12' })).toThrow(/needs a `start`/);
+    expect(() => projectSchema(image).parse({ ...p, start: '2025-09' })).toThrow(/needs an `end`/);
     const links = { other: [{ label: 'Lab', url: 'https://example.edu/lab/' }] };
     expect(projectSchema(image).parse({ ...p, links }).links?.other).toHaveLength(1);
     expect(() =>

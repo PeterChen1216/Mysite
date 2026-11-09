@@ -363,7 +363,7 @@ content/
 - **ADR-010** 分阶段上线：`content/site.yaml → launched: false` 时，Pages 产物根目录仍是旧站（zhic.me 不变），v2 以 base `/v2/` 预览于 `zhic.me/v2/`（robots 屏蔽）；旧站同时保留于 `/legacy/`。M1 验收后业主把 `launched` 改为 `true` 即切换：v2 占根目录、旧站留 `/legacy/`、`/work/Resume.pdf` 旧链接继续可用。原因：自定义域名下 `*.github.io` 会 301 到 zhic.me，无法另开预览 URL；同一仓库只能有一个 Pages 站点。部署改为 GitHub Actions（需业主在 Settings → Pages 把 Source 改为 GitHub Actions）。（2026-11-09，M0）
 - **ADR-011** 事实来源：除旧 `index.html` 外，允许从业主本人上传的 `Resume.pdf` 迁入事实（经历要点、辅修、课程、项目），**原文照录**并在 `source:` 字段注明；简历中的电话、志愿活动、技能暂不在页面上展示，待业主确认（注意：可下载的简历 PDF 本身含电话与 163 邮箱）。（2026-11-09，M0）
 - **ADR-012** M0 的实现细节偏离：① 经历 `highlights` 上限放宽为 5（简历原文 5 条照录，M1 设计按 1–3 条展示，待业主挑选）；② Lighthouse 验收在"上线配置"（base `/`）下测量，CI 同时对上线配置做组装 + E2E；③ 根目录 `CNAME` 保留，但 Pages 产物中的 CNAME 由 `content/site.yaml → domain` 生成；④ WebKit E2E 仅在 CI 运行；⑤ 逐字核对旧站事实的迁移测试改为一次性验收（`pnpm test:migration`），常规 E2E 改为从 `content/` 读取期望值，业主改文案不需要改测试；⑥ 简历只有一个来源 `content/resume/Resume.pdf`，组装时复制到 `/work/Resume.pdf` 与 `/legacy/work/Resume.pdf`。（2026-11-09，M0 评审后）
-- **ADR-013** 新简历（2026-11-03）迁入后：① 移除 M0 一次性逐字迁移测试（`pnpm test:migration`）——它在 M0 合并（`ea935de`）时已通过，而内容按业主更新后旧站事实不再是期望值；常规 E2E 继续从 `content/` 读取期望值。② 内容模型扩展：项目可选 `role`/`start`/`end`/`links.other`、状态 `completed`；新增 `content/skills.yaml`；`kind: volunteer` 的经历单列 Community 区块。M1 设计需为 Skills / Community 补 Figma 区块。（2026-11-09）
+- **ADR-013** 新简历（2026-11-03）迁入后：① 移除 M0 一次性逐字迁移测试（`pnpm test:migration`）——它在 M0 合并（`ea935de`）时已通过，而内容按业主更新后旧站事实不再是期望值；常规 E2E 继续从 `content/` 读取期望值。② 内容模型扩展：项目可选 `role`/`location`/`start`+`end`（成对）/`links.other`、状态 `completed`，`tagline` 由必填改为可选（偏离附录 A：宁缺不编）；教育 `gpa_label`；技能组 `basic`；新增 `content/skills.yaml`；`kind: volunteer` 的经历单列 Community 区块。M1 设计需为 Skills / Community 补 Figma 区块。（2026-11-09）
 
 ---
 

@@ -267,7 +267,7 @@ const hasAvgeek =
               {[
                 data.role,
                 data.location,
-                data.start && formatRange(data.start, data.end ?? 'present'),
+                data.start && data.end && formatRange(data.start, data.end),
               ]
                 .filter(Boolean)
                 .join(' · ')}
@@ -275,30 +275,34 @@ const hasAvgeek =
           )}
           {data.stack.length > 0 && <p class="meta">Stack: {data.stack.join(', ')}</p>}
           <Body />
-          {data.links && (
-            <ul class="links">
-              {data.links.live && (
-                <li>
-                  <a href={data.links.live}>Live site</a>
-                </li>
-              )}
-              {data.links.repo && (
-                <li>
-                  <a href={data.links.repo}>Source code</a>
-                </li>
-              )}
-              {data.links.appstore && (
-                <li>
-                  <a href={data.links.appstore}>App Store</a>
-                </li>
-              )}
-              {data.links.other.map((l) => (
-                <li>
-                  <a href={l.url}>{l.label}</a>
-                </li>
-              ))}
-            </ul>
-          )}
+          {data.links &&
+            (data.links.live ||
+              data.links.repo ||
+              data.links.appstore ||
+              data.links.other.length > 0) && (
+              <ul class="links">
+                {data.links.live && (
+                  <li>
+                    <a href={data.links.live}>Live site</a>
+                  </li>
+                )}
+                {data.links.repo && (
+                  <li>
+                    <a href={data.links.repo}>Source code</a>
+                  </li>
+                )}
+                {data.links.appstore && (
+                  <li>
+                    <a href={data.links.appstore}>App Store</a>
+                  </li>
+                )}
+                {data.links.other.map((l) => (
+                  <li>
+                    <a href={l.url}>{l.label}</a>
+                  </li>
+                ))}
+              </ul>
+            )}
         </article>
       ))}
     </section>
@@ -327,6 +331,7 @@ const hasAvgeek =
         {community.map((x) => (
           <article>
             <h3>
+              {x.logo && <Image src={x.logo} alt="" width={24} height={24} class="logo" />}
               {x.role} @ {x.url ? <a href={x.url}>{x.company}</a> : x.company}, {x.location}
             </h3>
             <p class="dates">{formatRange(x.start, x.end)}</p>
@@ -472,20 +477,17 @@ const hasAvgeek =
     margin-inline: auto;
     padding-inline: var(--space-4);
   }
-  /* One line at every width: the 8-bit font is much wider than its fallback, so a wrapping
-     nav would change height when the font loads and shift the whole page (CLS). */
+  /* The nav uses the monospace body font, whose width matches its fallback, so the line breaks
+     are the same before and after the web font loads (the 8-bit font is ~1.7× wider than its
+     fallback and made the wrapped nav grow → CLS 0.28). M1 replaces this nav. */
   .site-header ul {
     display: flex;
-    flex-wrap: nowrap;
-    overflow-x: auto;
-    scrollbar-width: none;
-    white-space: nowrap;
+    flex-wrap: wrap;
     gap: var(--space-2) var(--space-4);
     list-style: none;
     margin: 0;
     padding: var(--space-4) 0;
-    font: var(--type-pixel-label);
-    letter-spacing: var(--type-pixel-label-tracking);
+    font: var(--type-code-sm);
   }
   .hero {
     display: flex;

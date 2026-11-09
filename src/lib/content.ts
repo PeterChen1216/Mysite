@@ -39,10 +39,13 @@ export async function getEducation() {
 
 /** Work entries (everything except `kind: volunteer`), newest first. */
 export async function getExperience() {
-  return (await nonEmpty('experience'))
+  const work = (await nonEmpty('experience'))
     .map((e) => e.data)
     .filter((e) => e.kind !== 'volunteer')
     .sort(byStartDesc);
+  if (work.length === 0)
+    throw new Error('content/experience.yaml has no work (non-volunteer) entries');
+  return work;
 }
 
 /** Community / volunteer entries (`kind: volunteer`), newest first. May be empty. */
