@@ -74,7 +74,7 @@ const layout = cards === 3 ? 'stack' : cards % 2 === 1 ? 'strip' : 'pairs';
     display: flex;
     flex-direction: column;
     gap: 48px;
-    padding: 120px 64px 48px;
+    padding: 120px var(--gutter) 48px;
   }
   /* Figma: left 1150 / top 40 in the 1440 frame → anchored to the right edge. */
   .projects__diamond {

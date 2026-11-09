@@ -18,7 +18,12 @@ const { id, cmd, title, blurb } = Astro.props;
       {title.map((line, i) => (
         <>
           {line}
-          {i < title.length - 1 && <br />}
+          {i < title.length - 1 && (
+            <>
+              {' '}
+              <br />
+            </>
+          )}
         </>
       ))}
     </h2>

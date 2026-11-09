@@ -1,7 +1,7 @@
 ---
 /** Enchanted-tooltip chip (Figma "Chip"): purple border on near-black, 8-bit label. */
 interface Props {
-  tone?: 'enchant' | 'diamond' | 'gold' | 'grass' | 'redstone' | 'white';
+  tone?: 'enchant' | 'diamond' | 'cyan' | 'gold' | 'grass' | 'redstone' | 'white';
   as?: 'span' | 'li';
 }
 const { tone = 'diamond', as: Tag = 'span' } = Astro.props;
@@ -28,6 +28,9 @@ const { tone = 'diamond', as: Tag = 'span' } = Astro.props;
   }
   .chip--diamond {
     color: var(--color-accent-diamond);
+  }
+  .chip--cyan {
+    color: #55ffff;
   }
   .chip--gold {
     color: var(--color-accent-gold);

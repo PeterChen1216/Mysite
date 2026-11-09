@@ -95,6 +95,9 @@ const scale = size / 324;
     left: -485px;
     width: 1944px;
     height: 324px;
+  }
+  /* Spins only when the motion class is set (JS on, no reduced motion) — see src/styles/motion.css. */
+  :global(html.motion) .globe__strip {
     animation: globe-spin 12s linear infinite;
     will-change: transform;
   }
@@ -123,9 +126,8 @@ const scale = size / 324;
     }
   }
   @media (prefers-reduced-motion: reduce) {
-    .globe__strip {
+    :global(html.motion) .globe__strip {
       animation: none;
-      transform: translateX(-324px);
     }
   }
 </style>

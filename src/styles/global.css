@@ -5,6 +5,11 @@
   box-sizing: border-box;
 }
 
+:root {
+  /* Page side gutter: 64 px (Figma) until the content reaches 1312 px, then centred. */
+  --gutter: max(64px, calc((100% - 1312px) / 2));
+}
+
 html {
   color-scheme: dark;
   background: var(--color-bg-night);

@@ -271,6 +271,8 @@ const commits = rows.map((row) => {
     width: 44px;
     height: 44px;
     object-fit: contain;
+    /* The logo file has a wide dark margin around the wordmark: zoom into it. */
+    transform: scale(1.35);
   }
   .commit__body {
     grid-area: body;
