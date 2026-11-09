@@ -1,0 +1,121 @@
+---
+/**
+ * Skills inventory (#skills; not in Figma — drawn in the About cards' language): one row per
+ * skills.yaml group, each skill in an inventory slot, "basic" skills in dashed slots.
+ * The separators are real text (visually hidden), so each <dd> reads exactly
+ * "A, B, C; basic D" — for screen readers, copy/paste and the content tests.
+ */
+import Card from '../../ui/Card.astro';
+import CardTitle from '../../ui/CardTitle.astro';
+import type { PageData } from '../../../lib/page-data';
+
+interface Props {
+  data: PageData;
+}
+const { data } = Astro.props;
+const { copy, skills } = data;
+---
+
+<Card class="about-card about-card--skills" id="skills" labelledby="about-skills">
+  <div class="sk">
+    <CardTitle as="h3" id="about-skills" label={copy.about.card_skills} />
+    <dl class="sk__list">
+      {skills.groups.map((g) => (
+        <div class="sk__row">
+          <dt class="sk__name">{g.name}</dt>
+          <dd class="sk__items">
+            {g.items.map((item, i) => (
+              <>
+                {i > 0 && <span class="visually-hidden">, </span>}
+                <span class="sk__slot">{item}</span>
+              </>
+            ))}
+            {g.basic.length > 0 && (
+              <>
+                <span class="visually-hidden">; </span>
+                <span class="sk__basic">
+                  <span class="sk__basic-label">{`${copy.about.skills_basic} `}</span>
+                  {g.basic.map((item, i) => (
+                    <>
+                      {i > 0 && <span class="visually-hidden">, </span>}
+                      <span class="sk__slot sk__slot--basic">{item}</span>
+                    </>
+                  ))}
+                </span>
+              </>
+            )}
+          </dd>
+        </div>
+      ))}
+    </dl>
+  </div>
+</Card>
+
+<style>
+  .sk {
+    display: flex;
+    flex-direction: column;
+    gap: 18px;
+  }
+  /* One grid for all rows (rows use display: contents), so the labels share a column. */
+  .sk__list {
+    display: grid;
+    grid-template-columns: max-content minmax(0, 1fr);
+    align-items: baseline;
+    gap: 12px 24px;
+    margin: 0;
+  }
+  .sk__row {
+    display: contents;
+  }
+  .sk__name {
+    font: var(--type-code-label);
+    letter-spacing: var(--type-code-label-tracking);
+    text-transform: uppercase;
+    color: var(--color-text-mid);
+  }
+  .sk__name::before {
+    content: '> ';
+    content: '> ' / '';
+    color: var(--color-accent-terminal-green);
+  }
+  .sk__items,
+  .sk__basic {
+    position: relative;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: 6px;
+    margin: 0;
+  }
+  /* Inventory slot: terminal background, edge border, a pixel of inset shade. */
+  .sk__slot {
+    padding: 3px 8px;
+    background: var(--color-bg-terminal);
+    border: 2px solid var(--color-border-edge);
+    box-shadow: inset 2px 2px 0 rgb(0 0 0 / 0.45);
+    font: var(--type-code-sm);
+    color: var(--color-text-hi);
+  }
+  .sk__slot--basic {
+    border-style: dashed;
+    box-shadow: none;
+    color: var(--color-text-mid);
+  }
+  .sk__basic-label {
+    margin-left: 6px;
+    font: var(--type-code-label);
+    letter-spacing: var(--type-code-label-tracking);
+    text-transform: uppercase;
+    color: var(--color-text-mid);
+  }
+  @media (max-width: 767px) {
+    .sk__list {
+      grid-template-columns: minmax(0, 1fr);
+      gap: 8px;
+    }
+    .sk__row + .sk__row > .sk__name {
+      margin-top: 8px;
+    }
+  }
+</style>

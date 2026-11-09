@@ -1,6 +1,7 @@
 import { defineConfig, devices } from '@playwright/test';
 
-const PORT = 4322;
+// Override with E2E_PORT when several checkouts run E2E at once.
+const PORT = Number(process.env.E2E_PORT ?? 4322);
 const CI = !!process.env.CI;
 
 // E2E runs against the assembled GitHub Pages artifact (_site/), not the dev server,

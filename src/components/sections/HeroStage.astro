@@ -1,0 +1,275 @@
+---
+/**
+ * Hero stage (Figma "HeroStage" 17:125, 560×640): pixel globe with orbit rings, ten voxel blocks
+ * that drop in, the player card (pixel portrait; hover shows the real photo — DECISIONS Q7), and
+ * three tooltips whose text comes from content/ via src/lib/derive.ts. Decorative except the
+ * tooltips, which repeat facts available elsewhere on the page, and the player card: it takes
+ * keyboard focus so the photo can be revealed without a mouse.
+ */
+import { Image } from 'astro:assets';
+import orbit from '../../assets/voxel/hero/orbit.png';
+import orbit2 from '../../assets/voxel/hero/orbit-2.png';
+import satellite from '../../assets/voxel/hero/satellite.svg';
+import portrait from '../../assets/voxel/hero/portrait-pixel.svg';
+import PixelGlobe from '../ui/PixelGlobe.astro';
+import Tooltip from '../ui/Tooltip.astro';
+import VoxelBlock, { type BlockName } from '../ui/VoxelBlock.astro';
+import type { PageData } from '../../lib/page-data';
+
+interface Props {
+  data: PageData;
+}
+const { data } = Astro.props;
+
+// Figma positions (px within the 560×640 stage), in the order they drop in.
+const blocks: Array<{ name: BlockName; x: number; y: number; w: number; glow?: string }> = [
+  { name: 'grass', x: 352, y: 416, w: 86 },
+  { name: 'grass', x: 309, y: 440, w: 86 },
+  { name: 'dirt', x: 395, y: 440, w: 86 },
+  { name: 'grass', x: 352, y: 464, w: 86 },
+  { name: 'diamond', x: 450, y: 40, w: 69, glow: 'rgb(74 237 217 / 0.35)' },
+  { name: 'tnt', x: 24, y: 60, w: 58 },
+  { name: 'command', x: 470, y: 300, w: 67 },
+  { name: 'terminal', x: 8, y: 372, w: 78 },
+  { name: 'glow', x: 486, y: 200, w: 53, glow: 'rgb(242 201 76 / 0.6)' },
+  { name: 'gold', x: 180, y: 20, w: 47 },
+];
+---
+
+<div class="stage-wrap">
+  <div class="stage">
+    <img class="stage__orbit" src={orbit.src} width="460" height="460" alt="" data-loop="orbit" />
+    <img
+      class="stage__orbit2"
+      src={orbit2.src}
+      width="540"
+      height="200"
+      alt=""
+      data-loop="orbit-sway"
+    />
+    <div class="stage__globe" data-intro="globe">
+      <PixelGlobe size={324} interactive />
+    </div>
+    <img
+      class="stage__satellite"
+      src={satellite.src}
+      width="28"
+      height="20"
+      alt=""
+      data-intro="rise"
+      style="--i:0"
+    />
+    {blocks.map((b, i) => (
+      <div
+        class="stage__block"
+        data-intro="drop"
+        style={`left:${b.x}px;top:${b.y}px;--i:${i};${b.glow ? `--glow:${b.glow}` : ''}`}
+      >
+        <VoxelBlock name={b.name} size={b.w} shadow={false} eager />
+      </div>
+    ))}
+    <figure
+      class="stage__card"
+      data-intro="rise"
+      style="--i:1"
+      data-particles
+      tabindex="0"
+      aria-labelledby="stage-photo-caption"
+    >
+      <img class="stage__portrait" src={portrait.src} width="156" height="195" alt="" />
+      <Image
+        class="stage__photo"
+        src={data.profile.avatar}
+        alt=""
+        width={156}
+        height={195}
+        widths={[156, 312]}
+        sizes="156px"
+        loading="lazy"
+      />
+      <span class="stage__xp" aria-hidden="true"></span>
+      <figcaption id="stage-photo-caption" class="visually-hidden">
+        {data.profile.avatar_alt}
+      </figcaption>
+    </figure>
+    {data.githubHandle && (
+      <p class="stage__tag" data-intro="rise" style="--i:2">
+        <span class="stage__tag-in">{data.githubHandle}</span>
+      </p>
+    )}
+    <!-- Badges are anchored to the right edge: their text length depends on content. -->
+    {data.hero.gpaBadge && (
+      <div class="stage__tip stage__tip--gpa" data-intro="rise" data-particles>
+        <Tooltip tone="gold" text={data.hero.gpaBadge} />
+      </div>
+    )}
+    <div class="stage__tip" style="right:0;top:118px" data-intro="rise" data-particles>
+      <Tooltip tone="white" text={data.hero.avgeekBadge} />
+    </div>
+    <div
+      class="stage__tip stage__tip--bottom"
+      style="right:0;top:596px"
+      data-intro="rise"
+      data-particles
+    >
+      <Tooltip tone="cyan" text={data.hero.projectBadge} />
+    </div>
+  </div>
+</div>
+
+<style>
+  .stage-wrap {
+    container-type: inline-size;
+    width: 560px;
+    max-width: 100%;
+    flex: none;
+  }
+  .stage {
+    --s: 1;
+    position: relative;
+    width: 560px;
+    height: 640px;
+    transform: scale(var(--s));
+    transform-origin: 0 0;
+    margin-bottom: calc(640px * (var(--s) - 1));
+  }
+  /* --inv undoes the stage scale for the badges' text so it never drops below 8 px; below
+     0.78 scale the badges and name tag are hidden (their facts are in About and Projects). */
+  @container (max-width: 559px) {
+    .stage {
+      --s: 0.89;
+      --inv: 1.124;
+    }
+  }
+  @container (max-width: 499px) {
+    .stage {
+      --s: 0.78;
+      --inv: 1.282;
+    }
+  }
+  @container (max-width: 439px) {
+    .stage {
+      --s: 0.67;
+    }
+    .stage__tip,
+    .stage__tag {
+      display: none;
+    }
+  }
+  @container (max-width: 379px) {
+    .stage {
+      --s: 0.6;
+    }
+  }
+  @container (max-width: 339px) {
+    .stage {
+      --s: 0.53;
+    }
+  }
+  .stage > * {
+    position: absolute;
+  }
+  .stage__orbit {
+    left: 60px;
+    top: 70px;
+    width: 460px;
+    height: 460px;
+    max-width: none;
+  }
+  /* Figma: a 540×200 ring centred in a 575×357 box at (−41.8, 200), tilted +18° (17:127). */
+  .stage__orbit2 {
+    left: -24.1px;
+    top: 278.5px;
+    width: 540px;
+    height: 200px;
+    max-width: none;
+    transform: rotate(18deg);
+  }
+  .stage__globe {
+    left: 128px;
+    top: 138px;
+  }
+  .stage__satellite {
+    left: 74px;
+    top: 128px;
+  }
+  .stage__block {
+    filter: drop-shadow(8px 8px 0 rgb(0 0 0 / 0.35)) drop-shadow(0 0 14px var(--glow, transparent));
+  }
+  .stage__card {
+    left: 8px;
+    top: 440px;
+    width: 156px;
+    height: 195px;
+    margin: 0;
+    overflow: hidden;
+    background: var(--color-bg-panel);
+    border: 3px solid #000;
+    box-shadow: 8px 8px 0 0 rgb(0 0 0 / 0.5);
+    box-sizing: content-box;
+  }
+  .stage__portrait,
+  .stage__photo {
+    position: absolute;
+    inset: 0;
+    width: 156px;
+    height: 195px;
+    max-width: none;
+    object-fit: cover;
+  }
+  .stage__photo {
+    opacity: 0;
+    /* src/motion/params.ts UI.photoSwap */
+    transition: opacity var(--m-photo-swap);
+  }
+  .stage__card:hover .stage__photo,
+  .stage__card:focus-visible .stage__photo {
+    opacity: 1;
+  }
+  .stage__xp {
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    height: 6px;
+    background: var(--color-accent-terminal-green);
+  }
+  .stage__tag {
+    left: 18px;
+    top: 408px;
+    margin: 0;
+  }
+  .stage__tag-in {
+    display: block;
+    padding: 6px 8px;
+    background: rgb(0 0 0 / 0.55);
+    font: var(--type-pixel-tiny);
+    letter-spacing: var(--type-pixel-tiny-tracking);
+    color: #fff;
+    zoom: var(--inv, 1);
+  }
+  /* GPA badge: right-anchored so a long honor name can't run off the page. It is longer than
+     Figma's (the honor's full name comes from content), so where there is room beside the
+     unscaled stage — side by side from 1280 px, centred and stacked at 672–1023 px — it
+     overhangs the stage by 40 px (Figma: 24 px) to stay clear of the gold block. Elsewhere it
+     covers part of the gold block: its top half where the stage is scaled down and the badge
+     keeps its full text size, a 13×14 px corner at 592–671 px (docs/STATUS.md D). */
+  .stage__tip--gpa {
+    right: 0;
+    top: 8px;
+  }
+  @media (min-width: 1280px), (min-width: 672px) and (max-width: 1023px) {
+    .stage__tip--gpa {
+      right: -40px;
+    }
+  }
+  /* Zoom the badge itself (not its positioned wrapper, whose offsets must not scale). */
+  .stage__tip > :global(.tooltip) {
+    zoom: var(--inv, 1);
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .stage__photo {
+      transition: none;
+    }
+  }
+</style>

@@ -62,8 +62,12 @@ export function findBreakage(root) {
   for (const rel of textFiles(root)) {
     if (!rel.endsWith('.md')) continue;
     const body = readFileSync(join(root, rel), 'utf8');
-    const open = body.lastIndexOf('<!--');
-    if (open !== -1 && body.indexOf('-->', open + 4) === -1) {
+    // Complete comments (`<!-->` and `<!--->` are empty ones; same pattern as
+    // src/content/guards.ts) are blanked out, keeping line numbers; a `<!--` left over is open.
+    const open = body
+      .replace(/<!--(?:-?>|[\s\S]*?-->)/g, (c) => c.replace(/[^\n]/g, ' '))
+      .indexOf('<!--');
+    if (open !== -1) {
       const line = body.slice(0, open).split('\n').length;
       problems.push(`content/${rel}:${line}: "<!--" is never closed with "-->"`);
     }

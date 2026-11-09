@@ -1,0 +1,93 @@
+---
+/**
+ * Experience (Figma "Experience" 22:1343): section header, then the career as a `git log` —
+ * HEAD (profile.status), every work entry and each school, newest first, with each role's
+ * highlights under its row. Volunteer entries follow in a smaller community log, a section of
+ * its own so #experience lists work only. Rows come from derive.gitLog / experienceRows.
+ */
+import SectionHeader from '../ui/SectionHeader.astro';
+import GitLog from './experience/GitLog.astro';
+import type { PageData } from '../../lib/page-data';
+
+interface Props {
+  data: PageData;
+}
+const { data } = Astro.props;
+const { copy } = data;
+---
+
+<section id="experience" class="exp" aria-labelledby="experience-title">
+  <SectionHeader
+    id="experience-title"
+    cmd={copy.experience.cmd}
+    title={copy.experience.title}
+    blurb={copy.experience.blurb}
+  />
+  <GitLog rows={data.log} entries={data.experience} headHref="#contact" />
+</section>
+{data.community.length > 0 && (
+  <section id="community" class="exp exp--community" aria-labelledby="community-title">
+    <header class="community__head">
+      <p class="community__cmd" aria-hidden="true">
+        <span class="g">$</span> {copy.experience.community_cmd}
+      </p>
+      <h2 id="community-title" class="community__h">
+        {copy.experience.community_title}
+      </h2>
+    </header>
+    <GitLog rows={data.communityLog} entries={data.community} tone="community" />
+  </section>
+)}
+
+<style>
+  .exp {
+    position: relative;
+    z-index: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 48px;
+    padding: 120px var(--gutter) 48px;
+  }
+  .exp--community {
+    gap: 28px;
+    padding-top: 24px;
+  }
+  .community__head {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+  /* Same eyebrow as ui/SectionHeader, one step smaller heading (Pixel/H3). */
+  .community__cmd {
+    margin: 0;
+    font: var(--type-code-label);
+    letter-spacing: var(--type-code-label-tracking);
+    text-transform: uppercase;
+    color: var(--color-accent-diamond);
+  }
+  .g {
+    color: var(--color-accent-terminal-green);
+  }
+  .community__h {
+    margin: 0;
+    font: var(--type-pixel-h3);
+    letter-spacing: var(--type-pixel-h3-tracking);
+    color: var(--color-text-hi);
+    text-shadow: 3px 3px 0 rgb(0 0 0 / 0.85);
+  }
+  @media (max-width: 1279px) {
+    .exp {
+      padding-inline: 32px;
+    }
+  }
+  @media (max-width: 767px) {
+    .exp {
+      gap: 32px;
+      padding: 88px 16px 40px;
+    }
+    .exp--community {
+      gap: 24px;
+      padding-top: 16px;
+    }
+  }
+</style>

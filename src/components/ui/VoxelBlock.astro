@@ -1,0 +1,63 @@
+---
+/**
+ * Isometric voxel block (Figma Block/*): self-drawn SVGs exported from the design — no Mojang
+ * textures (PLAN §12). Decorative by default (alt=""); rendered as <img> so the SVG is cached.
+ */
+import type { ImageMetadata } from 'astro';
+
+export type BlockName =
+  | 'grass'
+  | 'dirt'
+  | 'diamond'
+  | 'tnt'
+  | 'command'
+  | 'terminal'
+  | 'glow'
+  | 'gold'
+  | 'obsidian'
+  | 'bookshelf';
+
+interface Props {
+  name: BlockName;
+  /** Rendered width in px; height follows the block's aspect ratio. */
+  size?: number;
+  class?: string;
+  style?: string;
+  /** Hard drop shadow like the design (6px 6px 0 rgba(0,0,0,.35)). */
+  shadow?: boolean;
+  /** Eager-load blocks that are visible on first paint. */
+  eager?: boolean;
+  alt?: string;
+}
+
+const blocks = import.meta.glob<{ default: ImageMetadata }>('../../assets/voxel/blocks/*.svg', {
+  eager: true,
+});
+const { name, size = 56, class: cls, style, shadow = true, eager = false, alt = '' } = Astro.props;
+const meta = blocks[`../../assets/voxel/blocks/${name}.svg`]?.default;
+if (!meta) throw new Error(`Unknown voxel block "${name}"`);
+const height = Math.round((size * meta.height) / meta.width);
+---
+
+<img
+  src={meta.src}
+  width={size}
+  height={height}
+  alt={alt}
+  class:list={['voxel', { 'voxel--shadow': shadow }, cls]}
+  style={style}
+  loading={eager ? 'eager' : 'lazy'}
+  decoding="async"
+  draggable="false"
+  data-particles={alt ? undefined : ''}
+/>
+
+<style>
+  .voxel {
+    display: block;
+    user-select: none;
+  }
+  .voxel--shadow {
+    filter: drop-shadow(6px 6px 0 rgb(0 0 0 / 0.35));
+  }
+</style>

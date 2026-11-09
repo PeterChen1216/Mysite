@@ -1,32 +1,39 @@
 ---
-import '@fontsource/pixelify-sans/latin-600.css';
-import '@fontsource/pixelify-sans/latin-700.css';
-import '@fontsource/press-start-2p/latin-400.css';
-import '@fontsource/vt323/latin-400.css';
-import '@fontsource/jetbrains-mono/latin-400.css';
-import '@fontsource/jetbrains-mono/latin-500.css';
-import '@fontsource/jetbrains-mono/latin-700.css';
+import { Font } from 'astro:assets';
 import '../styles/tokens.css';
 import '../styles/global.css';
-import { getSite } from '../lib/content';
+import '../styles/motion.css';
+import { getCopy, getSite } from '../lib/content';
 import { withBase } from '../lib/paths';
+import { motionCssVars } from '../motion/params';
 
 interface Props {
   title?: string;
   description?: string;
 }
 
-const site = await getSite();
+const [site, copy] = await Promise.all([getSite(), getCopy()]);
 const title = Astro.props.title ?? site.meta.title;
 const description = Astro.props.description ?? site.meta.description;
 const canonical = new URL(Astro.url.pathname, Astro.site);
 ---
 
 <!doctype html>
-<html lang="en">
+<html lang="en" style={motionCssVars()}>
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <script is:inline>
+      // Motion only when JS runs and reduced motion isn't requested (src/styles/motion.css).
+      if (!matchMedia('(prefers-reduced-motion: reduce)').matches)
+        document.documentElement.classList.add('motion');
+    </script>
+    <Font cssVariable="--font-code" preload={[{ weight: 400 }]} />
+    <Font cssVariable="--font-pixel" preload={[{ weight: 700 }]} />
+    <Font cssVariable="--font-8bit" preload />
+    <!-- The hero terminal is on the first screen: without a preload its lines first wrap in the
+         wider fallback and then shrink, shifting the stage and buttons (CLS ≈ 0.03). -->
+    <Font cssVariable="--font-term" preload />
     <title>{title}</title>
     <meta name="description" content={description} />
     {site.meta.keywords.length > 0 && (
@@ -45,7 +52,7 @@ const canonical = new URL(Astro.url.pathname, Astro.site);
   </head>
   <body>
     <a class="skip-link" href="#main">
-      Skip to content
+      {copy.labels.skip_link}
     </a>
     <slot />
   </body>

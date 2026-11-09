@@ -1,0 +1,44 @@
+---
+/** Inventory-slot panel (Figma "Card/*"): panel background, edge border, hard shadow. */
+interface Props {
+  class?: string;
+  dashed?: boolean;
+  labelledby?: string;
+  id?: string;
+  as?: 'article' | 'section' | 'div';
+}
+const { class: cls, dashed = false, labelledby, id, as: Tag = 'article' } = Astro.props;
+---
+
+<Tag
+  class:list={['card', { 'card--dashed': dashed }, cls]}
+  aria-labelledby={labelledby}
+  id={id}
+  data-particles
+>
+  <slot />
+</Tag>
+
+<style>
+  .card {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    padding: 28px;
+    background: var(--color-bg-panel);
+    border: 2px solid var(--color-border-edge);
+    box-shadow: 6px 6px 0 0 rgb(0 0 0 / 0.6); /* Figma Card/*: p-28, 6px 6px 0 rgba(0,0,0,.6) */
+    min-width: 0;
+  }
+  .card--dashed {
+    border-style: dashed;
+    box-shadow: none;
+    background: rgb(18 23 42 / 0.6);
+  }
+  @media (max-width: 767px) {
+    .card {
+      padding: 22px 20px;
+    }
+  }
+</style>

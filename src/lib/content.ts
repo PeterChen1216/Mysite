@@ -3,7 +3,8 @@
  * required file is missing or empty, so a broken content/ never deploys silently.
  */
 import { getCollection, getEntry, render, type CollectionKey } from 'astro:content';
-import { assertCommentsClosed } from '../content/guards';
+import { assertCommentsClosed, stripComments } from '../content/guards';
+import { copyVars, fillCopy, nowLines } from './derive';
 import { byStartDesc } from './format';
 
 function required<T>(entry: T | undefined, file: string): T {
@@ -23,6 +24,32 @@ export const getProfile = async () =>
   required(await getEntry('profile', 'profile'), 'content/profile.yaml').data;
 export const getInterests = async () =>
   required(await getEntry('interests', 'interests'), 'content/interests.yaml').data;
+
+/**
+ * copy.yaml with every page-wide `{placeholder}` filled from content (derive.fillCopy), so no
+ * component can print a raw `{name}`; an unknown placeholder fails the build.
+ */
+export async function getCopy() {
+  const [entry, profile, education, site] = await Promise.all([
+    getEntry('copy', 'copy'),
+    getProfile(),
+    getEducation(),
+    getSite(),
+  ]);
+  const copy = required(entry, 'content/copy.yaml').data;
+  const email = (profile.emails.find((e) => e.primary) ?? profile.emails[0])?.address ?? '';
+  return fillCopy(
+    copy,
+    copyVars({
+      displayName: profile.name.display,
+      location: profile.location,
+      domain: site.domain,
+      email,
+      edu: education[0]!,
+    }),
+  );
+}
+
 export const getSkills = async () =>
   required(await getEntry('skills', 'skills'), 'content/skills.yaml').data;
 
@@ -76,10 +103,25 @@ export async function getProse(name: 'about' | 'now') {
   const entry = await getEntry('prose', name);
   if (!entry) throw new Error(`content/${name}.md is missing`);
   assertCommentsClosed(entry.body, `content/${name}.md`);
-  const hasBody = entry.body?.replace(/<!--[\s\S]*?-->/g, '').trim();
+  const hasBody = stripComments(entry.body ?? '').trim();
   if (!hasBody) return { Content: null };
   const { Content } = await render(entry);
   return { Content };
+}
+
+/**
+ * now.md as plain lines for the ticker: Astro's rendering of the file, reduced to text by
+ * derive.nowLines. Empty when the file has nothing but comments.
+ */
+export async function getNowLines() {
+  const entry = await getEntry('prose', 'now');
+  if (!entry) throw new Error('content/now.md is missing');
+  assertCommentsClosed(entry.body, 'content/now.md');
+  const hasBody = stripComments(entry.body ?? '').trim();
+  if (!hasBody) return [];
+  const html = entry.rendered?.html;
+  if (html === undefined) throw new Error('content/now.md was not rendered as Markdown');
+  return nowLines(html);
 }
 
 export { render };

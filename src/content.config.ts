@@ -13,6 +13,7 @@ import {
   proseSchema,
   siteSchema,
   skillsSchema,
+  copySchema,
 } from './content/schema';
 
 // Paths are relative to the project root. Owners only ever edit content/ (PLAN §7).
@@ -40,6 +41,10 @@ export const collections = {
   interests: defineCollection({
     loader: strictFile('content/interests.yaml', singleton('interests')),
     schema: interestsSchema,
+  }),
+  copy: defineCollection({
+    loader: strictFile('content/copy.yaml', singleton('copy')),
+    schema: copySchema,
   }),
   skills: defineCollection({
     loader: strictFile('content/skills.yaml', singleton('skills')),

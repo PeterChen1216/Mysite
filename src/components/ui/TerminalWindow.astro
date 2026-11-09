@@ -1,0 +1,78 @@
+---
+/** Terminal window (Figma "Terminal"): title bar with traffic lights + body slot. */
+interface Props {
+  title: string;
+  class?: string;
+  /** Body typography: VT323 terminal output (hero) or JetBrains Mono (contact/projects). */
+  font?: 'term' | 'code';
+}
+const { title, class: cls, font = 'term' } = Astro.props;
+---
+
+<div class:list={['term', `term--${font}`, cls]}>
+  <div class="term__bar" aria-hidden="true">
+    <span class="term__dot term__dot--r"></span>
+    <span class="term__dot term__dot--y"></span>
+    <span class="term__dot term__dot--g"></span>
+    <span class="term__title" title={title}>
+      {title}
+    </span>
+  </div>
+  <div class="term__body">
+    <slot />
+  </div>
+</div>
+
+<style>
+  .term {
+    display: flex;
+    flex-direction: column;
+    background: var(--color-bg-terminal);
+    border: 2px solid var(--color-border-edge);
+    box-shadow: 8px 8px 0 0 rgb(0 0 0 / 0.5);
+    max-width: 100%;
+  }
+  .term__bar {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 14px;
+    background: var(--color-bg-panel);
+  }
+  .term__dot {
+    width: 10px;
+    height: 10px;
+    flex: none;
+  }
+  .term__dot--r {
+    background: #ff5f56;
+  }
+  .term__dot--y {
+    background: #ffbd2e;
+  }
+  .term__dot--g {
+    background: #27c93f;
+  }
+  .term__title {
+    flex: 1;
+    text-align: center;
+    font: var(--type-code-sm);
+    /* Figma uses text/lo here (3.0:1); text/mid keeps it readable (WCAG AA). */
+    color: var(--color-text-mid);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .term__body {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    padding: 18px 20px 20px;
+  }
+  .term--term .term__body {
+    font: var(--type-term-md);
+  }
+  .term--code .term__body {
+    font: var(--type-code-body);
+  }
+</style>

@@ -1,0 +1,67 @@
+---
+/** Starfield, grid and glows behind the hero (Figma bg/* layers). Decorative. */
+import grid from '../../assets/voxel/bg/grid.svg';
+import starsWhite from '../../assets/voxel/bg/stars-white.svg';
+import starsGold from '../../assets/voxel/bg/stars-gold.svg';
+import starsDiamond from '../../assets/voxel/bg/stars-diamond.svg';
+import glowCyan from '../../assets/voxel/bg/glow-cyan.svg';
+import glowGreen from '../../assets/voxel/bg/glow-green.svg';
+---
+
+<div class="bg" aria-hidden="true">
+  <div class="bg__canvas">
+    <img class="bg__grid" src={grid.src} width="1440" height="1100" alt="" />
+    <img class="bg__stars" src={starsWhite.src} width="1440" height="1000" alt="" />
+    <img class="bg__stars" src={starsGold.src} width="1440" height="1000" alt="" />
+    <img class="bg__stars" src={starsDiamond.src} width="1440" height="1000" alt="" />
+    <img class="bg__glow bg__glow--cyan" src={glowCyan.src} alt="" />
+    <img class="bg__glow bg__glow--green" src={glowGreen.src} alt="" />
+  </div>
+</div>
+
+<style>
+  .bg {
+    position: absolute;
+    inset: 0 0 auto 0;
+    height: 1100px;
+    overflow: hidden;
+    pointer-events: none;
+    z-index: 0;
+  }
+  .bg__canvas {
+    position: absolute;
+    top: 0;
+    left: 50%;
+    width: 1440px;
+    height: 1100px;
+    transform: translateX(-50%);
+  }
+  .bg__canvas img {
+    position: absolute;
+    max-width: none;
+  }
+  .bg__grid {
+    inset: 0;
+    width: 1440px;
+    height: 1100px;
+  }
+  .bg__stars {
+    left: 0;
+    top: 0;
+    width: 1440px;
+    height: 1000px;
+  }
+  /* Glows: Figma boxes (cyan 620 at 820/60, green 420 at −120/520) plus their blur bleed. */
+  .bg__glow--cyan {
+    left: calc(820px - 620px * 0.2581);
+    top: calc(60px - 620px * 0.2581);
+    width: calc(620px * 1.5162);
+    height: calc(620px * 1.5162);
+  }
+  .bg__glow--green {
+    left: calc(-120px - 420px * 0.381);
+    top: calc(520px - 420px * 0.381);
+    width: calc(420px * 1.762);
+    height: calc(420px * 1.762);
+  }
+</style>

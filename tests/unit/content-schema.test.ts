@@ -3,10 +3,12 @@ import { join } from 'node:path';
 import { z } from 'astro/zod';
 import { parse } from 'yaml';
 import { describe, expect, it, vi } from 'vitest';
-import { assertCommentsClosed } from '../../src/content/guards';
+import { assertCommentsClosed, stripComments } from '../../src/content/guards';
 import { list, parseYaml, singleton } from '../../src/content/parsers';
+import { copyVars, fillCopy } from '../../src/lib/derive';
 import {
   aviationSchema,
+  copySchema,
   educationSchema,
   experienceSchema,
   honorSchema,
@@ -63,6 +65,9 @@ describe('real content/ files validate against their schemas', () => {
   });
   it('aviation.yaml', () => {
     aviationSchema.parse(singleton('aviation')(read('aviation.yaml'))[0]);
+  });
+  it('copy.yaml', () => {
+    expect(() => copySchema.parse(singleton('copy')(read('copy.yaml'))[0])).not.toThrow();
   });
   it('projects/*.md', () => {
     const files = readdirSync(join(CONTENT, 'projects')).filter((f) => f.endsWith('.md'));
@@ -188,10 +193,11 @@ describe('schemas reject mistakes an owner could make', () => {
     ).toThrow();
   });
 
-  it('education GPA label defaults to "GPA"; tagline and location are optional', () => {
+  it('education GPA label is optional (the page uses copy.yaml); tagline and location too', () => {
     const edu = list('education.yaml')(read('education.yaml'))[0] as Record<string, unknown>;
     const { gpa_label: _label, ...rest } = edu;
-    expect(educationSchema.parse(rest).gpa_label).toBe('GPA');
+    // No built-in English default: page-data.ts fills it from copy.yaml labels.gpa.
+    expect(educationSchema.parse(rest).gpa_label).toBeUndefined();
     const p = { title: 't', status: 'wip', platform: ['web'], year: 2026, source: 's' };
     expect(projectSchema(image).parse({ ...p, location: 'Seattle, WA' }).tagline).toBeUndefined();
   });
@@ -218,6 +224,45 @@ describe('schemas reject mistakes an owner could make', () => {
     );
   });
 
+  it('copy: the phone clock needs a real IANA time zone', () => {
+    const copy = copySchema.parse(singleton('copy')(read('copy.yaml'))[0]);
+    const withZone = (time_zone: string) => ({
+      ...copy,
+      projects: { ...copy.projects, phone: { ...copy.projects.phone, time_zone } },
+    });
+    expect(() => copySchema.parse(withZone('Asia/Shanghai'))).not.toThrow();
+    expect(() => copySchema.parse(withZone('Seattle'))).toThrow(/IANA/);
+  });
+  it('copy: every project status has exactly one label', () => {
+    const copy = copySchema.parse(singleton('copy')(read('copy.yaml'))[0]);
+    const withStatus = (status: Record<string, string>) => ({
+      ...copy,
+      labels: { ...copy.labels, status },
+    });
+    const { wip: _wip, ...missing } = copy.labels.status;
+    expect(() => copySchema.parse(withStatus(missing))).toThrow();
+    expect(() => copySchema.parse(withStatus({ ...copy.labels.status, beta: 'beta' }))).toThrow();
+    expect(() => copySchema.parse(withStatus({ ...copy.labels.status, wip: ' ' }))).toThrow();
+  });
+  it('copy: every {placeholder} in copy.yaml is one the page can fill', () => {
+    const copy = copySchema.parse(singleton('copy')(read('copy.yaml'))[0]);
+    const vars = copyVars({
+      displayName: 'A B',
+      location: 'C, D',
+      domain: 'e.f',
+      email: 'g@h.i',
+      edu: {
+        school: 'S',
+        degree: 'D',
+        start: '2020-09',
+        end: '2024-06',
+        expected: false,
+        gpa_label: 'GPA',
+        honors: [],
+      },
+    });
+    expect(() => fillCopy(copy, vars)).not.toThrow();
+  });
   it('site: domain must be a bare hostname', () => {
     const site = singleton('site')(read('site.yaml'))[0] as Record<string, unknown>;
     expect(() => siteSchema.parse({ ...site, domain: 'https://zhic.me' })).toThrow(/Hostname/);
@@ -256,6 +301,13 @@ describe('YAML parsing guards', () => {
     expect(() => assertCommentsClosed('a <!-- b', 'content/now.md')).toThrow(/never closed/);
     expect(() => assertCommentsClosed('<!-- a --> b <!-- c -->', 'x')).not.toThrow();
     expect(() => assertCommentsClosed(undefined, 'x')).not.toThrow();
+    // `<!-->` and `<!--->` are complete (empty) comments in Markdown and HTML.
+    expect(() => assertCommentsClosed('one <!--> two <!---> three', 'x')).not.toThrow();
+    expect(() => assertCommentsClosed('a <!--> b <!-- c', 'x')).toThrow(/never closed/);
+    expect(stripComments('a<!-- x -->b<!-->c<!--->d')).toBe('abcd');
+    // Removing a comment must not join the text around it into a new "<!--".
+    expect(() => assertCommentsClosed('a <!-<!-- x -->- b', 'x')).not.toThrow();
+    expect(() => assertCommentsClosed('<!<!---->--', 'x')).not.toThrow();
   });
 });
 

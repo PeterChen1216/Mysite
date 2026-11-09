@@ -1,0 +1,331 @@
+---
+/**
+ * Contact (Figma "Contact" 22:1612): `$ ping` eyebrow, the big pixel heading, the ping terminal
+ * (copy.yaml contact.ping + `open mailto:` with a blinking cursor), the MC buttons and every public
+ * email address as a mailto link. The floating blocks are decorative (aria-hidden).
+ */
+import McButton from '../ui/McButton.astro';
+import TerminalWindow from '../ui/TerminalWindow.astro';
+import VoxelBlock from '../ui/VoxelBlock.astro';
+import type { PageData } from '../../lib/page-data';
+
+interface Props {
+  data: PageData;
+}
+const { data } = Astro.props;
+const { copy, links } = data;
+const { ping } = copy.contact;
+---
+
+<section id="contact" class="contact" aria-labelledby="contact-title">
+  <div class="contact__deco" aria-hidden="true">
+    <!-- Figma: grass 120/80, grass 72/108, dirt 168/108 (back to front). -->
+    <div class="contact__cluster">
+      <VoxelBlock name="grass" size={97} style="left:48px;top:0" />
+      <VoxelBlock name="grass" size={97} style="left:0;top:28px" />
+      <VoxelBlock name="dirt" size={97} style="left:96px;top:28px" />
+    </div>
+    <span class="contact__block contact__block--glow">
+      <VoxelBlock name="glow" size={62} />
+    </span>
+    <span class="contact__block contact__block--diamond">
+      <VoxelBlock name="diamond" size={55} />
+    </span>
+    <span class="contact__block contact__block--tnt">
+      <VoxelBlock name="tnt" size={50} />
+    </span>
+  </div>
+
+  <div class="contact__head">
+    <p class="contact__cmd" aria-hidden="true">
+      <span class="g">$</span> {copy.contact.cmd}
+    </p>
+    <h2 id="contact-title" class="contact__title">
+      {copy.contact.title.map((line, i) => (
+        <>
+          {line}
+          {i < copy.contact.title.length - 1 && <br />}
+        </>
+      ))}
+    </h2>
+  </div>
+
+  <TerminalWindow title={copy.contact.terminal_title} font="code" class="contact__term">
+    <p class="ping">{ping.request}</p>
+    <p class="ping ping--ok">{ping.reply}</p>
+    <p class="ping">{ping.summary}</p>
+    <p class="ping ping--cmd">
+      <span class="g">$ </span>
+      {copy.contact.open_cmd}
+      <span class="cursor" data-loop="blink" aria-hidden="true"></span>
+    </p>
+  </TerminalWindow>
+
+  <div class="contact__actions">
+    <div class="contact__btns">
+      <McButton href={links.email} kind="grass">
+        {copy.contact.say_hi}
+      </McButton>
+      {links.github && (
+        <McButton href={links.github} external>
+          {copy.contact.github}
+          <svg class="ext" viewBox="0 0 5 5" width="10" height="10" aria-hidden="true">
+            <path d="M2 0h3v1H2zM3 1h2v1H3zM2 2h1v1H2zM4 2h1v1H4zM1 3h1v1H1zM0 4h1v1H0z" />
+          </svg>
+        </McButton>
+      )}
+      {links.linkedin && (
+        <McButton href={links.linkedin} external>
+          {copy.contact.linkedin}
+          <svg class="ext" viewBox="0 0 5 5" width="10" height="10" aria-hidden="true">
+            <path d="M2 0h3v1H2zM3 1h2v1H3zM2 2h1v1H2zM4 2h1v1H4zM1 3h1v1H1zM0 4h1v1H0z" />
+          </svg>
+        </McButton>
+      )}
+      <McButton href={links.resume} download>
+        {copy.contact.resume}
+      </McButton>
+    </div>
+    <div class="contact__mail">
+      <span class="contact__mail-label">{copy.contact.emails_label}</span>
+      <ul class="contact__mail-list">
+        {data.publicEmails.map((address) => (
+          <li>
+            <a href={`mailto:${address}`}>{address}</a>
+          </li>
+        ))}
+      </ul>
+    </div>
+  </div>
+</section>
+
+<style>
+  .contact {
+    position: relative;
+    z-index: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 40px;
+    padding: 140px var(--gutter) 100px;
+    overflow-x: clip;
+  }
+
+  /* ---------- decorative blocks (Figma positions in the 1440 frame) ---------- */
+  .contact__deco {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+  }
+  .contact__deco :global(.voxel) {
+    pointer-events: auto;
+  }
+  .contact__cluster {
+    position: absolute;
+    left: 72px;
+    top: 80px;
+    width: 193px;
+    height: 140px;
+    transform-origin: 0 0;
+  }
+  .contact__cluster :global(.voxel) {
+    position: absolute;
+  }
+  .contact__block {
+    position: absolute;
+    display: block;
+  }
+  /* Glowstone: Figma left 1180 → anchored to the right edge so it stays clear of the heading. */
+  .contact__block--glow {
+    right: 198px;
+    top: 120px;
+    filter: drop-shadow(0 0 18px rgb(242 201 76 / 0.6));
+  }
+  /* Diamond: 40 px right of the 680 px terminal (Figma left 1100 = centre + 380). */
+  .contact__block--diamond {
+    left: calc(50% + 380px);
+    top: 360px;
+    filter: drop-shadow(0 0 11px rgb(74 237 217 / 0.35));
+  }
+  .contact__block--tnt {
+    left: 40px;
+    top: 400px;
+  }
+
+  /* ---------- heading ---------- */
+  .contact__head {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 16px;
+    max-width: 800px;
+    text-align: center;
+  }
+  .contact__cmd {
+    margin: 0;
+    font: var(--type-code-label);
+    letter-spacing: var(--type-code-label-tracking);
+    text-transform: uppercase;
+    color: var(--color-accent-diamond);
+  }
+  .g {
+    color: var(--color-accent-terminal-green);
+  }
+  .contact__title {
+    margin: 0;
+    font: var(--type-pixel-display);
+    letter-spacing: var(--type-pixel-display-tracking);
+    color: var(--color-text-hi);
+    text-shadow: 4px 4px 0 rgb(0 0 0 / 0.85);
+  }
+
+  /* ---------- ping terminal ---------- */
+  .contact :global(.contact__term) {
+    position: relative;
+    width: 680px;
+    box-shadow: 6px 6px 0 0 rgb(0 0 0 / 0.6);
+  }
+  .ping {
+    margin: 0;
+    color: var(--color-text-mid);
+    overflow-wrap: anywhere;
+  }
+  .ping--ok {
+    color: var(--color-accent-terminal-green);
+  }
+  .ping--cmd {
+    color: var(--color-text-hi);
+  }
+  .cursor {
+    display: inline-block;
+    width: 0.6em;
+    height: 1.15em;
+    margin-left: 1px;
+    vertical-align: -0.2em;
+    background: var(--color-accent-terminal-green);
+  }
+
+  /* ---------- buttons + emails ---------- */
+  .contact__actions {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 22px;
+    max-width: 100%;
+  }
+  .contact__btns {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 14px;
+  }
+  .ext {
+    display: inline-block;
+    margin-left: 10px;
+    vertical-align: 0;
+    fill: currentColor;
+    shape-rendering: crispEdges;
+    filter: drop-shadow(2px 2px 0 #3f3f3f);
+  }
+  .contact__mail {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 4px 12px;
+    font: var(--type-code-sm);
+    color: var(--color-text-mid);
+  }
+  .contact__mail-list {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 4px 12px;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+  .contact__mail-list li + li::before {
+    content: '·';
+    content: '·' / '';
+    margin-right: 12px;
+    color: var(--color-text-mid);
+  }
+  .contact__mail-list a {
+    color: var(--color-accent-diamond);
+    text-decoration: underline;
+    text-underline-offset: 3px;
+    overflow-wrap: anywhere;
+  }
+  .contact__mail-list a:hover,
+  .contact__mail-list a:focus-visible {
+    color: var(--color-accent-gold);
+  }
+
+  /* ---------- responsive ---------- */
+  @media (max-width: 1279px) {
+    .contact {
+      padding: 120px 32px 88px;
+    }
+    /* Keep the blocks clear of the 84 px heading on small laptops. */
+    .contact__cluster {
+      left: 32px;
+      top: 48px;
+      transform: scale(0.75);
+    }
+    .contact__block--glow {
+      right: 64px;
+    }
+  }
+  @media (max-width: 1023px) {
+    .contact__title {
+      font-size: 64px;
+    }
+    .contact__btns :global(.mc-btn) {
+      padding-inline: 18px;
+    }
+    .contact__cluster {
+      left: 24px;
+      top: 24px;
+      transform: scale(0.6);
+    }
+    .contact__block--glow {
+      right: 24px;
+      top: 32px;
+    }
+    .contact__block--diamond,
+    .contact__block--tnt {
+      display: none;
+    }
+  }
+  @media (max-width: 767px) {
+    .contact {
+      gap: 32px;
+      padding: 104px 16px 64px;
+    }
+    .contact__title {
+      font-size: 44px;
+    }
+    .contact__cluster {
+      left: 16px;
+      top: 16px;
+      transform: scale(0.45);
+    }
+    .contact__block--glow {
+      right: 16px;
+      top: 20px;
+    }
+    .contact__block--glow :global(.voxel) {
+      width: 40px;
+      height: auto;
+    }
+    .contact :global(.contact__term .term__body) {
+      padding: 14px;
+      font-size: 13px;
+    }
+    .contact__btns :global(.mc-btn) {
+      padding: 12px 16px;
+    }
+  }
+</style>

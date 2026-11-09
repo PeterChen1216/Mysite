@@ -112,10 +112,14 @@ export const educationSchema = z
   .object({
     id,
     school: text,
+    /** Short label for tight spots, e.g. "UW iSchool". */
+    short: text.optional(),
     url: httpUrl.optional(),
     department: text.optional(),
     department_url: httpUrl.optional(),
     degree: text,
+    /** The subject alone, e.g. "Informatics" (used in one-line summaries). */
+    major: text.optional(),
     track: text.optional(),
     minor: text.optional(),
     start: yearMonth,
@@ -126,8 +130,8 @@ export const educationSchema = z
       .string()
       .regex(/^\d\.\d{1,2}\/\d\.\d{1,2}$/, 'Use the form 3.81/4.0')
       .optional(),
-    /** How the GPA is labelled, e.g. "Cumulative GPA". */
-    gpa_label: text.default('GPA'),
+    /** How the GPA is labelled (e.g. "Cumulative GPA"); without it, copy.yaml `labels.gpa`. */
+    gpa_label: text.optional(),
     honors: z.array(text).default([]),
     coursework: z.array(text).default([]),
     source,
@@ -185,6 +189,13 @@ export const interestsSchema = z
           .object({
             name: text,
             note: text.optional(),
+            /** Short label for the terminal and chips, e.g. "gen-ai". */
+            tag: z
+              .string()
+              .regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/, 'Use lowercase words joined by hyphens, e.g. gen-ai')
+              .optional(),
+            /** An emoji; items with one also appear on the "off the clock" card. */
+            icon: z.string().trim().min(1).max(8).optional(),
           })
           .strict(),
       )
@@ -260,14 +271,16 @@ export const aviationSchema = z
   .strict();
 
 // --------------------------------------------------------- projects/*.md
+/** `completed` = a finished course/research project (not a product you keep shipping). */
+const projectStatus = z.enum(['idea', 'wip', 'testflight', 'shipped', 'completed', 'archived']);
+
 export const projectSchema = <I extends z.ZodType>(image: ImageHelper<I>) =>
   z
     .object({
       title: text,
       /** One line in your own words. Optional: leave it out rather than invent one. */
       tagline: text.max(120).optional(),
-      /** `completed` = a finished course/research project (not a product you keep shipping). */
-      status: z.enum(['idea', 'wip', 'testflight', 'shipped', 'completed', 'archived']),
+      status: projectStatus,
       platform: z.array(z.enum(['ios', 'web', 'cli', 'research'])).min(1),
       /** Your role, as written on the résumé, e.g. "Group Leader, University of Washington, INFO 494". */
       role: text.optional(),
@@ -323,6 +336,171 @@ export const skillsSchema = z
   })
   .strict();
 
+// ----------------------------------------------------------------- copy.yaml
+// Interface text from the Figma design. Facts never live here (PLAN §2.4).
+const lines = z.array(text).min(1);
+const navLink = z.object({ label: text, href: text }).strict();
+export const copySchema = z
+  .object({
+    id,
+    nav: z
+      .object({
+        links: z.array(navLink).min(1),
+        status: text,
+        resume: text,
+        say_hi: text,
+        /** Screen-reader names of the logo link and of the section links. */
+        logo_label: text,
+        sections_label: text,
+      })
+      .strict(),
+    hero: z
+      .object({
+        /** [brackets] mark the highlighted word. */
+        headline: lines,
+        terminal_title: text,
+        cmd_whoami: text,
+        cmd_interests: text,
+        ok: text,
+        summon: text,
+        summon_ok: text,
+        cta_projects: text,
+        cta_resume: text,
+        eyebrow_prefix: text,
+        avgeek_badge: text,
+        /** Badge once aviation.yaml `watching` has a route; {from} and {to} are its airports. */
+        avgeek_route: text,
+      })
+      .strict(),
+    ticker: z
+      .object({
+        /** Screen-reader name of the band. */
+        label: text,
+        /** Tag words; platform and interest tags come from content. */
+        tags: z.object({ xp: text, now: text, work: text, ping: text, edu: text }).strict(),
+      })
+      .strict(),
+    about: z
+      .object({
+        cmd: text,
+        title: lines,
+        blurb: text,
+        whoami_title: text,
+        card_whoami: text,
+        card_gpa: text,
+        card_now: text,
+        card_education: text,
+        card_off: text,
+        card_avgeek: text,
+        card_skills: text,
+        avgeek_title: text,
+        now_link: text,
+        skills_basic: text,
+        gpa_out_of: text,
+        track_suffix: text,
+        minor_prefix: text,
+        coursework: text,
+        /** Panel headings, keyed like aviation.yaml. */
+        avgeek_panels: z
+          .object({
+            watching: text,
+            seat_rules: text,
+            favorite_cabins: text,
+            news: text,
+            fare_examples: text,
+            tools: text,
+          })
+          .strict(),
+      })
+      .strict(),
+    projects: z
+      .object({
+        cmd: text,
+        title: lines,
+        blurb: text,
+        featured: text,
+        stack_label: text,
+        /** Status terminal title; the featured project's id is appended (`~/projects/<id>`). */
+        status_title: text,
+        status_cmd: text,
+        link_appstore: text,
+        link_repo: text,
+        link_live: text,
+        next_label: text,
+        next_title: text,
+        next_body: text,
+        next_tags: z.array(text).default([]),
+        next_progress: text,
+        /** Decorative phone mock-up beside the featured build (aria-hidden). */
+        phone: z
+          .object({
+            stamp: text,
+            place: text,
+            coords: text,
+            /** IANA zone for the live clock, e.g. America/Los_Angeles (checked at build time). */
+            time_zone: text.refine(
+              (tz) => {
+                try {
+                  new Intl.DateTimeFormat('en-US', { timeZone: tz });
+                  return true;
+                } catch {
+                  return false;
+                }
+              },
+              { message: 'Use an IANA time zone name, e.g. America/Los_Angeles' },
+            ),
+          })
+          .strict(),
+      })
+      .strict(),
+    experience: z
+      .object({
+        cmd: text,
+        title: lines,
+        blurb: text,
+        head_hint: text,
+        head_dates: text,
+        /** Heading of the community log (volunteer entries), shown below the commit history. */
+        community_cmd: text,
+        community_title: text,
+      })
+      .strict(),
+    contact: z
+      .object({
+        cmd: text,
+        title: lines,
+        say_hi: text,
+        github: text,
+        linkedin: text,
+        resume: text,
+        /** Title bar of the ping terminal. */
+        terminal_title: text,
+        /** The ping terminal's output (the reply line is green) and its last command. */
+        ping: z.object({ request: text, reply: text, summary: text }).strict(),
+        open_cmd: text,
+        /** Shown before the list of public email addresses. */
+        emails_label: text,
+      })
+      .strict(),
+    footer: z.object({ tagline: text, back_to_top: text, rights: text, updated: text }).strict(),
+    labels: z
+      .object({
+        now: text,
+        /** End of an ongoing project on its card (`Mar 2026 – Present`). */
+        present: text,
+        expected: text,
+        class_of: text,
+        /** Short GPA label on the hero badge. */
+        gpa: text,
+        /** One word per project status (every status in projects/*.md needs one). */
+        status: z.record(projectStatus, text),
+        new_tab: text,
+        skip_link: text,
+      })
+      .strict(),
+  })
+  .strict();
+
 // ------------------------------------------------ about.md / now.md (no frontmatter)
 export const proseSchema = z.object({}).strict();
 
@@ -332,4 +510,5 @@ export type Honor = z.infer<typeof honorSchema>;
 export type Interests = z.infer<typeof interestsSchema>;
 export type Aviation = z.infer<typeof aviationSchema>;
 export type Skills = z.infer<typeof skillsSchema>;
+export type Copy = z.infer<typeof copySchema>;
 export type Project = z.infer<ReturnType<typeof projectSchema>>;

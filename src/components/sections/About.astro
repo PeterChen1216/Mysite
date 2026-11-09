@@ -1,0 +1,171 @@
+---
+/**
+ * About bento (Figma "About" 20:715): section header, then the "Inventory" grid —
+ * whoami (2 columns) beside GPA + now-building, then education beside off-the-clock and
+ * AvGeek, with the skills inventory (not in Figma, same visual language) under those two.
+ * Every fact comes from PageData; the cards in ./about/ only lay it out. Now-building,
+ * off-the-clock and AvGeek appear only when content has something for them, so the grid
+ * template is built from the cards that are actually there (no empty cells).
+ */
+import SectionHeader from '../ui/SectionHeader.astro';
+import VoxelBlock from '../ui/VoxelBlock.astro';
+import AvGeekCard from './about/AvGeekCard.astro';
+import EducationCard from './about/EducationCard.astro';
+import NowCard from './about/NowCard.astro';
+import OffClockCard from './about/OffClockCard.astro';
+import SkillsCard from './about/SkillsCard.astro';
+import WhoamiCard from './about/WhoamiCard.astro';
+import XpCard from './about/XpCard.astro';
+import { aboutCards, gridAreas } from '../../lib/derive';
+import type { PageData } from '../../lib/page-data';
+
+interface Props {
+  data: PageData;
+}
+const { data } = Astro.props;
+const { copy, interests, aviation, building } = data;
+
+// Which cards content fills, the grid areas for them (three columns ≥ 1280, two ≥ 768, one), and
+// the interests no other card shows (listed on the whoami card): derive.aboutCards.
+const cards = aboutCards({ interests: interests.items, aviation, building: Boolean(building) });
+const { areas } = cards;
+---
+
+<section class="about" id="about" aria-labelledby="about-title">
+  <div class="about__block about__block--gold" aria-hidden="true">
+    <VoxelBlock name="gold" size={58} />
+  </div>
+  <div class="about__block about__block--obsidian" aria-hidden="true">
+    <VoxelBlock name="obsidian" size={47} />
+  </div>
+  <SectionHeader
+    id="about-title"
+    cmd={copy.about.cmd}
+    title={copy.about.title}
+    blurb={copy.about.blurb}
+  />
+  <div
+    class="inv"
+    style={`--areas-lg:${gridAreas(areas.lg)};--areas-md:${gridAreas(areas.md)};--areas-sm:${gridAreas(areas.sm)}`}
+  >
+    <WhoamiCard data={data} others={cards.others} />
+    <div class:list={['inv__stack', { 'inv__stack--one': cards.stackOne }]}>
+      <XpCard data={data} />
+      {building && <NowCard data={data} project={building} />}
+    </div>
+    <EducationCard data={data} />
+    {cards.offClock.length > 0 && <OffClockCard data={data} items={cards.offClock} />}
+    {cards.avgeek && <AvGeekCard data={data} interest={cards.aviationInterest} />}
+    <SkillsCard data={data} />
+  </div>
+</section>
+
+<style>
+  .about {
+    position: relative;
+    z-index: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 48px;
+    padding: 120px var(--gutter) 48px;
+  }
+  /* Floating decoration (Figma: gold at 1180/20 of 1440, obsidian at −10/640). */
+  .about__block {
+    position: absolute;
+    pointer-events: none;
+  }
+  .about__block--gold {
+    top: 20px;
+    right: 14%;
+  }
+  .about__block--obsidian {
+    top: 640px;
+    left: -10px;
+  }
+
+  /* ---- Inventory grid: three 424 px columns at 1440 (Figma Row1 / Row2), gap 20. ---- */
+  .inv {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    /* e.g. 'who who stack' 'edu off av' 'edu skills skills' — built in the frontmatter. */
+    grid-template-areas: var(--areas-lg);
+    gap: 20px;
+  }
+  .inv__stack {
+    grid-area: stack;
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+    min-width: 0;
+  }
+  /* The last card of the stack takes up any height the whoami card adds to the row. */
+  .inv__stack > :global(.card:last-child) {
+    flex-grow: 1;
+  }
+  .inv > :global(.about-card--who) {
+    grid-area: who;
+  }
+  .inv > :global(.about-card--edu) {
+    grid-area: edu;
+  }
+  .inv > :global(.about-card--off) {
+    grid-area: off;
+  }
+  .inv > :global(.about-card--av) {
+    grid-area: av;
+  }
+  .inv > :global(.about-card--skills) {
+    grid-area: skills;
+  }
+  /* Figma Card/* values: 28 px padding, 0.6 shadow, contents clipped (the whoami bookshelf
+     pokes out of the top edge). Card.astro uses 28/30 px and 0.35 — see integration notes. */
+  .inv :global(.card) {
+    padding: 28px;
+    box-shadow: 6px 6px 0 0 rgb(0 0 0 / 0.6);
+    overflow: clip;
+  }
+
+  @media (max-width: 1279px) {
+    .about {
+      gap: 40px;
+      padding: 96px 32px 40px;
+    }
+    .about__block--obsidian {
+      left: -22px;
+    }
+    .inv {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      grid-template-areas: var(--areas-md);
+    }
+    .inv__stack {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+    .inv__stack--one {
+      grid-template-columns: minmax(0, 1fr);
+    }
+  }
+  @media (max-width: 767px) {
+    .about {
+      gap: 32px;
+      padding: 72px 16px 32px;
+    }
+    .about__block--gold {
+      top: 12px;
+      right: 16px;
+    }
+    .about__block--obsidian {
+      display: none;
+    }
+    .inv {
+      grid-template-columns: minmax(0, 1fr);
+      grid-template-areas: var(--areas-sm);
+    }
+    .inv__stack {
+      grid-template-columns: minmax(0, 1fr);
+    }
+    .inv :global(.card) {
+      padding: 22px 20px;
+    }
+  }
+</style>

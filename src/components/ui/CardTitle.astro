@@ -1,0 +1,32 @@
+---
+/** Card label (Figma "CardTitle"): `## whoami`. */
+interface Props {
+  label: string;
+  as?: 'p' | 'h3';
+  id?: string;
+}
+const { label, as: Tag = 'p', id } = Astro.props;
+---
+
+<Tag class="ct" id={id}>
+  <span class="ct__hash" aria-hidden="true">
+    ##
+  </span>{' '}
+  {label}
+</Tag>
+
+<style>
+  .ct {
+    display: flex;
+    gap: 8px;
+    margin: 0;
+    font: var(--type-code-label);
+    letter-spacing: var(--type-code-label-tracking);
+    text-transform: uppercase;
+    color: var(--color-text-mid);
+    white-space: nowrap;
+  }
+  .ct__hash {
+    color: var(--color-accent-terminal-green);
+  }
+</style>

@@ -1,0 +1,203 @@
+---
+/**
+ * Projects (Figma "Projects" 22:956): section header with a floating Diamond block, the featured
+ * build (ProjectFeatured — Card/Featured 22:1020 + PhoneMockup 22:1158), every other project
+ * (ProjectCard — Card/ThisSite 22:1203) and the "next chunk" teaser (Card/Next 22:1275).
+ * Facts come from content/projects/*.md through PageData; interface text from copy.yaml.
+ */
+import Card from '../ui/Card.astro';
+import CardTitle from '../ui/CardTitle.astro';
+import Chip from '../ui/Chip.astro';
+import SectionHeader from '../ui/SectionHeader.astro';
+import VoxelBlock from '../ui/VoxelBlock.astro';
+import ProjectCard from './ProjectCard.astro';
+import ProjectFeatured from './ProjectFeatured.astro';
+import type { PageData } from '../../lib/page-data';
+
+interface Props {
+  data: PageData;
+}
+const { data } = Astro.props;
+const copy = data.copy.projects;
+const { featured } = data;
+const others = data.projects.filter((p) => p.id !== featured.id);
+// Cards below the featured build, teaser included: pairs sit side by side as in Figma (Row2);
+// with three, the first takes both rows of the left column and the other two stack beside it;
+// any other odd count closes with the teaser as a full-width strip.
+const cards = others.length + 1;
+const layout = cards === 3 ? 'stack' : cards % 2 === 1 ? 'strip' : 'pairs';
+---
+
+<section id="projects" class="projects" aria-labelledby="projects-title">
+  <span class="projects__diamond" aria-hidden="true">
+    <VoxelBlock name="diamond" size={55} />
+  </span>
+  <SectionHeader id="projects-title" cmd={copy.cmd} title={copy.title} blurb={copy.blurb} />
+  <ProjectFeatured project={featured} copy={copy} labels={data.copy.labels} />
+  <div class="projects__grid" data-layout={layout}>
+    {others.map((p) => (
+      <ProjectCard project={p} copy={copy} labels={data.copy.labels} />
+    ))}
+    <Card as="article" dashed class="pc pc--next" labelledby="projects-next-title">
+      <span class="next__block" aria-hidden="true">
+        <VoxelBlock name="tnt" size={69} />
+      </span>
+      <CardTitle label={copy.next_label} />
+      <h3 class="next__title" id="projects-next-title">
+        {copy.next_title}
+      </h3>
+      <p class="next__body">{copy.next_body}</p>
+      <div class="next__foot">
+        {copy.next_tags.length > 0 && (
+          <ul class="next__tags">
+            {copy.next_tags.map((tag) => (
+              <Chip as="li" tone="enchant">
+                {tag}
+              </Chip>
+            ))}
+          </ul>
+        )}
+        <p class="next__progress">
+          <span class="next__spin" aria-hidden="true">
+            [ <span data-loop="blink">/</span> ]
+          </span>
+          {copy.next_progress}
+        </p>
+      </div>
+    </Card>
+  </div>
+</section>
+
+<style>
+  .projects {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    gap: 48px;
+    padding: 120px var(--gutter) 48px;
+  }
+  /* Figma: left 1150 / top 40 in the 1440 frame → anchored to the right edge. */
+  .projects__diamond {
+    position: absolute;
+    top: 40px;
+    right: 235px;
+    filter: drop-shadow(0 0 11.2px rgb(74 237 217 / 0.35));
+  }
+
+  /* Card roots are rendered by ui/Card.astro, hence :global(). */
+  .projects :global(.pf) {
+    flex-direction: row;
+    align-items: center;
+    gap: 48px;
+    padding: 40px;
+    overflow: clip;
+  }
+  .projects :global(.pc) {
+    gap: 18px;
+    padding: 28px;
+    overflow: clip;
+  }
+  .projects__grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 20px;
+  }
+  .projects__grid[data-layout='stack'] > :global(:first-child) {
+    grid-row: span 2;
+  }
+  .projects__grid[data-layout='strip'] > :global(.pc--next) {
+    grid-column: 1 / -1;
+  }
+  .projects__grid[data-layout='strip'] .next__foot {
+    flex-direction: row;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 12px 24px;
+  }
+
+  /* "next chunk" teaser */
+  .next__block {
+    position: absolute;
+    top: -10px;
+    right: 75px;
+  }
+  .next__title {
+    margin: 0;
+    font: var(--type-pixel-h4);
+    letter-spacing: var(--type-pixel-h4-tracking);
+    /* Figma uses text/lo (3.0:1); text/mid keeps it readable (WCAG AA). */
+    color: var(--color-text-mid);
+  }
+  .next__body {
+    margin: 0;
+    max-width: 560px;
+    font: var(--type-code-body);
+    color: var(--color-text-mid);
+  }
+  .next__foot {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 18px;
+  }
+  .next__tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+  .next__progress {
+    margin: 0;
+    font: var(--type-term-md);
+    color: var(--color-text-mid);
+  }
+  .next__spin {
+    margin-right: 0.3em;
+    color: var(--color-accent-gold);
+    white-space: nowrap;
+  }
+
+  @media (max-width: 1279px) {
+    .projects {
+      padding-inline: 32px;
+    }
+  }
+  @media (max-width: 1023px) {
+    .projects :global(.pf) {
+      flex-direction: column;
+      align-items: stretch;
+      gap: 40px;
+    }
+    .projects__grid {
+      grid-template-columns: minmax(0, 1fr);
+    }
+    .projects__grid[data-layout='stack'] > :global(:first-child) {
+      grid-row: auto;
+    }
+  }
+  @media (max-width: 767px) {
+    .projects {
+      gap: 32px;
+      padding: 88px 16px 40px;
+    }
+    .projects__diamond {
+      top: 24px;
+      right: 24px;
+    }
+    .projects :global(.pf) {
+      padding: 32px 20px;
+    }
+    .projects :global(.pc) {
+      padding: 22px 20px;
+    }
+    .next__block {
+      right: 16px;
+    }
+    .next__block :global(.voxel) {
+      width: 56px;
+      height: auto;
+    }
+  }
+</style>

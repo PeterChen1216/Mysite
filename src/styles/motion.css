@@ -1,0 +1,134 @@
+/*
+ * Intro + ambient motion. Everything is keyed on `html.motion`, which an inline <head> script adds
+ * only when JavaScript runs and the visitor hasn't asked for reduced motion. Without it, the page
+ * is fully static and complete (PLAN §5.2 reduced-motion, §6.4 a11y).
+ * Timings are the `--m-*` custom properties from src/motion/params.ts (motionCssVars on <html>).
+ *
+ * Intro animations fill `backwards` only: the hidden start state covers each delay, and once an
+ * animation ends nothing is left on the element (no lingering compositor layers, no clip-path
+ * stuck one step short of the end).
+ */
+
+/* ---------- headline words: rise + unblur, staggered ---------- */
+html.motion [data-intro='word'] {
+  display: inline-block;
+  animation: intro-word var(--m-word-dur) var(--m-word-ease) backwards;
+  animation-delay: calc(var(--i, 0) * var(--m-word-stagger));
+}
+@keyframes intro-word {
+  from {
+    opacity: 0;
+    transform: translateY(var(--m-word-rise));
+    filter: blur(var(--m-word-blur));
+  }
+}
+
+/* ---------- terminal lines: typed left → right (per-line --steps/--dur/--d from Hero) ---------- */
+html.motion [data-intro='type'] {
+  animation: intro-type var(--dur, 600ms) steps(var(--steps, 20), end) backwards;
+  animation-delay: var(--d, 0ms);
+}
+@keyframes intro-type {
+  from {
+    clip-path: inset(0 100% 0 0);
+  }
+  to {
+    clip-path: inset(0 0 0 0);
+  }
+}
+
+/* ---------- globe: scale + fade in ---------- */
+html.motion [data-intro='globe'] {
+  animation:
+    intro-globe-scale var(--m-globe-scale-dur) ease-out var(--m-globe-delay) backwards,
+    intro-fade var(--m-globe-fade-dur) ease-out var(--m-globe-delay) backwards;
+}
+@keyframes intro-globe-scale {
+  from {
+    transform: scale(var(--m-globe-from));
+  }
+}
+@keyframes intro-fade {
+  from {
+    opacity: 0;
+  }
+}
+
+/* ---------- blocks: drop, overshoot, settle (70 % = Figma's 420 ms of 600 ms) ---------- */
+html.motion [data-intro='drop'] {
+  animation: intro-drop var(--m-drop-dur) backwards;
+  animation-delay: calc(var(--m-drop-delay) + var(--i, 0) * var(--m-drop-stagger));
+}
+@keyframes intro-drop {
+  0% {
+    opacity: 0;
+    transform: translateY(var(--m-drop-from));
+    animation-timing-function: ease-out;
+  }
+  33% {
+    opacity: 1;
+  }
+  70% {
+    transform: translateY(var(--m-drop-over));
+    animation-timing-function: ease-in-out;
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* ---------- cards / tooltips: slide up, staggered ---------- */
+html.motion [data-intro='rise'] {
+  animation: intro-rise var(--m-rise-dur) ease-out backwards;
+  animation-delay: calc(var(--m-rise-delay) + var(--i, 0) * var(--m-rise-stagger));
+}
+@keyframes intro-rise {
+  from {
+    opacity: 0;
+    transform: translateY(var(--m-rise-px));
+  }
+}
+
+/* ---------- ambient loops ---------- */
+html.motion [data-loop='blink'] {
+  animation: loop-blink var(--m-blink) steps(1, end) infinite;
+}
+@keyframes loop-blink {
+  50% {
+    opacity: 0;
+  }
+}
+html.motion [data-loop='orbit'] {
+  animation: loop-spin var(--m-orbit-turn) linear infinite;
+}
+/* Figma sways the tilted second ring (17:127); a full spin of an ellipse looks wrong. */
+html.motion [data-loop='orbit-sway'] {
+  animation: loop-sway var(--m-sway-dur) ease-in-out infinite alternate;
+}
+@keyframes loop-sway {
+  to {
+    rotate: var(--m-sway-deg);
+  }
+}
+@keyframes loop-spin {
+  to {
+    rotate: 360deg;
+  }
+}
+
+/* Off-screen loops stop drawing frames (src/scripts/offscreen.ts sets data-offscreen). */
+html.motion [data-offscreen],
+html.motion [data-offscreen] * {
+  animation-play-state: paused !important;
+}
+
+/* Belt and braces: the class is never added under reduced motion, but kill any stray motion
+   (also when reduced motion is turned on while the page is open). */
+@media (prefers-reduced-motion: reduce) {
+  html.motion *,
+  html.motion *::before,
+  html.motion *::after {
+    animation: none !important;
+  }
+}

@@ -1,0 +1,152 @@
+# Interface text: section headings, prompts and button labels, taken from the Figma design.
+# No facts about Peter live here — those come from the other content files and are filled in
+# by the page (GPA, dates, roles, emails…). Edit any line freely.
+# In `headline`, [brackets] mark the highlighted (green) word.
+# {placeholders} work in every line and are filled in from your content:
+#   {first} = first name, {host} = first name in lower case, {city} = first part of the profile
+#   location, {email} = primary email, {domain} = site domain, {major} {department} {school}
+#   {short} = education fields (a missing one falls back to degree / school).
+# Symbols at the start or end of a link label (▲ ↓ ★) are hidden from screen readers.
+
+nav:
+  links:
+    - { label: '~/about', href: '#about' }
+    - { label: '~/projects', href: '#projects' }
+    - { label: '~/experience', href: '#experience' }
+    - { label: '~/contact', href: '#contact' }
+  status: online · {city}
+  resume: RESUME
+  say_hi: SAY HI
+  # Read out by screen readers only.
+  logo_label: '{domain} — back to top'
+  sections_label: Sections
+
+hero:
+  headline:
+    - Crafting [data]
+    - into things
+    - people love[_]
+  terminal_title: '{host}@{domain}: ~ — zsh'
+  cmd_whoami: whoami
+  cmd_interests: cat ~/interests.txt
+  ok: '[OK]'
+  summon: '/summon pixel_globe ~ ~ ~ {rotate:1b}'
+  summon_ok: 'Summoned PixelGlobe. Chunks loaded: 36/36.'
+  cta_projects: SEE PROJECTS
+  cta_resume: DOWNLOAD RESUME
+  eyebrow_prefix: '// player:' # "// player: Peter Chen · UW iSchool ’27 · Seattle, Washington"
+  avgeek_badge: AvGeek  ✈  routes · seats · mileage
+  # Replaces avgeek_badge once aviation.yaml `watching` has a route ({from}/{to}: its airports).
+  avgeek_route: AvGeek  ✈  {from} ⇄ {to}
+
+# The scrolling band under the hero. Platform and interest tags come from your content.
+ticker:
+  label: Status # read out by screen readers only
+  tags: { xp: XP, now: NOW, work: WORK, ping: PING, edu: EDU }
+
+about:
+  cmd: cat ~/about.md
+  title: ['Player stats &', 'loaded chunks']
+  blurb: Who I am, what I’m studying, and what I get up to when I’m not shipping something. All stats self-reported, no cheats.
+  whoami_title: Hi, I’m {first} — {major} at the {department}.
+  card_whoami: whoami
+  card_gpa: gpa --level
+  card_now: now --building
+  card_education: education
+  card_off: off --the-clock
+  card_avgeek: avgeek
+  card_skills: inventory --skills
+  avgeek_title: Routes, seats, mileage plans.
+  now_link: Open in the App Store
+  skills_basic: basic # "…; basic Java"
+  # Small labels around facts on the About cards (the facts themselves come from the other files).
+  gpa_out_of: out of # "out of 4.00 · Cumulative GPA"
+  track_suffix: track # "Data Science track"
+  minor_prefix: Minor in # "Minor in …"
+  coursework: Relevant coursework
+  # Headings of the AvGeek panels; a panel only appears when aviation.yaml has entries for it.
+  avgeek_panels:
+    watching: Watching
+    seat_rules: Seat rules
+    favorite_cabins: Favorite cabins
+    news: Route news
+    fare_examples: Fare lab
+    tools: Tools I use
+
+projects:
+  cmd: ls ~/projects --sort=shipping
+  title: ['Builds, shipped', '& in progress']
+  blurb: Things I’ve made or am making. Featured build first, then the rest of the inventory.
+  featured: ★ FEATURED
+  stack_label: 'Stack:'
+  # The featured build's status terminal: window title (the project's file name is appended,
+  # e.g. ~/projects/clock-stamp) and the command shown on its first line.
+  status_title: '~/projects'
+  status_cmd: git status
+  # Link labels. A link listed under `links: other:` in a project file keeps its own label.
+  link_appstore: App Store
+  link_repo: Source code
+  link_live: Live site
+  next_label: next --chunk
+  next_title: '??? (loading…)'
+  next_body: Chunk not yet generated — check back after a few more commits.
+  # Chips on the "next chunk" card; leave the list empty ([]) for none.
+  next_tags: [TBD]
+  next_progress: generating chunk (-1, 3)…
+  # Decorative phone beside the featured build (hidden from screen readers): a sample stamp in
+  # the app's style, and the IANA time zone its live clock and date show.
+  phone:
+    stamp: STAMP
+    place: 'SEA · Seattle, WA'
+    coords: '47.6062° N, 122.3321° W'
+    time_zone: America/Los_Angeles
+
+experience:
+  cmd: git log --oneline --graph ~/career
+  title: [Commit history]
+  blurb: Where I’ve been, newest first. HEAD points at whatever comes next.
+  head_hint: say hi ↓
+  head_dates: now →
+  # The smaller log below the commit history: entries with `kind: volunteer` in experience.yaml.
+  community_cmd: git log --oneline ~/community
+  community_title: Community
+
+contact:
+  cmd: ping {host} --count 1
+  title: ['Let’s craft', 'something.']
+  say_hi: SAY HI · EMAIL
+  github: GITHUB
+  linkedin: LINKEDIN
+  resume: RESUME.PDF
+  # Title bar of the ping terminal, and the words before the list of public email addresses.
+  terminal_title: '~/contact — zsh'
+  ping:
+    request: 'PING {host} ({email}): 56 data bytes'
+    reply: '64 bytes from {email}: icmp_seq=0 ttl=64 time=0.27 ms'
+    summary: '--- 1 packet transmitted, 1 received, 0% packet loss ---'
+  open_cmd: 'open mailto:{email}'
+  emails_label: or write to
+
+footer:
+  tagline: built with voxels, coffee & too many flights
+  back_to_top: ▲ back to spawn
+  rights: All rights reserved.
+  updated: updated
+
+# Small words used inside dates and lists.
+labels:
+  now: now # end of an ongoing entry in the commit history
+  present: Present # end of an ongoing project on its card ("Mar 2026 – Present")
+  expected: (expected) # graduation date not reached yet
+  class_of: class of
+  gpa: GPA # on the hero badge ("GPA 3.84 ★ …")
+  # Project status words (projects/*.md `status`), shown on the cards, badge and ticker.
+  status:
+    idea: idea
+    wip: in progress
+    testflight: TestFlight
+    shipped: shipped
+    completed: completed
+    archived: archived
+  new_tab: (opens in a new tab) # read out by screen readers only
+  skip_link: Skip to content # first thing a keyboard user reaches

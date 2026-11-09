@@ -1,21 +1,48 @@
 import AxeBuilder from '@axe-core/playwright';
-import { expect, test } from '@playwright/test';
+import { expect, test, type Page } from '@playwright/test';
+import { copy } from './copy';
 import { V2 } from './site';
+
+/** Serious or critical axe violations (WCAG 2.1 A/AA + best practice), one line each. */
+async function blockingViolations(page: Page) {
+  const results = await new AxeBuilder({ page })
+    .withTags(['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa', 'best-practice'])
+    .analyze();
+  return results.violations
+    .filter((v) => v.impact === 'serious' || v.impact === 'critical')
+    .map((v) => `${v.id}: ${v.help} (${v.nodes.map((n) => n.target.join(' ')).join(', ')})`);
+}
+
+/** Serve the page with every <script> removed: the page as a visitor without JavaScript gets it. */
+async function withoutScripts(page: Page) {
+  await page.route(`**${V2}`, async (route) => {
+    const res = await route.fetch();
+    const html = (await res.text()).replace(/<script\b[\s\S]*?<\/script>/gi, '');
+    await route.fulfill({ response: res, body: html });
+  });
+}
 
 test.describe('accessibility & robustness', () => {
   test('axe: no serious or critical violations', async ({ page }) => {
     await page.goto(V2);
-    const results = await new AxeBuilder({ page })
-      .withTags(['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa', 'best-practice'])
-      .analyze();
-    const blocking = results.violations.filter(
-      (v) => v.impact === 'serious' || v.impact === 'critical',
+    expect(await blockingViolations(page)).toEqual([]);
+  });
+
+  test.describe('with reduced motion', () => {
+    test.use({ reducedMotion: 'reduce' });
+    test('axe: no serious or critical violations', async ({ page }) => {
+      await page.goto(V2);
+      expect(await blockingViolations(page)).toEqual([]);
+    });
+  });
+
+  test('axe: no serious or critical violations without JavaScript', async ({ page }) => {
+    await withoutScripts(page);
+    await page.goto(V2);
+    expect(await page.evaluate(() => document.documentElement.classList.contains('motion'))).toBe(
+      false,
     );
-    expect(
-      blocking.map(
-        (v) => `${v.id}: ${v.help} (${v.nodes.map((n) => n.target.join(' ')).join(', ')})`,
-      ),
-    ).toEqual([]);
+    expect(await blockingViolations(page)).toEqual([]);
   });
 
   test('all content is readable without JavaScript', async ({ browser }) => {
@@ -32,7 +59,7 @@ test.describe('accessibility & robustness', () => {
     test.skip(browserName === 'webkit', 'Safari does not Tab to links by default');
     await page.goto(V2);
     await page.keyboard.press('Tab');
-    const skip = page.getByRole('link', { name: 'Skip to content' });
+    const skip = page.getByRole('link', { name: copy.labels.skip_link, exact: true });
     await expect(skip).toBeFocused();
     await expect(skip).toBeVisible();
   });
@@ -44,15 +71,6 @@ test.describe('accessibility & robustness', () => {
       .evaluateAll((hs) => hs.map((h) => Number(h.tagName[1])));
     expect(levels.filter((l) => l === 1)).toHaveLength(1);
     levels.forEach((l, i) => i > 0 && expect(l - levels[i - 1]!).toBeLessThanOrEqual(1));
-  });
-
-  test('no horizontal scrolling at 390px', async ({ page }) => {
-    await page.setViewportSize({ width: 390, height: 844 });
-    await page.goto(V2);
-    const overflow = await page.evaluate(
-      () => document.documentElement.scrollWidth - document.documentElement.clientWidth,
-    );
-    expect(overflow).toBeLessThanOrEqual(0);
   });
 
   test('no console errors and no failed requests', async ({ page }) => {

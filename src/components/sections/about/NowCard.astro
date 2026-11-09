@@ -1,0 +1,130 @@
+---
+/**
+ * Card/NowBuilding (Figma 20:941): the ongoing project (derive.nowProject), its status as a
+ * `[■■■■□□]` bar (derive.statusBar) and the App Store link when the project has one.
+ */
+import Card from '../../ui/Card.astro';
+import CardTitle from '../../ui/CardTitle.astro';
+import NewTab from '../../ui/NewTab.astro';
+import VoxelBlock from '../../ui/VoxelBlock.astro';
+import { statusBar } from '../../../lib/derive';
+import type { PageData } from '../../../lib/page-data';
+
+interface Props {
+  data: PageData;
+  project: NonNullable<PageData['building']>;
+}
+const { data, project } = Astro.props;
+const { copy } = data;
+const bar = statusBar(project.status, copy.labels.status);
+const store = project.links?.appstore;
+---
+
+<Card class="about-card about-card--now" labelledby="about-now">
+  <div class="now">
+    <CardTitle label={copy.about.card_now} />
+    <div class="now__app">
+      <VoxelBlock name="command" size={64} />
+      <div class="now__text">
+        <h3 id="about-now" class="now__title">
+          {project.title}
+        </h3>
+        {project.tagline && <p class="now__sub">{project.tagline}</p>}
+      </div>
+    </div>
+    <p class="now__status">
+      <span class="now__bar" aria-hidden="true">
+        [
+        {Array.from({ length: bar.total }, (_, i) => (
+          <span class:list={['now__cell', { 'now__cell--on': i < bar.filled }]} />
+        ))}
+        ]
+      </span>
+      <span class="now__label">{bar.label}</span>
+    </p>
+    {store && (
+      <a class="now__link" href={store} target="_blank" rel="noopener">
+        {copy.about.now_link}
+        <span aria-hidden="true"> →</span>
+        <NewTab />
+      </a>
+    )}
+  </div>
+</Card>
+
+<style>
+  /* Figma: rows stacked with no gaps. When the grid stretches the card, the project and its
+     status stay at the top and the store link sits at the bottom. */
+  .now {
+    flex: 1 1 auto;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+  }
+  .now__app {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    min-width: 0;
+  }
+  .now__app :global(.voxel) {
+    flex: none;
+  }
+  .now__text {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    min-width: 0;
+  }
+  .now__title {
+    margin: 0;
+    font: var(--type-pixel-h4);
+    letter-spacing: var(--type-pixel-h4-tracking);
+    color: var(--color-text-hi);
+  }
+  .now__sub {
+    margin: 0;
+    font: var(--type-code-sm);
+    color: var(--color-text-mid);
+  }
+  .now__status {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 4px 20px;
+    margin: 0;
+    font: var(--type-term-md);
+    color: var(--color-accent-terminal-green);
+  }
+  /* Figma draws the bar in VT323; its Latin subset has no ■/□, so the cells are boxes. */
+  .now__bar {
+    display: inline-flex;
+    align-items: center;
+    gap: 2px;
+  }
+  .now__cell {
+    width: 16px;
+    height: 16px;
+    border: 2px solid var(--color-accent-terminal-green);
+  }
+  .now__cell--on {
+    background: var(--color-accent-terminal-green);
+  }
+  .now__link {
+    margin-top: auto;
+    font: var(--type-code-sm);
+    color: var(--color-accent-diamond);
+    text-decoration: none;
+  }
+  .now__link:hover,
+  .now__link:focus-visible {
+    color: var(--color-accent-gold);
+    text-decoration: underline;
+  }
+  @media (max-width: 400px) {
+    .now__cell {
+      width: 12px;
+      height: 12px;
+    }
+  }
+</style>

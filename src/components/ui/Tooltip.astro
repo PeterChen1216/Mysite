@@ -1,0 +1,46 @@
+---
+/**
+ * Floating "enchanted tooltip" badge (Figma "Tooltip"), used on the hero stage.
+ * Symbols outside the pixel font's Latin subset (★ ✈ ⇄ →) are drawn in a symbol font so they
+ * don't fall back to a tiny default glyph.
+ */
+interface Props {
+  text: string;
+  tone?: 'gold' | 'cyan' | 'white';
+  class?: string;
+  style?: string;
+}
+const { text, tone = 'white', class: cls, style } = Astro.props;
+const parts = text.split(/([★✈⇄→✦])/u).filter(Boolean);
+---
+
+<p class:list={['tooltip', `tooltip--${tone}`, cls]} style={style}>
+  {parts.map((p) => (/^[★✈⇄→✦]$/u.test(p) ? <span class="sym">{p}</span> : p))}
+</p>
+
+<style>
+  .tooltip {
+    margin: 0;
+    padding: 8px 10px;
+    border: 2px solid #5000ff;
+    background: rgb(16 0 16 / 0.94);
+    font: var(--type-pixel-tiny);
+    letter-spacing: var(--type-pixel-tiny-tracking);
+    text-shadow: 1px 1px 0 #1b1b1b;
+    white-space: pre;
+  }
+  .sym {
+    font-family: 'Segoe UI Symbol', 'Apple Symbols', 'Noto Sans Symbols 2', system-ui, sans-serif;
+    font-size: 11px;
+    line-height: 1;
+  }
+  .tooltip--gold {
+    color: var(--color-accent-gold);
+  }
+  .tooltip--cyan {
+    color: #55ffff;
+  }
+  .tooltip--white {
+    color: #fff;
+  }
+</style>

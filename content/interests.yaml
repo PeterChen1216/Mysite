@@ -1,7 +1,16 @@
-# Shown as `cat ~/interests.txt`.
+# Shown as `cat ~/interests.txt`. `tag` is the short label used in the terminal and chips;
+# items with an `icon` also appear on the "off the clock" card.
 items:
   - name: Generative AI with applications
+    tag: gen-ai
   - name: Aviation, everything about flight routes, seats, crafts, mileage plans
+    tag: aviation
   - name: Vibe Coder, released my first iOS app, Clock Stamp, on the App Store.
+    tag: vibe-coding
+    icon: 🛠️
   - name: Table-Tennis
+    tag: table-tennis
+    icon: 🏓
   - name: Choir
+    tag: choir
+    icon: 🎶

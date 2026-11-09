@@ -1,1 +1,1 @@
-<!-- What you're doing right now, one short line per bullet. Drives the hero terminal (M1). Leave empty to hide. -->
+<!-- What you're doing right now, one short line per bullet. Each bullet becomes a [NOW] item in the scrolling ticker under the hero (links and **bold** are shown as plain text). Leave empty to hide. -->

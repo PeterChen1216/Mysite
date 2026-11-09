@@ -1,9 +1,11 @@
 # One item per school, newest first.
 - school: University of Washington, Seattle
+  short: UW iSchool
   url: https://www.washington.edu/
   department: Information School
   department_url: https://ischool.uw.edu/
   degree: Bachelor of Science in Informatics
+  major: Informatics
   track: Data Science
   start: 2023-09
   end: 2027-03
@@ -19,4 +21,4 @@
     - Recommendation Systems & Search
     - Scientific Computing
     - GIS & Mapping
-  source: Resume.pdf (2026-11-03); department, school/department links, start date and track from legacy index.html
+  source: Resume.pdf (2026-11-03); department, school/department links, start date, track and "UW iSchool" from legacy index.html / site tagline

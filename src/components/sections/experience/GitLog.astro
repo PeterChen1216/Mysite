@@ -1,0 +1,383 @@
+---
+/**
+ * `git log` panel (Figma "GitLog" 22:1407): terminal-coloured panel with a rail on the left and
+ * one commit per row — node, hash, dates, title + sub line and an icon slot (a voxel block, or the
+ * company logo). The highlights of the matching experience entry are listed under its row (not in
+ * Figma; same column as the title). Rows and every fact come from derive.ts via PageData.
+ *
+ * DOM order is title → sub → dates → hash → slot so a screen reader hears the role before its
+ * dates; the grid puts them back in the design's visual order. Hashes are decoration (pseudo
+ * hashes, `HEAD -> main`, `init`) and are hidden from assistive tech.
+ */
+import { Image } from 'astro:assets';
+import type { ImageMetadata } from 'astro';
+import Glyphs from '../../ui/Glyphs.astro';
+import VoxelBlock from '../../ui/VoxelBlock.astro';
+import type { LogRow } from '../../../lib/derive';
+import type { PageData } from '../../../lib/page-data';
+
+type Entry = PageData['experience'][number];
+
+interface Props {
+  rows: LogRow[];
+  /** Entries whose highlights go under their row (matched on role, company · location, start). */
+  entries: Entry[];
+  /** `community`: every commit in grass green (a side branch); `career`: Figma's colours. */
+  tone?: 'career' | 'community';
+  /** Where HEAD's hint line points (the contact section). */
+  headHref?: string;
+}
+const { rows, entries, tone = 'career', headHref } = Astro.props;
+
+// Figma: HEAD green, then gold / diamond commits, `init` enchant.
+const CYCLE = ['gold', 'diamond'] as const;
+let n = 0;
+const commits = rows.map((row) => {
+  const entry = row.head
+    ? undefined
+    : entries.find(
+        (x) =>
+          x.role === row.title &&
+          x.start === row.sortKey &&
+          row.sub === `${x.company} · ${x.location}`,
+      );
+  const color = row.head
+    ? 'head'
+    : row.hash === 'init'
+      ? 'init'
+      : tone === 'community'
+        ? 'grass'
+        : CYCLE[n++ % CYCLE.length]!;
+  const logo = row.icon === 'logo' ? (row.logo as ImageMetadata | undefined) : undefined;
+  return { row, entry, color, logo, block: row.icon === 'logo' ? 'terminal' : row.icon };
+});
+---
+
+<div class="log">
+  <span class="log__rail" aria-hidden="true"></span>
+  <ol class="log__list">
+    {commits.map(({ row, entry, color, logo, block }) => (
+      <li class:list={['commit', `commit--${color}`]}>
+        <span class="commit__node" aria-hidden="true" />
+        <div class="commit__text">
+          <h3 class="commit__title">{row.title}</h3>
+          <p class="commit__sub">
+            {row.head && headHref ? (
+              <a href={headHref}>
+                <Glyphs text={row.sub} />
+              </a>
+            ) : entry ? (
+              <>
+                {entry.url ? <a href={entry.url}>{entry.company}</a> : entry.company} ·{' '}
+                {entry.location}
+              </>
+            ) : (
+              row.sub
+            )}
+          </p>
+        </div>
+        <p class="commit__dates">
+          <span class="commit__range">
+            {row.dates.split('→').map((part, i) => (
+              <>
+                {i > 0 && <span class="arrow">→</span>}
+                {part}
+              </>
+            ))}
+          </span>
+          {row.note && <span class="commit__note"> {row.note}</span>}
+        </p>
+        <p class="commit__hash" aria-hidden="true">
+          {row.hash}
+        </p>
+        <div class="commit__slot" data-particles>
+          {logo ? (
+            <Image
+              class="commit__logo"
+              src={logo}
+              alt={row.logoAlt ?? ''}
+              width={44}
+              height={44}
+              densities={[1, 2]}
+            />
+          ) : (
+            <span class="commit__block">
+              <VoxelBlock name={block} size={39} shadow={false} />
+            </span>
+          )}
+        </div>
+        {entry && entry.highlights.length > 0 && (
+          <ul class="commit__body">
+            {entry.highlights.map((h) => (
+              <li>{h}</li>
+            ))}
+          </ul>
+        )}
+      </li>
+    ))}
+  </ol>
+</div>
+
+<style>
+  .log {
+    --pad: 32px;
+    --node: 14px;
+    --slot: 56px;
+    --gap: 24px;
+    position: relative;
+    padding: 8px var(--pad);
+    background: var(--color-bg-terminal);
+    border: 2px solid var(--color-border-edge);
+    box-shadow: 6px 6px 0 0 rgb(0 0 0 / 0.6);
+  }
+  .log__list {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+  /* Figma "rail": 2 px, just right of the nodes, over the panel's top and bottom borders. An
+     element rather than ::before, so axe can still compute the text contrast in the panel. */
+  .log__rail {
+    position: absolute;
+    top: -2px;
+    bottom: -2px;
+    left: calc(var(--pad) + var(--node) + 3px);
+    width: 2px;
+    background: var(--color-border-line);
+  }
+
+  /* ---------- one commit: the design's row, then the highlights under the title ---------- */
+  .commit {
+    --c: var(--color-accent-gold);
+    --c-node: var(--c);
+    position: relative;
+    display: grid;
+    grid-template-columns: var(--node) 150px 190px minmax(0, 1fr) var(--slot);
+    grid-template-areas:
+      'node hash dates text slot'
+      '.    .    .     body .';
+    align-items: center;
+    column-gap: var(--gap);
+    padding: 22px 0;
+  }
+  .commit + .commit {
+    border-top: 2px solid var(--color-border-line);
+  }
+  .commit--head {
+    --c: var(--color-accent-terminal-green);
+  }
+  .commit--diamond {
+    --c: var(--color-accent-diamond);
+  }
+  /* Figma's enchant #a335ee is 4.0:1 on the terminal background; the text uses the lightened
+     purple of ui/Chip (AA), the node keeps the design colour. */
+  .commit--init {
+    --c: #b866f5;
+    --c-node: var(--color-accent-enchant);
+  }
+  .commit--grass {
+    --c: var(--color-block-grass);
+  }
+
+  .commit__node {
+    grid-area: node;
+    width: var(--node);
+    height: var(--node);
+    background: var(--c-node);
+    /* Figma's 3 px ring in the panel colour: keeps the node clear of the rail. */
+    box-shadow: 0 0 0 3px var(--color-bg-terminal);
+  }
+  .commit--head .commit__node {
+    box-shadow:
+      0 0 0 3px var(--color-bg-terminal),
+      0 0 10px 2px rgb(57 255 20 / 0.8);
+  }
+  .commit__hash {
+    grid-area: hash;
+    margin: 0;
+    font: var(--type-code-bold);
+    color: var(--c);
+    white-space: nowrap;
+  }
+  /* Figma: text/lo (3.0:1) → text/mid for AA. The range stays on one line; a note such as
+     "(expected)" wraps below it when the column is narrow. */
+  .commit__dates {
+    grid-area: dates;
+    margin: 0;
+    font: var(--type-code-sm);
+    color: var(--color-text-mid);
+  }
+  .commit__range {
+    white-space: nowrap;
+  }
+  /* The self-hosted JetBrains Mono subset has no U+2192, so the fallback font drew a small, low
+     arrow. The character stays in the text (copy, screen readers); the mask paints JetBrains
+     Mono's arrow — one cell wide, centred on the digits. */
+  .arrow {
+    --glyph: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 8 8'%3E%3Cpath d='M.3 4h7M4.3 1.1 7.2 4 4.3 6.9' fill='none' stroke='%23000' stroke-width='1.05'/%3E%3C/svg%3E");
+    display: inline-block;
+    width: 0.6em;
+    height: 0.6em;
+    overflow: hidden;
+    vertical-align: 0.06em;
+    color: transparent;
+    background: var(--color-text-mid);
+    -webkit-mask: var(--glyph) center / 0.6em no-repeat;
+    mask: var(--glyph) center / 0.6em no-repeat;
+  }
+  .commit__text {
+    grid-area: text;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    min-width: 0;
+  }
+  .commit__title {
+    margin: 0;
+    font: var(--type-pixel-h4);
+    letter-spacing: var(--type-pixel-h4-tracking);
+    color: var(--color-text-hi);
+    text-wrap: balance;
+  }
+  .commit--head .commit__title {
+    color: var(--color-accent-terminal-green);
+  }
+  .commit__sub {
+    margin: 0;
+    font: var(--type-code-sm);
+    color: var(--color-text-mid);
+  }
+  /* Links sit in running text: underlined, not colour alone. */
+  .commit__sub a {
+    color: inherit;
+    text-decoration: underline;
+    text-decoration-color: rgb(139 148 158 / 0.55);
+    text-underline-offset: 3px;
+  }
+  .commit__sub a:hover,
+  .commit__sub a:focus-visible {
+    color: var(--color-accent-diamond);
+    text-decoration-color: currentColor;
+  }
+  .commit__slot {
+    grid-area: slot;
+    display: grid;
+    place-items: center;
+    width: var(--slot);
+    height: var(--slot);
+    background: var(--color-bg-panel);
+    border: 2px solid var(--color-border-edge);
+    overflow: hidden;
+  }
+  .commit__block {
+    display: block;
+  }
+  .commit--head .commit__block {
+    filter: drop-shadow(0 0 4px rgb(74 237 217 / 0.35));
+  }
+  .commit__logo {
+    display: block;
+    width: 44px;
+    height: 44px;
+    object-fit: contain;
+    /* The logo file has a wide dark margin around the wordmark: zoom into it. */
+    transform: scale(1.35);
+  }
+  .commit__body {
+    grid-area: body;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    margin: 14px 0 0;
+    padding: 0;
+    list-style: none;
+    font: var(--type-code-sm);
+    color: var(--color-text-mid);
+  }
+  .commit__body li {
+    display: flex;
+    gap: 10px;
+    text-wrap: pretty;
+  }
+  /* A diff-style "+" per highlight; silent for screen readers where supported. */
+  .commit__body li::before {
+    content: '+';
+    content: '+' / '';
+    flex: none;
+    color: var(--c);
+  }
+
+  /* ---------- 1024–1279: hash above dates in one column, so the text keeps ~600 px ---------- */
+  @media (max-width: 1279px) {
+    .commit {
+      grid-template-columns: var(--node) 150px minmax(0, 1fr) var(--slot);
+      grid-template-areas:
+        'node hash  text slot'
+        'node dates text slot'
+        '.    .     body .';
+    }
+    .commit__hash {
+      align-self: end;
+    }
+    .commit__dates {
+      align-self: start;
+    }
+  }
+
+  /* ---------- narrower: hash + dates on one line beside the icon, text below ---------- */
+  @media (max-width: 1023px) {
+    .log {
+      --pad: 24px;
+      --slot: 48px;
+      --gap: 16px;
+      padding-block: 4px;
+    }
+    .commit {
+      grid-template-columns: var(--node) auto minmax(0, 1fr) var(--slot);
+      grid-template-areas:
+        'node hash dates slot'
+        '.    text text  text'
+        '.    body body  body';
+      padding: 18px 0;
+    }
+    .commit__hash,
+    .commit__dates {
+      align-self: center;
+    }
+    .commit__text {
+      margin-top: 12px;
+    }
+    .commit__body {
+      margin-top: 12px;
+    }
+    .commit__block :global(.voxel) {
+      width: 33px;
+      height: auto;
+    }
+    .commit__logo {
+      width: 38px;
+      height: 38px;
+    }
+  }
+  @media (max-width: 767px) {
+    .log {
+      --pad: 16px;
+      --slot: 44px;
+      --gap: 12px;
+    }
+    .commit__title {
+      font-size: 20px;
+    }
+    /* Very narrow screens (< 360 px) may wrap the dates rather than overflow. */
+    .commit__range {
+      white-space: normal;
+    }
+    .commit__block :global(.voxel) {
+      width: 30px;
+    }
+    .commit__logo {
+      width: 34px;
+      height: 34px;
+    }
+  }
+</style>

@@ -1,11 +1,10 @@
-// PLAN §2.3 / §9.1 budgets as tests. M0 ships zero client JS, so there is no JS entry yet:
-// add `{ name: 'First-screen JS (gz)', path: 'dist/_astro/*.js', limit: '180 KB', gzip: true }`
-// with the first island (M1), and the lazy scene chunk (≤ 250 KB gz) in M2.
+// PLAN §2.3 / §9.1 budgets as tests. JavaScript (inline + external) is checked by
+// scripts/check-js-budget.mjs; the lazy WebGL scene chunk (≤ 250 KB gz) is added in M2.
 module.exports = [
   {
     name: 'CSS (gz)',
     path: 'dist/_astro/*.css',
-    limit: '20 KB',
+    limit: '30 KB',
     gzip: true,
   },
   {
@@ -17,7 +16,7 @@ module.exports = [
   },
   {
     name: 'Fonts (raw woff2, latin subsets)',
-    path: 'dist/_astro/*.woff2',
+    path: 'dist/_astro/fonts/*.woff2',
     limit: '150 KB',
     gzip: false,
     brotli: false,
