@@ -85,6 +85,9 @@ experience:
   title: [Commit history]
   blurb: Where I’ve been, in chronological order. HEAD points at whatever comes next.
   head_hint: say hi ↓
+  # The smaller log below the commit history: entries with `kind: volunteer` in experience.yaml.
+  community_cmd: git log --oneline ~/community
+  community_title: Community
 
 contact:
   cmd: ping peter --count 1
@@ -93,6 +96,9 @@ contact:
   github: GITHUB
   linkedin: LINKEDIN
   resume: RESUME.PDF
+  # Title bar of the ping terminal, and the words before the list of public email addresses.
+  terminal_title: '~/contact — zsh'
+  emails_label: or write to
 
 footer:
   tagline: built with voxels, coffee & too many flights

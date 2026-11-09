@@ -1,194 +1,93 @@
 ---
-/** Experience section — M1 stub (plain M0 markup); to be implemented from Figma. */
-import { Image } from 'astro:assets';
-import { formatRange } from '../../lib/format';
+/**
+ * Experience (Figma "Experience" 22:1343): section header, then the career as a `git log` —
+ * HEAD (profile.status), every work entry and each school, newest first, with each role's
+ * highlights under its row. Volunteer entries follow in a smaller community log, a section of
+ * its own so #experience lists work only. Rows come from derive.gitLog / experienceRows.
+ */
+import SectionHeader from '../ui/SectionHeader.astro';
+import GitLog from './experience/GitLog.astro';
 import type { PageData } from '../../lib/page-data';
 
 interface Props {
   data: PageData;
 }
-const { data: page } = Astro.props;
-const { experience, community } = page;
+const { data } = Astro.props;
+const { copy } = data;
 ---
 
-<!-- M1 STUB: plain M0 markup kept so every content test passes; restyle to Figma, keep every fact. -->
-<div class="stub">
-  <section id="experience" aria-labelledby="experience-title">
-    <h2 id="experience-title">Experience</h2>
-    {experience.map((x) => (
-      <article>
-        <h3>
-          {x.logo && <Image src={x.logo} alt="" width={24} height={24} class="logo" />}
-          {x.role} @ {x.url ? <a href={x.url}>{x.company}</a> : x.company}, {x.location}
-        </h3>
-        <p class="dates">{formatRange(x.start, x.end)}</p>
-        <ul>
-          {x.highlights.map((h) => (
-            <li>{h}</li>
-          ))}
-        </ul>
-      </article>
-    ))}
+<section id="experience" class="exp" aria-labelledby="experience-title">
+  <SectionHeader
+    id="experience-title"
+    cmd={copy.experience.cmd}
+    title={copy.experience.title}
+    blurb={copy.experience.blurb}
+  />
+  <GitLog rows={data.log} entries={data.experience} headHref="#contact" />
+</section>
+{data.community.length > 0 && (
+  <section id="community" class="exp exp--community" aria-labelledby="community-title">
+    <header class="community__head">
+      <p class="community__cmd" aria-hidden="true">
+        <span class="g">$</span> {copy.experience.community_cmd}
+      </p>
+      <h2 id="community-title" class="community__h">
+        {copy.experience.community_title}
+      </h2>
+    </header>
+    <GitLog rows={data.communityLog} entries={data.community} tone="community" />
   </section>
-  {community.length > 0 && (
-    <section id="community" aria-labelledby="community-title">
-      <h2 id="community-title">Community</h2>
-      {community.map((x) => (
-        <article>
-          <h3>
-            {x.logo && <Image src={x.logo} alt="" width={24} height={24} class="logo" />}
-            {x.role} @ {x.url ? <a href={x.url}>{x.company}</a> : x.company}, {x.location}
-          </h3>
-          <p class="dates">{formatRange(x.start, x.end)}</p>
-          <ul>
-            {x.highlights.map((h) => (
-              <li>{h}</li>
-            ))}
-          </ul>
-        </article>
-      ))}
-    </section>
-  )}
-</div>
+)}
 
 <style>
-  .stub {
-    max-width: 880px;
-    margin-inline: auto;
-    padding-inline: var(--space-4);
-  }
-
-  .site-header,
-  main,
-  .site-footer {
-    max-width: 880px;
-    margin-inline: auto;
-    padding-inline: var(--space-4);
-  }
-  /* The nav uses the monospace body font, whose width matches its fallback, so the line breaks
-     are the same before and after the web font loads (the 8-bit font is ~1.7× wider than its
-     fallback and made the wrapped nav grow → CLS 0.28). M1 replaces this nav. */
-  .site-header ul {
+  .exp {
+    position: relative;
+    z-index: 1;
     display: flex;
-    flex-wrap: wrap;
-    gap: var(--space-2) var(--space-4);
-    list-style: none;
-    margin: 0;
-    padding: var(--space-4) 0;
-    font: var(--type-code-sm);
+    flex-direction: column;
+    gap: 48px;
+    padding: 120px 64px 48px;
   }
-  .hero {
+  .exp--community {
+    gap: 28px;
+    padding-top: 24px;
+  }
+  .community__head {
     display: flex;
-    flex-wrap: wrap;
-    gap: var(--space-6);
-    align-items: center;
-    padding-block: var(--space-8);
+    flex-direction: column;
+    gap: 12px;
   }
-  .avatar {
-    width: 160px;
-    height: 160px;
-    object-fit: cover;
-    border: 4px solid var(--color-border-edge);
-    box-shadow: var(--shadow-hard);
-  }
-  .prompt {
+  /* Same eyebrow as ui/SectionHeader, one step smaller heading (Pixel/H3). */
+  .community__cmd {
     margin: 0;
-    font: var(--type-term-lg);
-    color: var(--color-accent-terminal-green);
-  }
-  h1 {
-    margin: 0;
-    font: var(--type-pixel-h2);
-    letter-spacing: var(--type-pixel-h2-tracking);
-  }
-  h2 {
-    font: var(--type-pixel-h3);
-    margin-block: var(--space-12) var(--space-4);
-    border-bottom: 2px solid var(--color-border-line);
-    padding-bottom: var(--space-2);
-  }
-  h3 {
-    font: var(--type-pixel-h4);
-    margin-block: var(--space-6) var(--space-2);
-  }
-  h4 {
     font: var(--type-code-label);
     letter-spacing: var(--type-code-label-tracking);
     text-transform: uppercase;
-    color: var(--color-text-mid);
+    color: var(--color-accent-diamond);
   }
-  .full-name,
-  .tagline,
-  .meta,
-  .dates {
-    margin: var(--space-1) 0;
-    color: var(--color-text-mid);
-  }
-  .status {
+  .g {
     color: var(--color-accent-terminal-green);
   }
-  .links,
-  .inline-list {
-    display: flex;
-    flex-wrap: wrap;
-    gap: var(--space-2) var(--space-4);
-    list-style: none;
-    padding: 0;
-  }
-  .inline-list li::after {
-    content: ' ·';
-    color: var(--color-text-mid);
-  }
-  .inline-list li:last-child::after {
-    content: '';
-  }
-  .project-icon {
-    display: block;
-    image-rendering: pixelated;
-  }
-  .project-cover {
-    display: block;
-    width: 100%;
-    max-width: 640px;
-    height: auto;
-    border: 2px solid var(--color-border-edge);
-  }
-  /* Logos are decorative (alt=""): the company name is the adjacent text. */
-  .logo {
-    display: inline-block;
-    vertical-align: -4px;
-    margin-right: var(--space-2);
-  }
-  .skills {
-    display: grid;
-    grid-template-columns: max-content 1fr;
-    gap: var(--space-2) var(--space-4);
+  .community__h {
     margin: 0;
+    font: var(--type-pixel-h3);
+    letter-spacing: var(--type-pixel-h3-tracking);
+    color: var(--color-text-hi);
+    text-shadow: 3px 3px 0 rgb(0 0 0 / 0.85);
   }
-  .skills dt {
-    font: var(--type-code-bold);
-  }
-  .skills dd {
-    margin: 0;
-  }
-  @media (max-width: 480px) {
-    .skills {
-      grid-template-columns: 1fr;
-    }
-    .skills dd {
-      margin-bottom: var(--space-2);
+  @media (max-width: 1279px) {
+    .exp {
+      padding-inline: 32px;
     }
   }
-  .site-footer {
-    margin-top: var(--space-16);
-    padding-block: var(--space-8);
-    border-top: 2px solid var(--color-border-line);
-    font: var(--type-code-sm);
-    color: var(--color-text-mid);
-  }
-  @media (max-width: 480px) {
-    h1 {
-      font: var(--type-pixel-h3);
+  @media (max-width: 767px) {
+    .exp {
+      gap: 32px;
+      padding: 88px 16px 40px;
+    }
+    .exp--community {
+      gap: 24px;
+      padding-top: 16px;
     }
   }
 </style>
