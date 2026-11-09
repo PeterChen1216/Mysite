@@ -153,8 +153,10 @@ const cursorDelay = at;
   .hero__h1 .hi {
     color: var(--color-accent-terminal-green);
   }
-  .hero__term {
+  /* TerminalWindow is a child component: scoped styles need :global() to reach its root. */
+  .hero__copy :global(.hero__term) {
     width: 640px;
+    max-width: 100%;
   }
   .hero__ln {
     margin: 0;
@@ -213,7 +215,7 @@ const cursorDelay = at;
     .hero__h1 {
       font-size: 56px;
     }
-    .hero__term {
+    .hero__copy :global(.hero__term) {
       width: 100%;
     }
   }
