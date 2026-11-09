@@ -1,0 +1,12 @@
+# Owner-edited files are validated by schema, not by formatting rules (PLAN §7, R8)
+content/
+docs/
+legacy/
+dist/
+_site/
+.astro/
+.lighthouseci/
+test-results/
+playwright-report/
+pnpm-lock.yaml
+coverage/

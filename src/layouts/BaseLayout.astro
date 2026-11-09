@@ -1,0 +1,52 @@
+---
+import '@fontsource/pixelify-sans/latin-600.css';
+import '@fontsource/pixelify-sans/latin-700.css';
+import '@fontsource/press-start-2p/latin-400.css';
+import '@fontsource/vt323/latin-400.css';
+import '@fontsource/jetbrains-mono/latin-400.css';
+import '@fontsource/jetbrains-mono/latin-500.css';
+import '@fontsource/jetbrains-mono/latin-700.css';
+import '../styles/tokens.css';
+import '../styles/global.css';
+import { getSite } from '../lib/content';
+import { withBase } from '../lib/paths';
+
+interface Props {
+  title?: string;
+  description?: string;
+}
+
+const site = await getSite();
+const title = Astro.props.title ?? site.meta.title;
+const description = Astro.props.description ?? site.meta.description;
+const canonical = new URL(Astro.url.pathname, Astro.site);
+---
+
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>{title}</title>
+    <meta name="description" content={description} />
+    {site.meta.keywords.length > 0 && (
+      <meta name="keywords" content={site.meta.keywords.join(', ')} />
+    )}
+    <link rel="canonical" href={canonical} />
+    <link rel="icon" href={withBase('favicon.svg')} type="image/svg+xml" />
+    <meta name="theme-color" content="#0b0f1a" />
+    <meta name="color-scheme" content="dark" />
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content={title} />
+    <meta property="og:description" content={description} />
+    <meta property="og:url" content={canonical} />
+    <meta name="twitter:card" content="summary" />
+    <meta name="generator" content={Astro.generator} />
+  </head>
+  <body>
+    <a class="skip-link" href="#main">
+      Skip to content
+    </a>
+    <slot />
+  </body>
+</html>
