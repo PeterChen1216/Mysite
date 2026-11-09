@@ -1,0 +1,152 @@
+---
+/**
+ * Phone mock-up beside the featured build (Figma PhoneMockup 22:1158, 236×470): a live clock and
+ * date (src/scripts/clock.ts fills `data-clock`; without JS the classic 09:41 stays and the date
+ * line is blank), a sample stamp in the app's style and a mini pixel globe. Purely decorative
+ * (aria-hidden); its strings live in content/copy.yaml → projects.phone.
+ */
+import PixelGlobe from '../ui/PixelGlobe.astro';
+import type { ProjectsCopy } from './projects-view';
+
+interface Props {
+  phone: ProjectsCopy['phone'];
+  class?: string;
+}
+const { phone, class: cls } = Astro.props;
+---
+
+<div class:list={['phone', cls]} aria-hidden="true">
+  <span class="phone__notch"></span>
+  <span class="phone__clock" data-clock="time" data-tz={phone.time_zone}>
+    09:41
+  </span>
+  <span class="phone__signal">
+    <i></i>
+    <i></i>
+    <i></i>
+  </span>
+  <span class="phone__battery">100%</span>
+  <p class="phone__time" data-clock="time" data-tz={phone.time_zone}>
+    09:41
+  </p>
+  <p class="phone__date" data-clock="date" data-tz={phone.time_zone}></p>
+  <div class="phone__stamp">
+    <p class="phone__stamp-label">{phone.stamp}</p>
+    <p class="phone__stamp-place">{phone.place}</p>
+    <p class="phone__stamp-coords">{phone.coords}</p>
+  </div>
+  <div class="phone__globe">
+    <PixelGlobe size={162} />
+  </div>
+  <span class="phone__home"></span>
+</div>
+
+<style>
+  /* Figma geometry: a 236×470 frame with a 6 px bezel inside, a 4 px black stroke outside and a
+     10 px hard shadow; children sit at the frame's coordinates. */
+  .phone {
+    position: relative;
+    flex: none;
+    width: 236px;
+    height: 470px;
+    overflow: clip;
+    background: var(--color-bg-terminal);
+    box-shadow:
+      inset 0 0 0 6px var(--color-border-edge),
+      0 0 0 4px #000,
+      10px 10px 0 4px rgb(0 0 0 / 0.6);
+    user-select: none;
+  }
+  .phone > * {
+    position: absolute;
+    margin: 0;
+  }
+  .phone__notch {
+    left: 83px;
+    top: 6px;
+    width: 70px;
+    height: 12px;
+    background: #000;
+  }
+  .phone__clock,
+  .phone__battery {
+    top: 18px;
+    font: var(--type-code-sm);
+    color: var(--color-text-mid);
+    white-space: nowrap;
+  }
+  .phone__clock {
+    left: 18px;
+  }
+  .phone__battery {
+    right: 8px;
+  }
+  .phone__signal {
+    left: 154px;
+    top: 24px;
+    display: flex;
+    gap: 10px;
+  }
+  .phone__signal i {
+    width: 3px;
+    height: 12px;
+    background: var(--color-text-mid);
+  }
+  .phone__time {
+    left: 22px;
+    top: 96px;
+    font: 700 58px / 1.2 var(--font-pixel);
+    color: var(--color-accent-terminal-green);
+    text-shadow: 3px 3px 0 rgb(0 0 0 / 0.8);
+    white-space: nowrap;
+  }
+  .phone__date {
+    left: 24px;
+    top: 166px;
+    min-height: 1.25em;
+    font: var(--type-term-md);
+    color: var(--color-text-mid);
+    white-space: nowrap;
+  }
+  .phone__stamp {
+    left: 22px;
+    top: 212px;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    width: 192px;
+    padding: 12px 14px;
+    border: 2px solid #5000ff;
+    background: rgb(16 0 16 / 0.9);
+  }
+  .phone__stamp p {
+    margin: 0;
+  }
+  .phone__stamp-label {
+    font: var(--type-pixel-tiny);
+    letter-spacing: var(--type-pixel-tiny-tracking);
+    color: var(--color-accent-gold);
+  }
+  .phone__stamp-place {
+    font: var(--type-term-md);
+    color: var(--color-text-hi);
+    white-space: nowrap;
+  }
+  /* Figma gives the text box 164 px (it overhangs the padding), which sets where it wraps. */
+  .phone__stamp-coords {
+    width: 164px;
+    font: var(--type-code-sm);
+    color: var(--color-accent-diamond);
+  }
+  .phone__globe {
+    left: 56px;
+    top: 318px;
+  }
+  .phone__home {
+    left: 78px;
+    top: 454px;
+    width: 80px;
+    height: 4px;
+    background: var(--color-text-mid);
+  }
+</style>

@@ -1,213 +1,203 @@
 ---
-/** Projects section — M1 stub (plain M0 markup); to be implemented from Figma. */
-import { Image } from 'astro:assets';
-import { formatRange } from '../../lib/format';
-import { PLATFORM_LABEL, STATUS_LABEL } from '../../lib/derive';
+/**
+ * Projects (Figma "Projects" 22:956): section header with a floating Diamond block, the featured
+ * build (ProjectFeatured — Card/Featured 22:1020 + PhoneMockup 22:1158), every other project
+ * (ProjectCard — Card/ThisSite 22:1203) and the "next chunk" teaser (Card/Next 22:1275).
+ * Facts come from content/projects/*.md through PageData; interface text from copy.yaml.
+ */
+import Card from '../ui/Card.astro';
+import CardTitle from '../ui/CardTitle.astro';
+import Chip from '../ui/Chip.astro';
+import SectionHeader from '../ui/SectionHeader.astro';
+import VoxelBlock from '../ui/VoxelBlock.astro';
+import ProjectCard from './ProjectCard.astro';
+import ProjectFeatured from './ProjectFeatured.astro';
 import type { PageData } from '../../lib/page-data';
 
 interface Props {
   data: PageData;
 }
-const { data: page } = Astro.props;
-const renderedProjects = page.projects.map(({ id, Body, ...data }) => ({ id, Body, data }));
+const { data } = Astro.props;
+const copy = data.copy.projects;
+const { featured } = data;
+const others = data.projects.filter((p) => p.id !== featured.id);
+// Cards below the featured build, teaser included: pairs sit side by side as in Figma (Row2);
+// with three, the first takes both rows of the left column and the other two stack beside it;
+// any other odd count closes with the teaser as a full-width strip.
+const cards = others.length + 1;
+const layout = cards === 3 ? 'stack' : cards % 2 === 1 ? 'strip' : 'pairs';
 ---
 
-<!-- M1 STUB: plain M0 markup kept so every content test passes; restyle to Figma, keep every fact. -->
-<div class="stub">
-  <section id="projects" aria-labelledby="projects-title">
-    <h2 id="projects-title">Projects</h2>
-    {renderedProjects.map(({ id, data, Body }) => (
-      <article id={`project-${id}`}>
-        {data.icon && <Image src={data.icon} alt="" width={48} height={48} class="project-icon" />}
-        <h3>{data.title}</h3>
-        {data.tagline && <p>{data.tagline}</p>}
-        {data.cover && (
-          <Image src={data.cover} alt={data.cover_alt ?? ''} width={640} class="project-cover" />
-        )}
-        <p class="meta">
-          {data.year} · {data.platform.map((p) => PLATFORM_LABEL[p]).join(', ')} ·{' '}
-          {STATUS_LABEL[data.status]}
-        </p>
-        {(data.role || data.location || data.start) && (
-          <p class="meta">
-            {[data.role, data.location, data.start && data.end && formatRange(data.start, data.end)]
-              .filter(Boolean)
-              .join(' · ')}
-          </p>
-        )}
-        {data.stack.length > 0 && <p class="meta">Stack: {data.stack.join(', ')}</p>}
-        <Body />
-        {data.links &&
-          (data.links.live ||
-            data.links.repo ||
-            data.links.appstore ||
-            data.links.other.length > 0) && (
-            <ul class="links">
-              {data.links.live && (
-                <li>
-                  <a href={data.links.live}>Live site</a>
-                </li>
-              )}
-              {data.links.repo && (
-                <li>
-                  <a href={data.links.repo}>Source code</a>
-                </li>
-              )}
-              {data.links.appstore && (
-                <li>
-                  <a href={data.links.appstore}>App Store</a>
-                </li>
-              )}
-              {data.links.other.map((l) => (
-                <li>
-                  <a href={l.url}>{l.label}</a>
-                </li>
-              ))}
-            </ul>
-          )}
-      </article>
+<section id="projects" class="projects" aria-labelledby="projects-title">
+  <span class="projects__diamond" aria-hidden="true">
+    <VoxelBlock name="diamond" size={55} />
+  </span>
+  <SectionHeader id="projects-title" cmd={copy.cmd} title={copy.title} blurb={copy.blurb} />
+  <ProjectFeatured project={featured} copy={copy} />
+  <div class="projects__grid" data-layout={layout}>
+    {others.map((p) => (
+      <ProjectCard project={p} copy={copy} />
     ))}
-  </section>
-</div>
+    <Card as="article" dashed class="pc pc--next" labelledby="projects-next-title">
+      <span class="next__block" aria-hidden="true">
+        <VoxelBlock name="tnt" size={69} />
+      </span>
+      <CardTitle label={copy.next_label} />
+      <h3 class="next__title" id="projects-next-title">
+        {copy.next_title}
+      </h3>
+      <p class="next__body">{copy.next_body}</p>
+      <div class="next__foot">
+        {copy.next_tags.length > 0 && (
+          <ul class="next__tags">
+            {copy.next_tags.map((tag) => (
+              <Chip as="li" tone="enchant">
+                {tag}
+              </Chip>
+            ))}
+          </ul>
+        )}
+        <p class="next__progress">
+          <span class="next__spin" aria-hidden="true">
+            [ <span data-loop="blink">/</span> ]
+          </span>
+          {copy.next_progress}
+        </p>
+      </div>
+    </Card>
+  </div>
+</section>
 
 <style>
-  .stub {
-    max-width: 880px;
-    margin-inline: auto;
-    padding-inline: var(--space-4);
+  .projects {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    gap: 48px;
+    padding: 120px 64px 48px;
+  }
+  /* Figma: left 1150 / top 40 in the 1440 frame → anchored to the right edge. */
+  .projects__diamond {
+    position: absolute;
+    top: 40px;
+    right: 235px;
+    filter: drop-shadow(0 0 11.2px rgb(74 237 217 / 0.35));
   }
 
-  .site-header,
-  main,
-  .site-footer {
-    max-width: 880px;
-    margin-inline: auto;
-    padding-inline: var(--space-4);
-  }
-  /* The nav uses the monospace body font, whose width matches its fallback, so the line breaks
-     are the same before and after the web font loads (the 8-bit font is ~1.7× wider than its
-     fallback and made the wrapped nav grow → CLS 0.28). M1 replaces this nav. */
-  .site-header ul {
-    display: flex;
-    flex-wrap: wrap;
-    gap: var(--space-2) var(--space-4);
-    list-style: none;
-    margin: 0;
-    padding: var(--space-4) 0;
-    font: var(--type-code-sm);
-  }
-  .hero {
-    display: flex;
-    flex-wrap: wrap;
-    gap: var(--space-6);
+  /* Card roots are rendered by ui/Card.astro, hence :global(). */
+  .projects :global(.pf) {
+    flex-direction: row;
     align-items: center;
-    padding-block: var(--space-8);
+    gap: 48px;
+    padding: 40px;
+    overflow: clip;
   }
-  .avatar {
-    width: 160px;
-    height: 160px;
-    object-fit: cover;
-    border: 4px solid var(--color-border-edge);
-    box-shadow: var(--shadow-hard);
+  .projects :global(.pc) {
+    gap: 18px;
+    padding: 28px;
+    overflow: clip;
   }
-  .prompt {
+  .projects__grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 20px;
+  }
+  .projects__grid[data-layout='stack'] > :global(:first-child) {
+    grid-row: span 2;
+  }
+  .projects__grid[data-layout='strip'] > :global(.pc--next) {
+    grid-column: 1 / -1;
+  }
+  .projects__grid[data-layout='strip'] .next__foot {
+    flex-direction: row;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 12px 24px;
+  }
+
+  /* "next chunk" teaser */
+  .next__block {
+    position: absolute;
+    top: -10px;
+    right: 75px;
+  }
+  .next__title {
     margin: 0;
-    font: var(--type-term-lg);
-    color: var(--color-accent-terminal-green);
-  }
-  h1 {
-    margin: 0;
-    font: var(--type-pixel-h2);
-    letter-spacing: var(--type-pixel-h2-tracking);
-  }
-  h2 {
-    font: var(--type-pixel-h3);
-    margin-block: var(--space-12) var(--space-4);
-    border-bottom: 2px solid var(--color-border-line);
-    padding-bottom: var(--space-2);
-  }
-  h3 {
     font: var(--type-pixel-h4);
-    margin-block: var(--space-6) var(--space-2);
-  }
-  h4 {
-    font: var(--type-code-label);
-    letter-spacing: var(--type-code-label-tracking);
-    text-transform: uppercase;
+    letter-spacing: var(--type-pixel-h4-tracking);
+    /* Figma uses text/lo (3.0:1); text/mid keeps it readable (WCAG AA). */
     color: var(--color-text-mid);
   }
-  .full-name,
-  .tagline,
-  .meta,
-  .dates {
-    margin: var(--space-1) 0;
+  .next__body {
+    margin: 0;
+    max-width: 560px;
+    font: var(--type-code-body);
     color: var(--color-text-mid);
   }
-  .status {
-    color: var(--color-accent-terminal-green);
+  .next__foot {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 18px;
   }
-  .links,
-  .inline-list {
+  .next__tags {
     display: flex;
     flex-wrap: wrap;
-    gap: var(--space-2) var(--space-4);
-    list-style: none;
+    gap: 8px;
+    margin: 0;
     padding: 0;
+    list-style: none;
   }
-  .inline-list li::after {
-    content: ' ·';
+  .next__progress {
+    margin: 0;
+    font: var(--type-term-md);
     color: var(--color-text-mid);
   }
-  .inline-list li:last-child::after {
-    content: '';
+  .next__spin {
+    margin-right: 0.3em;
+    color: var(--color-accent-gold);
+    white-space: nowrap;
   }
-  .project-icon {
-    display: block;
-    image-rendering: pixelated;
-  }
-  .project-cover {
-    display: block;
-    width: 100%;
-    max-width: 640px;
-    height: auto;
-    border: 2px solid var(--color-border-edge);
-  }
-  /* Logos are decorative (alt=""): the company name is the adjacent text. */
-  .logo {
-    display: inline-block;
-    vertical-align: -4px;
-    margin-right: var(--space-2);
-  }
-  .skills {
-    display: grid;
-    grid-template-columns: max-content 1fr;
-    gap: var(--space-2) var(--space-4);
-    margin: 0;
-  }
-  .skills dt {
-    font: var(--type-code-bold);
-  }
-  .skills dd {
-    margin: 0;
-  }
-  @media (max-width: 480px) {
-    .skills {
-      grid-template-columns: 1fr;
-    }
-    .skills dd {
-      margin-bottom: var(--space-2);
+
+  @media (max-width: 1279px) {
+    .projects {
+      padding-inline: 32px;
     }
   }
-  .site-footer {
-    margin-top: var(--space-16);
-    padding-block: var(--space-8);
-    border-top: 2px solid var(--color-border-line);
-    font: var(--type-code-sm);
-    color: var(--color-text-mid);
+  @media (max-width: 1023px) {
+    .projects :global(.pf) {
+      flex-direction: column;
+      align-items: stretch;
+      gap: 40px;
+    }
+    .projects__grid {
+      grid-template-columns: minmax(0, 1fr);
+    }
+    .projects__grid[data-layout='stack'] > :global(:first-child) {
+      grid-row: auto;
+    }
   }
-  @media (max-width: 480px) {
-    h1 {
-      font: var(--type-pixel-h3);
+  @media (max-width: 767px) {
+    .projects {
+      gap: 32px;
+      padding: 88px 16px 40px;
+    }
+    .projects__diamond {
+      top: 24px;
+      right: 24px;
+    }
+    .projects :global(.pf) {
+      padding: 32px 20px;
+    }
+    .projects :global(.pc) {
+      padding: 22px 20px;
+    }
+    .next__block {
+      right: 16px;
+    }
+    .next__block :global(.voxel) {
+      width: 56px;
+      height: auto;
     }
   }
 </style>

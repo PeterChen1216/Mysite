@@ -1,0 +1,239 @@
+---
+/**
+ * Any non-featured project, in the style of Figma Card/ThisSite (22:1203): a `## year · platform ·
+ * status` label, title, tagline, role/dates line, bullets, stack chips, `> link` lines and a voxel
+ * block in the corner (the project's own icon when it has one).
+ *
+ * Content contract (tests/e2e/content.spec.ts): inside #project-<id> the first `.meta` reads
+ * "year · platforms · status", then one `.meta` with "role · location · dates" and one with
+ * "Stack: …" (the chips carry visually hidden ", " separators).
+ */
+import { Image } from 'astro:assets';
+import Card from '../ui/Card.astro';
+import Chip from '../ui/Chip.astro';
+import VoxelBlock, { type BlockName } from '../ui/VoxelBlock.astro';
+import { projectView, type Project, type ProjectsCopy } from './projects-view';
+
+interface Props {
+  project: Project;
+  copy: ProjectsCopy;
+}
+const { project: p, copy } = Astro.props;
+const v = projectView(p, copy);
+const { Body } = p;
+/** Corner block by platform (Figma pairs "This website" with the Terminal block). */
+const BLOCK: Record<string, BlockName> = {
+  web: 'terminal',
+  research: 'bookshelf',
+  cli: 'obsidian',
+  ios: 'command',
+};
+const block = BLOCK[p.platform[0] ?? ''] ?? 'gold';
+---
+
+<Card as="article" class="pc" id={v.anchor} labelledby={`${v.anchor}-title`}>
+  <span class="pc__block" aria-hidden="true">
+    {p.icon ? (
+      <Image class="pc__icon" src={p.icon} alt="" width={64} height={64} />
+    ) : (
+      <VoxelBlock name={block} size={69} />
+    )}
+  </span>
+  <h3 class="pc__title" id={`${v.anchor}-title`}>
+    {p.title}
+  </h3>
+  <p class="meta pc__stat">{v.stat}</p>
+  {p.tagline && <p class="pc__tagline">{p.tagline}</p>}
+  {v.when && <p class="meta pc__when">{v.when}</p>}
+  {p.cover && (
+    <Image
+      class="pc__cover"
+      src={p.cover}
+      alt={p.cover_alt ?? ''}
+      widths={[560, 1120]}
+      sizes="(max-width: 767px) 100vw, 560px"
+    />
+  )}
+  <div class="pc__body">
+    <Body />
+  </div>
+  {p.stack.length > 0 && (
+    <p class="meta pc__stack">
+      <span class="pc__stack-label">Stack: </span>
+      {p.stack.map((item, i) => (
+        <Chip tone="diamond">
+          {item}
+          {i < p.stack.length - 1 && <span class="visually-hidden">, </span>}
+        </Chip>
+      ))}
+    </p>
+  )}
+  {v.links.length > 0 && (
+    <ul class="pc__links">
+      {v.links.map((l) => (
+        <li>
+          <span class="pc__prompt" aria-hidden="true">
+            &gt;
+          </span>
+          <a href={l.url} target="_blank" rel="noopener" aria-label={`${l.label} — ${p.title}`}>
+            {l.label}
+          </a>
+        </li>
+      ))}
+    </ul>
+  )}
+</Card>
+
+<style>
+  /* Figma: left 498 / top −10 in a 642 px padding box → anchored to the right edge. */
+  .pc__block {
+    position: absolute;
+    top: -10px;
+    right: 75px;
+  }
+  .pc__icon {
+    display: block;
+    width: 64px;
+    height: 64px;
+    image-rendering: pixelated;
+    filter: drop-shadow(6px 6px 0 rgb(0 0 0 / 0.35));
+  }
+  /* Title and label keep clear of the corner block (75 px from the edge + 69 px wide). */
+  .pc__title {
+    margin: 0;
+    padding-right: 124px;
+    font: var(--type-pixel-h4);
+    letter-spacing: var(--type-pixel-h4-tracking);
+    color: var(--color-text-hi);
+  }
+  /* The label reads like CardTitle ("## …") and sits above the title on screen; the title stays
+     first for screen readers. */
+  .pc__stat {
+    order: -1;
+    display: flex;
+    gap: 8px;
+    margin: 0;
+    padding-right: 124px;
+    font: var(--type-code-label);
+    letter-spacing: var(--type-code-label-tracking);
+    text-transform: uppercase;
+    color: var(--color-text-mid);
+  }
+  .pc__stat::before {
+    content: '##';
+    content: '##' / '';
+    color: var(--color-accent-terminal-green);
+  }
+  /* Figma's paragraph is 460 px; real bullets are longer, so they get a fuller measure. */
+  .pc__tagline,
+  .pc__when,
+  .pc__body {
+    max-width: 560px;
+  }
+  .pc__tagline {
+    margin: 0;
+    font: var(--type-code-body);
+    color: var(--color-text-hi);
+  }
+  .pc__when {
+    margin: 0;
+    font: var(--type-code-sm);
+    color: var(--color-accent-diamond);
+  }
+  .pc__cover {
+    display: block;
+    width: 100%;
+    max-width: 560px;
+    height: auto;
+    border: 2px solid var(--color-border-edge);
+  }
+  .pc__body {
+    font: var(--type-code-body);
+    color: var(--color-text-mid);
+  }
+  .pc__body :global(ul) {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+  .pc__body :global(li) {
+    position: relative;
+    padding-left: 20px;
+  }
+  .pc__body :global(li)::before {
+    content: '';
+    position: absolute;
+    left: 2px;
+    top: 0.65em;
+    width: 6px;
+    height: 6px;
+    background: var(--color-accent-terminal-green);
+  }
+  .pc__body :global(p) {
+    margin: 0;
+  }
+  .pc__stack {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 8px;
+    margin: 0;
+  }
+  .pc__stack-label {
+    font: var(--type-code-label);
+    letter-spacing: var(--type-code-label-tracking);
+    text-transform: uppercase;
+    color: var(--color-text-mid);
+  }
+  /* Links settle at the bottom when a shorter card is stretched to its row. */
+  .pc__links {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px 28px;
+    margin: auto 0 0;
+    padding: 0;
+    list-style: none;
+    font: var(--type-term-md);
+  }
+  .pc__links li {
+    display: flex;
+    gap: 0.5em;
+  }
+  .pc__prompt {
+    color: var(--color-accent-terminal-green);
+  }
+  .pc__links a {
+    color: var(--color-accent-terminal-green);
+    text-decoration: underline;
+    text-decoration-thickness: 2px;
+    text-underline-offset: 4px;
+  }
+  .pc__links a::after {
+    content: '↗';
+    content: '↗' / '';
+    display: inline-block;
+    margin-left: 0.3em;
+    font-family: 'Segoe UI Symbol', 'Apple Symbols', 'Noto Sans Symbols 2', system-ui, sans-serif;
+    font-size: 0.7em;
+  }
+  .pc__links a:hover,
+  .pc__links a:focus-visible {
+    color: var(--color-accent-gold);
+  }
+  @media (max-width: 767px) {
+    .pc__block {
+      right: 16px;
+    }
+    .pc__block :global(.voxel) {
+      width: 56px;
+      height: auto;
+    }
+    .pc__title,
+    .pc__stat {
+      padding-right: 72px;
+    }
+  }
+</style>

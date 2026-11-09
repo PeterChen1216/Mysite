@@ -394,10 +394,37 @@ export const copySchema = z
         title: lines,
         blurb: text,
         featured: text,
+        /** Status terminal title; the featured project's id is appended (`~/projects/<id>`). */
+        status_title: text,
+        status_cmd: text,
+        link_appstore: text,
+        link_repo: text,
+        link_live: text,
         next_label: text,
         next_title: text,
         next_body: text,
+        next_tags: z.array(text).default([]),
         next_progress: text,
+        /** Decorative phone mock-up beside the featured build (aria-hidden). */
+        phone: z
+          .object({
+            stamp: text,
+            place: text,
+            coords: text,
+            /** IANA zone for the live clock, e.g. America/Los_Angeles (checked at build time). */
+            time_zone: text.refine(
+              (tz) => {
+                try {
+                  new Intl.DateTimeFormat('en-US', { timeZone: tz });
+                  return true;
+                } catch {
+                  return false;
+                }
+              },
+              { message: 'Use an IANA time zone name, e.g. America/Los_Angeles' },
+            ),
+          })
+          .strict(),
       })
       .strict(),
     experience: z

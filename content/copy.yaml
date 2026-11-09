@@ -58,10 +58,27 @@ projects:
   title: ['Builds, shipped', '& in progress']
   blurb: Things I’ve made or am making. Featured build first, then the rest of the inventory.
   featured: ★ FEATURED
+  # The featured build's status terminal: window title (the project's file name is appended,
+  # e.g. ~/projects/clock-stamp) and the command shown on its first line.
+  status_title: '~/projects'
+  status_cmd: git status
+  # Link labels. A link listed under `links: other:` in a project file keeps its own label.
+  link_appstore: App Store
+  link_repo: Source code
+  link_live: Live site
   next_label: next --chunk
   next_title: '??? (loading…)'
   next_body: Chunk not yet generated — check back after a few more commits.
+  # Chips on the "next chunk" card; leave the list empty ([]) for none.
+  next_tags: [TBD]
   next_progress: generating chunk (-1, 3)…
+  # Decorative phone beside the featured build (hidden from screen readers): a sample stamp in
+  # the app's style, and the IANA time zone its live clock and date show.
+  phone:
+    stamp: STAMP
+    place: 'SEA · Seattle, WA'
+    coords: '47.6062° N, 122.3321° W'
+    time_zone: America/Los_Angeles
 
 experience:
   cmd: git log --oneline --graph ~/career
