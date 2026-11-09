@@ -2,6 +2,7 @@
 import { Font } from 'astro:assets';
 import '../styles/tokens.css';
 import '../styles/global.css';
+import '../styles/motion.css';
 import { getSite } from '../lib/content';
 import { withBase } from '../lib/paths';
 
@@ -21,6 +22,11 @@ const canonical = new URL(Astro.url.pathname, Astro.site);
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <script is:inline>
+      // Motion only when JS runs and reduced motion isn't requested (src/styles/motion.css).
+      if (!matchMedia('(prefers-reduced-motion: reduce)').matches)
+        document.documentElement.classList.add('motion');
+    </script>
     <Font cssVariable="--font-code" preload={[{ weight: 400 }]} />
     <Font cssVariable="--font-pixel" preload={[{ weight: 700 }]} />
     <Font cssVariable="--font-8bit" preload />

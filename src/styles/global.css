@@ -47,6 +47,15 @@ img {
   image-rendering: auto;
 }
 
+.particles-layer {
+  position: fixed;
+  inset: 0;
+  width: 100vw;
+  height: 100vh;
+  pointer-events: none;
+  z-index: 60;
+}
+
 .visually-hidden {
   position: absolute;
   width: 1px;

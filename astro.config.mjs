@@ -27,8 +27,16 @@ export default defineConfig({
       fallbacks: ['sans-serif'],
       options: {
         variants: [
-          { src: [fs('pixelify-sans', 'pixelify-sans-latin-600-normal.woff2')], weight: 600, style: 'normal' },
-          { src: [fs('pixelify-sans', 'pixelify-sans-latin-700-normal.woff2')], weight: 700, style: 'normal' },
+          {
+            src: [fs('pixelify-sans', 'pixelify-sans-latin-600-normal.woff2')],
+            weight: 600,
+            style: 'normal',
+          },
+          {
+            src: [fs('pixelify-sans', 'pixelify-sans-latin-700-normal.woff2')],
+            weight: 700,
+            style: 'normal',
+          },
         ],
       },
     },
@@ -39,7 +47,11 @@ export default defineConfig({
       fallbacks: ['monospace'],
       options: {
         variants: [
-          { src: [fs('press-start-2p', 'press-start-2p-latin-400-normal.woff2')], weight: 400, style: 'normal' },
+          {
+            src: [fs('press-start-2p', 'press-start-2p-latin-400-normal.woff2')],
+            weight: 400,
+            style: 'normal',
+          },
         ],
       },
     },
@@ -49,7 +61,9 @@ export default defineConfig({
       cssVariable: '--font-term',
       fallbacks: ['monospace'],
       options: {
-        variants: [{ src: [fs('vt323', 'vt323-latin-400-normal.woff2')], weight: 400, style: 'normal' }],
+        variants: [
+          { src: [fs('vt323', 'vt323-latin-400-normal.woff2')], weight: 400, style: 'normal' },
+        ],
       },
     },
     {
@@ -59,9 +73,21 @@ export default defineConfig({
       fallbacks: ['monospace'],
       options: {
         variants: [
-          { src: [fs('jetbrains-mono', 'jetbrains-mono-latin-400-normal.woff2')], weight: 400, style: 'normal' },
-          { src: [fs('jetbrains-mono', 'jetbrains-mono-latin-500-normal.woff2')], weight: 500, style: 'normal' },
-          { src: [fs('jetbrains-mono', 'jetbrains-mono-latin-700-normal.woff2')], weight: 700, style: 'normal' },
+          {
+            src: [fs('jetbrains-mono', 'jetbrains-mono-latin-400-normal.woff2')],
+            weight: 400,
+            style: 'normal',
+          },
+          {
+            src: [fs('jetbrains-mono', 'jetbrains-mono-latin-500-normal.woff2')],
+            weight: 500,
+            style: 'normal',
+          },
+          {
+            src: [fs('jetbrains-mono', 'jetbrains-mono-latin-700-normal.woff2')],
+            weight: 700,
+            style: 'normal',
+          },
         ],
       },
     },

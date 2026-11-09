@@ -7,7 +7,9 @@ interface Props {
 const { tone = 'diamond', as: Tag = 'span' } = Astro.props;
 ---
 
-<Tag class:list={['chip', `chip--${tone}`]}><slot /></Tag>
+<Tag class:list={['chip', `chip--${tone}`]}>
+  <slot />
+</Tag>
 
 <style>
   .chip {

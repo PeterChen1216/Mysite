@@ -16,7 +16,9 @@ const { title, class: cls, font = 'term' } = Astro.props;
     <span class="term__dot term__dot--g"></span>
     <span class="term__title">{title}</span>
   </div>
-  <div class="term__body"><slot /></div>
+  <div class="term__body">
+    <slot />
+  </div>
 </div>
 
 <style>

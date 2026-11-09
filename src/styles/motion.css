@@ -1,0 +1,116 @@
+/*
+ * Intro + ambient motion. Everything is keyed on `html.motion`, which an inline <head> script adds
+ * only when JavaScript runs and the visitor hasn't asked for reduced motion. Without it, the page
+ * is fully static and complete (PLAN §5.2 reduced-motion, §6.4 a11y). Timings: src/motion/params.ts.
+ */
+
+/* ---------- headline words: rise + unblur, staggered ---------- */
+html.motion [data-intro='word'] {
+  display: inline-block;
+  animation: intro-word 277ms cubic-bezier(0, 0, 0.58, 1) both;
+  animation-delay: calc(var(--i, 0) * 125ms);
+}
+@keyframes intro-word {
+  from {
+    opacity: 0;
+    transform: translateY(28px);
+    filter: blur(8px);
+  }
+}
+
+/* ---------- terminal lines: typed left → right ---------- */
+html.motion [data-intro='type'] {
+  animation: intro-type var(--dur, 600ms) steps(var(--steps, 20), end) both;
+  animation-delay: var(--d, 0ms);
+}
+@keyframes intro-type {
+  from {
+    clip-path: inset(0 100% 0 0);
+  }
+  to {
+    clip-path: inset(0 0 0 0);
+  }
+}
+
+/* ---------- globe: scale + fade in ---------- */
+html.motion [data-intro='globe'] {
+  animation:
+    intro-globe-scale 800ms ease-out 100ms both,
+    intro-fade 500ms ease-out 100ms both;
+}
+@keyframes intro-globe-scale {
+  from {
+    transform: scale(0.55);
+  }
+}
+@keyframes intro-fade {
+  from {
+    opacity: 0;
+  }
+}
+
+/* ---------- blocks: drop from −90px, overshoot 10px, settle ---------- */
+html.motion [data-intro='drop'] {
+  animation: intro-drop 600ms both;
+  animation-delay: calc(200ms + var(--i, 0) * 90ms);
+}
+@keyframes intro-drop {
+  0% {
+    opacity: 0;
+    transform: translateY(-90px);
+    animation-timing-function: ease-out;
+  }
+  33% {
+    opacity: 1;
+  }
+  70% {
+    transform: translateY(10px);
+    animation-timing-function: ease-in-out;
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* ---------- cards / tooltips: slide up 14px ---------- */
+html.motion [data-intro='rise'] {
+  animation: intro-rise 350ms ease-out both;
+  animation-delay: calc(1300ms + var(--i, 0) * 120ms);
+}
+@keyframes intro-rise {
+  from {
+    opacity: 0;
+    transform: translateY(14px);
+  }
+}
+
+/* ---------- ambient loops ---------- */
+html.motion [data-loop='blink'] {
+  animation: loop-blink 1000ms steps(1, end) infinite;
+}
+@keyframes loop-blink {
+  50% {
+    opacity: 0;
+  }
+}
+html.motion [data-loop='orbit'] {
+  animation: loop-spin 54s linear infinite;
+}
+html.motion [data-loop='orbit-reverse'] {
+  animation: loop-spin 72s linear infinite reverse;
+}
+@keyframes loop-spin {
+  to {
+    rotate: 360deg;
+  }
+}
+
+/* Belt and braces: the class is never added under reduced motion, but kill any stray motion. */
+@media (prefers-reduced-motion: reduce) {
+  html.motion *,
+  html.motion *::before,
+  html.motion *::after {
+    animation: none !important;
+  }
+}

@@ -48,17 +48,19 @@ async function visibleText(page: Page, selector = 'body') {
   return straight(await page.locator(selector).innerText());
 }
 
+/** Expected strings not found in the text (case-insensitive: the design upper-cases some labels). */
 function missing(text: string, expected: unknown[]) {
+  const haystack = text.toLowerCase();
   return expected
     .filter((e): e is string | number => typeof e === 'string' || typeof e === 'number')
     .map((e) => straight(String(e)))
-    .filter((e) => !text.includes(e));
+    .filter((e) => !haystack.includes(e.toLowerCase()));
 }
 
 test.describe('content/ renders completely', () => {
   test('profile, about, interests', async ({ page }) => {
     await page.goto(V2);
-    await expect(page.locator('h1')).toHaveText(profile.name.display);
+    await expect(page.locator('h1')).toContainText(profile.name.display);
     const text = await visibleText(page);
     const publicEmails = profile.emails.filter((e: { public?: boolean }) => e.public);
     expect(

@@ -1,0 +1,233 @@
+---
+/** Hero (Figma "Hero" 17:94): eyebrow, headline, typed terminal, CTAs, links + the stage. */
+import McButton from '../ui/McButton.astro';
+import TerminalWindow from '../ui/TerminalWindow.astro';
+import HeroStage from './HeroStage.astro';
+import { highlightParts } from '../../lib/derive';
+import { INTRO } from '../../motion/params';
+import type { PageData } from '../../lib/page-data';
+
+interface Props {
+  data: PageData;
+}
+const { data } = Astro.props;
+const { copy, hero, links, profile } = data;
+
+// Headline words, each animated in turn (Figma: word-by-word rise).
+let w = 0;
+const headline = copy.hero.headline.map((line) =>
+  highlightParts(line).flatMap((part) =>
+    part.text
+      .split(/(\s+)/)
+      .filter(Boolean)
+      .map((t) => (/^\s+$/.test(t) ? { space: true as const } : { text: t, hi: part.hi, i: w++ })),
+  ),
+);
+
+// Terminal lines type one after another; pace from src/motion/params.ts.
+const lines = [
+  { kind: 'cmd', text: 'whoami' },
+  { kind: 'out', text: hero.whoami },
+  { kind: 'cmd', text: 'cat ~/interests.txt' },
+  { kind: 'tags', text: hero.tags.map((t) => `${t}/`).join('   ') },
+  { kind: 'cmd', text: copy.hero.summon },
+  { kind: 'ok', text: `${copy.hero.summon_ok} ${profile.status}.` },
+] as const;
+let at = INTRO.typing.startMs;
+const typed = lines.map((l) => {
+  const chars = l.text.length + (l.kind === 'cmd' ? 2 : l.kind === 'ok' ? 5 : 0);
+  const dur = Math.max(
+    INTRO.typing.minLineMs,
+    Math.min(INTRO.typing.maxLineMs, chars * INTRO.typing.msPerChar),
+  );
+  const out = { ...l, steps: chars, dur, delay: at };
+  at += dur;
+  return out;
+});
+const cursorDelay = at;
+---
+
+<section class="hero" aria-labelledby="hero-title" id="top">
+  <div class="hero__copy">
+    <p class="hero__eyebrow">{hero.eyebrow}</p>
+    <h1 id="hero-title" class="hero__h1">
+      <span class="visually-hidden">{profile.name.display} — </span>
+      {headline.map((line) => (
+        <span class="hero__line">
+          {line.map((t) =>
+            'space' in t ? (
+              ' '
+            ) : (
+              <span data-intro="word" class:list={{ hi: t.hi }} style={`--i:${t.i}`}>
+                {t.text}
+              </span>
+            ),
+          )}
+        </span>
+      ))}
+    </h1>
+    <TerminalWindow title={copy.hero.terminal_title} class="hero__term">
+      {typed.map((l) => (
+        <p
+          class:list={['hero__ln', `hero__ln--${l.kind}`]}
+          data-intro="type"
+          style={`--steps:${l.steps};--dur:${l.dur}ms;--d:${l.delay}ms`}
+        >
+          {l.kind === 'cmd' && <span class="g">$ </span>}
+          {l.kind === 'ok' && <span class="g">[OK] </span>}
+          {l.text}
+        </p>
+      ))}
+      <p
+        class="hero__ln"
+        aria-hidden="true"
+        data-intro="type"
+        style={`--steps:3;--dur:250ms;--d:${cursorDelay}ms`}
+      >
+        <span class="g">$ </span>
+        <span class="hero__cursor" data-loop="blink">
+          █
+        </span>
+      </p>
+    </TerminalWindow>
+    <div class="hero__ctas">
+      <McButton href="#projects" kind="grass">
+        {copy.hero.cta_projects}
+      </McButton>
+      <McButton href={links.resume} download>
+        {copy.hero.cta_resume}
+      </McButton>
+    </div>
+    <ul class="hero__links">
+      {data.socials.map((s) => (
+        <li>
+          <a href={s.url} rel="me noopener" target="_blank">
+            {s.display} <span aria-hidden="true">↗</span>
+          </a>
+        </li>
+      ))}
+      <li>
+        <a href={links.email}>{data.primaryEmail}</a>
+      </li>
+    </ul>
+  </div>
+  <HeroStage data={data} />
+</section>
+
+<style>
+  .hero {
+    position: relative;
+    z-index: 1;
+    display: flex;
+    align-items: center;
+    gap: 40px;
+    padding: 56px 64px 72px;
+  }
+  .hero__copy {
+    flex: 1 1 0;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 28px;
+  }
+  .hero__eyebrow {
+    margin: 0;
+    font: var(--type-pixel-label);
+    letter-spacing: var(--type-pixel-label-tracking);
+    text-transform: uppercase;
+    color: var(--color-accent-diamond);
+    white-space: pre-wrap;
+  }
+  .hero__h1 {
+    margin: 0;
+    max-width: 720px;
+    font: var(--type-pixel-display);
+    letter-spacing: var(--type-pixel-display-tracking);
+    color: var(--color-text-hi);
+    text-shadow: 4px 4px 0 rgb(0 0 0 / 0.6);
+  }
+  .hero__line {
+    display: block;
+  }
+  .hero__h1 .hi {
+    color: var(--color-accent-terminal-green);
+  }
+  .hero__term {
+    width: 640px;
+  }
+  .hero__ln {
+    margin: 0;
+    color: var(--color-text-mid);
+  }
+  .hero__ln--cmd {
+    color: var(--color-text-hi);
+  }
+  .hero__ln--tags {
+    color: var(--color-accent-diamond);
+    white-space: pre-wrap;
+  }
+  .g {
+    color: var(--color-accent-terminal-green);
+  }
+  .hero__cursor {
+    color: var(--color-accent-terminal-green);
+  }
+  .hero__ctas {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 14px;
+  }
+  .hero__links {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px 18px;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+    font: var(--type-code-sm);
+  }
+  .hero__links a {
+    color: var(--color-text-mid);
+    text-decoration: none;
+  }
+  .hero__links a:hover,
+  .hero__links a:focus-visible {
+    color: var(--color-accent-diamond);
+    text-decoration: underline;
+  }
+  @media (max-width: 1279px) {
+    .hero {
+      flex-direction: column;
+      align-items: stretch;
+      padding: 48px 32px 56px;
+    }
+    .hero__h1 {
+      font-size: 64px;
+    }
+    :global(.stage-wrap) {
+      align-self: center;
+    }
+  }
+  @media (max-width: 1023px) {
+    .hero__h1 {
+      font-size: 56px;
+    }
+    .hero__term {
+      width: 100%;
+    }
+  }
+  @media (max-width: 767px) {
+    .hero {
+      padding: 32px 16px 40px;
+      gap: 32px;
+    }
+    .hero__h1 {
+      font-size: 44px;
+    }
+    .hero__term :global(.term__body) {
+      font-size: 20px;
+      padding: 14px;
+    }
+  }
+</style>

@@ -218,7 +218,7 @@ export function tickerItems(input: {
   }
   for (const p of input.projects.filter((p) => p.featured)) {
     const platform = p.platform.map((x) => PLATFORM_LABEL[x] ?? x).join('/');
-    items.push({ tag: platform.toUpperCase(), text: `${p.title} · ${STATUS_LABEL[p.status]}` });
+    items.push({ tag: platform, text: `${p.title} · ${STATUS_LABEL[p.status]}` });
   }
   items.push({
     tag: (edu.short ?? 'EDU').split(' ')[0]!.toUpperCase(),
@@ -245,33 +245,42 @@ export interface LogRow {
   sortKey: string;
 }
 
+type LoggedExperience = ExperienceLike & { logo?: unknown; logo_alt?: string | undefined };
+
+/** One `git log` row per experience entry, newest first (no HEAD / init markers). */
+export function experienceRows(experience: LoggedExperience[]): LogRow[] {
+  return experience
+    .map((x): LogRow => ({
+      hash: pseudoHash(`${x.company}|${x.role}|${x.start}`),
+      head: false,
+      dates: logRange(x.start, x.end),
+      title: x.role,
+      sub: `${x.company} · ${x.location}`,
+      icon: x.logo
+        ? 'logo'
+        : x.kind === 'volunteer'
+          ? 'grass'
+          : x.end === 'present'
+            ? 'command'
+            : 'terminal',
+      ...(x.logo ? { logo: x.logo, logoAlt: x.logo_alt ?? '' } : {}),
+      sortKey: x.start,
+    }))
+    .sort((a, b) => b.sortKey.localeCompare(a.sortKey));
+}
+
 /**
- * `git log` rows, newest first: HEAD (status), every experience entry (work and volunteer),
- * and each school. The oldest entry is labelled `init`.
+ * `git log` rows, newest first: HEAD (status), every experience entry passed in, and each
+ * school. The oldest entry is labelled `init`.
  */
 export function gitLog(input: {
   status: string;
   headHint: string;
   currentYear: number;
-  experience: Array<ExperienceLike & { logo?: unknown; logo_alt?: string | undefined }>;
+  experience: LoggedExperience[];
   education: EducationLike[];
 }): LogRow[] {
-  const rows: LogRow[] = input.experience.map((x) => ({
-    hash: pseudoHash(`${x.company}|${x.role}|${x.start}`),
-    head: false,
-    dates: logRange(x.start, x.end),
-    title: x.role,
-    sub: `${x.company} · ${x.location}`,
-    icon: x.logo
-      ? 'logo'
-      : x.kind === 'volunteer'
-        ? 'grass'
-        : x.end === 'present'
-          ? 'command'
-          : 'terminal',
-    ...(x.logo ? { logo: x.logo, logoAlt: x.logo_alt ?? '' } : {}),
-    sortKey: x.start,
-  }));
+  const rows: LogRow[] = experienceRows(input.experience);
   for (const e of input.education) {
     rows.push({
       hash: pseudoHash(`${e.school}|${e.degree}|${e.start}`),

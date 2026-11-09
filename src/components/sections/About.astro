@@ -1,0 +1,327 @@
+---
+/** About section — M1 stub (plain M0 markup); to be implemented from Figma. */
+import { formatYearMonth } from '../../lib/format';
+import type { PageData } from '../../lib/page-data';
+
+interface Props {
+  data: PageData;
+}
+const { data: page } = Astro.props;
+const { interests, education, honors, skills, aviation } = page;
+const about = { Content: page.About };
+const hasAvgeek =
+  aviation.watching.length +
+    aviation.seat_rules.length +
+    aviation.favorite_cabins.length +
+    aviation.news.length +
+    aviation.fare_examples.length +
+    aviation.tools.length >
+  0;
+---
+
+<!-- M1 STUB: plain M0 markup kept so every content test passes; restyle to Figma, keep every fact. -->
+<div class="stub">
+  <p class="tagline">{page.profile.tagline}</p>
+  <section id="about" aria-labelledby="about-title">
+    <h2 id="about-title">About</h2>
+    {about.Content && <about.Content />}
+    <h3>Interests</h3>
+    <ul>
+      {interests.items.map((i) => (
+        <li>
+          {i.name}
+          {i.note && <> — {i.note}</>}
+        </li>
+      ))}
+    </ul>
+  </section>
+  <section id="education" aria-labelledby="education-title">
+    <h2 id="education-title">Education</h2>
+    {education.map((e) => (
+      <article>
+        <h3>{e.url ? <a href={e.url}>{e.school}</a> : e.school}</h3>
+        <p>
+          {e.degree}
+          {e.track && <>, {e.track} track</>}
+          {e.minor && <>, Minor in {e.minor}</>}
+          {e.department && (
+            <>
+              {' '}
+              · {e.department_url ? <a href={e.department_url}>{e.department}</a> : e.department}
+            </>
+          )}
+        </p>
+        <p class="dates">
+          {formatYearMonth(e.start)} – {formatYearMonth(e.end)}
+          {e.expected && ' (expected)'}
+        </p>
+        {e.gpa && (
+          <p>
+            {e.gpa_label}: {e.gpa}
+          </p>
+        )}
+        {e.honors.length > 0 && (
+          <ul>
+            {e.honors.map((h) => (
+              <li>{h}</li>
+            ))}
+          </ul>
+        )}
+        {e.coursework.length > 0 && (
+          <>
+            <h4>Relevant coursework</h4>
+            <ul class="inline-list">
+              {e.coursework.map((c) => (
+                <li>{c}</li>
+              ))}
+            </ul>
+          </>
+        )}
+      </article>
+    ))}
+  </section>
+  <section id="honors" aria-labelledby="honors-title">
+    <h2 id="honors-title">Honors &amp; Awards</h2>
+    <ul>
+      {honors.map((h) => (
+        <li>
+          {h.name}, {h.org}, {h.year}
+          {h.note && <> — {h.note}</>}
+        </li>
+      ))}
+    </ul>
+  </section>
+  <section id="skills" aria-labelledby="skills-title">
+    <h2 id="skills-title">Skills</h2>
+    <dl class="skills">
+      {skills.groups.map((g) => (
+        <>
+          <dt>{g.name}</dt>
+          <dd>
+            {g.items.join(', ')}
+            {g.basic.length > 0 && `; basic ${g.basic.join(', ')}`}
+          </dd>
+        </>
+      ))}
+    </dl>
+  </section>
+  {hasAvgeek && (
+    <section id="avgeek" aria-labelledby="avgeek-title">
+      <h2 id="avgeek-title">AvGeek</h2>
+      {aviation.watching.length > 0 && (
+        <>
+          <h3>Watching</h3>
+          <ul>
+            {aviation.watching.map((r) => (
+              <li>
+                {r.from} → {r.to} · {r.airline} {r.aircraft} — {r.why}
+              </li>
+            ))}
+          </ul>
+        </>
+      )}
+      {aviation.seat_rules.length > 0 && (
+        <>
+          <h3>Seat rules</h3>
+          <ul>
+            {aviation.seat_rules.map((r) => (
+              <li>{r}</li>
+            ))}
+          </ul>
+        </>
+      )}
+      {aviation.favorite_cabins.length > 0 && (
+        <>
+          <h3>Favorite cabins</h3>
+          <ul>
+            {aviation.favorite_cabins.map((c) => (
+              <li>
+                {c.aircraft} · {c.cabin} — {c.why}
+              </li>
+            ))}
+          </ul>
+        </>
+      )}
+      {aviation.news.length > 0 && (
+        <>
+          <h3>Route news</h3>
+          <ul>
+            {aviation.news.map((n) => (
+              <li>
+                <time datetime={n.date}>{n.date}</time> <a href={n.url}>{n.headline}</a>
+              </li>
+            ))}
+          </ul>
+        </>
+      )}
+      {aviation.fare_examples.length > 0 && (
+        <>
+          <h3>Fare lab</h3>
+          <ul>
+            {aviation.fare_examples.map((f) => (
+              <li>
+                <code>{f.code}</code> {f.route} — {f.notes}
+              </li>
+            ))}
+          </ul>
+        </>
+      )}
+      {aviation.tools.length > 0 && (
+        <>
+          <h3>Tools I use</h3>
+          <ul class="inline-list">
+            {aviation.tools.map((t) => (
+              <li>
+                <a href={t.url} rel="noopener" target="_blank">
+                  {t.name}
+                </a>
+              </li>
+            ))}
+          </ul>
+        </>
+      )}
+    </section>
+  )}
+</div>
+
+<style>
+  .stub {
+    max-width: 880px;
+    margin-inline: auto;
+    padding-inline: var(--space-4);
+  }
+
+  .site-header,
+  main,
+  .site-footer {
+    max-width: 880px;
+    margin-inline: auto;
+    padding-inline: var(--space-4);
+  }
+  /* The nav uses the monospace body font, whose width matches its fallback, so the line breaks
+     are the same before and after the web font loads (the 8-bit font is ~1.7× wider than its
+     fallback and made the wrapped nav grow → CLS 0.28). M1 replaces this nav. */
+  .site-header ul {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-2) var(--space-4);
+    list-style: none;
+    margin: 0;
+    padding: var(--space-4) 0;
+    font: var(--type-code-sm);
+  }
+  .hero {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-6);
+    align-items: center;
+    padding-block: var(--space-8);
+  }
+  .avatar {
+    width: 160px;
+    height: 160px;
+    object-fit: cover;
+    border: 4px solid var(--color-border-edge);
+    box-shadow: var(--shadow-hard);
+  }
+  .prompt {
+    margin: 0;
+    font: var(--type-term-lg);
+    color: var(--color-accent-terminal-green);
+  }
+  h1 {
+    margin: 0;
+    font: var(--type-pixel-h2);
+    letter-spacing: var(--type-pixel-h2-tracking);
+  }
+  h2 {
+    font: var(--type-pixel-h3);
+    margin-block: var(--space-12) var(--space-4);
+    border-bottom: 2px solid var(--color-border-line);
+    padding-bottom: var(--space-2);
+  }
+  h3 {
+    font: var(--type-pixel-h4);
+    margin-block: var(--space-6) var(--space-2);
+  }
+  h4 {
+    font: var(--type-code-label);
+    letter-spacing: var(--type-code-label-tracking);
+    text-transform: uppercase;
+    color: var(--color-text-mid);
+  }
+  .full-name,
+  .tagline,
+  .meta,
+  .dates {
+    margin: var(--space-1) 0;
+    color: var(--color-text-mid);
+  }
+  .status {
+    color: var(--color-accent-terminal-green);
+  }
+  .links,
+  .inline-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-2) var(--space-4);
+    list-style: none;
+    padding: 0;
+  }
+  .inline-list li::after {
+    content: ' ·';
+    color: var(--color-text-mid);
+  }
+  .inline-list li:last-child::after {
+    content: '';
+  }
+  .project-icon {
+    display: block;
+    image-rendering: pixelated;
+  }
+  .project-cover {
+    display: block;
+    width: 100%;
+    max-width: 640px;
+    height: auto;
+    border: 2px solid var(--color-border-edge);
+  }
+  /* Logos are decorative (alt=""): the company name is the adjacent text. */
+  .logo {
+    display: inline-block;
+    vertical-align: -4px;
+    margin-right: var(--space-2);
+  }
+  .skills {
+    display: grid;
+    grid-template-columns: max-content 1fr;
+    gap: var(--space-2) var(--space-4);
+    margin: 0;
+  }
+  .skills dt {
+    font: var(--type-code-bold);
+  }
+  .skills dd {
+    margin: 0;
+  }
+  @media (max-width: 480px) {
+    .skills {
+      grid-template-columns: 1fr;
+    }
+    .skills dd {
+      margin-bottom: var(--space-2);
+    }
+  }
+  .site-footer {
+    margin-top: var(--space-16);
+    padding-block: var(--space-8);
+    border-top: 2px solid var(--color-border-line);
+    font: var(--type-code-sm);
+    color: var(--color-text-mid);
+  }
+  @media (max-width: 480px) {
+    h1 {
+      font: var(--type-pixel-h3);
+    }
+  }
+</style>

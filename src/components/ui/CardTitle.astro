@@ -8,7 +8,12 @@ interface Props {
 const { label, as: Tag = 'p', id } = Astro.props;
 ---
 
-<Tag class="ct" id={id}><span class="ct__hash" aria-hidden="true">##</span> {label}</Tag>
+<Tag class="ct" id={id}>
+  <span class="ct__hash" aria-hidden="true">
+    ##
+  </span>{' '}
+  {label}
+</Tag>
 
 <style>
   .ct {

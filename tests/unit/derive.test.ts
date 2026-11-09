@@ -155,7 +155,7 @@ describe('ticker', () => {
       { tag: 'XP', text: "Cumulative GPA 3.84/4.00 · Dean's List 2025–26" },
       { tag: 'NOW', text: 'Writing my thesis' },
       { tag: 'WORK', text: 'TA @ iSchool' },
-      { tag: 'IOS', text: 'Clock Stamp · shipped' },
+      { tag: 'iOS', text: 'Clock Stamp · shipped' },
       { tag: 'UW', text: 'Informatics · Data Science ’27' },
       { tag: 'CHOIR', text: 'Choir' },
       { tag: 'PING', text: 'a@b.c' },
@@ -218,5 +218,33 @@ describe('contact', () => {
   it('ping transcript uses the given address', () => {
     expect(pingLines('a@b.c')[0]).toBe('PING peter (a@b.c): 56 data bytes');
     expect(pingLines('a@b.c')).toHaveLength(3);
+  });
+});
+
+describe('experienceRows', () => {
+  it('maps volunteer entries to grass rows, newest first', async () => {
+    const { experienceRows } = await import('../../src/lib/derive');
+    const rows = experienceRows([
+      {
+        company: 'A',
+        role: 'Volunteer',
+        kind: 'volunteer',
+        start: '2022-01',
+        end: '2022-05',
+        location: 'X',
+      },
+      {
+        company: 'B',
+        role: 'Volunteer',
+        kind: 'volunteer',
+        start: '2023-10',
+        end: '2024-04',
+        location: 'Y',
+      },
+    ]);
+    expect(rows.map((r) => [r.sub, r.icon])).toEqual([
+      ['B · Y', 'grass'],
+      ['A · X', 'grass'],
+    ]);
   });
 });

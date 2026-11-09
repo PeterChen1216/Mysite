@@ -36,14 +36,12 @@ const scale = size / 324;
     <div class="globe__ocean"></div>
     <div class="globe__clip">
       <div class="globe__strip" data-globe-strip>
-        {
-          [0, 1, 2].map((i) => (
-            <>
-              <img src={land.src} width="648" height="324" alt="" style={`left:${i * 648}px`} />
-              <img src={ice.src} width="648" height="324" alt="" style={`left:${i * 648}px`} />
-            </>
-          ))
-        }
+        {[0, 1, 2].map((i) => (
+          <>
+            <img src={land.src} width="648" height="324" alt="" style={`left:${i * 648}px`} />
+            <img src={ice.src} width="648" height="324" alt="" style={`left:${i * 648}px`} />
+          </>
+        ))}
       </div>
     </div>
     <div class="globe__shade"></div>

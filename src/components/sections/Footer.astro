@@ -1,0 +1,73 @@
+---
+/** Footer (Figma "Footer"): copyright · domain, tagline, version · last updated, back to top. */
+import type { PageData } from '../../lib/page-data';
+
+interface Props {
+  data: PageData;
+}
+const { data } = Astro.props;
+const { footer, copy, site } = data;
+---
+
+<footer class="foot">
+  <p class="foot__left">
+    {footer.copyright}. All rights reserved. · {site.domain}
+  </p>
+  <p class="foot__mid">{copy.footer.tagline}</p>
+  <div class="foot__right">
+    <p>
+      <span class="foot__ver">{footer.version}</span> · updated
+      <time datetime={footer.updated}>{footer.updated}</time>
+      {site.footer.update_note && <span class="foot__note"> · {site.footer.update_note}</span>}
+    </p>
+    <a class="foot__top" href="#top">
+      {copy.footer.back_to_top}
+    </a>
+  </div>
+</footer>
+
+<style>
+  .foot {
+    position: relative;
+    z-index: 1;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px 32px;
+    padding: 32px 64px;
+    border-top: 2px solid var(--color-border-line);
+    font: var(--type-code-sm);
+    color: var(--color-text-mid);
+  }
+  .foot p {
+    margin: 0;
+  }
+  .foot__right {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 8px 16px;
+  }
+  .foot__top {
+    color: var(--color-accent-terminal-green);
+    text-decoration: none;
+    white-space: nowrap;
+  }
+  .foot__top:hover,
+  .foot__top:focus-visible {
+    text-decoration: underline;
+  }
+  @media (max-width: 1023px) {
+    .foot {
+      flex-direction: column;
+      align-items: flex-start;
+      padding: 28px 32px;
+    }
+  }
+  @media (max-width: 767px) {
+    .foot {
+      padding: 24px 16px;
+    }
+  }
+</style>

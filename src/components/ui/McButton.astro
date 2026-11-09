@@ -14,17 +14,28 @@ interface Props {
   /** Accessible name when the visible label is cryptic. */
   ariaLabel?: string;
 }
-const { href, kind = 'stone', external = false, download = false, class: cls, ariaLabel } = Astro.props;
+const {
+  href,
+  kind = 'stone',
+  external = false,
+  download = false,
+  class: cls,
+  ariaLabel,
+} = Astro.props;
 ---
 
 <a
   class:list={['mc-btn', `mc-btn--${kind}`, cls]}
   href={href}
-  {...external ? { target: '_blank', rel: 'noopener' } : {}}
-  {...download ? { download: '' } : {}}
-  {...ariaLabel ? { 'aria-label': ariaLabel } : {}}
+  {...(external ? { target: '_blank', rel: 'noopener' } : {})}
+  {...(download ? { download: '' } : {})}
+  {...(ariaLabel ? { 'aria-label': ariaLabel } : {})}
   data-particles
-><span class="mc-btn__label"><slot /></span></a>
+>
+  <span class="mc-btn__label">
+    <slot />
+  </span>
+</a>
 
 <style>
   .mc-btn {

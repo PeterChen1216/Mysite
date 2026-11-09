@@ -22,7 +22,7 @@
     "test": "vitest run --coverage",
     "test:e2e": "playwright test --trace off",
     "content:check": "node scripts/check-content.mjs",
-    "size": "size-limit",
+    "size": "size-limit && node scripts/check-js-budget.mjs",
     "lhci": "lhci autorun",
     "verify": "pnpm format:check && pnpm lint && pnpm check && pnpm content:check && pnpm test && pnpm build && pnpm size && pnpm assemble && pnpm test:e2e"
   },

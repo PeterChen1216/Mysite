@@ -11,16 +11,16 @@ const { id, cmd, title, blurb } = Astro.props;
 
 <header class="sh">
   <div class="sh__title">
-    <p class="sh__cmd" aria-hidden="true"><span class="sh__dollar">$</span> {cmd}</p>
+    <p class="sh__cmd" aria-hidden="true">
+      <span class="sh__dollar">$</span> {cmd}
+    </p>
     <h2 id={id} class="sh__h">
-      {
-        title.map((line, i) => (
-          <>
-            {line}
-            {i < title.length - 1 && <br />}
-          </>
-        ))
-      }
+      {title.map((line, i) => (
+        <>
+          {line}
+          {i < title.length - 1 && <br />}
+        </>
+      ))}
     </h2>
   </div>
   {blurb && <p class="sh__blurb">{blurb}</p>}

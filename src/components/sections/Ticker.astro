@@ -1,0 +1,90 @@
+---
+/** Scrolling status ticker (Figma "Ticker"): items built from content by derive.tickerItems. */
+import type { PageData } from '../../lib/page-data';
+import { LOOP } from '../../motion/params';
+
+interface Props {
+  data: PageData;
+}
+const { data } = Astro.props;
+const items = data.ticker;
+// Rough width estimate (13 px JetBrains Mono ≈ 7.8 px/char + gaps) → constant scroll speed.
+const widthPx = items.reduce((n, it) => n + (it.tag.length + it.text.length + 4) * 7.8 + 72, 0);
+const seconds = Math.round(widthPx / LOOP.tickerPxPerSecond);
+---
+
+<div class="ticker" style={`--ticker-s:${seconds}s`}>
+  <ul class="ticker__track" aria-label="Status">
+    {items.map((it) => (
+      <li class="ticker__item">
+        <span class="ticker__tag">[{it.tag}]</span> {it.text}
+        <span class="ticker__star" aria-hidden="true">
+          ✦
+        </span>
+      </li>
+    ))}
+  </ul>
+  <ul class="ticker__track ticker__track--dup" aria-hidden="true">
+    {items.map((it) => (
+      <li class="ticker__item">
+        <span class="ticker__tag">[{it.tag}]</span> {it.text}
+        <span class="ticker__star">✦</span>
+      </li>
+    ))}
+  </ul>
+</div>
+
+<style>
+  .ticker {
+    position: relative;
+    z-index: 1;
+    display: flex;
+    overflow: hidden;
+    padding: 14px 0;
+    background: rgb(10 14 20 / 0.9);
+    border-block: 2px solid var(--color-border-line);
+    font: var(--type-code-sm);
+    color: var(--color-text-mid);
+    white-space: nowrap;
+  }
+  .ticker__track {
+    display: flex;
+    flex: none;
+    gap: 36px;
+    margin: 0;
+    padding: 0 18px;
+    list-style: none;
+  }
+  .ticker__item {
+    display: flex;
+    gap: 8px;
+  }
+  .ticker__tag {
+    color: var(--color-accent-terminal-green);
+  }
+  .ticker__star {
+    margin-left: 28px;
+    color: var(--color-accent-gold);
+  }
+  .ticker__track--dup {
+    display: none;
+  }
+  :global(html.motion) .ticker__track--dup {
+    display: flex;
+  }
+  :global(html.motion) .ticker__track {
+    animation: ticker var(--ticker-s, 60s) linear infinite;
+  }
+  .ticker:hover .ticker__track {
+    animation-play-state: paused;
+  }
+  @keyframes ticker {
+    to {
+      transform: translateX(-100%);
+    }
+  }
+  /* Without motion the band scrolls by hand. */
+  :global(html:not(.motion)) .ticker {
+    overflow-x: auto;
+  }
+</style>
