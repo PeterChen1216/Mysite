@@ -1,0 +1,300 @@
+---
+/**
+ * Featured build (Figma Card/Featured 22:1020): chips, title, tagline + bullets, a status terminal
+ * built only from the project's data (stack, derive.statusBar, dates), link buttons and — for an
+ * iOS build — the decorative phone mock-up (22:1158) with Command / Glow blocks.
+ *
+ * Content contract (tests/e2e/content.spec.ts): inside #project-<id> the first `.meta` reads
+ * "year · platforms · status" (the chip row; the separators are visually hidden), then one `.meta`
+ * with "role · location · dates" and one with "Stack: …".
+ */
+import { Image } from 'astro:assets';
+import Card from '../ui/Card.astro';
+import Chip from '../ui/Chip.astro';
+import McButton from '../ui/McButton.astro';
+import TerminalWindow from '../ui/TerminalWindow.astro';
+import VoxelBlock from '../ui/VoxelBlock.astro';
+import PhoneMockup from './PhoneMockup.astro';
+import { statusBar } from '../../lib/derive';
+import { projectView, type Project, type ProjectsCopy } from './projects-view';
+
+interface Props {
+  project: Project;
+  copy: ProjectsCopy;
+}
+const { project: p, copy } = Astro.props;
+const v = projectView(p, copy);
+const { Body } = p;
+const bar = statusBar(p.status);
+const cells = Array.from({ length: bar.total }, (_, i) => i < bar.filled);
+// Symbols outside the 8-bit font's Latin subset are drawn in a symbol font (as in Tooltip); the
+// parts share one <span> so the chip's flex box doesn't swallow the space after the symbol.
+const SYMBOL = /^[★✈⇄→✦]$/u;
+const featuredParts = copy.featured.split(/([★✈⇄→✦])/u).filter(Boolean);
+const withPhone = p.platform.includes('ios');
+---
+
+<Card as="article" class="pf" id={v.anchor} labelledby={`${v.anchor}-title`}>
+  <span class="pf__block pf__block--command" aria-hidden="true">
+    <VoxelBlock name="command" size={125} />
+  </span>
+  <div class="pf__copy">
+    <h3 class="pf__title" id={`${v.anchor}-title`}>
+      {p.title}
+    </h3>
+    <div class="pf__chips">
+      <Chip tone="gold">
+        <span>
+          {featuredParts.map((part) =>
+            SYMBOL.test(part) ? <span class="sym">{part}</span> : part,
+          )}
+        </span>
+      </Chip>
+      <p class="meta pf__stat">
+        <Chip tone="enchant">
+          {v.year}
+          <span class="visually-hidden"> · </span>
+        </Chip>
+        {v.platforms.map((label, i) => (
+          <Chip tone="diamond">
+            {label}
+            <span class="visually-hidden">{i < v.platforms.length - 1 ? ', ' : ' · '}</span>
+          </Chip>
+        ))}
+        <Chip tone="white">{v.status}</Chip>
+      </p>
+    </div>
+    <div class="pf__desc">
+      {p.tagline && <p class="pf__tagline">{p.tagline}</p>}
+      {p.cover && (
+        <Image
+          class="pf__cover"
+          src={p.cover}
+          alt={p.cover_alt ?? ''}
+          widths={[560, 1120]}
+          sizes="(max-width: 767px) 100vw, 560px"
+        />
+      )}
+      <div class="pf__body">
+        <Body />
+      </div>
+    </div>
+    <TerminalWindow title={`${copy.status_title}/${v.id}`} class="pf__term">
+      <p class="pf__ln">
+        <span class="pf__g">$</span> {copy.status_cmd}
+      </p>
+      {v.stack && <p class="pf__ln pf__ln--mid meta">{v.stack}</p>}
+      <p class="pf__ln">
+        <span class="pf__bar" aria-hidden="true">
+          <span>[</span>
+          {cells.map((on) => (
+            <span class:list={['pf__cell', { 'pf__cell--on': on }]} />
+          ))}
+          <span>]</span>
+        </span>
+        <span class="pf__g">{bar.label}</span>
+        {v.when && <span class="meta pf__when">{v.when}</span>}
+      </p>
+    </TerminalWindow>
+    {v.links.length > 0 && (
+      <div class="pf__links">
+        {v.links.map((l) => (
+          <McButton
+            href={l.url}
+            kind={l.kind === 'appstore' ? 'grass' : 'stone'}
+            external
+            ariaLabel={`${l.label} — ${p.title}`}
+          >
+            {l.label}
+          </McButton>
+        ))}
+      </div>
+    )}
+  </div>
+  {withPhone && (
+    <div class="pf__stage">
+      <span class="pf__block pf__block--glow" aria-hidden="true">
+        <VoxelBlock name="glow" size={50} />
+      </span>
+      <PhoneMockup phone={copy.phone} />
+    </div>
+  )}
+</Card>
+
+<style>
+  .pf__block {
+    position: absolute;
+  }
+  /* Figma: left 878 / top −32 in a 1308 px padding box → anchored to the right edge. */
+  .pf__block--command {
+    right: 305px;
+    top: -32px;
+  }
+  /* Figma parks the Glow block behind the phone, where it can't be seen; it peeks out from
+     behind the phone's lower-left edge instead. */
+  .pf__block--glow {
+    left: -34px;
+    bottom: 92px;
+    filter: drop-shadow(0 0 14.4px rgb(242 201 76 / 0.6));
+  }
+  .pf__copy {
+    flex: 1 1 0;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 20px;
+  }
+  .pf__title {
+    margin: 0;
+    font: var(--type-pixel-h3);
+    letter-spacing: var(--type-pixel-h3-tracking);
+    color: var(--color-text-hi);
+    text-shadow: 3px 3px 0 rgb(0 0 0 / 0.8);
+  }
+  /* Chips sit above the title on screen; the title stays first for screen readers. */
+  .pf__chips {
+    order: -1;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+  .pf__stat {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin: 0;
+  }
+  .sym {
+    font-family: 'Segoe UI Symbol', 'Apple Symbols', 'Noto Sans Symbols 2', system-ui, sans-serif;
+    font-size: 10px;
+    line-height: 1;
+  }
+  /* Figma's paragraph is 560 px; bullets get a little more room so they wrap like it does. */
+  .pf__desc {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    max-width: 600px;
+  }
+  .pf__tagline {
+    margin: 0;
+    font: var(--type-code-body);
+    color: var(--color-text-hi);
+  }
+  .pf__cover {
+    display: block;
+    width: 100%;
+    height: auto;
+    border: 2px solid var(--color-border-edge);
+  }
+  .pf__body {
+    font: var(--type-code-body);
+    color: var(--color-text-mid);
+  }
+  .pf__body :global(ul) {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+  .pf__body :global(li) {
+    position: relative;
+    padding-left: 20px;
+  }
+  .pf__body :global(li)::before {
+    content: '';
+    position: absolute;
+    left: 2px;
+    top: 0.65em;
+    width: 6px;
+    height: 6px;
+    background: var(--color-accent-terminal-green);
+  }
+  .pf__body :global(p) {
+    margin: 0;
+  }
+  .pf__copy :global(.pf__term) {
+    width: 100%;
+    max-width: 560px;
+    box-shadow: none;
+  }
+  .pf__copy :global(.pf__term .term__body) {
+    gap: 4px;
+    padding: 14px 16px;
+  }
+  .pf__ln {
+    margin: 0;
+    color: var(--color-text-hi);
+  }
+  .pf__ln--mid {
+    color: var(--color-text-mid);
+  }
+  .pf__g {
+    color: var(--color-accent-terminal-green);
+  }
+  .pf__bar {
+    display: inline-flex;
+    align-items: center;
+    gap: 2px;
+    margin-right: 0.4em;
+    vertical-align: top;
+    color: var(--color-accent-terminal-green);
+  }
+  .pf__cell {
+    flex: none;
+    width: 16px;
+    height: 16px;
+    border: 1px solid var(--color-accent-terminal-green);
+  }
+  .pf__cell--on {
+    background: var(--color-accent-terminal-green);
+  }
+  .pf__when {
+    margin-left: 0.6em;
+    color: var(--color-accent-diamond);
+  }
+  .pf__links {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+  }
+  .pf__links :global(.mc-btn) {
+    text-transform: uppercase;
+  }
+  .pf__stage {
+    position: relative;
+    flex: none;
+  }
+  @media (max-width: 1023px) {
+    .pf__stage {
+      align-self: center;
+    }
+    .pf__block--command {
+      right: 24px;
+    }
+  }
+  @media (max-width: 767px) {
+    .pf__block--command {
+      right: 12px;
+      top: -20px;
+    }
+    .pf__block--command :global(.voxel) {
+      width: 64px;
+      height: auto;
+    }
+    .pf__chips {
+      padding-right: 72px;
+    }
+    .pf__title {
+      font-size: 26px;
+    }
+    /* One class more than TerminalWindow's own `.term--term .term__body` font rule. */
+    .pf__copy :global(.pf__term.term--term .term__body) {
+      font-size: 20px;
+      padding: 12px 14px;
+    }
+  }
+</style>
