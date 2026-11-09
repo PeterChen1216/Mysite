@@ -1,6 +1,7 @@
 import { readFileSync, readdirSync } from 'node:fs';
 import { expect, test, type Page } from '@playwright/test';
 import { parse } from 'yaml';
+import { logRange } from '../../src/lib/derive';
 import { formatRange, formatYearMonth } from '../../src/lib/format';
 import { V2 } from './site';
 
@@ -90,9 +91,12 @@ test.describe('content/ renders completely', () => {
       expected.push(...((e.honors as string[]) ?? []), ...((e.coursework as string[]) ?? []));
     }
     for (const h of honors) expected.push(`${h.name}, ${h.org}, ${h.year}`, h.note);
+    // Experience is a `git log` (M1): each commit reads role, then `company · location`, then
+    // its dates as derive.logRange prints them (`2024-07 → 2024-09`; `present` → `now`).
     for (const x of experience) {
-      expected.push(`${x.role} @ ${x.company}, ${x.location}`);
-      expected.push(formatRange(String(x.start), String(x.end)));
+      expected.push(
+        `${x.role} ${x.company} · ${x.location} ${logRange(String(x.start), String(x.end))}`,
+      );
       expected.push(...(x.highlights as string[]));
     }
     expect(missing(text, expected)).toEqual([]);

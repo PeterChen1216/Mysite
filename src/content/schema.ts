@@ -386,7 +386,15 @@ export const copySchema = z
       })
       .strict(),
     experience: z
-      .object({ cmd: text, title: lines, blurb: text, head_hint: text })
+      .object({
+        cmd: text,
+        title: lines,
+        blurb: text,
+        head_hint: text,
+        /** Heading of the community log (volunteer entries), shown below the commit history. */
+        community_cmd: text,
+        community_title: text,
+      })
       .strict(),
     contact: z
       .object({
@@ -396,6 +404,10 @@ export const copySchema = z
         github: text,
         linkedin: text,
         resume: text,
+        /** Title bar of the ping terminal. */
+        terminal_title: text,
+        /** Shown before the list of public email addresses. */
+        emails_label: text,
       })
       .strict(),
     footer: z.object({ tagline: text, back_to_top: text }).strict(),
