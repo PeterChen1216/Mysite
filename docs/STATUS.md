@@ -1,6 +1,6 @@
 # STATUS（会话交接 · PLAN §15.6）
 
-> 更新：2026-11-09（第二轮评审修复后）· 分支 `claude/affectionate-dirac-6zpbqu`
+> 更新：2026-11-09（第三轮复核修复后）· 分支 `claude/affectionate-dirac-6zpbqu`
 
 ## 当前状态
 | 里程碑 | 状态 |
@@ -32,7 +32,8 @@
 - 页脚："built with voxels, coffee & too many flights"（PLAN §5.4 举过的例子）
 - "next --chunk ??? (loading…)" 预告卡
 - 第二轮评审后新增的界面文字（以前写死在代码里，现在都在 copy.yaml，可改）：读屏用的名称（跳转链接 "Skip to content"、导航 "Sections"、logo "zhic.me — back to top"、滚动条 "Status"）、Hero 眉题前缀 "// player:"、有航线时的徽章模板 `AvGeek ✈ {from} ⇄ {to}`、滚动条标签词 XP/NOW/WORK/PING/EDU、ping 终端的三行输出与 `open mailto:{email}`
-- `{占位符}` 现在在 copy.yaml 的**每一行**都能用（新增 `{host}` = 小写名字、`{domain}`、`{email}`）；写错的占位符会让构建失败，不会出现在页面上。终端里的 "peter@zhic.me" 和 "ping peter" 都来自 `{host}@{domain}`
+- `{占位符}` 现在在 copy.yaml 的**每一行**都能用（新增 `{host}` = 小写名字、`{domain}`、`{email}`），花括号里可以带空格（`{ city }`）；写错的占位符（包括 `{first-name}` 这类，以及把 `{from}`/`{to}` 写在 `hero.avgeek_route` 以外的地方）会让构建失败并指出是哪一行，不会出现在页面上。终端里的 "peter@zhic.me" 和 "ping peter" 都来自 `{host}@{domain}`
+- 第三轮又移入 copy.yaml 的界面词：项目状态词 `labels.status`（idea / in progress / TestFlight / shipped / completed / archived，项目卡、徽章、滚动条共用）、进行中项目的结束词 `labels.present`（"Mar 2026 – Present"）、Hero 徽章的 `labels.gpa`（"GPA"）
 
 ### C. Figma 里关于你本人的文案（**没有上页面**；你同意的我再加）
 1. Whoami 改写版："Informatics, Data Science track, graduating June 2027. Huge tech fan…"（若采用需改为 March 2027）——目前页面用你的 about.md 原文；卡片标题 Figma 原文 "Hi, I’m Peter — a junior at the UW Information School."（若要写年级，改模板即可）
@@ -57,8 +58,8 @@
 - Grass 按钮 hover：Figma 组件是浅绿底黄字（PLAN §5.2 文字写"蓝底黄字"）——按 Figma 组件实现并为 AA 加深；Stone 按钮 hover 为蓝底黄字
 - 第二条轨道环：Figma 是倾斜 18° 的椭圆并摆动 30°；实现为来回摆动（整圈旋转的椭圆看起来不对）
 - Hero 舞台在 1024–1279 缩小显示；徽章文字始终 ≥ 8 px，缩到 0.78 以下（1024 附近与手机）时徽章隐藏（同样的事实在 About / Projects 里都有）
-- GPA 徽章：真实荣誉名更长（"Annual Dean's List 2025–26"），按 Figma 的 left 300 会在 1100–1440 被页面右边裁掉。现改为靠右对齐：≥ 1280 时像 Figma 一样伸出舞台 40 px（右缘 1416/1440，与金块不重叠）；1100–1279 时盖住金块的上半（纯装饰，徽章在上层）
-- 玩家卡可以用键盘 Tab 选中，选中时显示真人照片（原来只有鼠标悬停能看到，Q7）；滚动条是可聚焦的命名区域，键盘聚焦时暂停滚动
+- GPA 徽章：真实荣誉名更长（"Annual Dean's List 2025–26"，徽章比 Figma 长 61 px），按 Figma 的 left 300 会在 1100–1440 被页面右边裁掉。现改为靠右对齐；舞台旁有空间时（≥ 1280 并排、672–1023 居中堆叠）伸出舞台 40 px（Figma 是 24 px；1440 时右缘 1416），与金块不重叠。472–671 与 1100–1279 舞台缩小或边距不够，徽章保持原字号，会盖住金块上半（最多约 42×21 px）和钻石块一角（纯装饰，徽章在上层）；≤ 468 与 1024–1096 徽章隐藏。荣誉名再长时重叠会更多
+- 玩家卡可以用键盘 Tab 选中，选中时显示真人照片（原来只有鼠标悬停能看到，Q7）；滚动条是可聚焦的命名区域，悬停或聚焦（Tab、点击、轻触）时暂停，焦点移开后继续——点击也会暂停是有意保留的（给鼠标用户一个持续的暂停方式）；如果只想让键盘聚焦暂停，把 `Ticker.astro` 里的 `:focus-within` 改成 `:focus-visible` 即可
 
 ### E. 之前还没答的问题
 1. Classmate Map：新简历没写，是否保留？
@@ -76,14 +77,25 @@
 - **事实**：全部来自 `content/`，由 `src/lib/derive.ts`（16 个单测）与 `src/lib/page-data.ts` 计算；界面文案在 `content/copy.yaml`。
 - **动效**：CSS 优先，`html.motion` 仅在 JS 可用且未开启 reduced-motion 时添加；开场序列按 Figma 参数单次播放；hover 像素粒子；地球 hover 减速、拖拽旋转、离屏暂停。无 JS 与 reduced-motion 下页面完整静止。
 - **字体**：Astro Fonts API + 度量匹配 fallback（CLS ≈ 0）。
-- **质量**：单测 91（覆盖率门槛按文件 ≥ 80%，现已包含 derive.ts 与 projects-view.ts）、E2E 64（Chromium / 移动 Chromium，CI 另跑 WebKit）；axe 0 严重——正常动效、reduced-motion、无 JS 三种情况都测；构建零警告、首屏 JS 2.2 KB gz（预算 180 KB）、Lighthouse 移动端 99–100 / 100 / 100 / 100、LCP ≈ 0.76 s。新增布局测试：360–1920 共 9 个宽度逐词检查文字不被裁切、不溢出到相邻元素（旧的"无横向滚动"测试因 `.page{overflow-x:clip}` 永远通过，已替换）。
-- **流程**：3 个分区 agent 并行实现（独立 worktree），我集成；两轮独立评审 + 对抗式复核。第一轮（事实 / 视觉）18 条：16 条已修，2 条按 Figma 组件驳回。第二轮（无障碍 / 代码）25 条：24 条确认、1 条驳回；23 条产品问题全部修复（见下），另 1 条是评审流程自身的问题（评审副本共用 node_modules 缓存，已改流程，主仓库未受影响）。
+- **质量**：单测 108（覆盖率门槛按文件 ≥ 80%，包含 derive.ts、projects-view.ts 与 motion/params.ts）、E2E 69（Chromium / 移动 Chromium，CI 另跑 WebKit）；axe 0 严重——正常动效、reduced-motion、无 JS 三种情况都测；构建零警告、首屏 JS 2.2 KB gz（预算 180 KB）、Lighthouse 移动端 99–100 / 100 / 100 / 100、LCP ≈ 0.76 s。布局测试：320–1920 共 10 个宽度（含 WCAG 1.4.10 的 320 px）逐词检查文字不被裁切、不溢出到相邻元素（旧的"无横向滚动"测试因 `.page{overflow-x:clip}` 永远通过，已替换）。
+- **流程**：3 个分区 agent 并行实现（独立 worktree），我集成；两轮独立评审 + 对抗式复核。第一轮（事实 / 视觉）18 条：16 条已修，2 条按 Figma 组件驳回。第二轮（无障碍 / 代码）25 条：24 条确认、1 条驳回；23 条产品问题全部修复（见下），另 1 条是评审流程自身的问题（评审副本共用 node_modules 缓存，已改流程，主仓库未受影响）。第三轮独立复核第二轮的修复：22 条确认修好、3 条只修了一半，另有 22 条新线索（复核 agent 中途碰到用量上限，对抗式复核与性能扫描没跑完）；我逐条核对后全部处理（见下），其中"点击滚动条也会暂停"按设计保留（见 D）。
 
 ### 第二轮评审修复（无障碍 / 动效 / 代码）
 - 无障碍：滚动条在 reduced-motion / 无 JS 下是无名称、键盘无法滚动的区域（axe 严重）→ 命名区域 + 可聚焦；键盘聚焦暂停滚动（WCAG 2.2.2）；页面打开后再开启"减少动态效果"时，地球会因滚动 / 拖拽重新转起来、悬停粒子仍会出现 → 已修；h1 末尾的 `_` 光标、"▲ back to spawn"、"say hi ↓" 的符号不再被读出；11 个新标签页链接补上"(opens in a new tab)"
 - 布局：GPA 徽章在 1100–1440 被裁切；教育行 "(expected)" 在 1024–1279 压在学校名上 → 日期保持一行、"(expected)" 换到下一行；About 卡片缺席时（无兴趣图标 / 无航空数据 / 无进行中项目）网格留空洞 → 按实际卡片生成网格；技能 basic 组在窄屏不换行
 - 内容管线：now.md 原样把 Markdown（`[链接](…)`、`**粗体**`、标题）送进滚动条 → 新解析器只保留文字（有单测）；now.md 注释写的是"驱动 Hero 终端"，实际只进滚动条 → 已更正
 - 动效与性能：`src/motion/params.ts` 现在真正驱动 CSS（以 `--m-*` 自定义属性注入），删掉未用 / 已漂移的参数；离屏的循环动画（光标、轨道、滚动条）暂停，页面静止时不再每秒画 60 帧；开场动画结束后不再残留 22 个合成层，也不会让打字行停在最后一步
+
+### 第三轮复核修复
+- now.md → 滚动条：改为读取 Astro 渲染后的 HTML（与全站相同的 CommonMark + GFM），不再自己解析 Markdown。自动链接 `<https://…>`（之前整段被删）、引用式链接及其定义行（之前定义行漏进滚动条）、网址里的括号、任务清单、代码里的 `**`、`&amp;` 等实体、脚注都正确变成纯文字；单测用真实构建渲染出的 HTML
+- copy.yaml 占位符：`{from}`/`{to}` 只在 `hero.avgeek_route` 有效，别处会让构建失败；`{first-name}` 这类写错同样失败，`{ city }` 可用；报错指出是哪个键
+- 剩下写死在代码里的界面词移入 copy.yaml：项目状态词、"Present"、"GPA"（见 B）
+- 动效参数：Hero 最后一行光标的打字时长改用同一公式，按钮 hover（120 ms / 3 步）与照片切换（200 ms / 4 步）进入 `params.ts`；新单测保证 CSS 读的每个 `--m-*` 都由 `params.ts` 提供、提供的每个都被用到
+- "减少动态效果"开了又关：离屏的地球不再继续转；开着时滚动条变为可手动滚动（之前停在第一条、无法滚动）
+- 地球拖拽：之前拖几像素就被浏览器自带的图片拖拽打断、又开始自转；现在全程跟手，舞台缩小时（1100–1279）也按实际大小换算
+- 读屏：h1 只隐藏高亮的光标 `_`，标题里写 "&"、"+" 等符号会照常读出；"✈️" 这类带变体符的 emoji 也被识别为装饰；"C++"、"cd ~" 里的 ASCII 符号不再被当作装饰
+- GPA 徽章：672–1023 也伸出舞台，平板竖屏不再盖住金块（见 D）
+- 测试：布局检查加 320 px，带 title 的省略号截断（终端标题栏）算正常；About 网格四种卡片组合有单测，各宽度下网格模板有效；技能换行、减少动态效果开关、手机上的离屏暂停都有 E2E；按 copy.yaml 文案找元素时改为精确匹配（"Stats" 这类改动不会误伤）；now.md 的 E2E 只查接线，解析规则由单测负责
 
 ## M1 验收（PLAN §8）
 | 验收项 | 结果 |
