@@ -1,25 +1,23 @@
 # STATUS（会话交接 · PLAN §15.6）
 
-> 更新：2026-11-09（第六轮复核修复后）· 分支 `claude/affectionate-dirac-6zpbqu`
+> 更新：2026-11-09（M1 已接受并合并）· 分支 `claude/affectionate-dirac-6zpbqu`
 
 ## 当前状态
 | 里程碑 | 状态 |
 |---|---|
 | M0 骨架与内容迁移 | ✅ 已上线（PeterChen1216/Mysite#2，`ea935de`） |
 | 内容更新：新简历 2026-11-03 | ✅ 已上线（PeterChen1216/Mysite#3，`e6f033c`；业主 R2-4 同意直接合并） |
-| **M1 长页面版（Figma `Home — Voxel / 1440`）** | 🟡 **实现完成、自动检查全绿，等待你早上审核**（draft PR，未合并；未改 `launched`；未改 Figma） |
+| **M1 长页面版（Figma `Home — Voxel / 1440`）** | ✅ **业主 2026-11-09 接受并合并**（PeterChen1216/Mysite#4，squash 合并）；zhic.me/v2/ 更新为 M1；`launched` 仍为 false；Figma 未改 |
 | M2 体素场景 / M3 窗口 | 未开始 |
 
-线上：zhic.me/（旧站，不变）· zhic.me/v2/（目前仍是 M0 纯页面；M1 合并后更新）· zhic.me/legacy/。
+线上：zhic.me/（旧站，不变）· zhic.me/v2/（M1 长页面版）· zhic.me/legacy/。
 
 ---
 
-## ☀️ 早上请审核 / 确认（按优先级）
+## ☀️ 还需要你确认的（按优先级）
 
-### A. 是否接受 M1
-1. 看 PR 描述里的截图（1440 / 390）或下载 CI 产物 `site-<sha>` 本地打开 `v2/index.html`。
-2. 接受 → 合并 PR（zhic.me/v2/ 更新；旧首页不变）。
-3. 是否同时 **正式上线**（`content/site.yaml` → `launched: true`，v2 替换旧首页，旧站移到 /legacy/）？DECISIONS Q1 说 "M1 完成即替换旧站"，但这一步我不会替你做。
+### A. M1：✅ 已接受并合并（2026-11-09）；还剩是否正式上线
+- 是否 **正式上线**（`content/site.yaml` → `launched: true`，v2 替换旧首页，旧站移到 /legacy/）？DECISIONS Q1 说 "M1 完成即替换旧站"，但这一步我不会替你做——你说一声，我开一个只改这一行的 PR。
 
 ### B. 设计稿里的界面文案（`content/copy.yaml`）——保留还是改？
 这些是 Figma 原文或由你的内容拼出来的界面文字；`{占位符}` 会自动填入你的内容，copy.yaml 里不写关于你的事实。
@@ -131,13 +129,13 @@
 | hover 粒子、打字机、reduced-motion 全覆盖 | ✅ |
 | 响应式 390 / 768 / 1024 / 1440 | ✅ |
 | 移动端 LCP ≤ 2.5 s、axe 0 严重、键盘可达 | ✅（LCP ≈ 0.76 s；axe 覆盖动效 / reduced-motion / 无 JS；照片与滚动条可用键盘操作） |
-| 业主人工验收 | ⏳ 早上 |
+| 业主人工验收 | ✅ 2026-11-09 接受并合并 |
 
 ## 与计划的偏离
 记入 PLAN §13：ADR-009 至 ADR-014。实现细节：分支名沿用会话指定的 `claude/affectionate-dirac-6zpbqu`；合并一律以业主账号 squash（业主要求）。
 
 ## 下一步（三条）
-1. 你审核 M1（A–E），合并；决定是否 `launched: true`。
+1. 决定是否 `launched: true`（A）；确认 B–E 的文案、偏差与旧问题。
 2. 把确认后的偏差与文案回写 Figma（或告诉我，我来改）。
 3. M2：Three.js 体素场景与相机停靠（PLAN §8）。
 
