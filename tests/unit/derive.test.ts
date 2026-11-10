@@ -32,6 +32,8 @@ import {
   withGpaLabel,
   type EducationLike,
   type ProjectLike,
+  eyebrowShort,
+  schoolHonors,
 } from '../../src/lib/derive';
 
 type Edu = EducationLike & { gpa_label: string };
@@ -874,5 +876,33 @@ describe('About cards', () => {
     expect(card({ id: 'aviation', future_list: ['x'] })).toBe(true);
     expect(card({ id: 'aviation', note: 'not a list', watching: [] })).toBe(false);
     expect(card({})).toBe(false);
+  });
+});
+
+describe('the phone layout (X4)', () => {
+  it('a one-line eyebrow: the name, and the tagline’s class year as a tail', () => {
+    expect(eyebrowShort('// player:', 'Peter Chen', 'Informatics: Data Science, UW ’27')).toEqual({
+      head: '// player: Peter Chen',
+      tail: ' · UW ’27',
+    });
+    // A Chinese tagline (full-width comma).
+    expect(eyebrowShort('// 玩家:', 'Peter Chen', '信息学：数据科学，UW ’27').tail).toBe(
+      ' · UW ’27',
+    );
+    // No class year at the end, or no tagline: the name alone.
+    expect(eyebrowShort('//', 'A B', 'Designer, Seattle').tail).toBe('');
+    expect(eyebrowShort('//', 'A B', undefined)).toEqual({ head: '// A B', tail: '' });
+  });
+  it("a school's honors: org is its name, or its name before the comma", () => {
+    const honors = [
+      { name: 'Dean’s List', org: 'University of Washington', year: '2025-2026' },
+      { name: 'Prize', org: 'Some Society', year: '2024' },
+      { name: 'Award', org: 'university of washington, seattle', year: '2023' },
+    ];
+    expect(schoolHonors('University of Washington, Seattle', honors).map((h) => h.name)).toEqual([
+      'Dean’s List',
+      'Award',
+    ]);
+    expect(schoolHonors('Another College', honors)).toEqual([]);
   });
 });

@@ -15,6 +15,12 @@ nav:
   say_hi: 打個招呼
   logo_label: '{domain}——回到頂部'
   sections_label: 欄目
+  hotbar:
+    - 關於
+    - 項目
+    - 經歷
+    - 聯繫
+  hotbar_prefs: 設置
 
 hero:
   headline:
@@ -73,6 +79,9 @@ hero:
     not_found: 找不到命令：{cmd} —— 試試 help
     theme_set: 主題：{name}
     opening: 正在打開 {name}…
+  more: 更多 ▾
+  less: 收起 ▴
+  badges_label: 亮點
 
 ticker:
   label: 狀態
@@ -134,6 +143,8 @@ projects:
     tab_list: List
     tab_clock: Clock
     pick_label: 顯示此城市的時間：
+  list_all: 全部列出 ▸
+  position: 第 {n} 個，共 {count} 個
 
 experience:
   cmd: git log --oneline --graph ~/career
@@ -509,3 +520,10 @@ from:
   not_found.home_label: b7e60605
   not_found.projects_label: 6f33f409
   og.alt: 6494fcc5
+  nav.hotbar: 0da8a208
+  nav.hotbar_prefs: 94dfe5d5
+  hero.more: 68f6f992
+  hero.less: 6992f115
+  projects.list_all: 84f569fd
+  projects.position: a2dc324b
+  hero.badges_label: aa0d31f7

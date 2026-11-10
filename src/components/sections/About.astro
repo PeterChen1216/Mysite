@@ -167,9 +167,20 @@ const { areas } = cards;
     .inv {
       grid-template-columns: minmax(0, 1fr);
       grid-template-areas: var(--areas-sm);
+      gap: 22px;
     }
+    /* X4: XP and Now side by side, the same height (§8.3) — while each column is at least 10.4em
+       (156 px at the default text size: from 358 px wide, so 360 and up). Narrower, or with
+       larger text, one above the other: their labels and the GPA do not wrap. */
     .inv__stack {
+      grid-template-columns: repeat(auto-fit, minmax(min(100%, 10.4em), 1fr));
+      gap: 14px;
+    }
+    .inv__stack--one {
       grid-template-columns: minmax(0, 1fr);
+    }
+    .inv__stack > :global(.card) {
+      padding: 18px;
     }
   }
 </style>

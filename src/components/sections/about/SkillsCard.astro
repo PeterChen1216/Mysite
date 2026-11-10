@@ -48,7 +48,7 @@ const tips: Record<string, string[]> = Object.fromEntries(
       {skills.groups.map((g) => (
         <div class="sk__row">
           <dt class="sk__name">{g.name}</dt>
-          <dd class="sk__items">
+          <dd class="sk__items" data-snap-row>
             {g.items.map((item, i) => (
               <>
                 {i > 0 && <span class="visually-hidden">{sep}</span>}
@@ -148,6 +148,19 @@ const tips: Record<string, string[]> = Object.fromEntries(
     }
     .sk__row + .sk__row > .sk__name {
       margin-top: 8px;
+    }
+    /* X4: each group one row of 44 px slots, swiped sideways (with JavaScript: its slots are then
+       one roving Tab stop that scrolls with the arrow keys; without it the rows wrap). */
+    .sk__items,
+    .sk__basic {
+      align-items: center;
+      gap: 8px;
+    }
+    .sk__slot {
+      display: flex;
+      align-items: center;
+      min-height: 44px;
+      padding: 0 12px;
     }
   }
 </style>

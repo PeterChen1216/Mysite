@@ -430,8 +430,9 @@ test.describe('6 · commit row: node, rail, git show', () => {
     test.skip(!isMobile, 'touch');
     await page.goto(V2);
     const row = page.locator('#experience .commit').nth(1);
-    await row.locator('.commit__dates').scrollIntoViewIfNeeded();
-    await row.locator('.commit__dates').tap();
+    // X4: on a phone the hash line (hash and dates) is the row's <summary> key; tap its title.
+    await row.locator('.commit__title').scrollIntoViewIfNeeded();
+    await row.locator('.commit__title').tap();
     await expect(row).toHaveAttribute('data-active', '');
     await expect.poll(() => pseudo(row, '::before', 'scale')).toBe('1');
     await page.locator('#experience .sh__h').tap();
@@ -534,7 +535,12 @@ test.describe('9 · MC button', () => {
   test('no sticky hover after a tap', async ({ page, isMobile }) => {
     test.skip(!isMobile, 'touch');
     await page.goto(V2);
-    const btn = page.locator('.hero .mc-btn').first(); // SEE PROJECTS: an in-page jump
+    // X4: a phone's first screen has RÉSUMÉ and SAY HI (a mailto link: its jump is held back
+    // here, only the colour after the tap matters); larger screens SEE PROJECTS, an in-page jump.
+    await page.evaluate(() =>
+      document.addEventListener('click', (e) => e.preventDefault(), { capture: true }),
+    );
+    const btn = page.locator('.hero .mc-btn--grass:visible').first();
     await btn.tap();
     await page.waitForTimeout(200);
     expect(await style(btn, 'background-color')).toBe(await token(page, '--mc-grass-bg'));
@@ -595,7 +601,7 @@ test.describe('10 · player card: photo, XP bar, copy key', () => {
     await card.tap();
     await expect(card).toHaveAttribute('data-active', '');
     await expect(page.locator('.stage__photo')).toHaveCSS('opacity', '1');
-    await page.locator('.hero__eyebrow').tap();
+    await page.locator('.hero__eyebrow:visible').tap();
     await expect(card).not.toHaveAttribute('data-active');
   });
 });
@@ -683,9 +689,12 @@ test.describe('12 · terminal prompt (an easter egg with a real form control)', 
   }) => {
     test.skip(browserName === 'webkit', noTab);
     await page.goto(V2);
+    // X4: on a phone the prompt is in the folded part of the terminal: unfold it first.
+    if (await page.locator('[data-fold]').isVisible()) await page.locator('[data-fold]').click();
     const key = page.getByRole('button', { name: copy.hero.prompt.open, exact: true });
-    // Where the buttons under the terminal are on the page (not in the window, which scrolls).
-    const ctas = page.locator('.hero__ctas');
+    // Where the buttons under the terminal are on the page (not in the window, which scrolls;
+    // X4: a phone has its own pair, so the pair on screen).
+    const ctas = page.locator('.hero__ctas:visible');
     const onPage = () =>
       ctas.evaluate((el) => {
         const r = el.getBoundingClientRect();
@@ -723,6 +732,8 @@ test.describe('12 · terminal prompt (an easter egg with a real form control)', 
 
   test('a tap opens it; axe is clean with it open', async ({ page, isMobile }) => {
     await page.goto(V2);
+    // X4: on a phone the prompt is in the folded part of the terminal: unfold it first.
+    if (await page.locator('[data-fold]').isVisible()) await page.locator('[data-fold]').tap();
     const key = page.getByRole('button', { name: copy.hero.prompt.open, exact: true });
     if (isMobile) await key.tap();
     else await key.click();
@@ -742,14 +753,19 @@ test.describe('13 · external link: the arrow hops, the status line names the ho
   test('keyboard focus and the pointer', async ({ page, browserName, isMobile }) => {
     test.skip(browserName === 'webkit', noTab);
     await page.goto(V2);
-    const link = page.locator('.hero__links a[target="_blank"]').first();
+    // X4: the hero's links are in Contact's row of keys on a phone.
+    const link = page
+      .locator(isMobile ? '.contact__key[target="_blank"]' : '.hero__links a[target="_blank"]')
+      .first();
     const host = new URL(String(await link.getAttribute('href'))).host.replace(/^www\./, '');
     await tabTo(page, link);
     const line = page.locator('.linkline');
     await expect(line).toHaveAttribute('data-on', 'true');
     await expect(line).toHaveText(`↗ ${host}`);
     await expect(line).toHaveAttribute('aria-hidden', 'true');
-    expect(await style(link.locator('.ext-arrow'), 'left')).toBe('1px');
+    expect(await style(link.locator(isMobile ? '.contact__key-ext' : '.ext-arrow'), 'left')).toBe(
+      '1px',
+    );
     await page.keyboard.press('Shift+Tab');
     await expect(line).toHaveAttribute('data-on', 'false');
     if (isMobile) return;
@@ -845,9 +861,22 @@ test.describe('15 · cursor: a crosshair over blocks, the system’s over text a
 });
 
 test.describe('16 · back to spawn: a block falls as the page scrolls up', () => {
-  /** How far the page is from where the link goes (#top, the hero, under the nav). */
+  /** "Back to spawn": the footer's link, or on a phone (X4) the top bar's logo. */
+  const spawnLink = (page: Page) =>
+    page.locator(
+      page.viewportSize()!.width < 768 ? 'a.nav__logo[data-spawn-block]' : 'a.foot__top',
+    );
+  /**
+   * How far the page is from where the link goes: #top, the hero, under the nav (on a phone, X4,
+   * just under the top bar, which stays at the top of the screen).
+   */
   const fromTop = (page: Page) =>
-    page.evaluate(() => Math.abs(document.getElementById('top')!.getBoundingClientRect().top));
+    page.evaluate(() => {
+      const nav = document.querySelector('.nav')!;
+      const under =
+        getComputedStyle(nav).position === 'sticky' ? nav.getBoundingClientRect().bottom : 0;
+      return Math.abs(document.getElementById('top')!.getBoundingClientRect().top - under);
+    });
   test('the keyboard: Enter on it drops a block and goes to the top', async ({
     page,
     browserName,
@@ -855,7 +884,7 @@ test.describe('16 · back to spawn: a block falls as the page scrolls up', () =>
     test.skip(browserName === 'webkit', noTab);
     await page.goto(V2);
     await page.evaluate(() => window.scrollTo(0, document.body.scrollHeight));
-    const link = page.locator('a.foot__top');
+    const link = spawnLink(page);
     await link.focus();
     await page.keyboard.press('Enter');
     await expect(page.locator('.spawn-block')).toHaveCount(1);
@@ -866,7 +895,8 @@ test.describe('16 · back to spawn: a block falls as the page scrolls up', () =>
   test('a tap does the same', async ({ page, isMobile }) => {
     test.skip(!isMobile, 'touch');
     await page.goto(V2);
-    const link = page.locator('a.foot__top');
+    await page.evaluate(() => window.scrollTo(0, document.body.scrollHeight));
+    const link = spawnLink(page);
     await link.scrollIntoViewIfNeeded();
     await link.tap();
     await expect(page.locator('.spawn-block')).toHaveCount(1);
@@ -878,7 +908,7 @@ test.describe('16 · back to spawn: a block falls as the page scrolls up', () =>
       await seed(page, { motion: how });
       await page.goto(V2);
       await page.evaluate(() => window.scrollTo(0, document.body.scrollHeight));
-      await page.locator('a.foot__top').click();
+      await spawnLink(page).click();
       await expect(page.locator('.spawn-block')).toHaveCount(0);
       expect(await fromTop(page)).toBeLessThanOrEqual(1);
     });

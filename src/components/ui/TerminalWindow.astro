@@ -5,11 +5,12 @@ interface Props {
   class?: string;
   /** Body typography: VT323 terminal output (hero) or JetBrains Mono (contact/projects). */
   font?: 'term' | 'code';
+  id?: string;
 }
-const { title, class: cls, font = 'term' } = Astro.props;
+const { title, class: cls, font = 'term', id } = Astro.props;
 ---
 
-<div class:list={['term', `term--${font}`, cls]} data-surface="dark">
+<div class:list={['term', `term--${font}`, cls]} id={id} data-surface="dark">
   <div class="term__bar" aria-hidden="true">
     <span class="term__dot term__dot--r"></span>
     <span class="term__dot term__dot--y"></span>

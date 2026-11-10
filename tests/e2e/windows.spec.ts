@@ -8,7 +8,7 @@ import { expect, test, type Locator, type Page } from '@playwright/test';
 import { pagePath } from '../../src/i18n/routing';
 import { WINDOW } from '../../src/motion/params';
 import { contentFor } from './locale';
-import { LOCALE_PAGES, V2 } from './site';
+import { directoryKey, LOCALE_PAGES, V2 } from './site';
 
 /** Projects in the page's order (src/lib/content.ts getProjects): featured, newest, by title. */
 const ordered = <P extends { fm: Record<string, unknown> }>(list: P[]) =>
@@ -50,7 +50,7 @@ async function blockingViolations(page: Page) {
 
 /** Open the directory from Projects' `more ▸` (by keyboard, so focus is where a visitor's is). */
 async function openDirectory(page: Page) {
-  const more = page.locator('#projects .sh__more');
+  const more = directoryKey(page);
   await more.focus();
   await page.keyboard.press('Enter');
   await expect(directory(page)).toBeVisible();
@@ -313,7 +313,7 @@ test.describe('motion: the window grows out of its key at full motion only', () 
               .filter((a) => !(a instanceof CSSAnimation) && !(a instanceof CSSTransition)).length;
         }).observe(d, { attributes: true, attributeFilter: ['open'] });
       });
-      await page.locator('#projects .sh__more').click();
+      await directoryKey(page).click();
       await expect(directory(page)).toBeVisible();
       const grew = await page.evaluate(() => (window as unknown as { grew?: number }).grew);
       if (reducedMotion === 'reduce') expect(grew).toBe(0);
@@ -328,12 +328,15 @@ for (const { locale, path } of LOCALE_PAGES)
     const { copy, projects } = contentFor(locale);
     test('the directory, then a project over it; keys are 24 px targets', async ({ page }) => {
       await page.goto(path);
-      await page.locator('#projects .sh__more').click();
+      await directoryKey(page).click();
       const dir = page.getByRole('dialog', { name: copy.windows.directory_heading });
       await expect(dir).toBeVisible();
       await settled(dir);
       expect(await blockingViolations(page)).toEqual([]);
-      for (const k of await dir.locator('.win__key').all()) {
+      // Those on screen (X4: a phone's window is full width, without the move key).
+      const keys = dir.locator('.win__key:visible');
+      expect(await keys.count()).toBeGreaterThan(0);
+      for (const k of await keys.all()) {
         const b = await box(k);
         expect(Math.min(b.width, b.height)).toBeGreaterThanOrEqual(24);
       }

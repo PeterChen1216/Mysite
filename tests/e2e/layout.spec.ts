@@ -43,8 +43,11 @@ test.describe('Pages artifact layout', () => {
     const name = downloadName(profile.name.display, info.date);
     expect(name).toMatch(/-Resume-\d{4}-\d{2}-\d{2}\.pdf$/);
     await page.goto(V2);
+    // The hero and Contact (the nav's opens it in a tab); X4: a phone has its own hero button and
+    // Contact key in their place — two shown at any width, every one saving under the same name.
+    await expect(page.locator(`a[href="${V2}resume.pdf"][download]:visible`)).toHaveCount(2);
     const buttons = page.locator(`a[href="${V2}resume.pdf"][download]`);
-    await expect(buttons).toHaveCount(2); // the hero and Contact; the nav's opens it in a tab
+    await expect(buttons).toHaveCount(4);
     for (const button of await buttons.all())
       await expect(button).toHaveAttribute('download', name);
   });

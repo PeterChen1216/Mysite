@@ -312,6 +312,7 @@ warning: content/aviation.yaml watching SEA → XYZ: the scene has no position f
 规则：
 - `{占位符}` 由内容自动填入：`{first}`（名）、`{host}`（名的小写）、`{city}`、`{email}`、`{domain}`、`{major}`、`{department}`、`{school}`、`{short}`；个别行还有自己的（文件里的注释写着）。写错名字（`{emial}`）构建会失败并指出哪一行。
 - `headline` 里 `[方括号]` 是绿色高亮的词。
+- **手机上才看得到的几行**（X4，窄于 768 px 的屏幕）：`nav.hotbar`（底部热键栏四个栏目的短名，顺序与 `nav.links` 相同，个数也必须相同）和 `nav.hotbar_prefs`（⚙ 那一格）；`hero.more` / `hero.less`（折起来的终端的「更多 ▾ / 收起 ▴」键）；`hero.badges_label`（地球下面那排可以横滑的徽章，读屏软件念的名字）；`projects.list_all`（项目轮播下面的「全部列出 ▸」）和 `projects.position`（读屏软件念的「第几张，共几张」，`{n}`、`{count}` 自动填入）。在桌面上改了看不出变化，用 `pnpm dev` 打开后把浏览器窗口拉窄（或开发者工具的手机模式）看。
 - **只改值，不要增删键**：两个中文文件必须有和 `copy.yaml` 完全一样的键，少一个或多一个都会被拦下。
 
 **运行**：`pnpm content:check`（结尾 ✔），然后 `pnpm content:stale`，它列出因此过期的中文译文（只是提醒，不会失败）——更新中文的方法见 §9：

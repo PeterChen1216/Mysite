@@ -9,6 +9,11 @@
  * The player card (PLAN-EXPERIENCE §6 row 10): hovered, focused or tapped, the photo replaces the
  * portrait, the XP bar along its foot fills (again) to the real GPA ratio it shows at rest, and the
  * name tag offers a key that copies the GitHub handle (src/scripts/interact.ts).
+ *
+ * Phones (X4; §8.3, Figma "Stage · 280 px globe + 4 blocks" 56:11771): a 358 × 330 stage scaled to
+ * the column (288 at 320 px, 398 at 430) — the 280 px globe and its rings, four blocks (TNT,
+ * diamond, gold, grass), the name tag with its copy key showing, the player card at 92 × 115 —
+ * and the three badges under it as a row to swipe (scroll-snap; the last one peeks).
  */
 import { Image } from 'astro:assets';
 import orbit from '../../assets/voxel/hero/orbit.png';
@@ -29,19 +34,48 @@ const { data } = Astro.props;
 const xp = gpaRatio(data.edu.gpa) ?? 1;
 const handle = data.githubHandle;
 
-// Figma positions (px within the 560×640 stage), in the order they drop in.
-const blocks: Array<{ name: BlockName; x: number; y: number; w: number; glow?: string }> = [
-  { name: 'grass', x: 352, y: 416, w: 86 },
+// Figma positions (px within the 560×640 stage), in the order they drop in; `phone`: the four the
+// phone's 358×330 stage keeps, and where (x, y, width).
+type Spot = { x: number; y: number; w: number };
+const blocks: Array<{
+  name: BlockName;
+  x: number;
+  y: number;
+  w: number;
+  glow?: string;
+  phone?: Spot;
+}> = [
+  { name: 'grass', x: 352, y: 416, w: 86, phone: { x: 270, y: 250, w: 62 } },
   { name: 'grass', x: 309, y: 440, w: 86 },
   { name: 'dirt', x: 395, y: 440, w: 86 },
   { name: 'grass', x: 352, y: 464, w: 86 },
-  { name: 'diamond', x: 450, y: 40, w: 69, glow: 'var(--color-glow-diamond)' },
-  { name: 'tnt', x: 24, y: 60, w: 58 },
+  {
+    name: 'diamond',
+    x: 450,
+    y: 40,
+    w: 69,
+    glow: 'var(--color-glow-diamond)',
+    phone: { x: 300, y: 0, w: 45 },
+  },
+  { name: 'tnt', x: 24, y: 60, w: 58, phone: { x: 8, y: 14, w: 38 } },
   { name: 'command', x: 470, y: 300, w: 67 },
   { name: 'terminal', x: 8, y: 372, w: 78 },
   { name: 'glow', x: 486, y: 200, w: 53, glow: 'var(--color-glow-gold)' },
-  { name: 'gold', x: 180, y: 20, w: 47 },
+  { name: 'gold', x: 180, y: 20, w: 47, phone: { x: 322, y: 168, w: 35 } },
 ];
+const place = (b: (typeof blocks)[number]) =>
+  [
+    `--x:${b.x}px;--y:${b.y}px`,
+    b.phone ? `--px:${b.phone.x}px;--py:${b.phone.y}px;--pw:${b.phone.w}px` : '',
+    b.glow ? `--glow:${b.glow}` : '',
+  ]
+    .filter(Boolean)
+    .join(';');
+const badges = [
+  data.hero.gpaBadge && { tone: 'gold' as const, text: data.hero.gpaBadge },
+  { tone: 'white' as const, text: data.hero.avgeekBadge },
+  { tone: 'cyan' as const, text: data.hero.projectBadge },
+].filter((b) => !!b);
 ---
 
 <div class="stage-wrap">
@@ -79,9 +113,9 @@ const blocks: Array<{ name: BlockName; x: number; y: number; w: number; glow?: s
     />
     {blocks.map((b, i) => (
       <div
-        class="stage__block"
+        class:list={['stage__block', { 'stage__block--phone': b.phone }]}
         data-intro="drop"
-        style={`left:${b.x}px;top:${b.y}px;--i:${i};${b.glow ? `--glow:${b.glow}` : ''}`}
+        style={`${place(b)};--i:${i}`}
       >
         <VoxelBlock name={b.name} size={b.w} shadow={false} eager />
       </div>
@@ -149,6 +183,15 @@ const blocks: Array<{ name: BlockName; x: number; y: number; w: number; glow?: s
       <Tooltip tone="cyan" text={data.hero.projectBadge} />
     </div>
   </div>
+  <!-- Phones: the badges as a row to swipe (a named region you can focus and scroll with the
+       arrow keys; nothing in it is a control). -->
+  <ul class="badges" role="list" tabindex="0" aria-label={data.copy.hero.badges_label}>
+    {badges.map((b) => (
+      <li class="badges__item">
+        <Tooltip tone={b.tone} text={b.text} />
+      </li>
+    ))}
+  </ul>
 </div>
 
 <style>
@@ -236,6 +279,8 @@ const blocks: Array<{ name: BlockName; x: number; y: number; w: number; glow?: s
     top: 128px;
   }
   .stage__block {
+    left: var(--x);
+    top: var(--y);
     filter: drop-shadow(8px 8px 0 var(--color-shadow-block))
       drop-shadow(0 0 14px var(--glow, transparent));
   }
@@ -392,6 +437,155 @@ const blocks: Array<{ name: BlockName; x: number; y: number; w: number; glow?: s
   /* Zoom the badge itself (not its positioned wrapper, whose offsets must not scale). */
   .stage__tip > :global(.tooltip) {
     zoom: var(--inv, 1);
+  }
+  .badges {
+    display: none;
+  }
+  /* Phones (X4): the 358 × 330 stage of the frame, scaled to the column (100cqw / 358 px; where
+     the browser cannot divide lengths, in steps). Only its four blocks; the badges move out. */
+  @media (max-width: 767px) {
+    /* A column: the scaled stage's margin and the badges' never collapse into one. */
+    .stage-wrap {
+      display: flex;
+      flex-direction: column;
+      width: 100%;
+    }
+    /* Never more than 1.2× (430 px of stage) on the widest phone-layout screens (to 767 px),
+       centred in the column. */
+    .stage-wrap .stage {
+      --s: min(tan(atan2(100cqw, 358px)), 1.2);
+      width: 358px;
+      height: 330px;
+      margin-inline: auto;
+      margin-bottom: calc(330px * (var(--s) - 1));
+      transform-origin: 50% 0;
+    }
+    .stage-wrap .stage__orbit {
+      left: 20px;
+      top: 6px;
+      width: 318px;
+      height: 318px;
+      opacity: 0.45;
+    }
+    .stage-wrap .stage__orbit2 {
+      left: 0;
+      top: 112px;
+      width: 358px;
+      height: 118px;
+      transform: none;
+      opacity: 0.6;
+    }
+    /* The 324 px globe shown at 280 (Figma): scaled about its centre, which the intro scales too. */
+    .stage-wrap .stage__globe {
+      left: 17px;
+      top: 3px;
+      scale: calc(280 / 324);
+    }
+    .stage-wrap .stage__satellite,
+    .stage-wrap .stage__block:not(.stage__block--phone),
+    .stage-wrap .stage__tip {
+      display: none;
+    }
+    .stage-wrap .stage__block {
+      left: var(--px);
+      top: var(--py);
+      filter: drop-shadow(5px 5px 0 var(--color-shadow-block))
+        drop-shadow(0 0 8px var(--glow, transparent));
+    }
+    .stage__block :global(.voxel) {
+      width: var(--pw);
+      height: auto;
+    }
+    .stage-wrap .stage__card {
+      left: 10px;
+      top: 206px;
+      width: 92px;
+      height: 115px;
+      box-shadow: 6px 6px 0 0 var(--color-shadow-term);
+    }
+    .stage-wrap .stage__portrait,
+    .stage-wrap .stage__photo {
+      width: 92px;
+      height: 115px;
+    }
+    .stage-wrap .stage__xp {
+      height: 4px;
+    }
+    /* The name tag, its copy key showing (tap = copy the handle); 44 px tall to the touch. */
+    /* 8 px above the card (Figma 2): two targets, kept apart (§8.4). */
+    .stage-wrap .stage__tag {
+      left: 6px;
+      top: 172px;
+      display: flex;
+      align-items: center;
+      background: var(--color-tag-bg);
+      --inv: 1;
+    }
+    .stage-wrap .stage__copy {
+      position: relative;
+      left: auto;
+      height: auto;
+      align-self: stretch;
+      /* At least 24 px on screen at any scale of the stage (WCAG 2.5.8, with a mouse too): 25,
+         so that scaling back down never rounds it to 23.99. */
+      min-height: calc(25px / var(--s));
+      /* 44 px wide on screen, so that its hit area (below) needs no room at the sides. */
+      min-width: calc(44px / var(--s));
+      background: none;
+      opacity: 1;
+      pointer-events: auto;
+      padding: 0 8px 0 0;
+    }
+    /* Its hit area: 44 px tall, rising over the globe (never down onto the card under it). */
+    .stage-wrap .stage__copy::after {
+      content: '';
+      position: absolute;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      /* 44 px on screen, whatever the stage's scale. */
+      height: calc(44px / var(--s));
+    }
+    .badges {
+      display: flex;
+      gap: 8px;
+      margin: 14px 0 0;
+      padding: 0 0 10px;
+      overflow-x: auto;
+      scroll-snap-type: x proximity;
+      scrollbar-width: none;
+      list-style: none;
+      overscroll-behavior-x: contain;
+    }
+    .badges::-webkit-scrollbar {
+      display: none;
+    }
+    .badges__item {
+      flex: none;
+      scroll-snap-align: start;
+    }
+    .badges :global(.tooltip) {
+      padding: 10px 12px;
+      white-space: nowrap;
+    }
+  }
+  /* Browsers that cannot divide lengths (tan(atan2())): the stage in steps. */
+  @supports not (scale: tan(atan2(1px, 1px))) {
+    @media (max-width: 767px) {
+      .stage-wrap .stage {
+        --s: 1;
+      }
+      @container (max-width: 357px) {
+        .stage-wrap .stage {
+          --s: 0.9;
+        }
+      }
+      @container (max-width: 321px) {
+        .stage-wrap .stage {
+          --s: 0.8;
+        }
+      }
+    }
   }
   @media (prefers-reduced-motion: reduce) {
     .stage__photo {

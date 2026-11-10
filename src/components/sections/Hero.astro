@@ -1,10 +1,20 @@
 ---
-/** Hero (Figma "Hero" 17:94): eyebrow, headline, typed terminal, CTAs, links + the stage. */
+/**
+ * Hero (Figma "Hero" 17:94): eyebrow, headline, typed terminal, CTAs, links + the stage.
+ *
+ * Phones (X4, Figma "Mobile — 390" Hero): a one-line eyebrow (`// player: Peter Chen · UW ’27`,
+ * the tail from profile.yaml `tagline`), the headline on three lines, the terminal folded to
+ * whoami and the interests (`more ▾` unfolds the rest, `less ▴` folds it: a disclosure that needs
+ * JavaScript — without it the terminal is whole), then RESUME and SAY HI side by side in the bottom
+ * third of the first screen (§8.1 "thumb first"), the stage (HeroStage.astro) and its badges as a
+ * row to swipe. The social links are in Contact there.
+ */
+import Glyphs from '../ui/Glyphs.astro';
 import McButton from '../ui/McButton.astro';
 import NewTab from '../ui/NewTab.astro';
 import TerminalWindow from '../ui/TerminalWindow.astro';
 import HeroStage from './HeroStage.astro';
-import { headlineWords } from '../../lib/derive';
+import { eyebrowShort, headlineWords } from '../../lib/derive';
 import { INTRO, typingMs } from '../../motion/params';
 import type { PageData } from '../../lib/page-data';
 
@@ -17,15 +27,19 @@ const { copy, hero, links, profile } = data;
 // Headline words, each animated in turn (Figma: word-by-word rise); a highlighted part made of
 // symbols only (the `[_]` cursor) is hidden from screen readers (derive.headlineWords).
 const headline = headlineWords(copy.hero.headline);
+// Phones: `// player: Peter Chen` and, where it fits, ` · UW ’27` (the tagline's last part).
+const eyebrow = eyebrowShort(copy.hero.eyebrow_prefix, profile.name.display, profile.tagline);
 
 // Terminal lines type one after another; pace from src/motion/params.ts.
+// `fold`: on phones, the lines the folded terminal leaves for `more ▾` (the interests too on the
+// narrowest phones).
 const lines = [
-  { kind: 'cmd', text: copy.hero.cmd_whoami },
-  { kind: 'out', text: hero.whoami },
-  { kind: 'cmd', text: copy.hero.cmd_interests },
-  { kind: 'tags', text: hero.tags.map((t) => `${t}/`).join('   ') },
-  { kind: 'cmd', text: copy.hero.summon },
-  { kind: 'ok', text: hero.summonOk },
+  { kind: 'cmd', text: copy.hero.cmd_whoami, fold: '' },
+  { kind: 'out', text: hero.whoami, fold: '' },
+  { kind: 'cmd', text: copy.hero.cmd_interests, fold: 'narrow' },
+  { kind: 'tags', text: hero.tags.map((t) => `${t}/`).join('   '), fold: 'narrow' },
+  { kind: 'cmd', text: copy.hero.summon, fold: 'phone' },
+  { kind: 'ok', text: hero.summonOk, fold: 'phone' },
 ] as const;
 let at = INTRO.typing.startMs;
 const typed = lines.map((l) => {
@@ -54,7 +68,11 @@ const prompt = JSON.stringify({
 
 <section class="hero" aria-labelledby="hero-title" id="top">
   <div class="hero__copy">
-    <p class="hero__eyebrow">{hero.eyebrow}</p>
+    <p class="hero__eyebrow hero__eyebrow--full">{hero.eyebrow}</p>
+    <p class="hero__eyebrow hero__eyebrow--short">
+      {eyebrow.head}
+      {eyebrow.tail && <span class="hero__eyebrow-tail">{eyebrow.tail}</span>}
+    </p>
     <h1 id="hero-title" class="hero__h1">
       <span class="visually-hidden">{profile.name.display} — </span>
       {headline.map((line) => (
@@ -76,10 +94,10 @@ const prompt = JSON.stringify({
         </span>
       ))}
     </h1>
-    <TerminalWindow title={copy.hero.terminal_title} class="hero__term">
+    <TerminalWindow title={copy.hero.terminal_title} class="hero__term" id="hero-term">
       {typed.map((l) => (
         <p
-          class:list={['hero__ln', `hero__ln--${l.kind}`]}
+          class:list={['hero__ln', `hero__ln--${l.kind}`, l.fold && `hero__ln--fold-${l.fold}`]}
           data-intro="type"
           style={`--steps:${l.steps};--dur:${l.dur}ms;--d:${l.delay}ms`}
         >
@@ -89,7 +107,7 @@ const prompt = JSON.stringify({
         </p>
       ))}
       <p
-        class="hero__ln"
+        class="hero__ln hero__ln--fold-phone"
         aria-hidden="true"
         data-intro="type"
         data-prompt={prompt}
@@ -100,13 +118,35 @@ const prompt = JSON.stringify({
           █
         </span>
       </p>
+      <button
+        type="button"
+        class="hero__fold"
+        aria-expanded="false"
+        aria-controls="hero-term"
+        data-fold
+      >
+        <span class="hero__fold-more">
+          <Glyphs text={copy.hero.more} />
+        </span>
+        <span class="hero__fold-less">
+          <Glyphs text={copy.hero.less} />
+        </span>
+      </button>
     </TerminalWindow>
-    <div class="hero__ctas">
+    <div class="hero__ctas hero__ctas--wide">
       <McButton href="#projects" kind="grass">
         {copy.hero.cta_projects}
       </McButton>
       <McButton href={links.resume} download={links.resumeFile}>
         {copy.hero.cta_resume}
+      </McButton>
+    </div>
+    <div class="hero__ctas hero__ctas--phone">
+      <McButton href={links.resume} download={links.resumeFile}>
+        {copy.nav.resume}
+      </McButton>
+      <McButton href={links.email} kind="grass">
+        {copy.nav.say_hi}
       </McButton>
     </div>
     <ul class="hero__links">
@@ -324,17 +364,114 @@ const prompt = JSON.stringify({
       align-self: center;
     }
   }
+  /* The phone layout's parts: hidden at every other width. */
+  .hero__eyebrow--short,
+  .hero__ctas--phone,
+  .hero__fold {
+    display: none;
+  }
+  /* Phones (X4; Figma "Mobile — 390" Hero): the copy in one column, its gaps from the frame. */
   @media (max-width: 767px) {
     .hero {
-      padding: 32px 16px 40px;
-      gap: 32px;
+      padding: 24px 16px 28px;
+      gap: 28px;
+    }
+    .hero__copy {
+      gap: 0;
+    }
+    .hero__eyebrow--full,
+    .hero__ctas--wide,
+    .hero__links {
+      display: none;
+    }
+    .hero__eyebrow--short {
+      display: block;
+      margin-bottom: 16px;
     }
     .hero__h1 {
+      margin-bottom: 24px;
       font-size: calc(44px * var(--ts));
+      line-height: calc(46 / 44);
+    }
+    .hero__copy :global(.hero__term) {
+      margin-bottom: 24px;
     }
     .hero__copy :global(.hero__term .term__body) {
       font-size: calc(20px * var(--ts));
-      padding: 14px;
+      line-height: 1.4;
+      padding: 14px 16px;
+    }
+    /* RESUME and SAY HI side by side, in the bottom third of the first screen (§8.1). */
+    .hero__ctas--phone {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 12px;
+      width: 100%;
+    }
+    .hero__ctas--phone :global(.mc-btn) {
+      justify-content: center;
+      min-height: 48px;
+      padding-inline: 8px;
+      white-space: normal;
+      text-align: center;
+    }
+    /* The folded terminal (with JavaScript; without it every line shows). */
+    :global(html.js) .hero__fold {
+      display: inline-flex;
+      align-self: flex-start;
+      align-items: center;
+      min-width: 44px;
+      min-height: 44px;
+      margin-top: 8px;
+      padding: 0 14px;
+      border: 2px solid var(--color-accent-terminal-green);
+      background: none;
+      font: var(--type-code-label);
+      letter-spacing: var(--type-code-label-tracking);
+      text-transform: var(--type-label-case);
+      color: var(--color-accent-terminal-green);
+      cursor: pointer;
+      touch-action: manipulation;
+    }
+    .hero__fold :global([aria-hidden]) {
+      margin-inline-start: 8px;
+    }
+    /* The prompt's key (row 12), unfolded: a 44 px target. */
+    .hero__copy :global(.hero__prompt) {
+      display: inline-flex;
+      align-items: center;
+      min-height: 44px;
+      min-width: 44px;
+    }
+    .hero__fold[aria-expanded='true'] .hero__fold-more,
+    .hero__fold[aria-expanded='false'] .hero__fold-less {
+      display: none;
+    }
+    @media (hover: hover) {
+      .hero__fold:hover {
+        background: var(--color-nav-active-bg);
+      }
+    }
+    .hero__fold:focus-visible {
+      background: var(--color-nav-active-bg);
+    }
+    :global(html.js) :global(.hero__term:not([data-open])) .hero__ln--fold-phone {
+      display: none;
+    }
+  }
+  @media (min-width: 420px) and (max-width: 767px) {
+    .hero__h1 {
+      font-size: calc(48px * var(--ts));
+      line-height: calc(50 / 48);
+    }
+  }
+  /* The narrowest phones: the eyebrow is the name alone; the interests wait behind `more ▾`. */
+  @media (max-width: 359px) {
+    .hero__eyebrow-tail {
+      display: none;
+    }
+    :global(html.js) :global(.hero__term:not([data-open])) .hero__ln--fold-narrow {
+      display: none;
     }
   }
   /* The same for the narrowest phones (see the 1280–1319 rule above). */
@@ -364,6 +501,9 @@ const prompt = JSON.stringify({
   @media (max-width: 767px) {
     :global(:root:lang(zh)) .hero__h1 {
       font-size: calc(36px * var(--ts));
+    }
+    :global(:root:lang(zh)) .hero__h1 {
+      line-height: 1.2;
     }
     :global(:root:lang(zh)) .hero__copy :global(.hero__term .term__body) {
       font-size: calc(24px * var(--ts));

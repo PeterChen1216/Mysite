@@ -4,6 +4,7 @@
  * motion level changes (src/scripts/prefs.ts apply): `html[data-tier]` and `[data-tier-reason]`.
  * Tier 0 holds every loop as motion "off" does (no `motion` class).
  */
+import { liteMode, type LiteSignals } from '../lib/lite';
 import type { MotionLevel } from '../prefs/model';
 import {
   TIER_SESSION_KEY,
@@ -28,6 +29,7 @@ function sessionTier(): Tier | null {
 const nav = navigator as Navigator & {
   connection?: { saveData?: boolean };
   deviceMemory?: number;
+  getBattery?: () => Promise<EventTarget & { charging: boolean; level: number }>;
 };
 const query = parseTierQuery(location.search);
 const contrast = matchMedia('(prefers-contrast: more), (forced-colors: active)');
@@ -85,3 +87,38 @@ export const debugMode = (): string | null => new URLSearchParams(location.searc
 
 /** The contrast media query, so a change to it re-decides the tier. */
 export const contrastQuery = contrast;
+
+/** Lite mode changed (src/lib/lite.ts): the ambient layer and the particles follow it. */
+export const LITE_EVENT = 'zhic:lite';
+
+/**
+ * Lite mode (PLAN-EXPERIENCE §8.5, X4): on <html> as data-lite (and data-lite-reason) for the tier 2
+ * layers to read. Save-Data and memory are known at once; the battery answers later, where the
+ * browser has the Battery Status API, and again when it changes.
+ */
+export function initLite(): void {
+  const base: LiteSignals = {
+    saveData: Boolean(nav.connection?.saveData),
+    deviceMemory: nav.deviceMemory,
+  };
+  const apply = (battery: LiteSignals['battery']) => {
+    const { lite, reason } = liteMode({ ...base, battery });
+    const was = html.hasAttribute('data-lite');
+    html.toggleAttribute('data-lite', lite);
+    if (reason) html.dataset.liteReason = reason;
+    else delete html.dataset.liteReason;
+    if (was !== lite) document.dispatchEvent(new CustomEvent(LITE_EVENT));
+  };
+  apply(null);
+  nav
+    .getBattery?.()
+    .then((b) => {
+      const read = () => apply({ charging: b.charging, level: b.level });
+      b.addEventListener('levelchange', read);
+      b.addEventListener('chargingchange', read);
+      read();
+    })
+    .catch(() => {
+      // No battery to ask (or the browser refused): lite stays as decided.
+    });
+}

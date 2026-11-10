@@ -36,8 +36,9 @@ const { data } = Astro.props;
 <style>
   .lang-suggest {
     position: fixed;
-    inset: auto 16px 16px;
-    z-index: 50;
+    /* Above the phone's hotbar (--hotbar-h is 0 elsewhere). */
+    inset: auto 16px calc(16px + var(--hotbar-h));
+    z-index: 51;
     display: flex;
     flex-wrap: wrap;
     align-items: center;
@@ -73,6 +74,15 @@ const { data } = Astro.props;
   .lang-suggest__no:hover,
   .lang-suggest__no:focus-visible {
     border-color: var(--color-accent-gold);
+  }
+  /* Phones (X4): both actions are 44 px targets. */
+  @media (max-width: 767px) {
+    .lang-suggest__go,
+    .lang-suggest__no {
+      display: inline-flex;
+      align-items: center;
+      min-height: 44px;
+    }
   }
   @media print {
     .lang-suggest {

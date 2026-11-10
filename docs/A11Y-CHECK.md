@@ -62,9 +62,10 @@ kept and appears without a flash. DevTools → Rendering → *Emulate vision def
 (protanopia, deuteranopia, tritanopia, achromatopsia) on Night and Colour-blind safe: adjacent
 categories stay distinguishable.
 
-## 7. Phone (1 min)
-On a real phone with VoiceOver or TalkBack: swipe through the nav (the hotbar from X4 on); the
-settings window opens from the gear key and every choice can be made; the pause key works.
+## 7. Phone (1 min; the full device pass is §10)
+- iPhone, Safari, VoiceOver on: swipe to the hotbar — it is announced as one navigation "Sections" with five links (about, projects, experience, contact, prefs); the current section's link says "current"; double-tap `prefs` opens the settings dialog and focus lands inside it.
+- Scroll down: the top bar and the hotbar slide away; scroll up a little: both come back. With VoiceOver's cursor or a keyboard, moving into a hidden bar brings it back.
+- The first screen: RÉSUMÉ and SAY HI are under the folded terminal, within thumb reach; `more ▾` unfolds the terminal.
 
 ## 8. Print (30 s)
 `Ctrl/⌘-P` from any theme: black on white, no nav, ticker, hero art or phone; links followed by
@@ -83,6 +84,19 @@ their address; nothing contradicts `resume.pdf`.
 
 ---
 
+## 10. The phone matrix (X4; PLAN-EXPERIENCE §8.8) — once per milestone that touches the phone layout, ~20 min
+**Not run yet (X4 was built and tested in emulation only: Chromium's Pixel 7 and WebKit's iPhone 13 in CI, 320–430 px). Record the result in docs/STATUS.md.**
+
+| Device | Browser | Check |
+|---|---|---|
+| iPhone 12 / 13 mini (375–390) | Safari | the hotbar clears the home indicator (nothing under the bar); the address bar collapsing does not make the stars jump; rubber-band scroll at the top and the foot shows the page colour, no white; a tap on a hotbar slot goes there at once (no double-tap delay); the copy key on an email shows the toast and the address is on the clipboard |
+| iPhone 15 Pro Max (430) | Safari | as above; the hero stage fills the column (globe 311 px); turn the phone: the tablet layout, nothing under the notch |
+| Pixel 7 (412) | Chrome | `theme-color` follows the theme (the browser bar changes with Day / Night); the address bar collapsing does not resize the stars; carousel: swipe snaps to a card, the ◀ ▶ keys step it, the dots follow |
+| A 2020 mid-range Android, 4 GB (e.g. Galaxy A51) | Chrome | lite mode is on (`document.documentElement.dataset.liteReason` is `memory` in the remote inspector): no rising motes; scrolling stays smooth |
+| iPad (768 / 1024) | Safari | portrait 768: the tablet layout (top nav, no hotbar); landscape 1024: the desktop layout; no hover-only content |
+| WeChat in-app browser | — | open zhic.me/v2/ from a chat: the page is fully usable with the hotbar hidden; the WeChat bar showing and hiding does not resize the stars |
+| VoiceOver (iPhone) and TalkBack (Pixel) | — | §7 above; plus: the carousel is announced as a carousel, each card says "1 of 3"; an experience row's summary says "git show …, collapsed" and opens with a double-tap; the toast "[OK] copied …" is read out |
+
 ### What CI already checks (no need to repeat by hand)
 | Contract row (§4.1) | Test |
 |---|---|
@@ -90,6 +104,7 @@ their address; nothing contradicts `resume.pdf`.
 | Motion levels, pause-all incl. the phone clock, reduced motion mid-visit | `motion.spec.ts`, `robustness.spec.ts` |
 | Reflow 320 px and ten widths, text spacing (1.4.12), text size 130 % | `robustness.spec.ts` |
 | Target size 24 px (2.5.8); 44 px touch area for MC buttons | `a11y.spec.ts` |
+| The phone layout (X4) at 320 / 360 / 390 / 412 / 430 and a landscape phone: no sideways scroll; the hotbar as one `<nav>` of five links, scroll-spy, hide and show, focus bringing it back, the safe-area inset; every control a 44 px target 8 px from the next; `axe` per width, locale and theme; the folded terminal, carousels and slot rows, `<details>` rows, tap-to-copy and its fallback, the city keys; lite mode; no WebGL on a phone | `mobile.spec.ts` (Pixel 7 in Chromium; iPhone 13 in WebKit on CI) |
 | Contrast in every theme, more contrast, reduced transparency | `tests/unit/contrast.test.ts` |
 | `axe` per theme, with the settings window open, without JavaScript | `themes.spec.ts`, `prefs.spec.ts`, `quality.spec.ts` |
 | Forced colours: every control has a boundary | `themes.spec.ts` |

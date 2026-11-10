@@ -159,6 +159,8 @@ export const LOCAL_PLACEHOLDERS: Readonly<Record<string, readonly string[]>> = {
   'not_found.cmd': ['path'],
   'not_found.error': ['path'],
   'og.alt': ['title'],
+  // X4: a card's place in the phone's carousel of other builds.
+  'projects.position': ['n', 'count'],
 };
 
 /**
@@ -506,6 +508,20 @@ export const STATUS_PROGRESS: Record<ProjectLike['status'], number> = {
 };
 
 // ---------------------------------------------------------------- facts for the page
+/**
+ * The honors of one school (X4: on phones they sit in that school's Education card): those whose
+ * `org` is the school's name, or its name before the comma ("University of Washington" for
+ * "University of Washington, Seattle"), in file order.
+ */
+export function schoolHonors<H extends { org: string }>(school: string, honors: readonly H[]): H[] {
+  const full = school.trim().toLowerCase();
+  const base = full.split(',')[0]!.trim();
+  return honors.filter((h) => {
+    const org = h.org.trim().toLowerCase();
+    return org === full || org === base;
+  });
+}
+
 /** Newest honor first (honors.yaml order is newest first; ties keep file order). */
 export function latestHonor(honors: HonorLike[]): HonorLike | undefined {
   return [...honors].sort((a, b) => b.year.localeCompare(a.year))[0];
@@ -519,6 +535,25 @@ export function heroEyebrow(
   prefix: string,
 ): string {
   return `${prefix} ${name}  ·  ${edu.short ?? edu.school} ${classYear(edu.end)}  ·  ${location}`;
+}
+
+/**
+ * The phone's one-line eyebrow (X4): `// player: Peter Chen` and, as a separate tail the
+ * narrowest phones leave out, ` · UW ’27` — the last part of the profile's tagline when it is a
+ * class year ("Informatics: Data Science, UW ’27"); no tail otherwise.
+ */
+export function eyebrowShort(
+  prefix: string,
+  name: string,
+  tagline: string | undefined,
+): { head: string; tail: string } {
+  const last =
+    (tagline ?? '')
+      .split(/[,，]\s*/)
+      .pop()
+      ?.trim() ?? '';
+  const tail = /’\d{2}$/.test(last) ? ` · ${last}` : '';
+  return { head: `${prefix} ${name}`, tail };
 }
 
 /**

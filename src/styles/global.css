@@ -8,6 +8,25 @@
 :root {
   /* Page side gutter: 64 px (Figma) until the content reaches --content-max, then centred. */
   --gutter: max(64px, calc((100% - var(--content-max)) / 2));
+  /* What the phone's hotbar takes at the foot of the screen (X4; 0 where there is none). */
+  --hotbar-h: 0px;
+}
+@media (max-width: 767px) {
+  :root {
+    --hotbar-h: calc(64px + env(safe-area-inset-bottom));
+  }
+  /* What scrolls into view (a focused element, an anchor) clears the top bar and the hotbar
+     (WCAG 2.4.11: focus is never hidden under them). */
+  html {
+    scroll-padding: 48px 0 var(--hotbar-h);
+  }
+  /* No wait for a double-tap on a control (§8.6; the globe keeps its own pan-y). */
+  a,
+  button,
+  summary,
+  label {
+    touch-action: manipulation;
+  }
 }
 
 /* color-scheme comes with the theme (tokens.css). */
@@ -22,6 +41,8 @@ html {
 body {
   margin: 0;
   min-height: 100svh;
+  /* A phone on its side: nothing under the notch (the page covers the whole screen, viewport-fit). */
+  padding-inline: env(safe-area-inset-left) env(safe-area-inset-right);
 }
 
 a {
@@ -75,11 +96,14 @@ html[data-scene] .scene {
    canvas behind the page, in place of the page's still star pictures (Background.astro). */
 .ambient {
   position: fixed;
-  inset: 0;
+  top: 0;
+  left: 0;
   z-index: -1;
   display: block;
   width: 100%;
   height: 100%;
+  /* As tall as the tallest view: an address bar sliding away never resizes it (§8.6). */
+  height: 100lvh;
   pointer-events: none;
   opacity: 0;
   transition: opacity var(--m-scene-fade) ease-out;
@@ -204,6 +228,92 @@ html[data-ambient] .bg__stars {
 }
 .tip__line {
   color: var(--color-accent-enchant-text);
+}
+
+/* Phones (X4, §8.3–8.4): a row of slots or cards swiped sideways — native scroll-snap, no script
+   drags it. Only with JavaScript, which makes its items reachable from the keyboard (a roving Tab
+   stop, or the carousel's keys); without it the row wraps and everything shows. */
+@media (max-width: 767px) {
+  /* Proximity, not mandatory: a row can rest where focus scrolls it (a Tab into its third slot)
+     instead of snapping back over the focused item. */
+  html.js [data-snap-row] {
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    overscroll-behavior-x: contain;
+    scroll-snap-type: x proximity;
+    scrollbar-width: none;
+  }
+  html.js [data-snap-row]::-webkit-scrollbar {
+    display: none;
+  }
+  html.js [data-snap-row] > * {
+    flex: none;
+    scroll-snap-align: start;
+  }
+}
+
+/* Phones (X4, §8.4): a link that is a line of its own gets a 44 px tall hit area without moving
+   anything — an invisible box over and under its words (links inside sentences are left as they
+   are, as WCAG 2.5.5 allows). */
+@media (max-width: 767px) {
+  .hit-44 {
+    position: relative;
+  }
+  /* ::before: some of these links draw their ↗ with ::after. */
+  .hit-44::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: 50%;
+    height: 44px;
+    translate: 0 -50%;
+  }
+}
+
+/* The tap-to-copy toast (X4, Contact on phones; src/scripts/mobile.ts): above the hotbar, a dark
+   object with an enchanted edge; a role="status" region that is there, empty, from the start. */
+.toast {
+  position: fixed;
+  left: 16px;
+  right: 16px;
+  bottom: calc(var(--hotbar-h) + 12px);
+  z-index: 52;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin: 0;
+  padding: 10px 14px;
+  border: 2px solid var(--color-tooltip-edge);
+  background: var(--color-bg-terminal);
+  box-shadow: 4px 4px 0 0 var(--color-shadow);
+  font: var(--type-pixel-tiny);
+  letter-spacing: var(--type-pixel-tiny-tracking);
+  color: var(--color-paper);
+  opacity: 0;
+  translate: 0 8px;
+  pointer-events: none;
+  transition:
+    opacity var(--m-tip) steps(2),
+    translate var(--m-tip) steps(2);
+}
+.toast[data-on] {
+  opacity: 1;
+  translate: 0 0;
+}
+.toast:empty {
+  padding: 0;
+  border: 0;
+}
+.toast .px-icon {
+  flex: none;
+  color: var(--color-accent-terminal-green);
+}
+.toast__ok {
+  color: var(--color-accent-terminal-green);
+}
+.toast__what {
+  overflow-wrap: anywhere;
 }
 
 /* Redundant cues (src/lib/cues.ts): the glyph of a colour-coded label, drawn before it where the
@@ -378,6 +488,8 @@ html[data-ambient] .bg__stars {
   .voxel,
   .globe,
   .particles-layer,
+  .hotbar,
+  .toast,
   .scene,
   .ambient,
   .linkline,

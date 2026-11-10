@@ -20,15 +20,24 @@ const stored = (page: Page) =>
   page.evaluate((k) => JSON.parse(localStorage.getItem(k) ?? 'null'), KEY);
 const htmlAttr = (page: Page, name: string) =>
   page.evaluate((n) => document.documentElement.getAttribute(n), name);
+/**
+ * The key that opens the settings: the nav's gear (a button), or on a phone (X4) the hotbar's ⚙
+ * slot (a link to the window, one of the hotbar's five).
+ */
+const settingsKey = (page: Page, isMobile: boolean) =>
+  isMobile
+    ? page.locator('.hotbar').getByRole('link', { name: copy.nav.hotbar_prefs, exact: true })
+    : page.getByRole('button', { name: p.open_label, exact: true });
 
 test.describe('settings window', () => {
   test.use({ reducedMotion: 'reduce' });
 
   test('opens from the nav key, the footer and the "," key; Escape closes it, focus returns', async ({
     page,
+    isMobile,
   }) => {
     await page.goto(V2);
-    const gear = page.getByRole('button', { name: p.open_label, exact: true });
+    const gear = settingsKey(page, isMobile);
     await gear.click();
     await expect(dialog(page)).toBeVisible();
     await page.keyboard.press('Escape');
@@ -36,11 +45,16 @@ test.describe('settings window', () => {
     await expect(gear).toBeFocused();
 
     const foot = page.locator('footer').getByRole('button', { name: copy.footer.prefs });
-    await foot.click();
-    await expect(dialog(page)).toBeVisible();
-    await dialog(page).getByRole('button', { name: p.close }).click();
-    await expect(dialog(page)).toBeHidden();
-    await expect(foot).toBeFocused();
+    if (isMobile) {
+      // X4: on a phone the footer is two lines; the hotbar's ⚙ is the way in (above).
+      await expect(foot).toBeHidden();
+    } else {
+      await foot.click();
+      await expect(dialog(page)).toBeVisible();
+      await dialog(page).getByRole('button', { name: p.close }).click();
+      await expect(dialog(page)).toBeHidden();
+      await expect(foot).toBeFocused();
+    }
 
     await page.locator('body').press(',');
     await expect(dialog(page)).toBeVisible();
@@ -49,10 +63,11 @@ test.describe('settings window', () => {
   test('a labelled form, operable by keyboard alone; each choice applies at once', async ({
     page,
     browserName,
+    isMobile,
   }) => {
     test.skip(browserName === 'webkit', 'Safari does not Tab to every element by default');
     await page.goto(V2);
-    await page.getByRole('button', { name: p.open_label, exact: true }).focus();
+    await settingsKey(page, isMobile).focus();
     await page.keyboard.press('Enter');
     await expect(dialog(page)).toBeVisible();
     // Focus starts on the chosen theme; arrow keys move the choice, which applies at once.
@@ -87,7 +102,7 @@ test.describe('settings window', () => {
     expect(await stored(page)).toMatchObject({ theme: 'day', text: 115 });
     await page.keyboard.press('Escape');
     await expect(dialog(page)).toBeHidden();
-    await expect(page.getByRole('button', { name: p.open_label, exact: true })).toBeFocused();
+    await expect(settingsKey(page, isMobile)).toBeFocused();
   });
 
   test('axe: no serious or critical violations with the window open', async ({ page }) => {
@@ -165,7 +180,10 @@ test.describe('settings window', () => {
     expect(await stored(page)).toBeNull();
   });
 
-  test('shortcuts stay out of fields and can be turned off (WCAG 2.1.4)', async ({ page }) => {
+  test('shortcuts stay out of fields and can be turned off (WCAG 2.1.4)', async ({
+    page,
+    isMobile,
+  }) => {
     await page.goto(V2);
     // Typing in a field never opens the window or pauses the page.
     await page.evaluate(() => {
@@ -198,8 +216,8 @@ test.describe('settings window', () => {
     await page.locator('body').press('p');
     await expect(dialog(page)).toBeHidden();
     expect(await htmlAttr(page, 'data-paused')).toBeNull();
-    // The keys in the nav still work.
-    await page.getByRole('button', { name: p.open_label, exact: true }).click();
+    // The keys in the nav (on a phone, the hotbar's ⚙) still work.
+    await settingsKey(page, isMobile).click();
     await expect(dialog(page)).toBeVisible();
   });
 

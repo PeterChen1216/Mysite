@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import {
+  cityKeys,
   projectView,
   type Project,
   type ProjectLabels,
@@ -122,5 +123,36 @@ describe('projectView', () => {
     expect(v.when).toBe('2026年3月 – 至今');
     expect(v.stat).toBe('2026 · iOS、网页 · shipped');
     expect(v.stack).toBe('技术栈： A、B');
+  });
+});
+
+describe('the phone’s city keys (X4)', () => {
+  const phone = {
+    home_zone: 'America/Los_Angeles',
+    cities: [
+      { code: 'FRA', name: 'Frankfurt', time_zone: 'Europe/Berlin' },
+      { code: 'SEA', name: 'Seattle', time_zone: 'America/Los_Angeles' },
+      { code: 'SHA', name: 'Shanghai', time_zone: 'Asia/Shanghai' },
+    ],
+  } as unknown as ProjectsCopy['phone'];
+  it('in copy order, each with its hand’s colour; home is the arrow; the first away is chosen', () => {
+    expect(cityKeys(phone)).toEqual([
+      { name: 'Frankfurt', mark: 'FRA', zone: 'Europe/Berlin', tone: 'redstone', selected: true },
+      { name: 'Seattle', mark: 'SEA', zone: 'America/Los_Angeles', tone: 'here', selected: false },
+      { name: 'Shanghai', mark: 'SHA', zone: 'Asia/Shanghai', tone: 'gold', selected: false },
+    ]);
+  });
+  it('a city without a code shows its name; with no home city every hand has a colour', () => {
+    const away = {
+      home_zone: 'Asia/Tokyo',
+      cities: [
+        { name: 'Paris', time_zone: 'Europe/Paris' },
+        { name: 'Lima', time_zone: 'America/Lima' },
+      ],
+    } as unknown as ProjectsCopy['phone'];
+    expect(cityKeys(away).map((c) => [c.mark, c.tone, c.selected])).toEqual([
+      ['Paris', 'redstone', true],
+      ['Lima', 'gold', false],
+    ]);
   });
 });

@@ -13,6 +13,11 @@
  * or tapped, a commit's node pulses (motion full), the rail lights from it to the next commit
  * (src/scripts/interact.ts measures how far), and — where the hash column has the room, from
  * 1024 px — the hash becomes `git show <hash>` (copy.yaml experience.show_cmd).
+ *
+ * The highlights are a real <details> (X4, §8.3): open in the markup, so the page is whole without
+ * JavaScript and on every larger screen; on phones a commit row is folded to its title, dates and
+ * company · place (src/scripts/mobile.ts folds them, the first one left open), and its summary is
+ * a 44 px key over the hash line — `▸ 4a484db`, and `▾ git show 4a484db` once open.
  */
 import { Image } from 'astro:assets';
 import type { ImageMetadata } from 'astro';
@@ -78,7 +83,7 @@ const commits = rows.map((row) => {
           <h3 class="commit__title">{row.title}</h3>
           <p class="commit__sub">
             {row.head && headHref ? (
-              <a href={headHref}>
+              <a class="hit-44" href={headHref}>
                 <Glyphs text={row.sub} />
               </a>
             ) : entry ? (
@@ -122,11 +127,16 @@ const commits = rows.map((row) => {
           )}
         </div>
         {entry && entry.highlights.length > 0 && (
-          <ul class="commit__body">
-            {entry.highlights.map((h) => (
-              <li>{h}</li>
-            ))}
-          </ul>
+          <details class="commit__fold" open data-commit-fold>
+            <summary class="commit__sum">
+              <span class="visually-hidden">{show(row)}</span>
+            </summary>
+            <ul class="commit__body">
+              {entry.highlights.map((h) => (
+                <li>{h}</li>
+              ))}
+            </ul>
+          </details>
         )}
       </li>
     ))}
@@ -401,8 +411,15 @@ const commits = rows.map((row) => {
     /* The logo file has a wide dark margin around the wordmark: zoom into it. */
     transform: scale(1.35);
   }
-  .commit__body {
+  /* The details only wraps the highlights: everywhere but on phones it is open and its summary
+     unseen, so the list sits where it always did. */
+  .commit__fold {
     grid-area: body;
+  }
+  .commit__sum {
+    display: none;
+  }
+  .commit__body {
     display: flex;
     flex-direction: column;
     gap: 6px;
@@ -495,6 +512,53 @@ const commits = rows.map((row) => {
       --pad: 16px;
       --slot: 44px;
       --gap: 12px;
+    }
+    /* X4: a folded row. Its summary is an unseen 44 px key over the hash line (its name is the
+       show command); the hash under it shows the state: `▸ 4a484db`, open `▾ git show 4a484db`
+       (the dates then wrap beside it, as in the frame). */
+    .commit__sum {
+      position: absolute;
+      top: 18px;
+      left: calc(var(--node) + var(--gap) - 4px);
+      right: calc(var(--slot) + var(--gap));
+      display: block;
+      height: 44px;
+      list-style: none;
+      cursor: pointer;
+      touch-action: manipulation;
+      -webkit-tap-highlight-color: transparent;
+    }
+    /* Open, the hash line reads `▾ git show 4a484db`: the dates keep at least their widest part
+       beside it, and `git show` wraps first when the row is tight (large text). */
+    .commit {
+      grid-template-columns: var(--node) auto minmax(min-content, 1fr) var(--slot);
+    }
+    .commit__hash {
+      white-space: normal;
+    }
+    .commit__sum::-webkit-details-marker {
+      display: none;
+    }
+    .commit__sum:focus-visible {
+      outline-offset: 0;
+    }
+    .commit:has(> .commit__fold) .commit__hash::before {
+      content: '▸';
+      content: '▸' / '';
+      margin-inline-end: 0.5em;
+      font-family: var(--font-symbol);
+      font-size: 0.8em;
+    }
+    .commit:has(> .commit__fold[open]) .commit__hash {
+      font-size: 0;
+    }
+    .commit:has(> .commit__fold[open]) .commit__hash::before {
+      content: '▾ ' attr(data-show);
+      font: var(--type-code-bold);
+    }
+    /* The hover and focus overlay of the hash (X3 row 6) is the open state here. */
+    .commit:has(> .commit__fold) .commit__hash::after {
+      display: none;
     }
     .commit__title {
       font-size: calc(20px * var(--ts));

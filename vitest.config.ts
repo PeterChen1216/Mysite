@@ -44,6 +44,10 @@ export default defineConfig({
         'src/lib/not-found.ts',
         'src/lib/windows.ts',
         'src/og/layout.ts',
+        // X4: the phone's bars (scroll-spy, hide and show) and the mobile rules.
+        'src/lib/hotbar.ts',
+        'src/lib/carousel.ts',
+        'src/lib/lite.ts',
         // The WebGL scene's pure parts (the renderer and GL plumbing are covered by E2E).
         'src/scene/tier.ts',
         'src/scene/math.ts',

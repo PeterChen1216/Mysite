@@ -2,7 +2,7 @@ import { expect, test, type Page } from '@playwright/test';
 import { glyphParts } from '../../src/lib/derive';
 import { runningAnimations, runningLoops } from './animations';
 import { copy, escapeRe } from './copy';
-import { LOCALE_PAGES, TIER_PAGES, V2, open } from './site';
+import { directoryKey, LOCALE_PAGES, open, TIER_PAGES, V2 } from './site';
 
 /**
  * Text that is cut off or runs into its neighbours. Checks every visible word against the
@@ -16,15 +16,32 @@ import { LOCALE_PAGES, TIER_PAGES, V2, open } from './site';
 function textProblems(page: Page) {
   return page.evaluate(() => {
     const vw = document.documentElement.clientWidth;
-    const skip = (el: Element) => el.closest('.visually-hidden, .ticker') !== null;
+    /** Read out only: the .visually-hidden helper, or the same technique in a component's own
+     * styles (a 1 px box clipped to nothing: the hotbar's names where only icons fit). */
+    const srOnly = (el: Element) => {
+      for (let a: Element | null = el; a; a = a.parentElement) {
+        const cs = getComputedStyle(a);
+        if (cs.clipPath === 'inset(50%)' && a.getBoundingClientRect().width <= 1) return true;
+      }
+      return false;
+    };
+    /** Folded away in a closed <details> (the phone's commit rows, X4): not drawn at all, though
+     * Chromium still reports a box for it. Its summary is drawn and checked. */
+    const folded = (el: Element) => {
+      const details = el.closest('details:not([open])');
+      return details !== null && el.closest('summary')?.parentElement !== details;
+    };
+    const skip = (el: Element) =>
+      el.closest('.visually-hidden, .ticker') !== null || srOnly(el) || folded(el);
     const problems: string[] = [];
     const walker = document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT);
     for (let node = walker.nextNode(); node; node = walker.nextNode()) {
       const el = node.parentElement;
       const text = node.textContent ?? '';
       if (!el || !text.trim() || skip(el) || getComputedStyle(el).visibility === 'hidden') continue;
-      let left = 0;
-      let right = vw;
+      let left = -Infinity;
+      let right = Infinity;
+      let scroller = false;
       let shortened = false;
       for (let a: Element | null = el; a && a !== document.documentElement; a = a.parentElement) {
         const cs = getComputedStyle(a);
@@ -34,10 +51,24 @@ function textProblems(page: Page) {
           break;
         }
         const r = a.getBoundingClientRect();
+        // A row that scrolls sideways (the phone's carousels and slot rows, X4) shows the rest of
+        // its text when scrolled: it is cut off only past the end of what it scrolls through.
+        // (The row itself is checked against the page as any box is.)
+        if (/auto|scroll/.test(cs.overflowX) && a.scrollWidth > a.clientWidth + 1) {
+          const from = r.left - a.scrollLeft;
+          left = Math.max(left, from);
+          right = Math.min(right, from + a.scrollWidth);
+          scroller = true;
+          break;
+        }
         left = Math.max(left, r.left);
         right = Math.min(right, r.right);
       }
       if (shortened) continue;
+      if (!scroller) {
+        left = Math.max(left, 0);
+        right = Math.min(right, vw);
+      }
       const range = document.createRange();
       for (const m of text.matchAll(/\S+/g)) {
         range.setStart(node, m.index);
@@ -115,7 +146,7 @@ test.describe('layout holds at every width', () => {
   }
   // WCAG 1.4.12: a reader's own spacing (the bookmarklet values) must not clip or overlap text.
   for (const { locale, path } of LOCALE_PAGES)
-    for (const width of [320, 390, 768, 1024, 1440]) {
+    for (const width of [320, 390, 430, 768, 1024, 1440]) {
       test(`text-spacing override: nothing cut off at ${width}px (${locale})`, async ({ page }) => {
         await page.setViewportSize({ width, height: 900 });
         await page.goto(path);
@@ -129,7 +160,7 @@ test.describe('layout holds at every width', () => {
     }
   // The settings' largest text size (130 %) at the widths where the layout changes.
   for (const { locale, path } of LOCALE_PAGES)
-    for (const width of [320, 390, 768, 1024, 1280, 1440]) {
+    for (const width of [320, 390, 430, 768, 1024, 1280, 1440]) {
       test(`text size 130 %: nothing cut off at ${width}px (${locale})`, async ({
         page,
         browser,
@@ -194,7 +225,7 @@ test.describe('the pages and windows of M3 hold too', () => {
     test(`a window open over the page: nothing cut off at ${width}px`, async ({ page }) => {
       await page.setViewportSize({ width, height: 900 });
       await page.goto(V2);
-      await page.locator('#projects .sh__more').click();
+      await directoryKey(page).click();
       await expect(page.locator('dialog[data-window-kind="directory"]')).toBeVisible();
       expect(await textProblems(page)).toEqual([]);
       await page.locator('dialog[open] a[data-project-link]').first().click();
@@ -443,12 +474,15 @@ test.describe('keyboard and screen readers', () => {
       await expect(link).toHaveAccessibleName(new RegExp(`${escapeRe(copy.labels.new_tab)}$`));
   });
 
-  test('decorative symbols are left out of names', async ({ page }) => {
+  test('decorative symbols are left out of names', async ({ page, isMobile }) => {
     await page.goto(V2);
     await expect(page.locator('h1')).not.toHaveAccessibleName(/_\s*$/);
-    await expect(page.locator('footer a[href="#top"]')).toHaveAccessibleName(
-      glyphParts(copy.footer.back_to_top).text,
-    );
+    // X4: a phone's footer is two lines; back to spawn is the top bar's logo there (its name is
+    // its aria-label), and the footer's link is not shown.
+    if (!isMobile)
+      await expect(page.locator('footer a[href="#top"]')).toHaveAccessibleName(
+        glyphParts(copy.footer.back_to_top).text,
+      );
     await expect(page.locator('#experience a[href="#contact"]')).toHaveAccessibleName(
       glyphParts(copy.experience.head_hint).text,
     );

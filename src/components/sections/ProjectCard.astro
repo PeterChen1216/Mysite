@@ -27,8 +27,10 @@ interface Props {
   labels: ProjectLabels;
   /** The project's own page (M3): its title links there (with JavaScript, it opens over the page). */
   href: string;
+  /** Its place in the phone's carousel ("2 of 3"; read out on phones only: Projects.astro). */
+  position?: string;
 }
-const { project: p, copy, labels, href } = Astro.props;
+const { project: p, copy, labels, href, position } = Astro.props;
 const v = projectView(p, copy, labels);
 const { Body } = p;
 /** Corner block by platform (Figma pairs "This website" with the Terminal block). */
@@ -36,6 +38,7 @@ const block: BlockName = projectBlock(p);
 ---
 
 <Card as="article" class="pc" id={v.anchor} labelledby={`${v.anchor}-title`}>
+  {position && <p class="pc__pos">{position}</p>}
   <span class="pc__block" aria-hidden="true">
     {p.icon ? (
       <Image class="pc__icon" src={p.icon} alt="" width={64} height={64} />
@@ -44,7 +47,7 @@ const block: BlockName = projectBlock(p);
     )}
   </span>
   <h3 class="pc__title" id={`${v.anchor}-title`}>
-    <a class="project-link" href={href} data-project-link={p.id}>
+    <a class="project-link hit-44" href={href} data-project-link={p.id}>
       {p.title}
     </a>
   </h3>
@@ -81,7 +84,7 @@ const block: BlockName = projectBlock(p);
           <span class="pc__prompt" aria-hidden="true">
             &gt;
           </span>
-          <a href={l.url} target="_blank" rel="noopener">
+          <a class="hit-44" href={l.url} target="_blank" rel="noopener">
             {l.label}
             <span class="visually-hidden"> — {p.title}</span>
             <NewTab />
@@ -257,6 +260,39 @@ const block: BlockName = projectBlock(p);
     .pc__title,
     .pc__stat {
       padding-right: 72px;
+    }
+  }
+  /* In the phone's carousel (X4, with JavaScript): the first point only, three lines at most —
+     the rest is read out (visually hidden), and shown whole in the project's window. The links are
+     44 px rows. */
+  @media (max-width: 767px) {
+    :global(html.js) .pc__body :global(li:first-child) {
+      display: -webkit-box;
+      -webkit-box-orient: vertical;
+      -webkit-line-clamp: 3;
+      line-clamp: 3;
+      overflow: hidden;
+    }
+    :global(html.js) .pc__body :global(li:not(:first-child)),
+    :global(html.js) .pc__body :global(li ~ p),
+    :global(html.js) .pc__body :global(ul ~ *) {
+      /* The .visually-hidden technique (global.css), whole: a 1 px box, nothing drawn. */
+      position: absolute;
+      width: 1px;
+      height: 1px;
+      margin: -1px;
+      padding: 0;
+      border: 0;
+      overflow: hidden;
+      clip-path: inset(50%);
+      white-space: nowrap;
+    }
+    .pc__links li {
+      align-items: center;
+      min-height: 44px;
+    }
+    .pc__links {
+      gap: 0 20px;
     }
   }
 </style>

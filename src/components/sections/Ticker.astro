@@ -108,6 +108,13 @@ const seconds = Math.round(widthPx / LOOP.tickerPxPerSecond);
   :global(html.motion) .ticker__track {
     animation: ticker calc(var(--ticker-s, 60s) * var(--loop-slow, 1)) linear infinite;
   }
+  /* Phones (§8.3, X4): slower — 30 px/s instead of 40 (the same distance, a longer loop). A tap
+     focuses the band and holds it, as on any screen (WCAG 2.2.2). */
+  @media (max-width: 767px) {
+    :global(html.motion) .ticker__track {
+      animation-duration: calc(var(--ticker-s, 60s) * var(--loop-slow, 1) * var(--m-ticker-phone));
+    }
+  }
   .ticker:hover .ticker__track,
   .ticker:focus-within .ticker__track {
     animation-play-state: paused;

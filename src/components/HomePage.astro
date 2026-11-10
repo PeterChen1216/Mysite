@@ -76,6 +76,15 @@ const keys = { move: w.move_label, hint: w.move_hint, close: w.close };
     </main>
     <Footer data={data} />
   </div>
+  <!-- Phones (X4): the result of a tap-to-copy, above the hotbar (src/scripts/mobile.ts); in the
+       page from the start, empty, so screen readers announce what is put in it. -->
+  <p
+    class="toast"
+    role="status"
+    data-toast
+    data-ok={data.copy.hero.ok}
+    data-copied={data.copy.hero.copied}
+  ></p>
   <PrefsWindow data={data} />
   <PageScripts />
   <Window

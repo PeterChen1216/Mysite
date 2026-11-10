@@ -274,4 +274,23 @@ const label = copy.about.avgeek_panels;
   .av__tool:focus-visible::after {
     translate: var(--m-hop) calc(-1 * var(--m-hop));
   }
+  /* Phones (X4): the tools are 44 px keys, two to a row. */
+  @media (max-width: 767px) {
+    .av__tools {
+      display: grid;
+      /* Two to a row where they fit (Figma 390), one below. */
+      grid-template-columns: repeat(auto-fit, minmax(min(100%, 9.5em), 1fr));
+      margin: 0;
+      padding: 0;
+    }
+    .av__tools li {
+      display: flex;
+    }
+    .av__tool {
+      flex: 1;
+      min-height: 44px;
+      padding: 0 12px;
+      white-space: normal;
+    }
+  }
 </style>

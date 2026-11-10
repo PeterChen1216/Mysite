@@ -454,8 +454,15 @@ export const copySchema = z
         /** Screen-reader names of the logo link and of the section links. */
         logo_label: text,
         sections_label: text,
+        /** The phone's hotbar (X4): a short name per section link, in order, and the settings slot. */
+        hotbar: lines,
+        hotbar_prefs: text,
       })
-      .strict(),
+      .strict()
+      .refine((n) => n.hotbar.length === n.links.length, {
+        message: '`hotbar` needs one name for each of the `links` above, in the same order',
+        path: ['hotbar'],
+      }),
     hero: z
       .object({
         /** [brackets] mark the highlighted word. */
@@ -469,12 +476,17 @@ export const copySchema = z
         summon_ok: text,
         /** {name} = full name, {programme} = major · track, {year} = class year (’27). */
         whoami_line: text,
+        /** The phone's folded terminal (X4): the keys that unfold and fold it. */
+        more: text,
+        less: text,
         cta_projects: text,
         cta_resume: text,
         eyebrow_prefix: text,
         /** The hero globe as a keyboard slider: its name, and its value ({deg} = degrees turned). */
         globe_label: text,
         globe_value: text,
+        /** The phone's row of badges under the globe (X4): its screen-reader name. */
+        badges_label: text,
         avgeek_badge: text,
         /** Badge once aviation.yaml `watching` has a route; {from} and {to} are its airports. */
         avgeek_route: text,
@@ -564,6 +576,9 @@ export const copySchema = z
         next_body: text,
         next_tags: z.array(text).default([]),
         next_progress: text,
+        /** The phone's carousel of other builds (X4): the link to them all, and {n} of {count}. */
+        list_all: text,
+        position: text,
         /**
          * The phone drawn beside a project with `demo: world-clock` (decorative, aria-hidden): a
          * 24-hour dial with one hand per city, after the app's own clock face.

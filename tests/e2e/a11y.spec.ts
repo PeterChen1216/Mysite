@@ -237,11 +237,14 @@ test.describe('keyboard (WCAG 2.1.1, 2.1.2, 2.4.3, 2.4.7)', () => {
 });
 
 test.describe('reduced transparency', () => {
-  test('translucent bars become solid', async ({ page, browserName }) => {
+  test('translucent bars become solid', async ({ page, browserName, isMobile }) => {
     test.skip(browserName !== 'chromium', 'emulated through the Chromium DevTools protocol');
     await page.goto(V2);
+    // X4: a phone's top bar is opaque from the start (WebKit repaints a translucent bar over a
+    // scrolling page slowly); the ticker's band is the translucent bar there.
+    const bar = isMobile ? '.ticker' : '.nav';
     const alpha = () =>
-      page.locator('.nav').evaluate((el) => {
+      page.locator(bar).evaluate((el) => {
         const n = getComputedStyle(el).backgroundColor.match(/[\d.]+/g) ?? [];
         return n.length > 3 ? Number(n[3]) : 1;
       });

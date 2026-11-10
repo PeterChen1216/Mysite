@@ -429,8 +429,14 @@ export function initInteractions(): void {
   initPromptKey();
 
   // 16 · back to spawn (the link keeps its own jump; this only makes it smooth and drops a block).
+  // On phones the top bar's logo is back to spawn (X4: the footer there is two short lines).
+  const phone = matchMedia('(max-width: 767px)');
   document.addEventListener('click', (e) => {
-    const link = (e.target as Element | null)?.closest<HTMLAnchorElement>('a.foot__top');
-    if (link && !e.defaultPrevented && resolved().motion === 'full') spawn(link);
+    const link = (e.target as Element | null)?.closest<HTMLAnchorElement>(
+      'a.foot__top, a.nav__logo[data-spawn-block]',
+    );
+    if (!link || e.defaultPrevented || resolved().motion !== 'full') return;
+    if (link.classList.contains('nav__logo') && !phone.matches) return;
+    spawn(link);
   });
 }

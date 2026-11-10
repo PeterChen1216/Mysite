@@ -17,7 +17,13 @@ import TerminalWindow from '../ui/TerminalWindow.astro';
 import VoxelBlock from '../ui/VoxelBlock.astro';
 import PhoneMockup from './PhoneMockup.astro';
 import { statusBar } from '../../lib/derive';
-import { projectView, type Project, type ProjectLabels, type ProjectsCopy } from './projects-view';
+import {
+  cityKeys,
+  projectView,
+  type Project,
+  type ProjectLabels,
+  type ProjectsCopy,
+} from './projects-view';
 
 interface Props {
   project: Project;
@@ -36,6 +42,12 @@ const cells = Array.from({ length: bar.total }, (_, i) => i < bar.filled);
 const SYMBOL = /^[★✈⇄→✦]$/u;
 const featuredParts = copy.featured.split(/([★✈⇄→✦])/u).filter(Boolean);
 const withPhone = p.demo === 'world-clock';
+// Phones (X4): the phone's hands are 24 px tags, so a row of 44 px city keys under it does what a
+// tap on a hand does (src/scripts/clock.ts). Named like the hands: "FRA, Frankfurt".
+const cities = cityKeys(copy.phone).map((c) => ({
+  ...c,
+  label: c.mark === c.name ? c.name : `${c.mark}${labels.list_separator}${c.name}`,
+}));
 ---
 
 <Card as="article" class="pf" id={v.anchor} labelledby={`${v.anchor}-title`}>
@@ -44,7 +56,7 @@ const withPhone = p.demo === 'world-clock';
   </span>
   <div class="pf__copy">
     <h3 class="pf__title" id={`${v.anchor}-title`}>
-      <a class="project-link" href={href} data-project-link={p.id}>
+      <a class="project-link hit-44" href={href} data-project-link={p.id}>
         {p.title}
       </a>
     </h3>
@@ -128,6 +140,30 @@ const withPhone = p.demo === 'world-clock';
         <VoxelBlock name="glow" size={50} />
       </span>
       <PhoneMockup phone={copy.phone} separator={labels.list_separator} />
+      <div class="pf__cities" role="group" aria-labelledby={`${v.anchor}-cities`} data-city-keys>
+        <p class="pf__cities-label" id={`${v.anchor}-cities`}>
+          {copy.phone.pick_label}
+        </p>
+        <div class="pf__city-keys">
+          {cities.map((c) => (
+            <button
+              type="button"
+              class="pf__city"
+              data-city-key={c.zone}
+              aria-pressed={c.selected ? 'true' : 'false'}
+              aria-label={c.label}
+            >
+              <span class={`pf__swatch pf__swatch--${c.tone}`} aria-hidden="true" />
+              {c.tone === 'here' && (
+                <svg class="pf__here" viewBox="0 0 8 8" width="12" height="12" aria-hidden="true">
+                  <path d="M7 0h1v1H7zM5 1h2v1H5zM3 2h4v1H3zM1 3h5v1H1zM0 4h6v1H0zM4 5h1v3H4zM5 5h1v1H5z" />
+                </svg>
+              )}
+              {c.mark}
+            </button>
+          ))}
+        </div>
+      </div>
     </div>
   )}
 </Card>
@@ -288,7 +324,87 @@ const withPhone = p.demo === 'world-clock';
       right: 24px;
     }
   }
+  /* Phones (X4): a row of 44 px city keys under the phone, the touch twin of its hands (with
+     JavaScript, which makes them work). */
+  .pf__cities {
+    display: none;
+  }
   @media (max-width: 767px) {
+    :global(html.js) .pf__cities {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 14px;
+      width: 100%;
+      margin-top: 14px;
+    }
+    .pf__stage {
+      align-self: stretch;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+    .pf__links,
+    .pf__links :global(.mc-btn) {
+      width: 100%;
+      justify-content: center;
+    }
+    .pf__cities-label {
+      margin: 0;
+      font: var(--type-code-label);
+      letter-spacing: var(--type-code-label-tracking);
+      text-transform: var(--type-label-case);
+      color: var(--color-text-mid);
+    }
+    .pf__city-keys {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(min(88px, 100%), 1fr));
+      gap: 8px;
+      width: 100%;
+    }
+    .pf__city {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      min-height: 44px;
+      padding: 0 8px;
+      border: 2px solid var(--color-border-edge);
+      background: var(--color-bg-slot);
+      font: var(--type-pixel-button);
+      color: var(--color-text-hi);
+      cursor: pointer;
+      touch-action: manipulation;
+    }
+    /* Chosen: a green edge, an inner ring and green words — not colour alone. */
+    .pf__city[aria-pressed='true'] {
+      border-color: var(--color-accent-terminal-green);
+      box-shadow: inset 0 0 0 2px var(--color-accent-terminal-green);
+      color: var(--color-accent-terminal-green);
+    }
+    .pf__swatch {
+      flex: none;
+      width: 10px;
+      height: 10px;
+      background: var(--color-accent-redstone);
+    }
+    .pf__swatch--gold {
+      background: var(--color-accent-gold);
+    }
+    .pf__swatch--enchant {
+      background: var(--color-accent-enchant);
+    }
+    .pf__swatch--grass {
+      background: var(--color-block-grass);
+    }
+    .pf__swatch--here {
+      background: var(--color-block-water);
+    }
+    .pf__here {
+      flex: none;
+      fill: currentColor;
+      shape-rendering: crispEdges;
+    }
     .pf__block--command {
       right: 12px;
       top: -20px;
@@ -298,7 +414,7 @@ const withPhone = p.demo === 'world-clock';
       height: auto;
     }
     .pf__chips {
-      padding-right: 72px;
+      padding-right: 0;
     }
     .pf__title {
       font-size: calc(26px * var(--ts));

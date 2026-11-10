@@ -18,6 +18,12 @@ nav:
   say_hi: 打个招呼
   logo_label: '{domain}——回到顶部'
   sections_label: 栏目
+  hotbar:
+    - 关于
+    - 项目
+    - 经历
+    - 联系
+  hotbar_prefs: 设置
 
 hero:
   headline:
@@ -31,6 +37,9 @@ hero:
   summon: '/summon pixel_globe ~ ~ ~ {rotate:1b}'
   summon_ok: '已召唤 PixelGlobe。区块已加载：36/36。{status}。'
   whoami_line: '{name} — {programme} @ {school}，{year} 届。'
+  more: 更多 ▾
+  less: 收起 ▴
+  badges_label: 亮点
   cta_projects: 查看项目
   cta_resume: 下载英文简历
   eyebrow_prefix: '// 玩家:'
@@ -122,6 +131,8 @@ projects:
   next_body: 区块尚未生成——再过几次提交后回来看看。
   next_tags: [ 待定 ]
   next_progress: 正在生成区块 (-1, 3)…
+  list_all: 全部列出 ▸
+  position: '第 {n} 个，共 {count} 个'
   # 手机画的是 App 自己的英文界面，所以这里保持英文。
   phone:
     home_zone: America/Los_Angeles
@@ -510,3 +521,10 @@ from:
   not_found.home_label: a3be40d0
   not_found.projects_label: 32ba05b9
   og.alt: fdddf06b
+  nav.hotbar: d7d6c241
+  nav.hotbar_prefs: f81177b7
+  hero.more: 3281108f
+  hero.less: a2eb47c6
+  projects.list_all: 59ed1c8e
+  projects.position: a45faf4e
+  hero.badges_label: 6e85c948

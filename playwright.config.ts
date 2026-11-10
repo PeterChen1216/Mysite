@@ -17,10 +17,22 @@ export default defineConfig({
     trace: 'off',
   },
   projects: [
-    { name: 'chromium', use: { ...devices['Desktop Chrome'] } },
+    // The phone layout's own suite (X4, tests/e2e/mobile.spec.ts) runs on the phones only.
+    { name: 'chromium', use: { ...devices['Desktop Chrome'] }, testIgnore: /mobile\.spec/ },
     { name: 'mobile-chromium', use: { ...devices['Pixel 7'] } },
-    // WebKit browsers are installed in CI only (PLAN §9.1: Chromium + WebKit).
-    ...(CI ? [{ name: 'webkit', use: { ...devices['Desktop Safari'] } }] : []),
+    // WebKit browsers are installed in CI only (PLAN §9.1: Chromium + WebKit). An iPhone in
+    // WebKit runs the phone suite only (PLAN-EXPERIENCE §8.8: CI covers the widths in Chromium and
+    // WebKit; the rest of the matrix runs on Pixel 7 and desktop Safari).
+    ...(CI
+      ? [
+          { name: 'webkit', use: { ...devices['Desktop Safari'] }, testIgnore: /mobile\.spec/ },
+          {
+            name: 'mobile-webkit',
+            use: { ...devices['iPhone 13'] },
+            testMatch: /mobile\.spec/,
+          },
+        ]
+      : []),
   ],
   webServer: {
     command: `node scripts/serve.mjs _site ${PORT}`,

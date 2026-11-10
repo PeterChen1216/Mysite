@@ -12,6 +12,7 @@
  * a punch may come from a tap.
  */
 import { admitParticles } from '../lib/interact';
+import { particleCap } from '../lib/lite';
 import { PARTICLES } from '../motion/params';
 import { burstsAllowed } from './prefs';
 
@@ -27,6 +28,8 @@ interface Particle {
 }
 
 const rand = (min: number, max: number) => min + Math.random() * (max - min);
+/** Phones and tablets (§8.5: at most 24 particles there). */
+const touch = matchMedia('(max-width: 767px), (hover: none) and (pointer: coarse)');
 
 let canvas: HTMLCanvasElement | undefined;
 let ctx: CanvasRenderingContext2D | null = null;
@@ -101,7 +104,14 @@ export function burst(
   count: number = PARTICLES.count,
 ): boolean {
   if (!burstsAllowed() || colours.length === 0 || !layer()) return false;
-  const { retire, add } = admitParticles(live.length, count, PARTICLES.cap);
+  const cap = particleCap(
+    PARTICLES.cap,
+    touch.matches,
+    document.documentElement.hasAttribute('data-lite'),
+    PARTICLES.capTouch,
+    PARTICLES.capLite,
+  );
+  const { retire, add } = admitParticles(live.length, count, cap);
   live.splice(0, retire);
   const now = performance.now();
   for (let i = 0; i < add; i++) {

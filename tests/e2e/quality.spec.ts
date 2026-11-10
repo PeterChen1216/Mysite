@@ -48,12 +48,14 @@ for (const { locale, path: V2 } of LOCALE_PAGES)
       expect(await blockingViolations(page)).toEqual([]);
     });
 
-    test('all content is readable without JavaScript', async ({ browser }) => {
+    test('all content is readable without JavaScript', async ({ browser, isMobile }) => {
       const context = await browser.newContext({ javaScriptEnabled: false });
       const page = await context.newPage();
       await page.goto(V2);
       for (const id of ['about', 'education', 'honors', 'projects', 'experience', 'contact']) {
-        await expect(page.locator(`#${id}`)).toBeVisible();
+        // X4: on a phone the honors are listed in the Education card, under their school.
+        const where = id === 'honors' && isMobile ? '#education .edu__honors--phone' : `#${id}`;
+        await expect(page.locator(where).first()).toBeVisible();
       }
       await context.close();
     });

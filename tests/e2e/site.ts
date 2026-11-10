@@ -53,3 +53,10 @@ export async function open(page: Page, path: string): Promise<void> {
       timeout: 20_000,
     });
 }
+
+/**
+ * The key that opens the projects directory: Projects' `more ▸`, or on a phone (X4) `list all ▸`
+ * under the carousel (the header's `more ▸` makes way for it there).
+ */
+export const directoryKey = (page: Page) =>
+  page.locator('#projects .sh__more:visible, #projects .carousel__all:visible').first();

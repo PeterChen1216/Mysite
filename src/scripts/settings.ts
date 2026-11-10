@@ -56,6 +56,11 @@ function bind(dialog: HTMLDialogElement) {
       if (x < r.left || x > r.right || y < r.top || y > r.bottom) dialog.close();
     }
   });
+  // On phones the hotbar shows above the backdrop but, like the page, cannot be used while the
+  // window is open (it is modal): a tap there lands on no element (the root) and closes it.
+  document.addEventListener('click', (e) => {
+    if (dialog.open && e.target === document.documentElement) dialog.close();
+  });
   dialog.addEventListener('close', () => {
     // Back to whatever opened it (the nav key, the footer button, or where `,` was pressed).
     if (returnTo?.isConnected) returnTo.focus();

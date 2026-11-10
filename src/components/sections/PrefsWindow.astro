@@ -13,6 +13,13 @@
  * A modal <dialog>, closed until a visitor opens it (nav gear, footer `prefs`, the `,` key), so it
  * adds nothing to the page as first painted. A dark object: it stays a dark terminal in the light
  * themes (data-surface="dark").
+ *
+ * On phones (X4, Figma "State · Settings window" 73:17539) it opens from the hotbar's ⚙ slot and
+ * fills the screen down to the hotbar, within thumb reach, the hotbar showing above its backdrop
+ * with ⚙ selected; the motion choices sit in one row with the chosen one's note under them. The
+ * keyboard-shortcuts row is left out on a touch screen until a key is pressed there (a keyboard,
+ * or speech input that types): wherever a shortcut can fire, the switch that turns them off is
+ * shown (WCAG 2.1.4).
  */
 import { MOTION_LEVELS, TEXT_SIZES, THEMES } from '../../prefs/model';
 import type { PageData } from '../../lib/page-data';
@@ -106,7 +113,7 @@ const keys = [
         </span>
         <span class="prefs__name">{p.motion.legend}</span>
       </legend>
-      <div class="prefs__opts prefs__opts--wide">
+      <div class="prefs__opts prefs__opts--wide prefs__opts--motion">
         {motions.map((m) => (
           <label class="prefs__opt">
             <input type="radio" name="motion" value={m.value} />
@@ -117,6 +124,12 @@ const keys = [
           </label>
         ))}
       </div>
+      {/* Phones: the choices are one row of names; the chosen one's note is repeated under it. */}
+      {motions.map((m) => (
+        <p class="prefs__picked" data-for={m.value} aria-hidden="true">
+          {m.name} — {m.note}
+        </p>
+      ))}
       <p class="prefs__note" data-note-media="(prefers-reduced-motion: reduce)" hidden>
         {p.motion.reduced_note}
       </p>
@@ -173,7 +186,7 @@ const keys = [
       </div>
     </fieldset>
 
-    <fieldset class="prefs__row">
+    <fieldset class="prefs__row prefs__row--keys">
       <legend class="prefs__legend">
         <span class="prefs__cmd" aria-hidden="true">
           $ {p.keys.cmd}
@@ -485,9 +498,79 @@ const keys = [
   .prefs__reset:focus-visible {
     border-color: var(--color-accent-gold);
   }
+  .prefs__picked {
+    display: none;
+  }
   @media (max-width: 767px) {
     .prefs__form {
       padding: 16px;
+    }
+    /* Docked from just below the top of the screen to just above the hotbar (Figma: 8 px in). */
+    .prefs {
+      inset: calc(8px + env(safe-area-inset-top)) 8px calc(var(--hotbar-h) + 8px);
+      width: auto;
+      height: auto;
+      max-width: none;
+      max-height: none;
+      margin: 0;
+    }
+    /* The hotbar shows above the dimmed page, ⚙ selected (::backdrop inherits nothing everywhere
+       yet, so the bar's height is written out). */
+    .prefs::backdrop {
+      bottom: calc(64px + env(safe-area-inset-bottom));
+    }
+    .prefs__close {
+      min-height: 44px;
+      padding-inline: 14px;
+    }
+    /* Themes: two columns of tiles — box and swatch, then the name and its note (Figma). */
+    .prefs__opts--wide {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+    .prefs__opts--wide:not(.prefs__opts--motion) .prefs__opt {
+      flex-wrap: wrap;
+      align-items: flex-start;
+      align-content: flex-start;
+      gap: 8px;
+      padding: 10px 12px;
+    }
+    .prefs__opts--wide:not(.prefs__opts--motion) .prefs__opt-text {
+      flex-basis: 100%;
+    }
+    /* One row of four (two with larger text); the box stays: in Mono colour alone would not tell
+       the chosen one. */
+    .prefs__opts--motion {
+      display: flex;
+      flex-wrap: wrap;
+    }
+    .prefs__opts--motion .prefs__opt {
+      flex: 1 0 auto;
+      justify-content: center;
+      gap: 6px;
+      padding-inline: 4px;
+    }
+    .prefs__opts--motion .prefs__opt-note {
+      position: absolute;
+      width: 1px;
+      height: 1px;
+      overflow: hidden;
+      clip-path: inset(50%);
+      white-space: nowrap;
+    }
+    .prefs__row:has(input[value='auto']:checked) .prefs__picked[data-for='auto'],
+    .prefs__row:has(input[value='full']:checked) .prefs__picked[data-for='full'],
+    .prefs__row:has(input[value='calm']:checked) .prefs__picked[data-for='calm'],
+    .prefs__row:has(input[value='off']:checked) .prefs__picked[data-for='off'] {
+      display: block;
+      margin: 10px 0 0;
+      font: var(--type-code-sm);
+      color: var(--color-text-mid);
+    }
+  }
+  /* A touch screen with no keyboard in use: no shortcuts can fire, so no switch for them. */
+  @media (hover: none) and (pointer: coarse) {
+    :global(html:not([data-keyboard])) .prefs__row--keys {
+      display: none;
     }
   }
   /* Windows High Contrast: the system draws real radios; the pixel box would vanish. */

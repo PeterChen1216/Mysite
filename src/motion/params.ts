@@ -54,8 +54,9 @@ export const LOOP = {
   /** The tilted second ring sways back and forth (Figma 17:127: −30° per 6 s). */
   orbitSwayMs: 6000,
   orbitSwayDeg: -30,
-  /** Ticker scroll speed in px/s. */
+  /** Ticker scroll speed in px/s; slower on a phone (PLAN-EXPERIENCE §8.3, X4). */
   tickerPxPerSecond: 40,
+  tickerPhonePxPerSecond: 30,
 } as const;
 
 /**
@@ -70,6 +71,9 @@ export const GLOBE_TILE_PX = 648;
 export const PARTICLES = {
   /** No more than this many alive at once, whatever triggers them (PLAN-EXPERIENCE §6, E). */
   cap: 60,
+  /** …on a touch screen (§8.5: phones and tablets), and in lite mode (src/lib/lite.ts). */
+  capTouch: 24,
+  capLite: 8,
   /** Hover burst: 16 pixel particles of 4 or 6 px, 300–400 ms (PLAN §5.2). */
   count: 16,
   sizes: [4, 6],
@@ -204,6 +208,25 @@ export const AMBIENT = {
   maxDpr: 2,
 } as const;
 
+/**
+ * The phone's bars (PLAN-EXPERIENCE §8.2, X4; the rules are src/lib/hotbar.ts): the top bar and
+ * the hotbar slide away once the page has moved down a little, and come back on the way up, at
+ * the top and at the foot of the page. Calm and off move them without the slide.
+ */
+export const BARS = {
+  hideAfterPx: 24,
+  showAfterPx: 12,
+  topPx: 48,
+  endPx: 24,
+  /** Scroll-spy's reading line, as a share of the view's height (the desktop nav's too). */
+  spyLine: 0.4,
+  /** The slide: transform only, in pixel steps. */
+  slideMs: 160,
+  slideSteps: 4,
+  /** How long the tap-to-copy toast stays (§8.3 Contact). */
+  toastMs: 2400,
+} as const;
+
 /** The CSS-side parameters as a `style` value of custom properties (`--m-…`). */
 export function motionCssVars(): string {
   const ms = (n: number) => `${n}ms`;
@@ -263,6 +286,11 @@ export function motionCssVars(): string {
     '--m-enter': ms(ENTER.ms),
     '--m-enter-stagger': ms(ENTER.staggerMs),
     '--m-enter-cell': ms(ENTER.cellMs),
+    // The phone's bars and its slower ticker (X4).
+    '--m-bars': `${ms(BARS.slideMs)} steps(${BARS.slideSteps})`,
+    '--m-ticker-phone': String(
+      Math.round((LOOP.tickerPxPerSecond / LOOP.tickerPhonePxPerSecond) * 1000) / 1000,
+    ),
   };
   return Object.entries(vars)
     .map(([k, v]) => `${k}:${v}`)

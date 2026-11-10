@@ -113,3 +113,38 @@ export function pageDescription(
   const text = p.tagline?.trim() || first || fallback;
   return text.length > max ? `${text.slice(0, max - 1).trimEnd()}…` : text;
 }
+
+/** A hand's colour on the Clock Stamp phone (PhoneMockup.astro): the cities away from home in
+ * turn; the home city's hand is the "here" arrow. */
+export type HandTone = 'redstone' | 'gold' | 'enchant' | 'grass' | 'here';
+const HAND_TONES = ['redstone', 'gold', 'enchant', 'grass'] as const;
+
+export interface CityKey {
+  name: string;
+  /** What the key shows: the city's code, or its name. */
+  mark: string;
+  zone: string;
+  tone: HandTone;
+  /** The city the phone shows first (the first one away from home). */
+  selected: boolean;
+}
+
+/**
+ * The phone's city keys in copy.yaml order (X4: the 44 px row under the phone): each with its
+ * hand's colour, as PhoneMockup gives them out.
+ */
+export function cityKeys(phone: ProjectsCopy['phone']): CityKey[] {
+  const here = phone.cities.find((c) => c.time_zone === phone.home_zone);
+  const away = phone.cities.filter((c) => c !== here);
+  const first = away[0] ?? phone.cities[0];
+  return phone.cities.map((c) => {
+    const i = away.indexOf(c);
+    return {
+      name: c.name,
+      mark: c.code ?? c.name,
+      zone: c.time_zone,
+      tone: i < 0 ? 'here' : HAND_TONES[i % HAND_TONES.length]!,
+      selected: c === first,
+    };
+  });
+}

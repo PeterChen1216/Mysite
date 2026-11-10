@@ -1,5 +1,5 @@
 import { expect, test, type Page } from '@playwright/test';
-import { aboutCards, gridAreas, logRange } from '../../src/lib/derive';
+import { aboutCards, gridAreas, logRange, schoolHonors } from '../../src/lib/derive';
 import { formatRange, formatYearMonth } from '../../src/lib/format';
 import { stripComments } from '../../src/content/guards';
 import { escapeRe } from './copy';
@@ -96,8 +96,13 @@ for (const { locale, path, tier } of PAGES)
       }
     });
 
-    test('education, honors, experience', async ({ page }) => {
+    test('education, honors, experience', async ({ page, isMobile }) => {
       await open(page, path);
+      // X4: on a phone the commit rows are folded <details> — open each, as a reader would.
+      const folds = page.locator('details.commit__fold');
+      for (let i = 0; i < (await folds.count()); i++)
+        if (!(await folds.nth(i).evaluate((d) => (d as HTMLDetailsElement).open)))
+          await folds.nth(i).locator('summary').click();
       const text = await visibleText(page);
       const expected: unknown[] = [];
       for (const e of education as Rec[]) {
@@ -106,9 +111,16 @@ for (const { locale, path, tier } of PAGES)
           `${formatYearMonth(String(e.start), copy.labels)} – ${formatYearMonth(String(e.end), copy.labels)}`,
         );
         if (e.gpa) expected.push(`${e.gpa_label ?? copy.labels.gpa}: ${e.gpa}`);
-        expected.push(...((e.honors as string[]) ?? []), ...((e.coursework as string[]) ?? []));
+        // X4: on a phone a school's own `honors` line makes way for its honors.yaml entries,
+        // listed under it below (the same facts, said once); it shows when there are none.
+        const own =
+          isMobile && schoolHonors(String(e.school), honors as Array<{ org: string }>).length > 0;
+        if (!own) expected.push(...((e.honors as string[]) ?? []));
+        expected.push(...((e.coursework as string[]) ?? []));
       }
-      for (const h of honors as Rec[]) expected.push(`${h.name}, ${h.org}, ${h.year}`, h.note);
+      // X4: on a phone a school's honors are listed in its Education card, without the school.
+      for (const h of honors as Rec[])
+        expected.push(isMobile ? `${h.name}, ${h.year}` : `${h.name}, ${h.org}, ${h.year}`, h.note);
       // Experience is a `git log` (M1): each commit reads role, then `company · location`, then
       // its dates as derive.logRange prints them (`2024-07 → 2024-09`; `present` → labels.now).
       for (const x of experience as Rec[]) {
@@ -225,17 +237,41 @@ for (const { locale, path, tier } of PAGES)
         );
     });
 
-    test('footer: copyright line, update note, automatic date and version', async ({ page }) => {
+    test('footer: copyright line, update note, automatic date and version', async ({
+      page,
+      isMobile,
+    }) => {
       await open(page, path);
       const footer = page.locator('footer');
       const foot = site.footer as Rec;
       const holder = escapeRe(String(foot.copyright_holder));
       const rights = escapeRe(copy.footer.rights);
+      await expect(footer.locator('time')).toHaveAttribute('datetime', /^\d{4}-\d{2}-\d{2}$/);
+      if (isMobile) {
+        // X4 (Figma "Footer · two lines"): the tagline, then `© <years> <holder> · <place> ·
+        // updated <date>`; the version, the rights line and the update note are left to the
+        // larger screens (they are still in the page, not shown).
+        const where = escapeRe(String(profile.location));
+        const updated = escapeRe(copy.footer.updated);
+        // What shows (innerText, in the order of the page: the tagline is laid out above the
+        // line it sits in the middle of), not what the page holds.
+        const shown = straight(await footer.innerText());
+        expect(shown).toContain(copy.footer.tagline);
+        expect(shown.replace(copy.footer.tagline, '')).toMatch(
+          new RegExp(
+            `© ${foot.copyright_start}(–\\d{4})? ${holder} · ${where}\\s*· ${updated} \\d{4}-\\d{2}-\\d{2}`,
+          ),
+        );
+        expect(shown).not.toMatch(new RegExp(rights));
+        await expect(footer.locator('.foot__ver')).toBeHidden();
+        await expect(footer.locator('.foot__rights')).toBeHidden();
+        await expect(footer.locator('.foot__ver')).toHaveText(/v\d+\.\d+\.\d+\+\d{8}\.\w+/);
+        return;
+      }
       await expect(footer).toContainText(
         new RegExp(`© ${foot.copyright_start}(–\\d{4})? ${holder}\\. ${rights}`),
       );
       if (foot.update_note) await expect(footer).toContainText(String(foot.update_note));
-      await expect(footer.locator('time')).toHaveAttribute('datetime', /^\d{4}-\d{2}-\d{2}$/);
       await expect(footer).toContainText(/v\d+\.\d+\.\d+\+\d{8}\.\w+/);
     });
 
@@ -299,6 +335,8 @@ for (const { locale, path, tier } of PAGES)
     test('hero links to the résumé', async ({ page }) => {
       await open(page, path);
       // One résumé for every language (PLAN-EXPERIENCE §5.3: English only unless the owner adds one).
-      await expect(page.locator(`.hero a[href="${V2}resume.pdf"]`)).toHaveCount(1);
+      // X4: the phone's first screen has its own pair of buttons (RÉSUMÉ, SAY HI), the larger
+      // screens theirs; one of them shows at a time, so one link to it is on screen.
+      await expect(page.locator(`.hero a[href="${V2}resume.pdf"]:visible`)).toHaveCount(1);
     });
   });

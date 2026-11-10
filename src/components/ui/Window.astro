@@ -215,5 +215,9 @@ const dataAttrs = Object.fromEntries(Object.entries(data).map(([k, v]) => [`data
       min-width: 44px;
       min-height: 44px;
     }
+    /* Docked across the whole width, a window has nowhere to move on a phone (Figma: no key). */
+    .win__move {
+      display: none;
+    }
   }
 </style>

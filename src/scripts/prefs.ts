@@ -167,6 +167,9 @@ export function initPrefs(): void {
   });
 
   document.addEventListener('keydown', (e) => {
+    // A keyboard is in use (a touch screen's settings then list the shortcuts too, so they can be
+    // turned off: WCAG 2.1.4; PrefsWindow.astro).
+    html.setAttribute('data-keyboard', '');
     if (!prefs.keys || e.defaultPrevented || e.repeat) return;
     if (e.ctrlKey || e.metaKey || e.altKey || inField(e.target)) return;
     if (document.querySelector('dialog[open]')) return;

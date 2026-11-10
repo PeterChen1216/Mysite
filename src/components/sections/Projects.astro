@@ -4,7 +4,17 @@
  * build (ProjectFeatured — Card/Featured 22:1020 + PhoneMockup 22:1158), every other project
  * (ProjectCard — Card/ThisSite 22:1203) and the "next chunk" teaser (Card/Next 22:1275).
  * Facts come from content/projects/*.md through PageData; interface text from copy.yaml.
+ *
+ * Phones (X4; §8.3, Figma "Other builds · snap carousel" 64:13908): the featured card first (its
+ * phone centred, with 44 px city keys under it), then the other cards as a carousel — native
+ * scroll-snap, 300 px cards with the next one peeking, previous / next keys, position dots and
+ * `list all ▸` (the directory). Never moves by itself; every card stays in the Tab order (focus
+ * scrolls it into view) and tells screen readers its place ("2 of 3"). It needs JavaScript (its
+ * keys and dots); without it the cards stack as on a tablet.
  */
+import Glyphs from '../ui/Glyphs.astro';
+import PixelIcon from '../ui/PixelIcon.astro';
+import { fillTemplate, glyphParts } from '../../lib/derive';
 import Card from '../ui/Card.astro';
 import CardTitle from '../ui/CardTitle.astro';
 import Chip from '../ui/Chip.astro';
@@ -26,6 +36,15 @@ const others = data.projects.filter((p) => p.id !== featured.id);
 // any other odd count closes with the teaser as a full-width strip.
 const cards = others.length + 1;
 const layout = cards === 3 ? 'stack' : cards % 2 === 1 ? 'strip' : 'pairs';
+/** "2 of 3": a card's place in the phone's carousel (read out only there). */
+const position = (n: number) =>
+  fillTemplate(
+    copy.position,
+    { n: String(n), count: String(cards) },
+    [],
+    'copy.yaml projects.position',
+  );
+const w = data.copy.windows;
 ---
 
 <section id="projects" class="projects" aria-labelledby="projects-title">
@@ -50,16 +69,25 @@ const layout = cards === 3 ? 'stack' : cards % 2 === 1 ? 'strip' : 'pairs';
     labels={data.copy.labels}
     href={data.paths.project(featured.id)}
   />
-  <div class="projects__grid" data-layout={layout}>
-    {others.map((p) => (
+  <div
+    class="projects__grid"
+    id="projects-carousel"
+    data-layout={layout}
+    data-carousel
+    data-carousel-label={w.neighbours_label}
+    data-snap-row
+  >
+    {others.map((p, i) => (
       <ProjectCard
         project={p}
         copy={copy}
         labels={data.copy.labels}
         href={data.paths.project(p.id)}
+        position={position(i + 1)}
       />
     ))}
     <Card as="article" dashed class="pc pc--next" labelledby="projects-next-title">
+      <p class="pc__pos">{position(cards)}</p>
       <span class="next__block" aria-hidden="true">
         <VoxelBlock name="tnt" size={69} />
       </span>
@@ -86,6 +114,34 @@ const layout = cards === 3 ? 'stack' : cards % 2 === 1 ? 'strip' : 'pairs';
         </p>
       </div>
     </Card>
+  </div>
+  <div class="carousel" data-carousel-keys="projects-carousel">
+    <button
+      type="button"
+      class="carousel__key"
+      data-carousel-step="-1"
+      aria-controls="projects-carousel"
+    >
+      <PixelIcon name="tri-left" size={14} />
+      <span class="visually-hidden">{glyphParts(w.prev).text}</span>
+    </button>
+    <span class="carousel__dots" aria-hidden="true">
+      {Array.from({ length: cards }, (_, i) => (
+        <i data-on={i === 0 ? '' : undefined} />
+      ))}
+    </span>
+    <button
+      type="button"
+      class="carousel__key"
+      data-carousel-step="1"
+      aria-controls="projects-carousel"
+    >
+      <PixelIcon name="tri-right" size={14} />
+      <span class="visually-hidden">{glyphParts(w.next).text}</span>
+    </button>
+    <a class="carousel__all" href={data.paths.projects} data-window-open="directory-window">
+      <Glyphs text={copy.list_all} />
+    </a>
   </div>
 </section>
 
@@ -224,6 +280,109 @@ const layout = cards === 3 ? 'stack' : cards % 2 === 1 ? 'strip' : 'pairs';
     .next__block :global(.voxel) {
       width: 56px;
       height: auto;
+    }
+  }
+
+  /* The carousel's parts: phones with JavaScript only. A card's place is read out there only. */
+  .carousel,
+  .projects :global(.pc__pos) {
+    display: none;
+  }
+  @media (max-width: 767px) {
+    .projects :global(.pc__pos) {
+      position: absolute;
+      width: 1px;
+      height: 1px;
+      overflow: hidden;
+      clip-path: inset(50%);
+      white-space: nowrap;
+      display: block;
+    }
+    :global(html.js) .projects :global(.sh__more) {
+      display: none;
+    }
+    :global(html.js) .projects__grid {
+      display: flex;
+      align-items: stretch;
+      gap: 12px;
+      /* Room for the cards' shadows and the blocks over their top edge. */
+      margin-block: -24px -8px;
+      padding-block: 24px 8px;
+    }
+    :global(html.js) .projects__grid > :global(.pc) {
+      flex: 0 0 min(300px, calc(100% - 58px));
+    }
+    :global(html.js) .carousel {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-top: -16px;
+    }
+    .carousel__key {
+      display: grid;
+      place-items: center;
+      width: 44px;
+      height: 44px;
+      padding: 0;
+      border: 2px solid var(--color-border-edge);
+      background: var(--color-bg-panel);
+      color: var(--color-text-hi);
+      cursor: pointer;
+      touch-action: manipulation;
+    }
+    /* At an end: dimmed and dashed (not by colour alone). */
+    .carousel__key[aria-disabled='true'] {
+      border-style: dashed;
+      color: var(--color-text-lo);
+      cursor: default;
+    }
+    .carousel__key:focus-visible {
+      border-color: var(--color-accent-gold);
+    }
+    .carousel__dots {
+      display: flex;
+      gap: 6px;
+    }
+    .carousel__dots i {
+      width: 10px;
+      height: 10px;
+      background: var(--color-border-line);
+    }
+    /* The card shown: a bigger square in the accent (size and colour both change). */
+    .carousel__dots i[data-on] {
+      width: 14px;
+      height: 14px;
+      margin-block: -2px;
+      background: var(--color-accent-terminal-green);
+    }
+    .carousel__all {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      min-height: 44px;
+      margin-left: auto;
+      padding: 0 14px;
+      border: 2px solid var(--color-accent-terminal-green);
+      font: var(--type-code-label);
+      letter-spacing: var(--type-code-label-tracking);
+      text-transform: var(--type-label-case);
+      color: var(--color-accent-terminal-green);
+      text-decoration: none;
+      white-space: nowrap;
+      touch-action: manipulation;
+    }
+    .carousel__all:focus-visible {
+      background: var(--color-nav-active-bg);
+    }
+    @media (hover: hover) {
+      .carousel__all:hover {
+        background: var(--color-nav-active-bg);
+      }
+    }
+    @media (forced-colors: active) {
+      .carousel__dots i[data-on] {
+        background: Highlight;
+      }
     }
   }
 </style>

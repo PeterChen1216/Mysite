@@ -12,8 +12,10 @@
  * draws nothing. Decorative: aria-hidden, no pointer events, not focusable.
  */
 import { layerOffset, moteAt, motes, starAt, starLayers, type Layer } from '../lib/ambient';
+import { captureViewport, type ViewSize } from '../lib/lite';
 import { AMBIENT } from '../motion/params';
 import { MOTION_EVENT, PREFS_EVENT, loopsAllowed } from './prefs';
+import { LITE_EVENT } from './tier';
 
 export interface AmbientStatus {
   frames: number;
@@ -75,16 +77,34 @@ export function startAmbient(): Ambient {
     status.sky = skyLevel > 0;
     html.toggleAttribute('data-ambient', status.sky);
   };
-  const resize = () => {
-    w = Math.max(1, document.documentElement.clientWidth);
-    h = Math.max(1, innerHeight);
-    dpr = Math.min(AMBIENT.maxDpr, devicePixelRatio || 1);
+  // §8.6: the canvas is as tall as the tallest view (100lvh), its size captured once per width — an
+  // address bar sliding away (or an in-app browser hiding its bars) neither resizes nor clears it.
+  const probe = document.createElement('div');
+  probe.style.cssText = 'position:fixed;top:0;height:100lvh;width:0;visibility:hidden';
+  let view: ViewSize | null = null;
+  const lite = () => html.hasAttribute('data-lite');
+  const resize = (force = false) => {
+    document.body.append(probe);
+    const tall = probe.offsetHeight || innerHeight;
+    probe.remove();
+    const next = captureViewport(force ? null : view, {
+      width: Math.max(1, document.documentElement.clientWidth),
+      height: Math.max(1, tall, innerHeight),
+    });
+    // §8.5: at most 2× pixel ratio; 1× in lite mode.
+    const ratio = Math.min(lite() ? 1 : AMBIENT.maxDpr, devicePixelRatio || 1);
+    if (next === view && ratio === dpr) return;
+    view = next;
+    w = next.width;
+    h = next.height;
+    dpr = ratio;
     canvas.width = Math.round(w * dpr);
     canvas.height = Math.round(h * dpr);
     layers = starLayers(w, h, AMBIENT.factors, AMBIENT.density, AMBIENT.sizes, STAR_TOKENS.length);
   };
 
-  const moving = () => visible && heroInView && status.sky && loopsAllowed();
+  // Lite mode keeps the still stars and drops the motes (the layer's only loop).
+  const moving = () => visible && heroInView && status.sky && loopsAllowed() && !lite();
 
   function frame(now: number) {
     raf = 0;
@@ -109,10 +129,10 @@ export function startAmbient(): Ambient {
           ctx.fillRect(p.x, p.y, layer.size, layer.size);
         }
       });
-      // Motes rise over the first screen only, and fade as it scrolls away.
+      // Motes rise over the first screen only, and fade as it scrolls away (none in lite mode).
       const away = Math.min(1, scroll / h);
       let drawn = 0;
-      if (away < 1)
+      if (away < 1 && !lite())
         for (const m of drift) {
           const p = moteAt(m, clock, w, h, h * 0.7, AMBIENT.moteRisePxPerS);
           const y = p.y - scroll;
@@ -144,6 +164,14 @@ export function startAmbient(): Ambient {
     'resize',
     () => {
       resize();
+      request();
+    },
+    on,
+  );
+  document.addEventListener(
+    LITE_EVENT,
+    () => {
+      resize(true);
       request();
     },
     on,

@@ -105,7 +105,13 @@ export function initClocks(root: ParentNode = document): () => void {
 /**
  * The phone's city keys: the static tags become buttons in a named group, and the phone stops
  * being hidden from assistive technology (its pictures still are).
+ *
+ * On phones (X4) a row of 44 px keys under the phone (ProjectFeatured.astro `[data-city-keys]`) is
+ * the way to pick a city from the keyboard or a screen reader: the hands' 24 px tags still answer
+ * a tap, but they leave the Tab order and the accessibility tree there (one set of keys, not two).
  */
+const phoneLayout = matchMedia('(max-width: 767px)');
+
 function initPicker(phone: HTMLElement, update: () => void) {
   const dial = phone.querySelector<HTMLElement>('.dial');
   const tags = [...phone.querySelectorAll<HTMLElement>('.hand__tag[data-city-tz]')];
@@ -152,4 +158,33 @@ function initPicker(phone: HTMLElement, update: () => void) {
       if (e.pointerType === 'mouse') pick(key);
     });
   }
+
+  // The phone's row of city keys (outside the phone, in its card), kept in step with the hands.
+  const row = phone.parentElement?.querySelector<HTMLElement>('[data-city-keys]');
+  if (!row) return;
+  const rowKeys = [...row.querySelectorAll<HTMLButtonElement>('[data-city-key]')];
+  const sync = () => {
+    const zone = keys.find((k) => k.getAttribute('aria-pressed') === 'true')?.dataset.cityTz;
+    for (const k of rowKeys) k.setAttribute('aria-pressed', String(k.dataset.cityKey === zone));
+  };
+  // As the hands' keys do: a tap, a click or the keyboard's focus picks the city.
+  const pickRow = (k: HTMLButtonElement) => {
+    const hand = keys.find((h) => h.dataset.cityTz === k.dataset.cityKey);
+    if (hand) pick(hand);
+    sync();
+  };
+  for (const k of rowKeys) {
+    k.addEventListener('click', () => pickRow(k));
+    k.addEventListener('focus', () => pickRow(k));
+  }
+  for (const key of keys) key.addEventListener('click', sync);
+  const layout = () => {
+    const narrow = phoneLayout.matches;
+    if (narrow) dial.setAttribute('aria-hidden', 'true');
+    else dial.removeAttribute('aria-hidden');
+    for (const key of keys) key.tabIndex = narrow ? -1 : 0;
+  };
+  phoneLayout.addEventListener('change', layout);
+  layout();
+  sync();
 }
