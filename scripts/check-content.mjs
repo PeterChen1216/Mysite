@@ -121,6 +121,21 @@ export function findTranslationProblems(root) {
     if (extra.length > 0)
       problems.push(`content/${file}: keys copy.yaml lacks: ${extra.join(', ')}`);
   }
+  // Each language names itself (the language switch lists every name): two the same means one
+  // copy file calls itself by another language's name (a converted "简体中文" in Traditional).
+  /** @type {Map<string, string>} */
+  const names = new Map();
+  for (const file of ['copy.yaml', ...TRANSLATED_LOCALES.map((l) => `copy.${l}.yaml`)]) {
+    if (!existsSync(join(root, file))) continue;
+    const name = read(file)?.i18n?.name;
+    if (typeof name !== 'string') continue;
+    const other = names.get(name);
+    if (other)
+      problems.push(
+        `content/${file}: i18n.name "${name}" is also ${other}'s — each language names itself`,
+      );
+    else names.set(name, file);
+  }
   for (const twin of orphanTwins(root))
     problems.push(`content/${twin}: a translation of a file that does not exist`);
   for (const rel of textFiles(root)) {

@@ -11,7 +11,7 @@ nav:
     - { label: '~/經歷', href: '#experience' }
     - { label: '~/聯繫', href: '#contact' }
   status: 在線 · {city}
-  resume: 簡歷
+  resume: 簡歷（英文）
   say_hi: 打個招呼
   logo_label: '{domain}——回到頂部'
   sections_label: 欄目
@@ -29,7 +29,7 @@ hero:
   summon_ok: '已召喚 PixelGlobe。區塊已加載：36/36。{status}。'
   whoami_line: '{name} — {programme} @ {school}，{year} 屆。'
   cta_projects: 查看項目
-  cta_resume: 下載簡歷
+  cta_resume: 下載英文簡歷
   eyebrow_prefix: '// 玩家:'
   globe_label: 地球
   globe_value: '已轉動 {deg}°'
@@ -110,7 +110,7 @@ contact:
   say_hi: 打個招呼 · 郵件
   github: GITHUB
   linkedin: LINKEDIN
-  resume: 簡歷 PDF
+  resume: 英文簡歷 PDF
   terminal_title: '~/contact — zsh'
   ping:
     request: 'PING {host} ({email}): 56 data bytes'
@@ -191,17 +191,17 @@ labels:
   skip_link: 跳到正文
 
 i18n:
-  name: 簡體中文
+  name: 繁體中文
   preview_notice: 草稿譯文，尚未經過審閲。
   preview_link: 閲讀英文版
-  suggest: 本頁也有簡體中文版。
-  suggest_go: 閲讀簡體中文版
+  suggest: 本頁也有繁體中文版。
+  suggest_go: 閲讀繁體中文版
   suggest_dismiss: 不用了
   suggest_label: 語言建議
 from:
   nav.links: 4ee8cf8e
   nav.status: 18310fc0
-  nav.resume: 4c0e7ba5
+  nav.resume: 0fc8ee9a
   nav.say_hi: 0a32a6d9
   nav.logo_label: 308a2cf3
   nav.sections_label: 02d2cd88
@@ -214,7 +214,7 @@ from:
   hero.summon_ok: 2f45ac51
   hero.whoami_line: d8946e25
   hero.cta_projects: 2b77959e
-  hero.cta_resume: e9b86e95
+  hero.cta_resume: da10920d
   hero.eyebrow_prefix: "82554664"
   hero.globe_label: bd7a9abe
   hero.globe_value: 691ff75a
@@ -283,7 +283,7 @@ from:
   contact.say_hi: 601c76b1
   contact.github: a9e2e3a8
   contact.linkedin: "32262e00"
-  contact.resume: f2341bae
+  contact.resume: 892dc822
   contact.terminal_title: 3520c851
   contact.ping.request: eebe9de1
   contact.ping.reply: eae1031a

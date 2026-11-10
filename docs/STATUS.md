@@ -1,13 +1,103 @@
 # STATUS（会话交接 · PLAN §15.6）
 
 ## X2 进度（每次推送后更新；新会话从这里接着做）
-- ✅ 三种语言的页面、内容模型、草稿与预览状态、简体草稿、`pnpm content:hant`（繁体草稿）、`pnpm content:stale`、设置里的语言行、首次访问建议、预览提示（`0450191`）
-- ✅ CJK 像素字体：Fusion Pixel 12px（简体 `zh_hans` / 繁体 `zh_hant`，Fontsource 包，OFL）构建时按页面子集化（简 21 KB、繁 23 KB）并改名，只在本语言页面声明；每种语言的字体 token（12 px 倍数、无字距、无大写、更松的行距）（本提交）
-- ✅ E2E 语言矩阵：内容、布局（10 个宽度、文字间距、130 %）、axe 与无 JS 各跑三种语言（Night）；新 `i18n.spec.ts`：路由与 `/zh/` 404、canonical / robots / hreflang / og:locale、预览提示、语言行、首次访问建议、跨字形检查、回退 `lang="en"`、每种语言只加载自己的 CJK 字体、每种语言的 CLS（本提交）
-- ✅ Lighthouse 跑三种语言（上线配置，5 次中位数）：英 1.00 / 简 0.99 / 繁 0.99，LCP 0.91 s，CLS 0；预览语言因 `noindex` 不判 SEO。修了两处：首次访问建议改为空闲时显示；预览提示放进 `.page` 里（之前它把背景网格往下推，网格不再铺满首屏，Chrome 就把它当成 LCP，模拟 LCP 2.2–2.4 s）；系统 CJK 正文字体改为页面内声明的别名（`local()` + 只限 CJK 码位）：直接写进字体栈会把 → ★ 这类符号也交给 CJK 字体画成全角（没有 Arial / Courier New 的 Linux、Android 上 git log 的箭头溢出），而一个都没装时浏览器逐字搜系统字体、排版慢一倍（本提交）
-- ⏳ 下一步：英文像素对比（工作树对照 `9cd2ecf`）、ADR-017、`content/README.md` 翻译一节、本节总结
+- ✅ 三种语言的页面、内容模型、草稿与预览状态、简体草稿、`pnpm content:hant`、`pnpm content:stale`、语言行、首次访问建议、预览提示（`0450191`）
+- ✅ CJK 像素字体（Fusion Pixel 子集化 + 改名）与中文字体 token（`1b2e533`）
+- ✅ E2E 语言矩阵与 `i18n.spec.ts`（`53ea516`）
+- ✅ Lighthouse 三种语言；中文页面的 LCP / 排版修正（`b46cc93`）
+- ✅ 本总结、ADR-017、`content/README.md`「翻译」、简历按钮标「英文」、繁体版自称修正（本提交）
+- 下一步：业主审 X2（下面「请你审阅」「请你决定」），然后 M2
 
-> 更新：2026-11-10（全项目审计 + Clock Stamp 手机重做 + 体验扩展计划 + **X1 基础完成**）· 分支 `claude/happy-einstein-dkkcxx`（未合并，等业主审）
+## 🌐 X2 Languages 交付说明（PLAN-EXPERIENCE §5，§9 的 X2 行；PLAN §13 ADR-017）
+
+### 已交付
+| 部分 | 内容 |
+|---|---|
+| 路由 §5.2 | `/`（英文）、`/zh-hans/`（`lang="zh-Hans"`）、`/zh-hant/`（`lang="zh-Hant-HK"`），全部静态生成，预览期都在 `/v2/` 下；Astro i18n、`prefixDefaultLocale: false`；没有 `/zh/`（404）。每页有自己的 canonical、`og:locale`（en_US / zh_CN / zh_HK）；hreflang = 所有 live 语言 + `x-default`（只有一种 live 语言时不输出） |
+| 草稿怎样不上线（计划没定，ADR-017 ②） | `content/site.yaml → locales`：英文 `live`，两种中文 `preview`。preview 照常发布到它的网址供你阅读，但 `noindex`、不进 hreflang、不出现在 live 页面的语言切换里，每页顶上有翻译过的「草稿译文，尚未经过审阅」。任何译文字段或文件都可以 `draft: true`；**live 语言里有任何 draft，`pnpm content:check` 和构建都会失败**（两边都实测过：把 zh-hans 改成 live 后，内容检查逐条列出草稿，构建报「48 处草稿」并停止） |
+| 内容模型 §5.3 | `copy.zh-hans.yaml` / `copy.zh-hant.yaml`：与 `copy.yaml` 同样的键（少一个、多一个都构建失败）；有语言的事实在英文字段旁加 `zh-hans:` / `zh-hant:` 块；`about.zh-hans.md` 与 `projects/<id>.zh-hans.md` 这类翻译文件；没有语言的事实只有一份。每个译文字段记 `from`（来源文字的哈希）。Zod 对象全部保持 strict |
+| 回退 | 没译的事实显示英文并标 `lang="en"`（读屏用英文读）；没有翻译文件的 Markdown 整块标 `lang="en"` |
+| 简体草稿 | Claude 按你的英文逐句翻译：界面文字全部、about、Clock Stamp 与 X Community Notes 两个项目、职位 / 要点 / 地点、教育、荣誉、兴趣、技能组名与「语言」「工具」两组、网站描述与页脚说明。书面语；公司、学校、实验室、产品名保持英文；**没加任何事实**。Classmate Map 没译（英文句子本身待你重写）。全部 `draft: true` |
+| 繁体（香港）§5.4 | `pnpm content:hant`：OpenCC `s2hk`（opencc-js，只是 dev 依赖，不进浏览器）把每个「简体有、繁体没有」的字段转成香港字形，写成 `draft: true` 并记来源哈希；**从不覆盖已有的繁体字段**；只在 YAML 能逐字节往返时才写，不重排你的格式；列出一对多要人看的字。已运行、结果已提交。代表语言自身的 `i18n.name / suggest / suggest_go` 不转换（转换后繁体版自称「簡體中文」——已手改为「繁體中文」，内容检查现在会拦下两种语言同名） |
+| 过期报告 §5.4 | `pnpm content:stale`：英文改了，两种中文都列出（繁体写「经由简体」）；简体改了，繁体列出；CI 里每次推送都跑，从不失败；`--accept <locale>` 记录当前来源 |
+| 字体 §5.5 | 像素 CJK：**Fusion Pixel 12px proportional**（SIL OFL 1.1，从 npm 的 Fontsource 包取得，版本 2024.05.12）——简体用 `zh_hans` 切分，繁体用 `zh_hant`（**这个版本没有香港切分**）。构建后按各语言页面上真正出现的字子集化：简体 472 字 21.6 KB，繁体 477 字 23.2 KB（预算各 160 KB）；因 OFL 保留字体名，子集改名为 zhic Pixel SC / TC；只在本语言页面声明、只覆盖 CJK 码位，**英文页面不加载**。许可证：`src/assets/fonts/fusion-pixel/`（LICENSE.txt 原样 + README 说明改动），构建时也放在字体旁边。正文用系统 CJK 无衬线（PingFang SC / HK、Noto Sans SC / CJK、微软雅黑 / 正黑、文泉驿），以页面内只覆盖 CJK 的 `local()` 别名声明 |
+| 中文字体 token | `:root:lang(zh)`：像素字号取 12 px 倍数（84 / 48 / 24 / 12），8 与 10 px 的标签升到 12 px；无字距、无大写、行距更松；标题在各宽度保持一行的中文字号 |
+| 设置窗口 | 语言一行（在动效与字号之间，按 §2.1 的顺序）：普通链接，各用自己的语言与 `lang`，不需要脚本；live 页面只列 live 语言，preview 页面列全部（预览语言后标「草稿」）；点了会停在同一区块并记住选择 |
+| 首次访问建议 §5.2 | 底部一行横幅（固定定位，不移动版面），用被建议语言自己的文字；按计划的映射（并把 `en*` 映射到英文）；只建议 live 语言；从不跳转；关闭或选择都会记住 |
+| 原写在代码里的界面词 | 月份、平台名、列表分隔符、whoami 句式、/summon 回答移入 copy；英文输出不变 |
+| 预算与 CI | 每种语言的首屏 JS、两个 CJK 字体各 ≤ 160 KB 进入 `pnpm size`；Lighthouse 跑三种语言；CI 加「翻译过期报告」 |
+
+### 验证（2026-11-10，本容器）
+- `pnpm verify` 全绿：单测 258 通过 / 1 跳过（14 个文件）；E2E 361 通过 / 93 跳过（Chromium 桌面 + Pixel 7；内容、布局（10 个宽度、文字间距、130 %）、axe 与无 JS 三种语言都在 Night 下跑，主题与动效级别仍只跑英文，按 §9.1 修剪）。**WebKit 只在 CI 跑，本地没有跑过新的语言测试**
+- 体积：CSS 17.1 KB gz（预算 45）；首屏 JS 三种语言各 6.3 KB gz（内联 940 B + 主脚本 5546 B；预算 180）；CJK 字体 简 21.6 KB、繁 23.2 KB（各 160），英文页面 0
+- Lighthouse（上线配置 `SITE_STAGE=launched`，每页 5 次中位数）：英文 性能 1.00 / 无障碍 1.00 / 最佳实践 1.00 / SEO 1.00；简体 0.99 / 1.00 / 1.00 / 0.66；繁体 0.99 / 1.00 / 1.00 / 0.66（SEO 0.66 是 preview 的 `noindex`，故意的，对 preview 语言不判 SEO）；LCP 三页都是 0.91 s，CLS 都是 0，TBT 78 / 114 / 112 ms。第一次测时简体只有 0.93（LCP 2.2 s）——原因与修正见 `b46cc93`
+- **英文像素对比**（`/v2/`，1440 / 1024 / 390，`reducedMotion: 'reduce'`，时钟固定 2026-10-24T16:45Z，等 `document.fonts.ready`；对照是工作树里重新构建的 `9cd2ecf`）：三种宽度页面高度不变；遮住页脚版本号那一行后**差异 0 像素**；不遮时只有版本号末尾的内容提交哈希不同（399 / 402 / 402 像素，在 54 × 11 px 的方框里）。设置窗口（截图里是关着的）多了语言一行
+- 中文页面：两种中文页面上没有对方字形的字（按每个元素自己的 `lang` 检查，OpenCC 字表）；每个英文回退都在 `lang="en"` 里；CLS ≤ 0.05（字体晚到 1 秒也是）
+
+### 没做 / 只做了一部分（原因）
+1. **三种语言都 live 时的 hreflang 只在单元测试里验证**：现在只有英文 live，页面按规则不输出 hreflang；E2E 验证的是「页面输出 = 规则函数的结果」以及 preview 永不出现在 hreflang 里。等某种中文 live 时，同一组测试自动覆盖真实输出
+2. **繁体没有人审**：那是你的事（见下）。我只修了一处语义错误（繁体版自称「簡體中文」）；转换器选错的字照原样留着，列在下面
+3. **没有香港切分的像素字**：Fusion Pixel 2024.05.12 只有 `zh_hant`。它的字形接近台湾标准，个别字与香港写法不同；正文的系统字体按香港优先
+4. Classmate Map 没翻译（见上）；`aviation.yaml` 现在没有内容，结构支持翻译但没有可译的东西
+5. **没有 JavaScript 时找不到语言切换**：设置窗口要 JS 才能打开（X1 如此）。现在只有英文 live，影响为零；见「请你决定」6
+6. `astro dev` 用的是完整字体（不子集化）；只有构建产物子集化
+7. 系统 CJK 字体的 `local()` 名称只在 Linux（文泉驿）上实测过；macOS / Windows / Android 的名称按字体的官方名写，没有设备实测（不匹配时浏览器按 `lang` 自己选中文字体，不会坏）
+8. `docs/CONTENT-GUIDE.md`（M4）还不存在；翻译说明先写进 `content/README.md`「翻译」一节
+9. A11Y-CHECK 新增第 9 步「语言」，只在无头 Chromium 里看过截图（12 px 中文清楚），没有真读屏、真手机
+
+### 与计划的偏离
+- 预览状态（`live` / `preview`）是计划没有的机制（ADR-017 ②，按指示加的）
+- hreflang 只在至少两种语言 live 时输出（一种语言没有可替代的页面）
+- 字体子集改名为 zhic Pixel SC / TC（OFL 保留了 "Fusion Pixel" 这个名字）
+- 系统 CJK 字体不直接写进字体栈，而是页面内只覆盖 CJK 的 `local()` 别名：直接写会让 CJK 字体把 → ★ · 画成全角（没有 Arial / Courier New 的 Linux、Android 上 git log 的箭头溢出——布局测试抓到的），而且一个都没装时浏览器逐字搜索系统字体，排版慢一倍
+- 中文页面 8 / 10 px 的标签升到 12 px：8 px 的中文读不了，像素字最小 12 px；同一标签里的拉丁字也一起变大
+- 首次访问建议也会建议英文（计划的映射只列了中文）；它在浏览器空闲时才出现（立刻出现时 Lighthouse 量到 LCP 晚 0.5 s）
+- 预览提示放在 `.page` 里面而不是上面（放在上面会把背景网格推下去，Chrome 就把网格当成 LCP，模拟 LCP 2.2 s）
+- 每种语言自己的名字放进各自 copy 文件的 `i18n.name`（X1 写在 `src/i18n/locales.ts`）
+- 中文页面上，终端命令、ping 输出、Clock Stamp 手机画面保持英文（代码与 App 本身的样子）
+- 中文页面的简历按钮写明「英文」（§5.3：只有英文 PDF）
+- Lighthouse 的 CLS 门槛从 0.1 收紧到 0.05（§1.3 的预算）
+
+### 改过的测试
+- `prefs.spec.ts` 键盘测试：Tab 从动效组经过语言链接再到字号组（新的一行，按 §2.1 的顺序）
+- `content.spec.ts`：列项目时排除翻译文件；全部改为三种语言各跑一遍，期望值按该语言计算（`tests/e2e/locale.ts`）；平台词与列表分隔符从 copy 取
+- `robustness.spec.ts`「字号 130 %」：100 % 的基准改在新的浏览器上下文里测。原来在同一页去掉 `--text-scale` 再量，会与偏好脚本竞争；测试数量变成三倍后约 1/30 失败（en 390、zh-hans 768、en 1024 各一次）。断言没变
+- `quality.spec.ts`、`a11y.spec.ts` 的语言测试：改为三种语言各跑
+- 单元测试：`format` / `derive` / `projects-view` 的函数现在从 copy 接收月份、平台词、whoami 句式（不再有内置英文）
+- 新增：`tests/unit/i18n.test.ts`、`i18n-scripts.test.ts`、`cjk-font.test.ts`，`tests/e2e/i18n.spec.ts`。没有放宽或跳过任何已有断言
+
+### 需要回写 Figma（我没有改 Figma）
+1. 中文页面：简体与繁体各一组 1440 / 390 画框；中文字号表（像素 84 / 48 / 24 / 12、行距 1.15–1.35）
+2. 设置窗口的语言一行（当前语言的选中态、预览语言后的「草稿」）
+3. 预览提示条（深色底、金色下边框、「!」方块）
+4. 首次访问建议横幅（底部固定、钻石色边框）
+5. 中文页面的简历按钮文字变长（「简历（英文）」）
+
+### 请你审阅（这些都是草稿）
+**在哪里读**：合并到 main 后是 https://zhic.me/v2/zh-hans/ 与 https://zhic.me/v2/zh-hant/（搜索引擎不收录）；或在本地 `pnpm build && pnpm assemble && pnpm serve:site` 后打开 `/v2/zh-hans/`。
+
+**简体（Claude 从你的英文翻译）**：`content/copy.zh-hans.yaml`（全部界面文字）、`content/about.zh-hans.md`、`content/projects/clock-stamp.zh-hans.md`、`content/projects/x-community-notes.zh-hans.md`，以及 `site.yaml`、`profile.yaml`、`education.yaml`、`experience.yaml`、`honors.yaml`、`interests.yaml`、`skills.yaml` 里的 `zh-hans:` 块。
+**繁体（脚本从简体转换，只转字形）**：同名的 `copy.zh-hant.yaml`、`*.zh-hant.md` 与各文件里的 `zh-hant:` 块。脚本标出的一对多字里，我看到确定要改的一处：`experience.yaml` Merit 第一条「**併**為撰寫技術交底書」应为「**並**為」。其余标出的（發佈、標誌、製圖、每兩週、恢復、稜鏡、時鐘、標籤…）看来没错，但请过目。香港用词建议：設置→**設定**、默認→**預設**、鏈接→**連結**、聯繫→**聯絡**、加載→**載入**、源代碼→**原始碼**、反饋→**回饋**、信息學→**資訊學**？
+
+**上线一种语言的确切步骤**（以简体为例）：
+1. 读并修改上面的简体文件（直接在 GitHub 网页上改即可）
+2. 删掉每一个 `draft: true`（`content/copy.zh-hans.yaml` 第 8 行；每个 `zh-hans:` 块里的那一行；三个 `.zh-hans.md` 的 frontmatter 里那一行）。不确定还剩哪些：先把第 3 步做了再跑 `pnpm content:check`，它会逐条列出
+3. `content/site.yaml` 里把 `zh-hans: preview` 改成 `zh-hans: live`
+4. 提交；CI 绿了就上线。之后英文改动时 `pnpm content:stale` 会提醒哪些译文要跟着改；改完运行 `pnpm content:stale --accept zh-hans`（或按报告里给的值改 `from`）
+繁体同理，把 `zh-hans` 换成 `zh-hant`（繁体的 `draft` 在 `copy.zh-hant.yaml` 第 5 行、各 `zh-hant:` 块、`.zh-hant.md`）
+
+### 请你决定（都有默认值，已按默认实现）
+1. Q-L2：学校与公司是否用官方中文名（华盛顿大学 / 華盛頓大學）？默认保持英文
+2. Q-L4：香港版用书面语还是口语粤文？默认书面语
+3. 地名译成中文（「华盛顿州西雅图」「中国杭州」）可以吗？还是保持英文？
+4. Classmate Map：英文句子重写后我再译（或删掉这个项目）
+5. 中文页面上的 Clock Stamp 手机保持 App 的英文界面，可以吗？
+6. 没有 JavaScript 时的语言切换：要不要在页脚加一行语言链接（只在有别的 live 语言时出现；现在不会出现）？
+7. 中文页面的小标签升到 12 px（徽章、chip 里的拉丁字也变大）可以吗？
+8. 滚动条标签在中文页面：XP、PING 保持英文，NOW→当前、WORK→工作，可以吗？
+9. 「Dean's List」：简体「院长名单」；繁体用「院長名單」还是香港常见的「院長嘉許名單」？
+10. 繁体里「信息學」要不要改成香港常用的「資訊學」？
+11. 第一次访问时若浏览器是英文、页面是中文，会建议英文——可以吗？
 
 ## X1 进度（每次推送后更新；新会话从这里接着做）
 - ✅ token 三层 + 颜色 lint（`6add29a`、`132a76f`）
@@ -89,6 +179,7 @@
 | 内容更新：新简历 2026-11-03 | ✅ 已上线（PeterChen1216/Mysite#3，`e6f033c`；业主 R2-4 同意直接合并） |
 | **M1 长页面版（Figma `Home — Voxel / 1440`）** | ✅ **业主 2026-11-09 接受并合并**（PeterChen1216/Mysite#4，squash 合并）；zhic.me/v2/ 更新为 M1；`launched` 仍为 false；Figma 未改 |
 | **X1 基础（设置、主题、动效、无障碍）** | ✅ 完成，在分支 `claude/happy-einstein-dkkcxx` 上等业主审（见上） |
+| **X2 语言（英文 + 简体 + 繁体〔香港〕）** | ✅ 完成，同一分支；两种中文是 preview（草稿，待你审） |
 | M2 体素场景 / M3 窗口 | 未开始 |
 
 线上：zhic.me/（旧站，不变）· zhic.me/v2/（M1 长页面版）· zhic.me/legacy/。

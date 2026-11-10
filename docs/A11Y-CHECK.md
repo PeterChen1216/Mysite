@@ -70,6 +70,17 @@ settings window opens from the gear key and every choice can be made; the pause 
 `Ctrl/⌘-P` from any theme: black on white, no nav, ticker, hero art or phone; links followed by
 their address; nothing contradicts `resume.pdf`.
 
+## 9. Languages (1 min) — X2
+1. Open `/zh-hans/` and `/zh-hant/`. Headings, labels and buttons are in the pixel CJK face (a
+   12 px grid: crisp, not blurred); running text is in the system Chinese sans. At **12 px**
+   (labels, chips, the hero badges) every character is legible — Traditional is denser; zoom to
+   200 % if unsure.
+2. While a language is a preview, the gold "草稿译文 / 草稿譯文" bar is on top of every page.
+3. Press `,`: the language row lists each language in its own script; following one lands on the
+   same section of the other page.
+4. With a screen reader on a Chinese page, an untranslated fact (an English project, a skill
+   name) is read in an English voice.
+
 ---
 
 ### What CI already checks (no need to repeat by hand)
@@ -82,7 +93,7 @@ their address; nothing contradicts `resume.pdf`.
 | Contrast in every theme, more contrast, reduced transparency | `tests/unit/contrast.test.ts` |
 | `axe` per theme, with the settings window open, without JavaScript | `themes.spec.ts`, `prefs.spec.ts`, `quality.spec.ts` |
 | Forced colours: every control has a boundary | `themes.spec.ts` |
-| Language attributes, Chinese runs marked | `a11y.spec.ts` |
+| Language attributes, Chinese runs marked; every locale's content, layout and `axe`; English fallbacks marked `lang="en"`; no character of the other Chinese script | `a11y.spec.ts`, `content.spec.ts`, `robustness.spec.ts`, `quality.spec.ts`, `i18n.spec.ts` |
 | Hover content dismissible / hoverable / persistent (1.4.13) | `a11y.spec.ts` |
 | Globe: keyboard twin of the drag (2.5.7) | `robustness.spec.ts` |
 | Print styles | `a11y.spec.ts` |

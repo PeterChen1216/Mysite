@@ -14,7 +14,7 @@ nav:
     - { label: '~/经历', href: '#experience' }
     - { label: '~/联系', href: '#contact' }
   status: 在线 · {city}
-  resume: 简历
+  resume: 简历（英文）
   say_hi: 打个招呼
   logo_label: '{domain}——回到顶部'
   sections_label: 栏目
@@ -32,7 +32,7 @@ hero:
   summon_ok: '已召唤 PixelGlobe。区块已加载：36/36。{status}。'
   whoami_line: '{name} — {programme} @ {school}，{year} 届。'
   cta_projects: 查看项目
-  cta_resume: 下载简历
+  cta_resume: 下载英文简历
   eyebrow_prefix: '// 玩家:'
   globe_label: 地球
   globe_value: '已转动 {deg}°'
@@ -113,7 +113,7 @@ contact:
   say_hi: 打个招呼 · 邮件
   github: GITHUB
   linkedin: LINKEDIN
-  resume: 简历 PDF
+  resume: 英文简历 PDF
   terminal_title: '~/contact — zsh'
   ping:
     request: 'PING {host} ({email}): 56 data bytes'

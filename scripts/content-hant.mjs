@@ -31,6 +31,13 @@ import { frontmatterDoc, openYaml } from './lib/yaml-doc.mjs';
 /** OpenCC Simplified (mainland) → Traditional (Hong Kong): the `s2hk` configuration. */
 export const toHongKong = OpenCC.Converter({ from: 'cn', to: 'hk' });
 
+/**
+ * Copy keys that name the language itself ("简体中文", "this page is also in Simplified"):
+ * converting them would make the Traditional edition call itself Simplified, so they are never
+ * converted; the script says to write them (the build fails until they exist).
+ */
+export const SELF_KEYS = ['i18n.name', 'i18n.suggest', 'i18n.suggest_go'];
+
 /** The note at the top of a Traditional file this script creates (in Traditional Chinese). */
 const HEADER = [
   ' 由 pnpm content:hant 從簡體版（{source}）逐字轉換為香港繁體字形（OpenCC s2hk），只轉字形、不改用詞。',
@@ -128,16 +135,29 @@ export function fillTraditional(root, { dryRun = false, convert: base = toHongKo
       doc.commentBefore = HEADER.join('\n').replace('{source}', 'copy.zh-hans.yaml');
       doc.delete('from');
       doc.delete('draft');
-      const from = Object.fromEntries([...hansLeaves].map(([k, v]) => [k, sourceHash(v)]));
+      for (const key of SELF_KEYS) doc.deleteIn(key.split('.'));
+      const from = Object.fromEntries(
+        [...hansLeaves].filter(([k]) => !SELF_KEYS.includes(k)).map(([k, v]) => [k, sourceHash(v)]),
+      );
       const map = /** @type {import('yaml').YAMLMap} */ (doc.contents);
       map.items.unshift(doc.createPair('draft', true));
       doc.set('from', from);
       if (!dryRun) writeFileSync(hantCopy, doc.toString({ lineWidth: 0 }));
-      report.push(`content/copy.zh-hant.yaml: created (${hansLeaves.size} keys)`);
+      report.push(
+        `content/copy.zh-hant.yaml: created (${hansLeaves.size - SELF_KEYS.length} keys); write ${SELF_KEYS.join(', ')} yourself — they name the Traditional edition`,
+      );
     } else {
       const yaml = openYaml(hantCopy);
       const data = yaml.doc.toJS();
-      const missing = missingCopy(hansLeaves, copyLeaves(data), convert);
+      const leaves = copyLeaves(data);
+      const missing = missingCopy(hansLeaves, leaves, convert).filter(
+        (m) => !SELF_KEYS.includes(m.path),
+      );
+      const unwritten = SELF_KEYS.filter((k) => hansLeaves.has(k) && !leaves.has(k));
+      if (unwritten.length > 0)
+        report.push(
+          `content/copy.zh-hant.yaml: write ${unwritten.join(', ')} yourself — they name the Traditional edition`,
+        );
       if (missing.length > 0) {
         for (const m of missing) {
           yaml.doc.setIn(m.path.split('.'), m.value);

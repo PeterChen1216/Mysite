@@ -98,8 +98,9 @@ describe('pnpm content:hant', () => {
     const dir = fixture({
       'site.yaml': SITE,
       'experience.yaml': EXPERIENCE,
-      'copy.yaml': 'nav:\n  status: online\n  resume: RESUME\n',
-      'copy.zh-hans.yaml': 'draft: true\nnav:\n  status: online-hans\n  resume: resume-hans\n',
+      'copy.yaml': 'nav:\n  status: online\n  resume: RESUME\ni18n:\n  name: English\n',
+      'copy.zh-hans.yaml':
+        'draft: true\nnav:\n  status: online-hans\n  resume: resume-hans\ni18n:\n  name: jianti\n',
       'about.md': 'I build things.\n',
       'about.zh-hans.md': '---\ndraft: true\n---\n\nabout-hans\n',
       'projects/p.md': '---\ntitle: P\ntagline: A thing\n---\n\n- Did it.\n',
@@ -126,6 +127,9 @@ describe('pnpm content:hant', () => {
     expect(copy.nav).toEqual({ status: 'ONLINE-HANS', resume: 'RESUME-HANS' });
     expect(copy.draft).toBe(true);
     expect(copy.from['nav.status']).toBe(sourceHash('online-hans'));
+    // The language's own name is never converted (it would name the wrong script): left to write.
+    expect(copy.i18n?.name).toBeUndefined();
+    expect(report.join('\n')).toMatch(/write i18n\.name, .* yourself/);
 
     // A missing twin is created; an existing twin's body is the owner's and stays.
     expect(read(dir, 'about.zh-hant.md')).toMatch(/draft: true[\s\S]*---\n\nABOUT-HANS\n$/);
@@ -134,11 +138,13 @@ describe('pnpm content:hant', () => {
     expect(p).toMatch(/tagline: TAG-HANS/);
     expect(p).toMatch(/body: "deadbeef"/);
 
-    // Run again: nothing left to add, nothing changes.
+    // Run again: nothing left to add, nothing changes (it only repeats what to write by hand).
     const before = ['experience.yaml', 'copy.zh-hant.yaml', 'projects/p.zh-hant.md'].map((f) =>
       read(dir, f),
     );
-    expect(fillTraditional(dir, { convert: upper })).toEqual([]);
+    expect(fillTraditional(dir, { convert: upper })).toEqual([
+      'content/copy.zh-hant.yaml: write i18n.name yourself — they name the Traditional edition',
+    ]);
     expect(
       ['experience.yaml', 'copy.zh-hant.yaml', 'projects/p.zh-hant.md'].map((f) => read(dir, f)),
     ).toEqual(before);
@@ -209,6 +215,22 @@ describe('content guard: translations', () => {
     const live = SITE.replace('zh-hans: preview', 'zh-hans: live');
     expect(findTranslationProblems(fixture({ ...base, 'site.yaml': live }))).toEqual([
       'content/experience.yaml: #1 (A) › role (zh-hans) is a draft, but zh-hans is live',
+    ]);
+  });
+  it('each language names itself: a copy file using another one’s name is caught', () => {
+    const files = {
+      ...base,
+      'site.yaml': SITE,
+      'copy.yaml': 'i18n:\n  name: English\n',
+      'copy.zh-hans.yaml': 'i18n:\n  name: 简体中文\n',
+    };
+    expect(findTranslationProblems(fixture(files))).toEqual([]);
+    expect(
+      findTranslationProblems(
+        fixture({ ...files, 'copy.zh-hant.yaml': 'i18n:\n  name: 简体中文\n' }),
+      ),
+    ).toEqual([
+      'content/copy.zh-hant.yaml: i18n.name "简体中文" is also copy.zh-hans.yaml\'s — each language names itself',
     ]);
   });
   it('copy keys must match; a twin needs its English file; the fallback marks are reserved', () => {
