@@ -200,7 +200,7 @@ describe('fallback marks', () => {
     );
   });
   it('a mark without its partner is dropped; a page without marks is returned as is', () => {
-    expect(renderFallbacks(`<p>half</p><p>other</p>`)).toBe('<p>half</p><p>other</p>');
+    expect(renderFallbacks(`<p>\uE000half</p><p>other\uE001</p>`)).toBe('<p>half</p><p>other</p>');
     const english = '<p>Hello <b>world</b></p>';
     expect(renderFallbacks(english)).toBe(english);
     expect(stripFallback(m('x'))).toBe('x');

@@ -27,6 +27,8 @@ export default defineConfig({
         'src/i18n/fallback.ts',
         'src/i18n/routing.ts',
         'src/i18n/han-script.ts',
+        'src/i18n/cjk-font.ts',
+        'src/i18n/font-names.ts',
         'src/lib/theme-tokens.ts',
         'src/lib/cues.ts',
       ],

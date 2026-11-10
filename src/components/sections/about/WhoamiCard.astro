@@ -173,5 +173,9 @@ const TONES = ['diamond', 'enchant', 'cyan', 'gold', 'redstone', 'white'] as con
       max-width: calc(100% - 64px);
       font-size: calc(26px * var(--ts));
     }
+    /* Chinese: 12 px multiples for the pixel CJK face (PLAN-EXPERIENCE §5.5). */
+    :global(:root:lang(zh)) .who__title {
+      font-size: calc(24px * var(--ts));
+    }
   }
 </style>

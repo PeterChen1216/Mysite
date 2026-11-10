@@ -252,4 +252,30 @@ const cursor = { steps: 3, dur: typingMs(3), delay: at };
       font-size: calc(40px * var(--ts));
     }
   }
+  /* Chinese (PLAN-EXPERIENCE §5.5): the pixel CJK face is drawn on a 12 px grid, so the headline
+     steps through 12 px multiples, each sized so the longest line (seven characters and the
+     cursor) stays on one line in its column. */
+  @media (min-width: 1280px) and (max-width: 1359px) {
+    :global(:root:lang(zh)) .hero__h1 {
+      font-size: calc(72px * var(--ts));
+    }
+  }
+  @media (max-width: 1279px) {
+    :global(:root:lang(zh)) .hero__h1 {
+      font-size: calc(60px * var(--ts));
+    }
+  }
+  @media (max-width: 1023px) {
+    :global(:root:lang(zh)) .hero__h1 {
+      font-size: calc(48px * var(--ts));
+    }
+  }
+  @media (max-width: 767px) {
+    :global(:root:lang(zh)) .hero__h1 {
+      font-size: calc(36px * var(--ts));
+    }
+    :global(:root:lang(zh)) .hero__copy :global(.hero__term .term__body) {
+      font-size: calc(24px * var(--ts));
+    }
+  }
 </style>

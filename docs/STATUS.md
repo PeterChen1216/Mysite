@@ -1,9 +1,9 @@
 # STATUS（会话交接 · PLAN §15.6）
 
 ## X2 进度（每次推送后更新；新会话从这里接着做）
-- ✅ 三种语言的页面、内容模型、草稿与预览状态、简体草稿、`pnpm content:hant`（繁体草稿）、`pnpm content:stale`、设置里的语言行、首次访问建议、预览提示（本提交）
-- ⏳ 下一步：CJK 像素字体子集化管线 + 每种语言的字体 token（`:lang(zh)`）
-- 之后：E2E 语言矩阵（内容 / 布局 / axe × 三种语言，Night）、跨字形测试、hreflang / canonical / 回退 `lang="en"` / 预览状态的 E2E、预算（每种语言的 JS / CJK 字体）、Lighthouse、英文像素对比、ADR-017、本节总结
+- ✅ 三种语言的页面、内容模型、草稿与预览状态、简体草稿、`pnpm content:hant`（繁体草稿）、`pnpm content:stale`、设置里的语言行、首次访问建议、预览提示（`0450191`）
+- ✅ CJK 像素字体：Fusion Pixel 12px（简体 `zh_hans` / 繁体 `zh_hant`，Fontsource 包，OFL）构建时按页面子集化（简 21 KB、繁 23 KB）并改名，只在本语言页面声明；每种语言的字体 token（12 px 倍数、无字距、无大写、更松的行距）（本提交）
+- ⏳ 下一步：E2E 语言矩阵（内容 / 布局 / axe × 三种语言，Night）、跨字形测试、hreflang / canonical / 回退 `lang="en"` / 预览状态的 E2E、预算（每种语言的 JS / CJK 字体）、Lighthouse、英文像素对比、ADR-017、本节总结
 
 > 更新：2026-11-10（全项目审计 + Clock Stamp 手机重做 + 体验扩展计划 + **X1 基础完成**）· 分支 `claude/happy-einstein-dkkcxx`（未合并，等业主审）
 

@@ -10,6 +10,7 @@ import tokensCss from '../styles/tokens.css?raw';
 import { parseTokenCss, resolveTokens } from '../lib/theme-tokens';
 import { bootScript } from '../prefs/boot';
 import { THEMES, type Theme } from '../prefs/model';
+import { CJK_DEV_PATH, cjkFontFace, cjkFontPlaceholder } from '../i18n/cjk-font';
 
 interface Props {
   /** The page's data: its locale, head links (canonical, hreflang, robots) and copy. */
@@ -24,6 +25,17 @@ const tokenRules = parseTokenCss(tokensCss);
 const bg = (theme: Theme | null) => resolveTokens(tokenRules, { theme })['--color-bg-night']!;
 const themeColor = bg(null);
 const boot = bootScript(Object.fromEntries(THEMES.map((t) => [t, bg(t)])) as Record<Theme, string>);
+// A Chinese page declares its own pixel CJK face (and no other page does): the build swaps the
+// placeholder for the subset's URL (src/integrations/cjk-fonts.ts); `astro dev` serves the font.
+const cjk =
+  data.locale === 'en'
+    ? null
+    : cjkFontFace(
+        data.locale,
+        import.meta.env.DEV
+          ? `${CJK_DEV_PATH}${data.locale}.woff2`
+          : cjkFontPlaceholder(data.locale),
+      );
 ---
 
 <!doctype html>
@@ -41,7 +53,7 @@ const boot = bootScript(Object.fromEntries(THEMES.map((t) => [t, bg(t)])) as Rec
     <!-- The hero terminal is on the first screen: without a preload its lines first wrap in the
          wider fallback and then shrink, shifting the stage and buttons (CLS ≈ 0.03). -->
     <Font cssVariable="--font-term" preload />
-    <slot name="head" />
+    {cjk && <style is:inline set:html={cjk} />}
     <title>{head.title}</title>
     <meta name="description" content={head.description} />
     {head.keywords.length > 0 && <meta name="keywords" content={head.keywords.join(', ')} />}

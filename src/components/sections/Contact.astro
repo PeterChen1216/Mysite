@@ -282,6 +282,10 @@ const { ping } = copy.contact;
     .contact__title {
       font-size: calc(64px * var(--ts));
     }
+    /* Chinese: 12 px multiples for the pixel CJK face (PLAN-EXPERIENCE §5.5). */
+    :global(:root:lang(zh)) .contact__title {
+      font-size: calc(60px * var(--ts));
+    }
     .contact__btns :global(.mc-btn) {
       padding-inline: 18px;
     }
@@ -306,6 +310,9 @@ const { ping } = copy.contact;
     }
     .contact__title {
       font-size: calc(44px * var(--ts));
+    }
+    :global(:root:lang(zh)) .contact__title {
+      font-size: calc(36px * var(--ts));
     }
     .contact__cluster {
       left: 16px;

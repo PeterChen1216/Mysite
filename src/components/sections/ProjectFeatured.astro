@@ -304,5 +304,10 @@ const withPhone = p.demo === 'world-clock';
       font-size: calc(20px * var(--ts));
       padding: 12px 14px;
     }
+    /* Chinese: 12 px multiples for the pixel CJK face (PLAN-EXPERIENCE §5.5). */
+    :global(:root:lang(zh)) .pf__title,
+    :global(:root:lang(zh)) .pf__copy :global(.pf__term.term--term .term__body) {
+      font-size: calc(24px * var(--ts));
+    }
   }
 </style>

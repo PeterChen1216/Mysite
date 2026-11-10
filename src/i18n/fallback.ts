@@ -9,23 +9,23 @@
  * attributes (an `alt` or `aria-label` cannot hold an element) and raw-text elements (`title`,
  * `script`, `style`). English pages carry no marks and pass through unchanged.
  */
-export const FALLBACK_OPEN = '';
-export const FALLBACK_CLOSE = '';
-const MARKS = /[]/g;
+export const FALLBACK_OPEN = '\uE000';
+export const FALLBACK_CLOSE = '\uE001';
+const MARKS = /[\uE000\uE001]/g;
 
 export const markFallback = (text: string): string => `${FALLBACK_OPEN}${text}${FALLBACK_CLOSE}`;
 
 /** A text without its fallback marks. */
 export const stripFallback = (text: string): string => text.replace(MARKS, '');
 
-export const hasFallback = (text: string): boolean => /[]/.test(text);
+export const hasFallback = (text: string): boolean => /[\uE000\uE001]/.test(text);
 
 /** A comment, or a whole tag (quoted attribute values may hold `>`). */
 const TOKEN = /<!--[\s\S]*?-->|<\/?[a-zA-Z][\w-]*(?:[^>"']|"[^"]*"|'[^']*')*>/g;
 /** Elements whose content is text the browser does not parse as HTML. */
 const RAW = new Set(['script', 'style', 'title', 'textarea']);
 /** A marked run inside one piece of text. */
-const RUN = /([^]*)/g;
+const RUN = /\uE000([^\uE000\uE001]*)\uE001/g;
 
 /**
  * Rendered HTML with every marked run in the body's text wrapped in `<span lang="en">`, and the

@@ -5,7 +5,9 @@
  * contrast unit test, which checks every text × surface pair in every theme.
  *
  * Only the selector forms tokens.css uses are understood; anything else throws, so the file and
- * this reader can't drift apart silently.
+ * this reader can't drift apart silently. Rules scoped to a language (`:root:lang(zh)`, the
+ * per-locale type and CJK font tokens) never apply here: colours may not depend on the language,
+ * and a language rule that declares a colour token throws.
  */
 
 export interface TokenRule {
@@ -81,6 +83,10 @@ const MEDIA: Record<string, keyof NonNullable<TokenContext['media']>> = {
 };
 
 const ATTR = /^\[data-theme(?:='([\w-]+)')?\]$/;
+/** A rule for one language's pages: `:root:lang(zh-Hans)`, `[data-type-fixed]:lang(zh)`. */
+const LANG = /^(?::root|\[data-type-fixed\]):lang\([\w-]+\)$/;
+/** Tokens that are colours (or feed them): never per language. */
+const COLOUR_TOKEN = /^--(?:p-|color-|mc-|term-|cue-|art-|shadow)/;
 
 /**
  * Specificity (attribute and pseudo-class count) of `selector` when it matches the element in
@@ -99,6 +105,7 @@ function matchSelector(selector: string, ctx: TokenContext, which: 'root' | 'isl
     if (sel === ':root:not([data-theme])') return which === 'root' && ctx.theme === null ? 2 : -1;
     if (sel === "[data-surface='dark']") return which === 'island' ? 1 : -1;
     if (sel === '[data-type-fixed]') return -1;
+    if (LANG.test(sel)) return -1;
     const t = themeMatches(sel);
     if (t !== undefined) return which === 'root' && t ? 1 : -1;
   } else if (parts.length === 2 && parts[1] === "[data-surface='dark']") {
@@ -121,6 +128,13 @@ function mediaMatches(media: string | null, ctx: TokenContext): boolean {
 function declared(rules: TokenRule[], ctx: TokenContext, which: 'root' | 'island') {
   const hits: Array<{ spec: number; order: number; decls: TokenRule['decls'] }> = [];
   for (const r of rules) {
+    if (r.selectors.some((s) => LANG.test(s))) {
+      const colour = r.decls.find(([k]) => COLOUR_TOKEN.test(k));
+      if (colour)
+        throw new Error(
+          `tokens.css: ${colour[0]} is set per language; colours may not depend on it`,
+        );
+    }
     if (!mediaMatches(r.media, ctx)) continue;
     const spec = Math.max(...r.selectors.map((s) => matchSelector(s, ctx, which)));
     if (spec >= 0) hits.push({ spec, order: r.order, decls: r.decls });

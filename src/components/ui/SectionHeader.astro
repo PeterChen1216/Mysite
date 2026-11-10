@@ -84,5 +84,9 @@ const { id, cmd, title, blurb } = Astro.props;
       font-size: calc(36px * var(--ts));
       line-height: 1.05;
     }
+    /* Chinese: two-line headings need room between the lines (PLAN-EXPERIENCE §5.5). */
+    :global(:root:lang(zh)) .sh__h {
+      line-height: 1.2;
+    }
   }
 </style>

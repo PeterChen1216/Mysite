@@ -403,6 +403,10 @@ const commits = rows.map((row) => {
     .commit__title {
       font-size: calc(20px * var(--ts));
     }
+    /* Chinese: 12 px multiples for the pixel CJK face (PLAN-EXPERIENCE §5.5). */
+    :global(:root:lang(zh)) .commit__title {
+      font-size: calc(24px * var(--ts));
+    }
     .commit__block :global(.voxel) {
       width: 30px;
     }

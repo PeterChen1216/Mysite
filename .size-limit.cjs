@@ -22,4 +22,20 @@ module.exports = [
     gzip: false,
     brotli: false,
   },
+  // PLAN-EXPERIENCE §1.3 / §5.5: the pixel CJK face, subset to one locale's page, ≤ 160 KB per
+  // script (src/integrations/cjk-fonts.ts); each is loaded only by its own locale's page.
+  {
+    name: 'CJK pixel font, Simplified (raw woff2, subset)',
+    path: 'dist/_astro/cjk/zhic-pixel-sc.*.woff2',
+    limit: '160 KB',
+    gzip: false,
+    brotli: false,
+  },
+  {
+    name: 'CJK pixel font, Traditional (raw woff2, subset)',
+    path: 'dist/_astro/cjk/zhic-pixel-tc.*.woff2',
+    limit: '160 KB',
+    gzip: false,
+    brotli: false,
+  },
 ];

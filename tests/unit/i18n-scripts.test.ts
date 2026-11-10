@@ -218,7 +218,7 @@ describe('content guard: translations', () => {
         'site.yaml': SITE,
         'copy.zh-hant.yaml': 'nav:\n  state: 在綫\n',
         'gone.zh-hans.md': 'x\n',
-        'profile.yaml': 'tagline: "ab"\n',
+        'profile.yaml': 'tagline: "a\uE000b"\n',
       }),
     );
     expect(problems).toEqual([
