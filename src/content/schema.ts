@@ -669,6 +669,11 @@ export const copySchema = z
         suggest_label: text,
       })
       .strict(),
+    /**
+     * The WebGL scene (PLAN-EXPERIENCE §7). The canvas is decorative and says nothing; `hud` is the
+     * `?debug=1` line: {fps} {ms} {tier} {reason} {draws} {dpr}.
+     */
+    scene: z.object({ hud: text }).strict(),
   })
   .strict();
 

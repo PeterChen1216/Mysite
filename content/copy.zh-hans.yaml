@@ -201,6 +201,9 @@ i18n:
   suggest_go: 阅读简体中文版
   suggest_dismiss: 不用了
   suggest_label: 语言建议
+
+scene:
+  hud: '帧率 {fps} · {ms} 毫秒 · 图形等级 {tier}（{reason}）· {draws} 次绘制 · 像素比 {dpr}'
 from:
   nav.links: eade50c1
   nav.status: c4094d5f
@@ -370,3 +373,4 @@ from:
   i18n.suggest_go: 051a9312
   i18n.suggest_dismiss: f6ad0e81
   i18n.suggest_label: d8923b60
+  scene.hud: 9fea2546

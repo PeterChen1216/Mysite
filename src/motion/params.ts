@@ -86,6 +86,32 @@ export const PARTICLES = {
   ],
 } as const;
 
+/**
+ * The WebGL scene (PLAN-EXPERIENCE §7; src/scene/). Its loops follow the motion level like the
+ * CSS ones: calm runs them CALM.loopSlowdown times slower, off and pause hold them.
+ */
+export const SCENE = {
+  /** Camera damping time constant: PLAN §5.2's lerp 0.08–0.12 per frame at 60 fps. */
+  dampMs: 160,
+  /** The canvas fades in, and the DOM art it replaces fades out. */
+  fadeMs: 400,
+  /** Warm-up before showing it (PLAN §5.2: "连续 3 帧 < 25 ms 才淡入"), and how long to try. */
+  warmFrames: 3,
+  warmFrameMs: 25,
+  warmTimeoutMs: 3000,
+  /** Radar sweep and the satellite on the radar ring, radians per second. */
+  sweepRadPerS: 1.1,
+  satelliteRadPerS: 0.22,
+  /** XP orbs drift towards the pointer: how far they reach (world units) and how hard. */
+  orbReach: 14,
+  orbPull: 0.45,
+  orbSpringPerS: 3,
+  /** The chest lid opens while Skills is in view. */
+  lidMs: 500,
+  /** One crossing of a watched route by its plane. */
+  planeMs: 9000,
+} as const;
+
 /** The CSS-side parameters as a `style` value of custom properties (`--m-…`). */
 export function motionCssVars(): string {
   const ms = (n: number) => `${n}ms`;
@@ -119,6 +145,7 @@ export function motionCssVars(): string {
     '--m-btn-hover': `${ms(UI.buttonHover.ms)} steps(${UI.buttonHover.steps})`,
     '--m-photo-swap': `${ms(UI.photoSwap.ms)} steps(${UI.photoSwap.steps})`,
     '--m-calm-slow': String(CALM.loopSlowdown),
+    '--m-scene-fade': ms(SCENE.fadeMs),
   };
   return Object.entries(vars)
     .map(([k, v]) => `${k}:${v}`)

@@ -5,7 +5,7 @@ import { stripComments } from '../../src/content/guards';
 import { escapeRe } from './copy';
 import { contentFor } from './locale';
 import { hasWordBullet } from './now';
-import { LOCALE_PAGES, V2 } from './site';
+import { LOCALE_PAGES, TIER_PAGES, V2, open, type LocalePage, type TierPage } from './site';
 
 /**
  * Data-driven render check: every owner-provided string in content/ must be visible on the page —
@@ -35,8 +35,12 @@ function missing(text: string, expected: unknown[]) {
     .filter((e) => !haystack.includes(e.toLowerCase()));
 }
 
-for (const { locale, path } of LOCALE_PAGES)
-  test.describe(`content/ renders completely (${locale})`, () => {
+// Every locale (in Night), and English at every graphics tier (PLAN-EXPERIENCE §7, acceptance F):
+// the scene changes what is behind the content, never the content.
+const PAGES: Array<LocalePage & { tier?: TierPage['tier'] }> = [...LOCALE_PAGES, ...TIER_PAGES];
+for (const { locale, path, tier } of PAGES)
+  test.describe(`content/ renders completely (${locale}${tier === undefined ? '' : `, tier ${tier}`})`, () => {
+    test.skip(({ isMobile }) => isMobile && tier === 3, 'tier 3 is the desktop scene');
     const {
       site,
       profile,
@@ -60,7 +64,7 @@ for (const { locale, path } of LOCALE_PAGES)
     type Rec = Record<string, unknown>;
 
     test('profile, about, interests', async ({ page }) => {
-      await page.goto(path);
+      await open(page, path);
       const name = profile.name as { display: string; full: string };
       await expect(page.locator('h1')).toContainText(name.display);
       const text = await visibleText(page);
@@ -88,7 +92,7 @@ for (const { locale, path } of LOCALE_PAGES)
     });
 
     test('education, honors, experience', async ({ page }) => {
-      await page.goto(path);
+      await open(page, path);
       const text = await visibleText(page);
       const expected: unknown[] = [];
       for (const e of education as Rec[]) {
@@ -112,7 +116,7 @@ for (const { locale, path } of LOCALE_PAGES)
     });
 
     test('every project, scoped to its own card', async ({ page }) => {
-      await page.goto(path);
+      await open(page, path);
       for (const { id, fm, body: md } of projects) {
         const card = `#project-${id}`;
         const text = await visibleText(page, card);
@@ -159,7 +163,7 @@ for (const { locale, path } of LOCALE_PAGES)
     });
 
     test('work and volunteer entries land in their own sections', async ({ page }) => {
-      await page.goto(path);
+      await open(page, path);
       for (const x of experience as Rec[]) {
         const [mine, other] =
           x.kind === 'volunteer' ? ['#community', '#experience'] : ['#experience', '#community'];
@@ -170,7 +174,7 @@ for (const { locale, path } of LOCALE_PAGES)
     });
 
     test('every skill group and item', async ({ page }) => {
-      await page.goto(path);
+      await open(page, path);
       const groups = skills.groups as { name: string; items: unknown[]; basic?: unknown[] }[];
       await expect(page.locator('#skills dt')).toHaveText(groups.map((g) => g.name));
       await expect(page.locator('#skills dd')).toHaveText(
@@ -183,7 +187,7 @@ for (const { locale, path } of LOCALE_PAGES)
     });
 
     test('AvGeek panels show only what aviation.yaml has', async ({ page }) => {
-      await page.goto(path);
+      await open(page, path);
       const list = (k: string) => (aviation[k] ?? []) as Rec[];
       const total = ['watching', 'seat_rules', 'favorite_cabins', 'news', 'fare_examples', 'tools']
         .map((k) => list(k).length)
@@ -202,7 +206,7 @@ for (const { locale, path } of LOCALE_PAGES)
     });
 
     test('head metadata comes from site.yaml', async ({ page }) => {
-      await page.goto(path);
+      await open(page, path);
       const meta = site.meta as { title: string; description: string; keywords?: string[] };
       await expect(page).toHaveTitle(meta.title);
       await expect(page.locator('meta[name="description"]')).toHaveAttribute(
@@ -217,7 +221,7 @@ for (const { locale, path } of LOCALE_PAGES)
     });
 
     test('footer: copyright line, update note, automatic date and version', async ({ page }) => {
-      await page.goto(path);
+      await open(page, path);
       const footer = page.locator('footer');
       const foot = site.footer as Rec;
       const holder = escapeRe(String(foot.copyright_holder));
@@ -231,7 +235,7 @@ for (const { locale, path } of LOCALE_PAGES)
     });
 
     test('non-public emails appear nowhere in the HTML (DECISIONS Q6)', async ({ page }) => {
-      await page.goto(path);
+      await open(page, path);
       const html = (await page.content()).toLowerCase();
       for (const e of (profile.emails as Array<{ address: string; public?: boolean }>).filter(
         (x) => !x.public,
@@ -244,7 +248,7 @@ for (const { locale, path } of LOCALE_PAGES)
     }) => {
       // Wiring only. How Markdown becomes plain text (links, code, entities…) is unit-tested in
       // tests/unit/derive.test.ts against Astro's real rendering of a now.md that uses it all.
-      await page.goto(path);
+      await open(page, path);
       const items = page
         .locator('.ticker__track')
         .first()
@@ -274,7 +278,7 @@ for (const { locale, path } of LOCALE_PAGES)
         [390, cards.areas.sm],
       ] as const) {
         await page.setViewportSize({ width, height: 900 });
-        await page.goto(path);
+        await open(page, path);
         const grid = page.locator('.inv');
         expect(
           await grid.evaluate((el) => getComputedStyle(el).gridTemplateAreas),
@@ -288,7 +292,7 @@ for (const { locale, path } of LOCALE_PAGES)
     });
 
     test('hero links to the résumé', async ({ page }) => {
-      await page.goto(path);
+      await open(page, path);
       // One résumé for every language (PLAN-EXPERIENCE §5.3: English only unless the owner adds one).
       await expect(page.locator(`.hero a[href="${V2}resume.pdf"]`)).toHaveCount(1);
     });

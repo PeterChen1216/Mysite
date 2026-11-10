@@ -291,4 +291,22 @@ const blocks: Array<{ name: BlockName; x: number; y: number; w: number; glow?: s
       transition: none;
     }
   }
+  /* Graphics tier 3 (src/scene/): once the intro has played, the WebGL world draws the globe,
+     rings, satellite and blocks behind the page, where these stood. The globe's slider stays
+     (invisible) over the WebGL Earth and turns it; the player card and the badges stay. */
+  :global(html[data-scene='live']) .stage__orbit,
+  :global(html[data-scene='live']) .stage__orbit2,
+  :global(html[data-scene='live']) .stage__satellite,
+  :global(html[data-scene='live']) .stage__block,
+  :global(html[data-scene='live']) .stage__globe :global(.globe__inner) {
+    opacity: 0;
+    visibility: hidden;
+    transition:
+      opacity var(--m-scene-fade),
+      visibility 0s linear var(--m-scene-fade);
+  }
+  :global(html[data-scene='live']) .stage__orbit,
+  :global(html[data-scene='live']) .stage__orbit2 {
+    animation-play-state: paused !important;
+  }
 </style>

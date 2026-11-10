@@ -1,6 +1,14 @@
-// PLAN §2.3 / §9.1 budgets as tests. JavaScript (inline + external) is checked by
-// scripts/check-js-budget.mjs; the lazy WebGL scene chunk (≤ 250 KB gz) is added in M2.
+// PLAN §2.3 / §9.1 budgets as tests. First-screen JavaScript (inline + external) is checked by
+// scripts/check-js-budget.mjs, which also fails if the page references the scene chunk.
 module.exports = [
+  {
+    // PLAN-EXPERIENCE §1.3: the lazy WebGL scene (src/scene/renderer.ts and what only it uses),
+    // loaded with import() after the page is usable, at graphics tier 3 only.
+    name: 'WebGL scene chunk (gz, lazy)',
+    path: 'dist/_astro/renderer.*.js',
+    limit: '250 KB',
+    gzip: true,
+  },
   {
     // PLAN-EXPERIENCE §1.3: 45 KB with every theme included (was 30 KB before themes).
     name: 'CSS (gz)',

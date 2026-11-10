@@ -128,7 +128,8 @@ export function fillTemplate(
 /**
  * Placeholders filled per use rather than page-wide, by copy.yaml key: `hero.avgeek_route` takes
  * {from} and {to} (its airports), `hero.globe_value` {deg} (filled in the browser as the globe
- * turns), `prefs.text.option` {size}. Anywhere else they are unknown and fail the build.
+ * turns), `prefs.text.option` {size}, `scene.hud` (the `?debug=1` numbers, filled in the
+ * browser). Anywhere else they are unknown and fail the build.
  */
 export const LOCAL_PLACEHOLDERS: Readonly<Record<string, readonly string[]>> = {
   'hero.avgeek_route': ['from', 'to'],
@@ -137,6 +138,7 @@ export const LOCAL_PLACEHOLDERS: Readonly<Record<string, readonly string[]>> = {
   'hero.whoami_line': ['name', 'programme', 'year'],
   'labels.year_month': ['month', 'year'],
   'prefs.text.option': ['size'],
+  'scene.hud': ['fps', 'ms', 'tier', 'reason', 'draws', 'dpr'],
 };
 
 /**

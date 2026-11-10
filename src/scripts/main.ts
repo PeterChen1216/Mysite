@@ -6,6 +6,7 @@ import { initLang } from './lang';
 import { initOffscreenPause } from './offscreen';
 import { initParticles } from './particles';
 import { initPrefs } from './prefs';
+import { initScene } from './scene-loader';
 import { initScrollSpy } from './scrollspy';
 
 const start = () => {
@@ -18,6 +19,8 @@ const start = () => {
   initScrollSpy();
   initDismissible();
   initLang();
+  // Last, and only once the page is usable: the WebGL scene, at graphics tier 3.
+  initScene();
 };
 
 if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', start);

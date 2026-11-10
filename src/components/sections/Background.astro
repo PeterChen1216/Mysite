@@ -67,6 +67,14 @@ const art = [
     pointer-events: none;
     z-index: 0;
   }
+  /* Graphics tier 3: the WebGL scene draws this sky (stars, grid, glows) behind the page instead. */
+  :global(html[data-scene]) .bg {
+    opacity: 0;
+    visibility: hidden;
+    transition:
+      opacity var(--m-scene-fade),
+      visibility 0s linear var(--m-scene-fade);
+  }
   .bg__canvas {
     position: absolute;
     top: 0;

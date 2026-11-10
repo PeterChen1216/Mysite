@@ -158,6 +158,9 @@
   --p-oi-green-12: rgb(0 200 150 / 0.12);
   --p-oi-green-55: rgb(0 200 150 / 0.55);
   --p-oi-green-80: rgb(0 200 150 / 0.8);
+  /* WebGL scene: polar ice (the DOM globe's ice.svg) and planks (the bookshelf block's wood) */
+  --p-ice: #e8f1ff;
+  --p-wood: #a77e4b;
 }
 
 /* ── 2. semantic ──────────────────────────────────────────────────────────── */
@@ -550,6 +553,49 @@
   --term-dot-red: var(--p-mono-0);
   --term-dot-yellow: var(--p-mono-42);
   --term-dot-green: var(--p-mono-85);
+}
+
+/* WebGL scene (src/scene/palette.ts; PLAN-EXPERIENCE §3.4): the world's sixteen palette colours,
+   its grid and glows, and four levels (0–1). Mostly the theme's own semantic tokens, so every
+   theme has a scene and a theme change recolours it without a reload. The sky is the page
+   background: where the scene draws nothing, the page looks as it always did. */
+:root {
+  --scene-sky: var(--color-bg-night);
+  --scene-grass: var(--color-block-grass);
+  --scene-water: var(--color-block-water);
+  --scene-ice: var(--p-ice);
+  --scene-dirt: var(--color-block-dirt);
+  --scene-stone: var(--color-block-stone);
+  --scene-green: var(--color-accent-terminal-green);
+  --scene-diamond: var(--color-accent-diamond);
+  --scene-gold: var(--color-accent-gold);
+  --scene-enchant: var(--color-accent-enchant);
+  --scene-redstone: var(--color-accent-redstone);
+  --scene-ink: var(--color-ink);
+  --scene-paper: var(--color-paper);
+  --scene-wood: var(--p-wood);
+  --scene-panel: var(--color-bg-terminal);
+  --scene-star: var(--color-text-hi);
+  --scene-grid-line: var(--color-border-line);
+  --scene-glow-a: var(--color-block-water);
+  --scene-glow-b: var(--color-accent-terminal-green);
+  /* levels: stars, motes and glows (none on paper); the grid; the Earth's night side; glows */
+  --scene-sky-art: var(--art-sky);
+  --scene-grid: var(--art-grid);
+  --scene-night: 0.3;
+  --scene-glow: 0.7;
+}
+[data-theme='day'] {
+  --scene-night: 0.5;
+}
+[data-theme='mono-dark'] {
+  --scene-ice: var(--p-mono-90);
+  --scene-wood: var(--p-mono-54);
+}
+[data-theme='mono-light'] {
+  --scene-ice: var(--p-mono-81);
+  --scene-wood: var(--p-mono-54);
+  --scene-night: 0.55;
 }
 
 /* ── type, space, layout ──────────────────────────────────────────────────── */

@@ -21,6 +21,21 @@ const PAGE_DEG = 90;
 
 const wrap = (deg: number) => ((deg % 360) + 360) % 360;
 
+/**
+ * The hero globe as the scene sees it (src/scene/renderer.ts): at graphics tier 3 its pictures
+ * are hidden and the WebGL Earth is drawn where it stood, turned by this slider — so its keys,
+ * drag, hover slow-down, pause and off-screen rest all carry over.
+ */
+export interface HeroGlobe {
+  element: HTMLElement;
+  /** Degrees turned, 0–360. */
+  angle(): number;
+  /** Turn it to `deg` (the scene hands back the turn it made while the globe was off screen). */
+  set(deg: number): void;
+}
+let hero: HeroGlobe | null = null;
+export const heroGlobe = (): HeroGlobe | null => hero;
+
 export function initGlobes(): void {
   for (const globe of document.querySelectorAll<HTMLElement>('[data-globe]')) {
     const strip = globe.querySelector<HTMLElement>('[data-globe-strip]');
@@ -78,6 +93,7 @@ export function initGlobes(): void {
       }
       report();
     };
+    hero = { element: globe, angle: position, set: turnTo };
     const template = globe.dataset.valueText ?? '{deg}';
     const report = () => {
       const deg = Math.round(position()) % 360;

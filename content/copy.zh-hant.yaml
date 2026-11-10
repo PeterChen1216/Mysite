@@ -198,6 +198,9 @@ i18n:
   suggest_go: 閲讀繁體中文版
   suggest_dismiss: 不用了
   suggest_label: 語言建議
+
+scene:
+  hud: '幀率 {fps} · {ms} 毫秒 · 圖形等級 {tier}（{reason}）· {draws} 次繪製 · 像素比 {dpr}'
 from:
   nav.links: 4ee8cf8e
   nav.status: 18310fc0
@@ -367,3 +370,4 @@ from:
   i18n.suggest_go: 47e198aa
   i18n.suggest_dismiss: 1ae0017b
   i18n.suggest_label: 3921dabc
+  scene.hud: a9ab427d

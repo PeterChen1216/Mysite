@@ -2,7 +2,8 @@
 // First-screen JavaScript budget (PLAN §2.3: ≤ 180 KB gzipped, excluding the lazy WebGL chunk),
 // for the page of every locale (PLAN-EXPERIENCE §1.3). Astro inlines small scripts into the
 // HTML, so size-limit alone can't see them: count inline <script> bodies plus every external
-// /_astro/*.js the page references.
+// /_astro/*.js the page references. The WebGL scene (src/scene/renderer.ts → _astro/renderer.*.js)
+// must stay out of the first screen: no page may load or preload it; only import() at run time.
 import { readFileSync, existsSync } from 'node:fs';
 import { join } from 'node:path';
 import { gzipSync } from 'node:zlib';
@@ -49,6 +50,10 @@ for (const { dir } of Object.values(LOCALES)) {
     }
   }
   console.log(`First-screen JS (gz), /${dir}: ${kb(total)} / ${kb(LIMIT)}  [${parts.join(', ')}]`);
+  for (const m of html.matchAll(/<(?:script|link)\b[^>]*(?:src|href)="([^"]*renderer\.[^"]*)"/g)) {
+    console.error(`✖ /${dir} references the lazy scene chunk on the first screen: ${m[1]}`);
+    failed = true;
+  }
   if (total > LIMIT) {
     console.error(`✖ /${dir} is over budget`);
     failed = true;

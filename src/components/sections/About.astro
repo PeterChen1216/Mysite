@@ -82,6 +82,14 @@ const { areas } = cards;
     top: 640px;
     left: -10px;
   }
+  /* Graphics tier 3: the WebGL world's floating blocks take their place (src/scene/). */
+  :global(html[data-scene='live']) .about__block {
+    opacity: 0;
+    visibility: hidden;
+    transition:
+      opacity var(--m-scene-fade),
+      visibility 0s linear var(--m-scene-fade);
+  }
 
   /* ---- Inventory grid: three 424 px columns at 1440 (Figma Row1 / Row2), gap 20. ---- */
   .inv {

@@ -2,7 +2,7 @@ import { expect, test, type Page } from '@playwright/test';
 import { glyphParts } from '../../src/lib/derive';
 import { runningAnimations, runningLoops } from './animations';
 import { copy, escapeRe } from './copy';
-import { LOCALE_PAGES, V2 } from './site';
+import { LOCALE_PAGES, TIER_PAGES, V2, open } from './site';
 
 /**
  * Text that is cut off or runs into its neighbours. Checks every visible word against the
@@ -160,6 +160,33 @@ test.describe('layout holds at every width', () => {
     await page.goto(V2);
     await expect(page.locator('.sk__basic').first()).toHaveCSS('flex-wrap', 'wrap');
   });
+});
+
+// Every graphics tier (PLAN-EXPERIENCE §7, acceptance F), at full motion (reduced motion would
+// make every tier static): the scene sits behind the content and must not move or hide any of it.
+test.describe('layout holds at every graphics tier', () => {
+  test.skip(({ isMobile }) => isMobile, 'desktop projects resize the viewport themselves');
+  // Tier 3 is the desktop scene (from 1024 px).
+  for (const { path, tier } of TIER_PAGES)
+    for (const width of tier === 3 ? [1024, 1440] : [390, 1024, 1440]) {
+      test(`no text is cut off or overlapping at ${width}px (graphics tier ${tier})`, async ({
+        page,
+      }) => {
+        await page.setViewportSize({ width, height: 900 });
+        await open(page, path);
+        await page.evaluate(() => document.fonts.ready);
+        // The intro has played (words rise into place as it runs).
+        await page.evaluate(() =>
+          Promise.all(
+            document
+              .getAnimations()
+              .filter((a) => ((a as CSSAnimation).animationName ?? '').startsWith('intro-'))
+              .map((a) => a.finished.catch(() => undefined)),
+          ),
+        );
+        expect(await textProblems(page)).toEqual([]);
+      });
+    }
 });
 
 test.describe('motion', () => {

@@ -23,6 +23,7 @@ import {
   type Prefs,
   type Resolved,
 } from '../prefs/model';
+import { applyTier, contrastQuery } from './tier';
 
 export const MOTION_EVENT = 'zhic:motion';
 export const PREFS_EVENT = 'zhic:prefs';
@@ -74,7 +75,9 @@ export function apply(): void {
   const r = resolved();
   html.setAttribute('data-theme', r.theme);
   html.setAttribute('data-motion', r.motion);
-  html.classList.toggle('motion', r.motion !== 'off');
+  // Loops run unless the motion level or the graphics tier (src/scene/tier.ts) says static.
+  const tier = applyTier(r.motion).tier;
+  html.classList.toggle('motion', r.motion !== 'off' && tier > 0);
   // The intro plays once, at load; a change of level never replays it.
   if (r.motion !== 'full') html.classList.remove('intro');
   if (r.scale === 1) html.style.removeProperty('--text-scale');
@@ -139,10 +142,13 @@ function inField(target: EventTarget | null): boolean {
 
 /** Follow the device and other tabs; wire the entry points and the shortcuts. */
 export function initPrefs(): void {
+  // The head script set the static tier; the others are decided here (they look the same).
+  applyTier(resolved().motion);
   light.addEventListener('change', () => {
     if (prefs.theme === 'auto') apply();
   });
   reduce.addEventListener('change', apply);
+  contrastQuery.addEventListener('change', apply);
   addEventListener('storage', (e) => {
     if (e.key !== PREFS_KEY && e.key !== null) return;
     prefs = load();

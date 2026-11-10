@@ -1,6 +1,7 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { DEFAULT_LOCALE, LANG_TAG, LOCALES } from '../../src/i18n/locales';
 import { bootPrefs, bootScript } from '../../src/prefs/boot';
+import { staticTier } from '../../src/scene/tier';
 import {
   DEFAULT_PREFS,
   LIGHT_THEMES,
@@ -96,7 +97,11 @@ describe('what a choice shows on a device', () => {
 });
 
 /** A stand-in for the browser globals the head script touches. */
-function fakeBrowser(stored: string | null, media: Record<string, boolean> = {}) {
+function fakeBrowser(
+  stored: string | null,
+  media: Record<string, boolean> = {},
+  { search = '', saveData }: { search?: string; saveData?: boolean } = {},
+) {
   const attrs: Record<string, string> = {};
   const classes = new Set<string>();
   const style: Record<string, string> = {};
@@ -105,6 +110,8 @@ function fakeBrowser(stored: string | null, media: Record<string, boolean> = {})
     getItem: (k: string) => (k === PREFS_KEY ? stored : null),
   });
   vi.stubGlobal('matchMedia', (q: string) => ({ matches: media[q] ?? false }));
+  vi.stubGlobal('location', { search });
+  vi.stubGlobal('navigator', saveData === undefined ? {} : { connection: { saveData } });
   vi.stubGlobal('document', {
     documentElement: {
       setAttribute: (k: string, v: string) => (attrs[k] = v),
@@ -135,7 +142,7 @@ describe('the inline head script', () => {
 
   it('with nothing stored: Night, full motion with the intro, 100 %, js', () => {
     const b = fakeBrowser(null);
-    bootPrefs(CFG, normalizePrefs, resolvePrefs);
+    bootPrefs(CFG, normalizePrefs, resolvePrefs, staticTier);
     expect(b.attrs).toEqual({ 'data-theme': 'night', 'data-motion': 'full' });
     expect([...b.classes].sort()).toEqual(['intro', 'js', 'motion']);
     expect(b.style).toEqual({});
@@ -143,7 +150,7 @@ describe('the inline head script', () => {
   });
   it('applies a stored choice: theme, theme-color, color-scheme, calm, text size', () => {
     const b = fakeBrowser(JSON.stringify({ theme: 'day', motion: 'calm', text: 115 }));
-    bootPrefs(CFG, normalizePrefs, resolvePrefs);
+    bootPrefs(CFG, normalizePrefs, resolvePrefs, staticTier);
     expect(b.attrs).toEqual({ 'data-theme': 'day', 'data-motion': 'calm' });
     expect([...b.classes].sort()).toEqual(['js', 'motion']);
     expect(b.style).toEqual({ '--text-scale': '1.15' });
@@ -153,27 +160,50 @@ describe('the inline head script', () => {
     const b = fakeBrowser(JSON.stringify({ motion: 'full' }), {
       '(prefers-reduced-motion: reduce)': true,
     });
-    bootPrefs(CFG, normalizePrefs, resolvePrefs);
+    bootPrefs(CFG, normalizePrefs, resolvePrefs, staticTier);
     expect(b.attrs['data-motion']).toBe('off');
     expect([...b.classes]).toEqual(['js']);
+  });
+  it('motion off is graphics tier 0: data-tier="0"', () => {
+    const b = fakeBrowser(JSON.stringify({ motion: 'off' }));
+    bootPrefs(CFG, normalizePrefs, resolvePrefs, staticTier);
+    expect(b.attrs).toEqual({ 'data-theme': 'night', 'data-motion': 'off', 'data-tier': '0' });
+    expect([...b.classes]).toEqual(['js']);
+  });
+  it('?tier=0, reduced data or Save-Data: static from the first paint, whatever the motion', () => {
+    for (const [media, opts] of [
+      [{}, { search: '?debug=1&tier=0' }],
+      [{ '(prefers-reduced-data: reduce)': true }, {}],
+      [{}, { saveData: true }],
+    ] as const) {
+      const b = fakeBrowser(null, media, opts);
+      bootPrefs(CFG, normalizePrefs, resolvePrefs, staticTier);
+      expect(b.attrs).toEqual({ 'data-theme': 'night', 'data-motion': 'full', 'data-tier': '0' });
+      expect([...b.classes]).toEqual(['js']);
+    }
+    // Other tiers look the same at first paint: the main script decides them.
+    const b = fakeBrowser(null, {}, { search: '?tier=3', saveData: false });
+    bootPrefs(CFG, normalizePrefs, resolvePrefs, staticTier);
+    expect(b.attrs['data-tier']).toBeUndefined();
+    expect([...b.classes].sort()).toEqual(['intro', 'js', 'motion']);
   });
   it('auto theme reads the device light/dark setting', () => {
     const b = fakeBrowser(JSON.stringify({ theme: 'auto' }), {
       '(prefers-color-scheme: light)': true,
     });
-    bootPrefs(CFG, normalizePrefs, resolvePrefs);
+    bootPrefs(CFG, normalizePrefs, resolvePrefs, staticTier);
     expect(b.attrs['data-theme']).toBe('day');
   });
   it('survives a broken stored value or blocked storage', () => {
     const b = fakeBrowser('{not json');
-    bootPrefs(CFG, normalizePrefs, resolvePrefs);
+    bootPrefs(CFG, normalizePrefs, resolvePrefs, staticTier);
     expect(b.attrs['data-theme']).toBe('night');
     vi.stubGlobal('localStorage', {
       getItem: () => {
         throw new Error('SecurityError');
       },
     });
-    bootPrefs(CFG, normalizePrefs, resolvePrefs);
+    bootPrefs(CFG, normalizePrefs, resolvePrefs, staticTier);
     expect(b.attrs['data-theme']).toBe('night');
   });
   it('is self-contained: the inlined text runs on its own', () => {

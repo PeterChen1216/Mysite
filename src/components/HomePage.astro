@@ -24,11 +24,14 @@ interface Props {
   locale: Locale;
 }
 const data = await getPageData(Astro.props.locale);
+// For the WebGL scene (src/scene/, tier 3 only): the routes to draw on its Earth (aviation.yaml
+// `watching`, as airport codes) and the wording of its `?debug=1` line.
+const sceneRoutes = JSON.stringify(data.aviation.watching.map((r) => [r.from, r.to]));
 ---
 
 <BaseLayout data={data}>
   <LangSuggest data={data} />
-  <div class="page">
+  <div class="page" data-scene-routes={sceneRoutes} data-scene-hud={data.copy.scene.hud}>
     <!-- Inside the page, so the background still covers the whole first screen. -->
     {data.preview && <LangNotice data={data} />}
     <Background />

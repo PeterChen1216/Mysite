@@ -53,6 +53,37 @@ img {
   image-rendering: auto;
 }
 
+/* The WebGL scene (src/scene/, graphics tier 3): one canvas fixed behind all content, decorative
+   (aria-hidden, never focused, no pointer events). It fades in once warm; its sky is the page
+   background. Rendered below device resolution when the watchdog asks, in square pixels. */
+.scene {
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  display: block;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity var(--m-scene-fade) ease-out;
+  image-rendering: pixelated;
+}
+html[data-scene] .scene {
+  opacity: 1;
+}
+/* `?debug=1` (src/scripts/scene-hud.ts). */
+.scene-hud {
+  position: fixed;
+  left: 8px;
+  bottom: 8px;
+  z-index: 70;
+  padding: 4px 8px;
+  background: var(--color-bg-terminal);
+  color: var(--color-accent-terminal-green);
+  font: var(--type-code-label);
+  pointer-events: none;
+}
+
 .particles-layer {
   position: fixed;
   inset: 0;
@@ -213,6 +244,8 @@ img {
   .voxel,
   .globe,
   .particles-layer,
+  .scene,
+  .scene-hud,
   dialog,
   [data-prefs-open],
   [data-pause],

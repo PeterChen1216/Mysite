@@ -1,7 +1,7 @@
 import AxeBuilder from '@axe-core/playwright';
 import { expect, test, type Page } from '@playwright/test';
 import { contentFor } from './locale';
-import { LOCALE_PAGES } from './site';
+import { LOCALE_PAGES, TIER_PAGES, open } from './site';
 
 /** Serious or critical axe violations (WCAG 2.1 A/AA + best practice), one line each. */
 async function blockingViolations(page: Page) {
@@ -86,5 +86,28 @@ for (const { locale, path: V2 } of LOCALE_PAGES)
       page.on('response', (r) => r.status() >= 400 && problems.push(`${r.status()} ${r.url()}`));
       await page.goto(V2, { waitUntil: 'networkidle' });
       expect(problems).toEqual([]);
+    });
+  });
+
+// English in Night at every graphics tier (PLAN-EXPERIENCE §7, acceptance F; §9.1).
+for (const { path, tier } of TIER_PAGES)
+  test.describe(`accessibility at graphics tier ${tier}`, () => {
+    test.skip(({ isMobile }) => isMobile && tier === 3, 'tier 3 is the desktop scene');
+    test('axe: no serious or critical violations', async ({ page }) => {
+      await open(page, path);
+      expect(await blockingViolations(page)).toEqual([]);
+    });
+    test('one h1, no skipped heading levels; the canvas is not in the tab order', async ({
+      page,
+    }) => {
+      await open(page, path);
+      const levels = await page
+        .locator('h1, h2, h3, h4, h5, h6')
+        .evaluateAll((hs) => hs.map((h) => Number(h.tagName[1])));
+      expect(levels.filter((l) => l === 1)).toHaveLength(1);
+      for (const canvas of await page.locator('canvas').all()) {
+        await expect(canvas).toHaveAttribute('aria-hidden', 'true');
+        expect(await canvas.evaluate((el) => (el as HTMLElement).tabIndex)).toBeLessThan(0);
+      }
     });
   });

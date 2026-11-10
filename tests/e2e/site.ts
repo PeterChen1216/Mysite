@@ -1,4 +1,5 @@
 // Stage-aware paths shared by the E2E specs.
+import type { Page } from '@playwright/test';
 import { loadSiteConfig } from '../../site.config.mjs';
 import { LOCALES, LOCALE_KEYS, type Locale, type LocaleState } from '../../src/i18n/locales';
 
@@ -26,3 +27,29 @@ export const LOCALE_PAGES: LocalePage[] = LOCALE_KEYS.map((locale) => ({
   lang: LOCALES[locale].lang,
   state: LOCALE_STATES[locale],
 }));
+
+/**
+ * English in Night at each graphics tier (PLAN-EXPERIENCE §7, acceptance F: "E2E runs the content
+ * suite at each tier"; §9.1: each tier in Night/English). Tier 3 is the desktop scene: phones
+ * never get it (DECISIONS Q2), so the mobile project skips it.
+ */
+export interface TierPage extends LocalePage {
+  tier: 0 | 1 | 2 | 3;
+}
+export const TIER_PAGES: TierPage[] = ([0, 1, 2, 3] as const).map((tier) => ({
+  ...LOCALE_PAGES[0]!,
+  path: `${V2}?tier=${tier}`,
+  tier,
+}));
+
+/**
+ * Go to a page; at `?tier=3` also wait until the WebGL scene has replaced the DOM art, so the
+ * test runs against the page as a tier 3 visitor sees it.
+ */
+export async function open(page: Page, path: string): Promise<void> {
+  await page.goto(path);
+  if (/[?&]tier=3\b/.test(path))
+    await page.waitForFunction(() => document.documentElement.dataset.scene === 'live', null, {
+      timeout: 20_000,
+    });
+}

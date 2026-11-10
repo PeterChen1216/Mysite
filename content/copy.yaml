@@ -235,3 +235,9 @@ i18n:
   suggest_go: Read it in English
   suggest_dismiss: No thanks
   suggest_label: Language suggestion # read out by screen readers only
+
+# The WebGL scene behind the page (PLAN-EXPERIENCE §7). It is decorative and says nothing, so this
+# is only the developer line shown with ?debug=1 in the address: frames per second, milliseconds
+# per frame, the graphics tier and why, draw calls and pixel ratio, filled in by the browser.
+scene:
+  hud: 'fps {fps} · {ms} ms · tier {tier} ({reason}) · {draws} draws · dpr {dpr}'
