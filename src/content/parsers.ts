@@ -5,8 +5,8 @@
  * Astro's file() loader swallows exceptions thrown here and only logs a generic line, so every
  * error is also printed to stderr with the file name — that is the message the owner needs.
  */
-import { isScalar, parseDocument, visit } from 'yaml';
-import { copyKeyDiff, copyLeaves } from '../i18n/translations';
+import { isScalar, parseDocument, visit, type Document } from 'yaml';
+import { copyKeyDiff, copyLeaves } from '../i18n/translations.ts';
 
 type Entry = Record<string, unknown>;
 
@@ -14,26 +14,40 @@ function isRecord(value: unknown): value is Entry {
   return typeof value === 'object' && value !== null && !Array.isArray(value);
 }
 
+/** A value that a ` #` cut short: where it starts in the text, and what the owner wrote. */
+export interface CutValue {
+  offset: number;
+  message: string;
+}
+
 /**
- * Parse YAML, rejecting syntax errors and the classic owner trap where ` #` inside an unquoted
- * value starts a comment and silently cuts the text (`why: the #1 seat` → "the").
- * A trailing comment written as `# words` (space after #) stays allowed.
+ * The classic owner trap: ` #` inside an unquoted value starts a comment and silently cuts the
+ * text (`why: the #1 seat` → "the"). A trailing comment written as `# words` (space after #) stays
+ * allowed. Shared by parseYaml (the build) and the content check (which adds the line).
  */
-export function parseYaml(text: string): unknown {
-  const doc = parseDocument(text);
-  if (doc.errors.length > 0) throw doc.errors[0];
+export function cutValues(doc: Document, text: string): CutValue[] {
+  const cut: CutValue[] = [];
   visit(doc, {
     Pair(_, pair) {
       const node = pair.value;
       if (!isScalar(node) || node.type !== 'PLAIN' || !node.comment || !node.range) return;
-      const after = text.slice(node.range[1]);
-      if (/^[ \t]+#\S/.test(after)) {
-        throw new Error(
-          `"${String(node.value)} #${node.comment.trim()}" was cut off at "#" — wrap the whole value in quotes`,
-        );
+      if (/^[ \t]+#\S/.test(text.slice(node.range[1]))) {
+        cut.push({
+          offset: node.range[0],
+          message: `"${String(node.value)} #${node.comment.trim()}" was cut off at "#" — wrap the whole value in quotes`,
+        });
       }
     },
   });
+  return cut;
+}
+
+/** Parse YAML, rejecting syntax errors and values cut short by ` #` (cutValues). */
+export function parseYaml(text: string): unknown {
+  const doc = parseDocument(text);
+  if (doc.errors.length > 0) throw doc.errors[0];
+  const [cut] = cutValues(doc, text);
+  if (cut) throw new Error(cut.message);
   return doc.toJS();
 }
 

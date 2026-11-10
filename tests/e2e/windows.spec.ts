@@ -135,6 +135,9 @@ test.describe("a project's window: the same content as its page, over the home p
   test('from its title: its address, its heading takes focus, its page’s content', async ({
     page,
   }) => {
+    // Both pages show Clock Stamp's live clock: one fixed time for the whole context, so a minute
+    // turning over between the two reads cannot make them differ (it did once: 09:28 / 09:29).
+    await page.context().clock.setFixedTime(new Date('2026-10-24T16:45:00Z'));
     await page.goto(V2);
     const link = page.locator(`#project-${first.id} a[data-project-link]`);
     await link.focus();

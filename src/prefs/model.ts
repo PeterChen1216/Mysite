@@ -7,7 +7,7 @@
  * (src/prefs/boot.ts, as their source text) and imported by src/scripts/prefs.ts. They must stay
  * self-contained — no imports, no module-level values — which is why the lists come in `cfg`.
  */
-import { LOCALES } from '../i18n/locales';
+import { LOCALES } from '../i18n/locales.ts';
 
 export const PREFS_KEY = 'zhic:prefs:v1';
 

@@ -71,10 +71,16 @@ describe('watched routes the scene can draw', () => {
 describe('content breakage (always an error)', () => {
   it('flags an unclosed HTML comment in Markdown with its line', () => {
     const dir = fixture({ 'now.md': 'line one\n<!-- note\nrest of page\n', 'ok.md': '<!-- a -->' });
-    expect(findBreakage(dir)).toEqual(['content/now.md:2: "<!--" is never closed with "-->"']);
+    expect(findBreakage(dir)).toEqual([
+      expect.stringMatching(
+        /^content\/now\.md:2: "<!--" is never closed with "-->" — .*add "-->" where the note ends$/,
+      ),
+    ]);
     // `<!-->` and `<!--->` are complete, empty comments; an open one after them is still found.
     const empty = fixture({ 'now.md': 'a <!--> b\n<!---> c\nnext <!-- open\n' });
-    expect(findBreakage(empty)).toEqual(['content/now.md:3: "<!--" is never closed with "-->"']);
+    expect(findBreakage(empty)).toEqual([
+      expect.stringMatching(/^content\/now\.md:3: "<!--" is never closed/),
+    ]);
     expect(findBreakage(fixture({ 'now.md': 'a <!--> b <!---> c\n' }))).toEqual([]);
     // Each on its own, with no later "-->" that could close a comment read the old way.
     expect(findBreakage(fixture({ 'now.md': 'a <!--> b\n', 'b.md': 'c <!---> d\n' }))).toEqual([]);

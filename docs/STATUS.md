@@ -1,5 +1,9 @@
 # STATUS（会话交接 · PLAN §15.6）
 
+## M4 进度（每次推送后更新；新会话从这里接着做）
+- ✅ 第 1 步：`pnpm content:check` 按构建自己的 schema 逐个文件检查（`src/content/check.ts`，新），每条报错写明文件:行、第几项（带公司 / 学校名）、字段、错在哪、该怎么写，并回显写错的值；YAML 写坏（冒号、Tab、重复字段、` #` 截断）不再抛出堆栈，只报第一处并说怎么改；live 语言里的草稿每个文件一行；简历必须是 `content/resume/Resume.pdf` 且是真 PDF（旁边多一个 PDF 也报错）；`content/` 里网站不读的文件、`artifacts/` 里待处理的文件给提示；在 GitHub Actions 里每条问题同时是注解（显示在运行页和提交的对应行）。schema：结束日期 / `draft:` 的报错改成可操作的话，起止日期顺序只在两个日期都写对时才比较（不再多出一条误导的错）。测试：新 `tests/unit/content-check.test.ts`（真实脚本在 main / 指向 main 的 PR / `--strict` 下对 `TODO` / `lorem` / `placeholder` 退出 1、分支上退出 0；两个工作流都在构建前运行检查）
+- 下一步：简历版本化、CHANGELOG、PR 预览、`CLAUDE.md`、`docs/CONTENT-GUIDE.md`（截图）、演练计时、交付说明
+
 ## M3 进度（每次推送后更新；新会话从这里接着做）
 - ✅ 第 1 步：项目详情页与目录页（每种语言 `/projects/` 与 `/projects/<id>/`，静态、无 JS 可读、canonical / hreflang / noindex 按 X2 规则）、404「chunk not found」（一个根目录 `404.html`，按网址显示三种语言之一；`launched: false` 时 `/v2/` 外的地址「回家」指向旧站根目录）、首页项目标题变成链接、Projects 标题行的 `more ▸`；CJK 字体子集覆盖每种语言的全部页面；首屏 JS 检查跟随静态 import；Lighthouse 加入目录页、Clock Stamp 页与 404。新单测 `tests/unit/pages.test.ts`，新 E2E `tests/e2e/pages.spec.ts`。像素对比（`/v2/`、`/v2/?tier=1`，1440 / 1024 / 390，对照 `31e9882`）：只有 `more ▸`（64 × 24 px）不同
 - ✅ `250feea` 的 CI：上线配置作业**通过**（Lighthouse 10 个页面 × 5 次，用了 10 分钟；整个作业 18.5 分钟，上限 20）；主作业在 25 分钟处被取消——「安装 Playwright 浏览器」用了 8.5 分钟（平时不到 1 分钟），E2E 没跑完（日志拿不到）。下一次推送给 CI 加了浏览器缓存，上线作业上限改为 30 分钟

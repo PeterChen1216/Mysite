@@ -18,6 +18,8 @@ export default defineConfig({
         'src/content/parsers.ts',
         'src/content/guards.ts',
         'src/content/schema.ts',
+        // M4: the content check's field pass (pnpm content:check).
+        'src/content/check.ts',
         'src/prefs/model.ts',
         'src/prefs/boot.ts',
         'src/i18n/locales.ts',

@@ -10,11 +10,11 @@
  * Keep this file free of `astro:*` virtual imports so Vitest can load it directly.
  */
 import { z } from 'astro/zod';
-import { LOCALE_STATES } from '../i18n/locales';
-import { BODY, HASH, PROJECT_FIELDS, fieldsOf, translatedFields, type Fields } from '../i18n/translations';
-import { GLOBE_REGIONS } from '../lib/regions';
-import { isTimeZone } from '../lib/world-clock';
-import { MOTION_LEVELS, THEMES } from '../prefs/model';
+import { LOCALE_STATES } from '../i18n/locales.ts';
+import { BODY, HASH, PROJECT_FIELDS, fieldsOf, translatedFields, type Fields } from '../i18n/translations.ts';
+import { GLOBE_REGIONS } from '../lib/regions.ts';
+import { isTimeZone } from '../lib/world-clock.ts';
+import { MOTION_LEVELS, THEMES } from '../prefs/model.ts';
 
 /** Astro's `image()` schema helper (or a stand-in in tests); generic so the image type flows through. */
 export type ImageHelper<I extends z.ZodType = z.ZodType> = () => I;
@@ -27,6 +27,24 @@ const httpUrl = z.url({ protocol: /^https?$/ });
 export const yearMonth = z
   .string()
   .regex(/^\d{4}-(0[1-9]|1[0-2])$/, 'Use the YYYY-MM format, e.g. 2024-07');
+/**
+ * `start` is not after `end` (`present` is after everything). Only judged once both are well-formed
+ * months: a malformed one has its own message, and comparing it would add a misleading second.
+ */
+const inOrder = (start: unknown, end: unknown): boolean =>
+  end === 'present' ||
+  !yearMonth.safeParse(start).success ||
+  !yearMonth.safeParse(end).success ||
+  (start as string) <= (end as string);
+/** An end date: `YYYY-MM`, or `present` while it is still going on. */
+const endMonth = z.union([yearMonth, z.literal('present')], {
+  error: 'Use the YYYY-MM format (e.g. 2024-07), or present if it is still going on',
+});
+/** `draft: true`, or the list of fields (or copy keys) that are still drafts. */
+const draftMark = <T extends z.ZodType>(item: T) =>
+  z.union([z.literal(true), z.array(item).min(1)], {
+    error: 'Write draft: true, or a list of the fields that are still drafts, e.g. draft: [role]',
+  });
 /** An IANA time zone name, e.g. `America/Los_Angeles` (checked at build time). */
 const timeZone = text.refine(isTimeZone, {
   message: 'Use an IANA time zone name, e.g. America/Los_Angeles',
@@ -62,14 +80,14 @@ export function translationBlock(fields: Fields, extra: readonly string[] = []) 
     .object({
       ...values,
       from: z.partialRecord(z.enum(names), sourceHashSchema).optional(),
-      draft: z.union([z.literal(true), z.array(z.enum(names)).min(1)]).optional(),
+      draft: draftMark(z.enum(names)).optional(),
     })
     .strict()
     .refine((b) => !Array.isArray(b.draft) || b.draft.every((k) => present(b, k)), {
-      message: '`draft:` lists a field this block does not translate',
+      message: '`draft:` names a field this block does not translate — fix its name, or take it out of `draft:`',
     })
     .refine((b) => Object.keys(b.from ?? {}).every((k) => present(b, k)), {
-      message: '`from:` lists a field this block does not translate',
+      message: '`from:` names a field this block does not translate — fix its name, or delete that line of `from:`',
     })
     .refine((b) => translatedFields(b).length > 0 || extra.length > 0, {
       message: 'an empty translation block: remove it, or add the translated fields',
@@ -206,7 +224,7 @@ export const educationSchema = z
     ...translations(fieldsOf('education.yaml')),
   })
   .strict()
-  .refine((e) => e.start <= e.end, { message: '`start` must not be after `end`' });
+  .refine((e) => inOrder(e.start, e.end), { message: '`start` must not be after `end`' });
 
 // ---------------------------------------------------------- experience.yaml
 export const experienceSchema = <I extends z.ZodType>(image: ImageHelper<I>) =>
@@ -217,7 +235,7 @@ export const experienceSchema = <I extends z.ZodType>(image: ImageHelper<I>) =>
       role: text,
       kind: z.enum(['internship', 'full-time', 'part-time', 'research', 'volunteer']).optional(),
       start: yearMonth,
-      end: yearMonth.or(z.literal('present')),
+      end: endMonth,
       location: text,
       url: httpUrl.optional(),
       logo: image().optional(),
@@ -229,7 +247,7 @@ export const experienceSchema = <I extends z.ZodType>(image: ImageHelper<I>) =>
       ...translations(fieldsOf('experience.yaml')),
     })
     .strict()
-    .refine((e) => e.end === 'present' || e.start <= e.end, {
+    .refine((e) => inOrder(e.start, e.end), {
       message: '`start` must not be after `end`',
     });
 
@@ -363,7 +381,7 @@ export const projectSchema = <I extends z.ZodType>(image: ImageHelper<I>) =>
       role: text.optional(),
       location: text.optional(),
       start: yearMonth.optional(),
-      end: yearMonth.or(z.literal('present')).optional(),
+      end: endMonth.optional(),
       links: z
         .object({
           appstore: httpUrl.optional(),
@@ -394,7 +412,7 @@ export const projectSchema = <I extends z.ZodType>(image: ImageHelper<I>) =>
     .refine((p) => !p.cover || !!p.cover_alt, { message: '`cover_alt` is required with `cover`' })
     .refine((p) => !p.end || !!p.start, { message: '`end` needs a `start`' })
     .refine((p) => !p.start || !!p.end, { message: '`start` needs an `end` (YYYY-MM or present)' })
-    .refine((p) => !p.start || !p.end || p.end === 'present' || p.start <= p.end, {
+    .refine((p) => !p.start || !p.end || inOrder(p.start, p.end), {
       message: '`start` must not be after `end`',
     });
 
@@ -761,7 +779,7 @@ export const copySchema = z
  */
 export const translatedCopySchema = copySchema.extend({
   from: z.record(z.string(), sourceHashSchema).optional(),
-  draft: z.union([z.literal(true), z.array(text).min(1)]).optional(),
+  draft: draftMark(text).optional(),
 });
 
 // ---------------------------------------------- projects/<id>.zh-hans.md (twins)

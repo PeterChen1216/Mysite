@@ -214,7 +214,7 @@ describe('content guard: translations', () => {
     expect(findTranslationProblems(fixture({ ...base, 'site.yaml': SITE }))).toEqual([]);
     const live = SITE.replace('zh-hans: preview', 'zh-hans: live');
     expect(findTranslationProblems(fixture({ ...base, 'site.yaml': live }))).toEqual([
-      'content/experience.yaml: #1 (A) › role (zh-hans) is a draft, but zh-hans is live',
+      'content/experience.yaml: 1 zh-hans translation(s) still marked draft (#1 (A) › role), but zh-hans is live in content/site.yaml — read them and delete their "draft", or set zh-hans back to preview',
     ]);
   });
   it('each language names itself: a copy file using another one’s name is caught', () => {
@@ -244,10 +244,10 @@ describe('content guard: translations', () => {
       }),
     );
     expect(problems).toEqual([
-      'content/copy.zh-hant.yaml: missing keys nav.status',
-      'content/copy.zh-hant.yaml: keys copy.yaml lacks: nav.state',
-      'content/gone.zh-hans.md: a translation of a file that does not exist',
-      'content/profile.yaml: contains U+E000 / U+E001 (reserved by the build)',
+      'content/copy.zh-hant.yaml: missing nav.status — copy.yaml has these lines and this file must too (translate them; nothing falls back to English)',
+      'content/copy.zh-hant.yaml: nav.state not in copy.yaml — delete them here, or check their spelling against copy.yaml',
+      'content/gone.zh-hans.md: a translation of a file that does not exist — rename it after its English file (about.zh-hans.md translates about.md), or delete it',
+      'content/profile.yaml: contains U+E000 / U+E001 (invisible characters the build reserves) — retype the text around them',
     ]);
   });
 });
