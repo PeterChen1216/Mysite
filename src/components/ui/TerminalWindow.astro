@@ -29,7 +29,7 @@ const { title, class: cls, font = 'term' } = Astro.props;
     flex-direction: column;
     background: var(--color-bg-terminal);
     border: 2px solid var(--color-border-edge);
-    box-shadow: 8px 8px 0 0 rgb(0 0 0 / 0.5);
+    box-shadow: 8px 8px 0 0 var(--color-shadow-term);
     max-width: 100%;
   }
   .term__bar {
@@ -45,13 +45,13 @@ const { title, class: cls, font = 'term' } = Astro.props;
     flex: none;
   }
   .term__dot--r {
-    background: #ff5f56;
+    background: var(--term-dot-red);
   }
   .term__dot--y {
-    background: #ffbd2e;
+    background: var(--term-dot-yellow);
   }
   .term__dot--g {
-    background: #27c93f;
+    background: var(--term-dot-green);
   }
   .term__title {
     flex: 1;

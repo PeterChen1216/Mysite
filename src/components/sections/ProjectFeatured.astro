@@ -142,7 +142,7 @@ const withPhone = p.demo === 'world-clock';
   .pf__block--glow {
     left: -34px;
     bottom: 92px;
-    filter: drop-shadow(0 0 14.4px rgb(242 201 76 / 0.6));
+    filter: drop-shadow(0 0 14.4px var(--color-glow-gold));
   }
   .pf__copy {
     flex: 1 1 0;
@@ -157,7 +157,7 @@ const withPhone = p.demo === 'world-clock';
     font: var(--type-pixel-h3);
     letter-spacing: var(--type-pixel-h3-tracking);
     color: var(--color-text-hi);
-    text-shadow: 3px 3px 0 rgb(0 0 0 / 0.8);
+    text-shadow: 3px 3px 0 var(--color-heading-shadow-md);
   }
   /* Chips sit above the title on screen; the title stays first for screen readers. */
   .pf__chips {
@@ -174,7 +174,7 @@ const withPhone = p.demo === 'world-clock';
   }
   .sym {
     font-family: var(--font-symbol);
-    font-size: 10px;
+    font-size: calc(10px * var(--ts));
     line-height: 1;
   }
   /* Figma's paragraph is 560 px; bullets get a little more room so they wrap like it does. */
@@ -269,7 +269,7 @@ const withPhone = p.demo === 'world-clock';
     gap: 12px;
   }
   .pf__links :global(.mc-btn) {
-    text-transform: uppercase;
+    text-transform: var(--type-label-case);
   }
   .pf__stage {
     position: relative;
@@ -296,11 +296,11 @@ const withPhone = p.demo === 'world-clock';
       padding-right: 72px;
     }
     .pf__title {
-      font-size: 26px;
+      font-size: calc(26px * var(--ts));
     }
     /* One class more than TerminalWindow's own `.term--term .term__body` font rule. */
     .pf__copy :global(.pf__term.term--term .term__body) {
-      font-size: 20px;
+      font-size: calc(20px * var(--ts));
       padding: 12px 14px;
     }
   }

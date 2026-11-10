@@ -81,7 +81,7 @@ const layout = cards === 3 ? 'stack' : cards % 2 === 1 ? 'strip' : 'pairs';
     position: absolute;
     top: 40px;
     right: 235px;
-    filter: drop-shadow(0 0 11.2px rgb(74 237 217 / 0.35));
+    filter: drop-shadow(0 0 11.2px var(--color-glow-diamond));
   }
 
   /* Card roots are rendered by ui/Card.astro, hence :global(). */

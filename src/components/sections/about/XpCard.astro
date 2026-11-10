@@ -57,7 +57,7 @@ const filled = Math.round((gpaRatio(edu.gpa) ?? 0) * CELLS);
     font: var(--type-pixel-h2);
     letter-spacing: var(--type-pixel-h2-tracking);
     color: var(--color-accent-terminal-green);
-    text-shadow: 3px 3px 0 rgb(0 0 0 / 0.8);
+    text-shadow: 3px 3px 0 var(--color-heading-shadow-md);
   }
   /* Figma XPBar: 16 px tall, 2 px black border, 14 px cells 4 px apart, two greens. */
   .xp__bar {
@@ -66,7 +66,7 @@ const filled = Math.round((gpaRatio(edu.gpa) ?? 0) * CELLS);
     gap: 4px;
     height: 16px;
     padding: 2px;
-    background: var(--color-bg-terminal);
+    background: var(--color-bg-slot);
     border: 2px solid var(--color-ink);
   }
   .xp__cell {
@@ -108,6 +108,6 @@ const filled = Math.round((gpaRatio(edu.gpa) ?? 0) * CELLS);
     width: 8px;
     height: 8px;
     background: var(--color-accent-gold);
-    box-shadow: 2px 2px 0 rgb(0 0 0 / 0.6);
+    box-shadow: 2px 2px 0 var(--color-shadow);
   }
 </style>

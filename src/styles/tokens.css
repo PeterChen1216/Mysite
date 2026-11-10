@@ -1,42 +1,526 @@
 /*
- * Design tokens — generated from Figma, do not hand-edit values without a Figma link in the PR.
+ * Design tokens — the only file in src/ that may hold a colour value (scripts/check-colors.mjs).
  * Source: https://www.figma.com/design/cA9xh6uSZZvmFCUzrAhxjk  (page "Home — Voxel" → 🎨 Style tile, node 27:2324)
- * Variable collection: Voxel/Night · Text styles: Pixel/* Term/* Code/*
- * Synced: 2026-11-09 (M0)
+ * Variable collection: Voxel (mode Night = the design as shipped) · Text styles: Pixel/* Term/* Code/*
+ * Synced: 2026-11-09 (M0). Theme modes Day / Mono dark / Mono light / CVD: docs/PLAN-EXPERIENCE.md
+ * §3.2, to be written back to Figma as modes of the Voxel collection (docs/STATUS.md).
+ *
+ * Three layers (PLAN-EXPERIENCE §2.3):
+ *   1. palette   --p-*        raw values, no meaning; the same in every theme
+ *   2. semantic  --color-*    what a colour is for; one block per theme (html[data-theme])
+ *   3. component --mc-*, --term-*   only where a component truly differs from the semantic set
+ * Components use semantic (or component) tokens only.
+ *
+ * Themes: Night is :root (also the page without JavaScript). The inline head script sets
+ * html[data-theme] before first paint (src/prefs/boot.ts). In the light themes, "dark objects"
+ * (terminals, the git log, the phone, tooltips and chips, the settings window) carry
+ * data-surface="dark" and keep a dark palette: Night inside Day, Mono dark inside Mono light.
+ * prefers-contrast: more, forced-colors and print are handled at the end of this file.
  *
  * Figma letterSpacing values are percentages → emitted here as em (6 → 0.06em).
  * Figma lineHeight values are unitless multipliers.
  */
-:root {
-  /* ── color · Voxel/Night ─────────────────────────────── */
-  --color-bg-night: #0b0f1a;
-  --color-bg-panel: #12172a;
-  --color-bg-terminal: #0a0e14;
-  --color-border-line: #1c2340;
-  --color-border-edge: #2a3250;
-  --color-text-hi: #e6edf3;
-  --color-text-mid: #8b949e;
-  --color-text-lo: #556070; /* decorative only: 3.0:1 on bg-night, 2.8:1 on bg-panel — not for text or UI boundaries */
-  --color-accent-terminal-green: #39ff14;
-  --color-accent-diamond: #4aedd9;
-  --color-accent-gold: #fcdb05;
-  --color-accent-enchant: #a335ee; /* fills and nodes only: 4.0–4.3:1 as text */
-  --color-accent-enchant-text: #b866f5; /* the same purple lightened to pass WCAG AA as text */
-  --color-accent-aqua: #55ffff; /* tooltip / chip cyan (Figma Tooltip, aviation chip) */
-  --color-accent-redstone: #ff5555;
-  --color-block-grass: #7cbd4f;
-  --color-block-dirt: #8b5a2b;
-  --color-block-stone: #8d8d8d;
-  --color-block-water: #2457c5;
-  --color-xp-light: #7cf35f; /* the lighter of the XP bar's two greens */
-  /* Enchanted tooltip / chip (Figma Tooltip, Chip): purple edge on near-black */
-  --color-tooltip-edge: #5000ff;
-  --color-tooltip-bg: rgb(16 0 16 / 0.9);
-  /* Ink and paper: outlines, hard shadows and text that must stay pure */
-  --color-ink: #000;
-  --color-paper: #fff;
-  --color-text-shadow: #3f3f3f; /* 2 px shadow under 8-bit labels */
 
+/* ── 1. palette ───────────────────────────────────────────────────────────── */
+:root {
+  /* Night (Figma Voxel/Night) */
+  --p-navy-950: #0a0e14;
+  --p-navy-900: #0b0f1a;
+  --p-navy-850: #10151c;
+  --p-navy-800: #12172a;
+  --p-navy-700: #1c2340;
+  --p-navy-600: #2a3250;
+  --p-slate-500: #556070;
+  --p-slate-300: #8b949e;
+  --p-slate-200: #c9d1d9;
+  --p-slate-100: #e6edf3;
+  --p-neon-green: #39ff14;
+  --p-xp-green: #7cf35f;
+  --p-diamond: #4aedd9;
+  --p-aqua: #55ffff;
+  --p-gold: #fcdb05;
+  --p-enchant: #a335ee;
+  --p-enchant-light: #b866f5;
+  --p-redstone: #ff5555;
+  --p-grass: #7cbd4f;
+  --p-dirt: #8b5a2b;
+  --p-stone: #8d8d8d;
+  --p-water: #2457c5;
+  --p-ultramarine: #5000ff;
+  --p-tooltip-plum: rgb(16 0 16 / 0.9);
+  --p-tooltip-plum-solid: rgb(16 0 16 / 0.94);
+  --p-black: #000;
+  --p-white: #fff;
+  --p-grey-25: #3f3f3f;
+  --p-grey-11: #1b1b1b;
+  /* Day ("Overworld"): warm paper, white panels */
+  --p-paper: #f3efe4;
+  --p-paper-panel: #fffdf6;
+  --p-paper-slot: #ece6d6;
+  --p-paper-line: #d8cfb9;
+  --p-paper-edge: #8a7f68;
+  --p-paper-shade: #dcd2bb;
+  --p-ink-900: #161b22;
+  --p-ink-600: #4b5563;
+  --p-ink-400: #8a8f98;
+  --p-day-green: #11730a;
+  --p-day-xp: #2f8f1f;
+  --p-day-teal: #0a6f69;
+  --p-day-gold: #7a5c00;
+  --p-day-violet: #7422c4;
+  --p-day-red: #b3261e;
+  --p-day-blue: #0a5fa8;
+  /* Mono */
+  --p-mono-0: #000;
+  --p-mono-6: #0e0e0e;
+  --p-mono-12: #1f1f1f;
+  --p-mono-17: #2b2b2b;
+  --p-mono-27: #454545;
+  --p-mono-40: #666;
+  --p-mono-42: #6b6b6b;
+  --p-mono-54: #8a8a8a;
+  --p-mono-60: #9a9a9a;
+  --p-mono-71: #b4b4b4;
+  --p-mono-81: #cfcfcf;
+  --p-mono-84: #d6d6d6;
+  --p-mono-85: #d9d9d9;
+  --p-mono-88: #e0e0e0;
+  --p-mono-90: #e6e6e6;
+  --p-mono-91: #e8e8e8;
+  --p-mono-96: #f4f4f4;
+  --p-mono-100: #fff;
+  /* Colour-blind safe ("Prism"): the Okabe–Ito set, lightened where needed for AA on navy */
+  --p-oi-bluish-green: #00c896;
+  --p-oi-bluish-green-light: #5fe0bd;
+  --p-oi-sky: #56b4e9;
+  --p-oi-yellow: #f0e442;
+  --p-oi-purple: #cc79a7;
+  --p-oi-orange: #ff7a1a;
+  /* MC buttons and terminal lights (component tokens below) */
+  --p-mc-stone: #6f6f6f;
+  --p-mc-stone-hi: #a8a8a8;
+  --p-mc-stone-lo: #2c2c2c;
+  --p-mc-grass: #44802a;
+  --p-mc-grass-hi: #8ed35c;
+  --p-mc-grass-lo: #2f5a1c;
+  --p-mc-hover: #4f63e0;
+  --p-mc-hover-hi: #aebbff;
+  --p-mc-hover-lo: #2a3380;
+  --p-mc-hover-text: #ffffa0;
+  --p-mc-grass-hover: #3d7a22;
+  --p-mc-grass-hover-hi: #a7e07e;
+  --p-mc-grass-hover-lo: #345f20;
+  --p-light-red: #ff5f56;
+  --p-light-amber: #ffbd2e;
+  --p-light-green: #27c93f;
+  /* Shades and glows (alpha over whatever is behind) */
+  --p-shade-0: rgb(0 0 0 / 0);
+  --p-shade-08: rgb(0 0 0 / 0.08);
+  --p-shade-25: rgb(0 0 0 / 0.25);
+  --p-shade-35: rgb(0 0 0 / 0.35);
+  --p-shade-45: rgb(0 0 0 / 0.45);
+  --p-shade-50: rgb(0 0 0 / 0.5);
+  --p-shade-55: rgb(0 0 0 / 0.55);
+  --p-shade-60: rgb(0 0 0 / 0.6);
+  --p-shade-78: rgb(0 0 0 / 0.78);
+  --p-shade-80: rgb(0 0 0 / 0.8);
+  --p-shade-85: rgb(0 0 0 / 0.85);
+  --p-light-06: rgb(0 0 0 / 0.06);
+  --p-light-12: rgb(255 255 255 / 0.12);
+  --p-light-20: rgb(255 255 255 / 0.2);
+  --p-light-60: rgb(255 255 255 / 0.6);
+  --p-night-bar-72: rgb(10 14 20 / 0.72);
+  --p-night-bar-90: rgb(10 14 20 / 0.9);
+  --p-night-ghost: rgb(18 23 42 / 0.6);
+  --p-night-backdrop: rgb(5 7 12 / 0.72);
+  --p-slate-underline: rgb(139 148 158 / 0.55);
+  --p-neon-green-12: rgb(57 255 20 / 0.12);
+  --p-neon-green-55: rgb(57 255 20 / 0.55);
+  --p-neon-green-80: rgb(57 255 20 / 0.8);
+  --p-glow-gold: rgb(242 201 76 / 0.6);
+  --p-glow-diamond: rgb(74 237 217 / 0.35);
+  --p-paper-bar-88: rgb(255 253 246 / 0.88);
+  --p-paper-bar-94: rgb(255 253 246 / 0.94);
+  --p-paper-ghost: rgb(255 253 246 / 0.6);
+  --p-paper-backdrop: rgb(22 27 34 / 0.45);
+  --p-paper-shadow: rgb(60 48 20 / 0.22);
+  --p-ink-underline: rgb(75 85 99 / 0.55);
+  --p-day-green-10: rgb(17 115 10 / 0.1);
+  --p-day-green-55: rgb(17 115 10 / 0.55);
+  --p-mono-bar-85: rgb(0 0 0 / 0.85);
+  --p-mono-bar-92: rgb(0 0 0 / 0.92);
+  --p-mono-ghost: rgb(14 14 14 / 0.6);
+  --p-mono-light-bar-90: rgb(255 255 255 / 0.9);
+  --p-mono-light-bar-94: rgb(255 255 255 / 0.94);
+  --p-mono-light-ghost: rgb(244 244 244 / 0.6);
+  --p-mono-underline: rgb(180 180 180 / 0.55);
+  --p-mono-light-underline: rgb(69 69 69 / 0.55);
+  --p-oi-green-12: rgb(0 200 150 / 0.12);
+  --p-oi-green-55: rgb(0 200 150 / 0.55);
+  --p-oi-green-80: rgb(0 200 150 / 0.8);
+}
+
+/* ── 2. semantic ──────────────────────────────────────────────────────────── */
+/* Night (default; Figma Voxel/Night). Also the dark objects inside Day. */
+:root,
+[data-theme='night'],
+[data-theme='day'] [data-surface='dark'] {
+  color-scheme: dark;
+  /* surfaces */
+  --color-bg-night: var(--p-navy-900); /* the page */
+  --color-bg-panel: var(--p-navy-800); /* cards, title bars */
+  --color-bg-panel-ghost: var(--p-night-ghost); /* dashed "next chunk" card */
+  --color-bg-terminal: var(--p-navy-950); /* terminals and the git log (dark objects) */
+  --color-bg-slot: var(--p-navy-950); /* inventory slots on cards */
+  --color-bg-nav: var(--p-night-bar-72);
+  --color-bg-bar: var(--p-night-bar-90); /* ticker, footer */
+  --color-backdrop: var(--p-night-backdrop); /* behind the settings window */
+  --color-border-line: var(--p-navy-700);
+  --color-border-edge: var(--p-navy-600);
+  /* text */
+  --color-text-hi: var(--p-slate-100);
+  --color-text-mid: var(--p-slate-300);
+  --color-text-lo: var(
+    --p-slate-500
+  ); /* decorative only: 3.0:1 on bg-night — not for text or UI boundaries */
+  --color-text-bright: var(--p-white); /* the logo and other pure-white labels */
+  /* accents (Figma names; the role in brackets) */
+  --color-accent-terminal-green: var(--p-neon-green); /* [ok] */
+  --color-accent-diamond: var(--p-diamond); /* [info] */
+  --color-accent-gold: var(--p-gold); /* [highlight] */
+  --color-accent-enchant: var(--p-enchant); /* [special] fills and nodes only: 4.0–4.3:1 as text */
+  --color-accent-enchant-text: var(--p-enchant-light); /* the same purple lightened for AA text */
+  --color-accent-aqua: var(--p-aqua); /* tooltip / chip cyan (Figma Tooltip, aviation chip) */
+  --color-accent-redstone: var(--p-redstone); /* [alert] */
+  --color-link: var(--p-diamond);
+  --color-link-hover: var(--p-gold);
+  --color-link-underline-muted: var(--p-slate-underline);
+  --color-focus: var(--p-gold); /* 2 px focus ring */
+  --color-block-grass: var(--p-grass);
+  --color-block-dirt: var(--p-dirt);
+  --color-block-stone: var(--p-stone);
+  --color-block-water: var(--p-water);
+  --color-xp-light: var(--p-xp-green); /* the lighter of the XP bar's two greens */
+  /* Enchanted tooltip / chip (Figma Tooltip, Chip): purple edge on near-black */
+  --color-tooltip-edge: var(--p-ultramarine);
+  --color-tooltip-bg: var(--p-tooltip-plum);
+  --color-tooltip-bg-solid: var(--p-tooltip-plum-solid);
+  --color-tooltip-text-shadow: var(--p-grey-11);
+  /* Ink and paper: outlines, hard shadows and text that must stay pure */
+  --color-ink: var(--p-black);
+  --color-paper: var(--p-white);
+  --color-text-shadow: var(--p-grey-25); /* 2 px shadow under 8-bit labels */
+  /* shadows: hard pixel shadows under things, and under big headings */
+  --color-shadow: var(--p-shade-60); /* cards, panels */
+  --color-shadow-term: var(--p-shade-50); /* terminals, the player card */
+  --color-shadow-block: var(--p-shade-35); /* voxel blocks and icons */
+  --color-shadow-inset: var(--p-shade-45); /* inventory-slot inset */
+  --color-heading-shadow: var(--p-shade-85); /* section headings */
+  --color-heading-shadow-md: var(--p-shade-80); /* card headings, the XP level */
+  --color-heading-shadow-lo: var(--p-shade-60); /* the hero headline */
+  --color-tag-bg: var(--p-shade-55); /* name tag over the hero art */
+  --color-shade-clear: var(--p-shade-0);
+  --color-shade-soft: var(--p-shade-08);
+  --color-shade-deep: var(--p-shade-78);
+  --color-shade-dial: var(--p-shade-55);
+  --color-bevel-hi: var(--p-light-12);
+  /* nav highlight and glows */
+  --color-nav-active-bg: var(--p-neon-green-12);
+  --color-nav-active-edge: var(--p-neon-green-55);
+  --color-glow-green: var(--p-neon-green-80);
+  --color-glow-gold: var(--p-glow-gold);
+  --color-glow-diamond: var(--p-glow-diamond);
+  /* redundant cues: glyphs and shapes beside colour (PLAN-EXPERIENCE §3.3). Night is the design
+     as shipped and relies on the words; the other themes and contrast modes show them. */
+  --cue-display: none;
+  /* art */
+  --art-filter: none;
+}
+/* In Day the dark objects use a slightly lighter terminal so they read as objects on paper. */
+[data-theme='day'] [data-surface='dark'] {
+  --color-bg-terminal: var(--p-navy-850);
+}
+
+/* Colour-blind safe ("Prism"): Night with the accents remapped to the Okabe–Ito set. */
+[data-theme='cvd'] {
+  --color-accent-terminal-green: var(--p-oi-bluish-green);
+  --color-accent-diamond: var(--p-oi-sky);
+  --color-accent-gold: var(--p-oi-yellow);
+  --color-accent-enchant: var(--p-oi-purple);
+  --color-accent-enchant-text: var(--p-oi-purple);
+  --color-accent-aqua: var(--p-oi-sky);
+  --color-accent-redstone: var(--p-oi-orange);
+  --color-link: var(--p-oi-sky);
+  --color-link-hover: var(--p-oi-yellow);
+  --color-focus: var(--p-oi-yellow);
+  --color-xp-light: var(--p-oi-bluish-green-light);
+  --color-nav-active-bg: var(--p-oi-green-12);
+  --color-nav-active-edge: var(--p-oi-green-55);
+  --color-glow-green: var(--p-oi-green-80);
+  --cue-display: inline-block;
+}
+
+/* Day ("Overworld"): warm paper ground, white panels; terminals stay dark (see above). */
+[data-theme='day'] {
+  color-scheme: light;
+  --color-bg-night: var(--p-paper);
+  --color-bg-panel: var(--p-paper-panel);
+  --color-bg-panel-ghost: var(--p-paper-ghost);
+  --color-bg-terminal: var(--p-navy-850);
+  --color-bg-slot: var(--p-paper-slot);
+  --color-bg-nav: var(--p-paper-bar-88);
+  --color-bg-bar: var(--p-paper-bar-94);
+  --color-backdrop: var(--p-paper-backdrop);
+  --color-border-line: var(--p-paper-line);
+  --color-border-edge: var(--p-paper-edge);
+  --color-text-hi: var(--p-ink-900);
+  --color-text-mid: var(--p-ink-600);
+  --color-text-lo: var(--p-ink-400);
+  --color-text-bright: var(--p-ink-900);
+  --color-accent-terminal-green: var(--p-day-green);
+  --color-accent-diamond: var(--p-day-teal);
+  --color-accent-gold: var(--p-day-gold);
+  --color-accent-enchant: var(--p-day-violet);
+  --color-accent-enchant-text: var(--p-day-violet);
+  --color-accent-aqua: var(--p-day-teal);
+  --color-accent-redstone: var(--p-day-red);
+  --color-link: var(--p-day-blue);
+  --color-link-hover: var(--p-day-gold);
+  --color-link-underline-muted: var(--p-ink-underline);
+  --color-focus: var(--p-ink-900);
+  --color-block-grass: var(--p-grass);
+  --color-block-dirt: var(--p-dirt);
+  --color-block-stone: var(--p-stone);
+  --color-block-water: var(--p-water);
+  --color-xp-light: var(--p-day-xp);
+  --color-tooltip-edge: var(--p-ultramarine);
+  --color-tooltip-bg: var(--p-tooltip-plum);
+  --color-tooltip-bg-solid: var(--p-tooltip-plum-solid);
+  --color-tooltip-text-shadow: var(--p-grey-11);
+  --color-ink: var(--p-black);
+  --color-paper: var(--p-white);
+  --color-text-shadow: var(--p-grey-25);
+  --color-shadow: var(--p-paper-shadow);
+  --color-shadow-term: var(--p-shade-35);
+  --color-shadow-block: var(--p-shade-25);
+  --color-shadow-inset: var(--p-light-06);
+  --color-heading-shadow: var(--p-paper-shade);
+  --color-heading-shadow-md: var(--p-paper-shade);
+  --color-heading-shadow-lo: var(--p-paper-shade);
+  --color-tag-bg: var(--p-shade-55);
+  --color-shade-clear: var(--p-shade-0);
+  --color-shade-soft: var(--p-shade-08);
+  --color-shade-deep: var(--p-shade-78);
+  --color-shade-dial: var(--p-shade-55);
+  --color-bevel-hi: var(--p-light-12);
+  --color-nav-active-bg: var(--p-day-green-10);
+  --color-nav-active-edge: var(--p-day-green-55);
+  --color-glow-green: var(--p-day-green-55);
+  --color-glow-gold: var(--p-glow-gold);
+  --color-glow-diamond: var(--p-glow-diamond);
+  --cue-display: inline-block;
+  --art-filter: none;
+}
+
+/* Mono dark ("Bedrock"): pure black, white ink, greys. Also the dark objects in Mono light. */
+[data-theme='mono-dark'],
+[data-theme='mono-light'] [data-surface='dark'] {
+  color-scheme: dark;
+  --color-bg-night: var(--p-mono-0);
+  --color-bg-panel: var(--p-mono-6);
+  --color-bg-panel-ghost: var(--p-mono-ghost);
+  --color-bg-terminal: var(--p-mono-0);
+  --color-bg-slot: var(--p-mono-0);
+  --color-bg-nav: var(--p-mono-bar-85);
+  --color-bg-bar: var(--p-mono-bar-92);
+  --color-backdrop: var(--p-mono-bar-85);
+  --color-border-line: var(--p-mono-17);
+  --color-border-edge: var(--p-mono-40);
+  --color-text-hi: var(--p-mono-100);
+  --color-text-mid: var(--p-mono-71);
+  --color-text-lo: var(--p-mono-42);
+  --color-text-bright: var(--p-mono-100);
+  --color-accent-terminal-green: var(--p-mono-100);
+  --color-accent-diamond: var(--p-mono-88);
+  --color-accent-gold: var(--p-mono-100);
+  --color-accent-enchant: var(--p-mono-81);
+  --color-accent-enchant-text: var(--p-mono-81);
+  --color-accent-aqua: var(--p-mono-88);
+  --color-accent-redstone: var(--p-mono-100);
+  --color-link: var(--p-mono-100);
+  --color-link-hover: var(--p-mono-88);
+  --color-link-underline-muted: var(--p-mono-underline);
+  --color-focus: var(--p-mono-100);
+  --color-block-grass: var(--p-mono-71);
+  --color-block-dirt: var(--p-mono-42);
+  --color-block-stone: var(--p-mono-54);
+  --color-block-water: var(--p-mono-12);
+  --color-xp-light: var(--p-mono-60);
+  --color-tooltip-edge: var(--p-mono-71);
+  --color-tooltip-bg: var(--p-mono-bar-92);
+  --color-tooltip-bg-solid: var(--p-mono-0);
+  --color-tooltip-text-shadow: var(--p-mono-0);
+  --color-ink: var(--p-black);
+  --color-paper: var(--p-white);
+  --color-text-shadow: var(--p-grey-25);
+  --color-shadow: var(--p-shade-60);
+  --color-shadow-term: var(--p-shade-50);
+  --color-shadow-block: var(--p-shade-35);
+  --color-shadow-inset: var(--p-shade-45);
+  --color-heading-shadow: var(--p-shade-85);
+  --color-heading-shadow-md: var(--p-shade-80);
+  --color-heading-shadow-lo: var(--p-shade-60);
+  --color-tag-bg: var(--p-mono-bar-85);
+  --color-shade-clear: var(--p-shade-0);
+  --color-shade-soft: var(--p-shade-08);
+  --color-shade-deep: var(--p-shade-78);
+  --color-shade-dial: var(--p-shade-55);
+  --color-bevel-hi: var(--p-light-12);
+  --color-nav-active-bg: var(--p-light-12);
+  --color-nav-active-edge: var(--p-light-60);
+  --color-glow-green: var(--p-light-60);
+  --color-glow-gold: var(--p-light-20);
+  --color-glow-diamond: var(--p-light-20);
+  --cue-display: inline-block;
+  /* Pictures render through one filter instead of a second art set (§3.4). */
+  --art-filter: grayscale(1) contrast(1.15);
+}
+
+/* Mono light ("Paper"): white, black ink. Printing uses it too (end of file). */
+[data-theme='mono-light'] {
+  color-scheme: light;
+  --color-bg-night: var(--p-mono-100);
+  --color-bg-panel: var(--p-mono-96);
+  --color-bg-panel-ghost: var(--p-mono-light-ghost);
+  --color-bg-terminal: var(--p-mono-0);
+  --color-bg-slot: var(--p-mono-91);
+  --color-bg-nav: var(--p-mono-light-bar-90);
+  --color-bg-bar: var(--p-mono-light-bar-94);
+  --color-backdrop: var(--p-paper-backdrop);
+  --color-border-line: var(--p-mono-84);
+  --color-border-edge: var(--p-mono-54);
+  --color-text-hi: var(--p-mono-0);
+  --color-text-mid: var(--p-mono-27);
+  --color-text-lo: var(--p-mono-60);
+  --color-text-bright: var(--p-mono-0);
+  --color-accent-terminal-green: var(--p-mono-0);
+  --color-accent-diamond: var(--p-mono-12);
+  --color-accent-gold: var(--p-mono-0);
+  --color-accent-enchant: var(--p-mono-17);
+  --color-accent-enchant-text: var(--p-mono-17);
+  --color-accent-aqua: var(--p-mono-12);
+  --color-accent-redstone: var(--p-mono-0);
+  --color-link: var(--p-mono-0);
+  --color-link-hover: var(--p-mono-27);
+  --color-link-underline-muted: var(--p-mono-light-underline);
+  --color-focus: var(--p-mono-0);
+  --color-block-grass: var(--p-mono-42);
+  --color-block-dirt: var(--p-mono-27);
+  --color-block-stone: var(--p-mono-54);
+  --color-block-water: var(--p-mono-90);
+  --color-xp-light: var(--p-mono-42);
+  --color-tooltip-edge: var(--p-mono-71);
+  --color-tooltip-bg: var(--p-mono-bar-92);
+  --color-tooltip-bg-solid: var(--p-mono-0);
+  --color-tooltip-text-shadow: var(--p-mono-0);
+  --color-ink: var(--p-black);
+  --color-paper: var(--p-white);
+  --color-text-shadow: var(--p-mono-100);
+  --color-shadow: var(--p-shade-25);
+  --color-shadow-term: var(--p-shade-25);
+  --color-shadow-block: var(--p-shade-25);
+  --color-shadow-inset: var(--p-light-06);
+  --color-heading-shadow: var(--p-mono-85);
+  --color-heading-shadow-md: var(--p-mono-85);
+  --color-heading-shadow-lo: var(--p-mono-85);
+  --color-tag-bg: var(--p-mono-bar-85);
+  --color-shade-clear: var(--p-shade-0);
+  --color-shade-soft: var(--p-shade-08);
+  --color-shade-deep: var(--p-shade-50);
+  --color-shade-dial: var(--p-shade-55);
+  --color-bevel-hi: var(--p-light-12);
+  --color-nav-active-bg: var(--p-light-06);
+  --color-nav-active-edge: var(--p-shade-60);
+  --color-glow-green: var(--p-shade-25);
+  --color-glow-gold: var(--p-shade-25);
+  --color-glow-diamond: var(--p-shade-25);
+  --cue-display: inline-block;
+  --art-filter: grayscale(1) contrast(1.15);
+}
+
+/* ── 3. component ─────────────────────────────────────────────────────────── */
+:root {
+  /* MC buttons (Figma MCButton 15:733), darkened from Figma for WCAG AA (docs/M1-PLAN.md §4) */
+  --mc-border: var(--p-black);
+  --mc-text-shadow: var(--p-grey-25);
+  --mc-stone-bg: var(--p-mc-stone);
+  --mc-stone-hi: var(--p-mc-stone-hi);
+  --mc-stone-lo: var(--p-mc-stone-lo);
+  --mc-stone-fg: var(--p-white);
+  --mc-grass-bg: var(--p-mc-grass);
+  --mc-grass-hi: var(--p-mc-grass-hi);
+  --mc-grass-lo: var(--p-mc-grass-lo);
+  --mc-grass-fg: var(--p-white);
+  --mc-hover-bg: var(--p-mc-hover);
+  --mc-hover-hi: var(--p-mc-hover-hi);
+  --mc-hover-lo: var(--p-mc-hover-lo);
+  --mc-hover-fg: var(--p-mc-hover-text);
+  --mc-grass-hover-bg: var(--p-mc-grass-hover);
+  --mc-grass-hover-hi: var(--p-mc-grass-hover-hi);
+  --mc-grass-hover-lo: var(--p-mc-grass-hover-lo);
+  /* Terminal title-bar traffic lights */
+  --term-dot-red: var(--p-light-red);
+  --term-dot-yellow: var(--p-light-amber);
+  --term-dot-green: var(--p-light-green);
+}
+/* Mono: stone is grey, the primary (grass) button is inverted, hover inverts the stone one. */
+[data-theme='mono-dark'] {
+  --mc-border: var(--p-mono-71);
+  --mc-stone-bg: var(--p-mono-17);
+  --mc-stone-hi: var(--p-mono-42);
+  --mc-stone-lo: var(--p-mono-0);
+  --mc-grass-bg: var(--p-mono-100);
+  --mc-grass-hi: var(--p-mono-100);
+  --mc-grass-lo: var(--p-mono-60);
+  --mc-grass-fg: var(--p-mono-0);
+  --mc-hover-bg: var(--p-mono-88);
+  --mc-hover-hi: var(--p-mono-100);
+  --mc-hover-lo: var(--p-mono-60);
+  --mc-hover-fg: var(--p-mono-0);
+  --mc-text-shadow: var(--p-mono-0);
+  --mc-grass-hover-bg: var(--p-mono-88);
+  --mc-grass-hover-hi: var(--p-mono-100);
+  --mc-grass-hover-lo: var(--p-mono-60);
+  --term-dot-red: var(--p-mono-100);
+  --term-dot-yellow: var(--p-mono-71);
+  --term-dot-green: var(--p-mono-42);
+}
+[data-theme='mono-light'] {
+  --mc-border: var(--p-mono-0);
+  --mc-text-shadow: var(--p-mono-100);
+  --mc-stone-bg: var(--p-mono-90);
+  --mc-stone-hi: var(--p-mono-100);
+  --mc-stone-lo: var(--p-mono-60);
+  --mc-stone-fg: var(--p-mono-0);
+  --mc-grass-bg: var(--p-mono-0);
+  --mc-grass-hi: var(--p-mono-42);
+  --mc-grass-lo: var(--p-mono-0);
+  --mc-grass-fg: var(--p-mono-100);
+  --mc-hover-bg: var(--p-mono-17);
+  --mc-hover-hi: var(--p-mono-42);
+  --mc-hover-lo: var(--p-mono-0);
+  --mc-hover-fg: var(--p-mono-100);
+  --mc-grass-hover-bg: var(--p-mono-17);
+  --mc-grass-hover-hi: var(--p-mono-42);
+  --mc-grass-hover-lo: var(--p-mono-0);
+  --term-dot-red: var(--p-mono-0);
+  --term-dot-yellow: var(--p-mono-42);
+  --term-dot-green: var(--p-mono-85);
+}
+
+/* ── type, space, layout ──────────────────────────────────────────────────── */
+:root,
+[data-type-fixed] {
   /* Symbols outside the pixel fonts' Latin subsets (★ ✈ ⇄ → ↗) */
   --font-symbol: 'Segoe UI Symbol', 'Apple Symbols', 'Noto Sans Symbols 2', system-ui, sans-serif;
 
@@ -46,47 +530,58 @@
    * body & code) are defined by Astro's Fonts API (astro.config.mjs → fonts) together with
    * metric-matched fallbacks. All four are SIL OFL 1.1, self-hosted. */
 
-  /* ── text styles ─────────────────────────────────────── */
+  /* ── text styles ─────────────────────────────────────
+   * Sizes follow the visitor's text size (--text-scale: 1, 1.15 or 1.3, set on <html> by the
+   * settings); art with fixed geometry (data-type-fixed: the hero stage, the phone) stays at 1.
+   * Tracking, case and line height are tokens too, so a locale can override them (CJK: no
+   * letter-spacing, no upper-casing, looser leading). */
+  --ts: var(--text-scale, 1);
+  --type-label-case: uppercase; /* "## WHOAMI", eyebrows, button labels */
   /* Pixel/Display — Pixelify Sans Bold 84 */
-  --type-pixel-display: 700 84px / 1 var(--font-pixel);
+  --type-pixel-display: 700 calc(84px * var(--ts)) / 1 var(--font-pixel);
   --type-pixel-display-tracking: -0.01em;
   /* Pixel/H2 — Pixelify Sans Bold 56 */
-  --type-pixel-h2: 700 56px / 1 var(--font-pixel);
+  --type-pixel-h2: 700 calc(56px * var(--ts)) / 1 var(--font-pixel);
   --type-pixel-h2-tracking: -0.01em;
   /* Pixel/H3 — Pixelify Sans SemiBold 30 */
-  --type-pixel-h3: 600 30px / 1.1 var(--font-pixel);
+  --type-pixel-h3: 600 calc(30px * var(--ts)) / 1.1 var(--font-pixel);
   --type-pixel-h3-tracking: 0;
   /* Pixel/H4 — Pixelify Sans SemiBold 22 */
-  --type-pixel-h4: 600 22px / 1.2 var(--font-pixel);
+  --type-pixel-h4: 600 calc(22px * var(--ts)) / 1.2 var(--font-pixel);
   --type-pixel-h4-tracking: 0;
   /* Pixel/Label — Press Start 2P 10 */
-  --type-pixel-label: 400 10px / 1.6 var(--font-8bit);
+  --type-pixel-label: 400 calc(10px * var(--ts)) / 1.6 var(--font-8bit);
   --type-pixel-label-tracking: 0.04em;
   /* Pixel/Button — Press Start 2P 12 */
-  --type-pixel-button: 400 12px / 1 var(--font-8bit);
+  --type-pixel-button: 400 calc(12px * var(--ts)) / 1 var(--font-8bit);
   --type-pixel-button-tracking: 0;
   /* Pixel/Tiny — Press Start 2P 8 */
-  --type-pixel-tiny: 400 8px / 1.5 var(--font-8bit);
+  --type-pixel-tiny: 400 calc(8px * var(--ts)) / 1.5 var(--font-8bit);
   --type-pixel-tiny-tracking: 0.02em;
   /* Term/Lg — VT323 28 */
-  --type-term-lg: 400 28px / 1.15 var(--font-term);
+  --type-term-lg: 400 calc(28px * var(--ts)) / 1.15 var(--font-term);
   --type-term-lg-tracking: 0;
   /* Term/Md — VT323 22 */
-  --type-term-md: 400 22px / 1.25 var(--font-term);
+  --type-term-md: 400 calc(22px * var(--ts)) / 1.25 var(--font-term);
   --type-term-md-tracking: 0;
   /* Code/Body — JetBrains Mono Regular 15 */
-  --type-code-body: 400 15px / 1.7 var(--font-code);
+  --type-code-body: 400 calc(15px * var(--ts)) / 1.7 var(--font-code);
   --type-code-body-tracking: 0;
   /* Code/Bold — JetBrains Mono Bold 15 */
-  --type-code-bold: 700 15px / 1.6 var(--font-code);
+  --type-code-bold: 700 calc(15px * var(--ts)) / 1.6 var(--font-code);
   --type-code-bold-tracking: 0;
   /* Code/Sm — JetBrains Mono Regular 13 */
-  --type-code-sm: 400 13px / 1.6 var(--font-code);
+  --type-code-sm: 400 calc(13px * var(--ts)) / 1.6 var(--font-code);
   --type-code-sm-tracking: 0;
   /* Code/Label — JetBrains Mono Medium 12 */
-  --type-code-label: 500 12px / 1 var(--font-code);
+  --type-code-label: 500 calc(12px * var(--ts)) / 1 var(--font-code);
   --type-code-label-tracking: 0.06em;
+}
+[data-type-fixed] {
+  --ts: 1;
+}
 
+:root {
   /* ── layout (not Figma variables) ── */
   --space-unit: 4px; /* pixel grid */
   --space-1: 4px;
@@ -97,7 +592,144 @@
   --space-8: 32px;
   --space-12: 48px;
   --space-16: 64px;
-  --shadow-hard: 4px 4px 0 0 #000; /* hard pixel shadow, no blur */
+  --shadow-hard: 4px 4px 0 0 var(--p-black); /* hard pixel shadow, no blur */
   --radius: 0; /* voxel: square corners */
   --content-max: 1312px; /* Style tile content width (1440 − 2×64) */
+}
+
+/* ── automatic: more contrast (WCAG 1.4.3/1.4.11 headroom; PLAN-EXPERIENCE §3.1) ── */
+/* Mid text moves towards the high text, borders become visible lines, nothing is translucent. */
+@media (prefers-contrast: more) {
+  :root:not([data-theme]),
+  [data-theme='night'],
+  [data-theme='cvd'],
+  [data-theme='day'] [data-surface='dark'] {
+    --color-text-mid: var(--p-slate-200);
+    --color-text-lo: var(--p-slate-300);
+    --color-border-line: var(--p-slate-500);
+    --color-border-edge: var(--p-slate-300);
+    --color-bg-nav: var(--p-navy-950);
+    --color-bg-bar: var(--p-navy-950);
+    --color-bg-panel-ghost: var(--p-navy-800);
+    --color-tooltip-bg: var(--p-black);
+    --color-tooltip-bg-solid: var(--p-black);
+    --color-link-underline-muted: var(--p-slate-200);
+    --cue-display: inline-block;
+  }
+  [data-theme='mono-dark'],
+  [data-theme='mono-light'] [data-surface='dark'] {
+    --color-text-mid: var(--p-mono-88);
+    --color-border-line: var(--p-mono-54);
+    --color-border-edge: var(--p-mono-81);
+    --color-bg-nav: var(--p-mono-0);
+    --color-bg-bar: var(--p-mono-0);
+    --color-bg-panel-ghost: var(--p-mono-6);
+    --color-link-underline-muted: var(--p-mono-88);
+  }
+  [data-theme='day'] {
+    --color-text-mid: var(--p-ink-900);
+    --color-border-line: var(--p-paper-edge);
+    --color-border-edge: var(--p-ink-900);
+    --color-bg-nav: var(--p-paper-panel);
+    --color-bg-bar: var(--p-paper-panel);
+    --color-bg-panel-ghost: var(--p-paper-panel);
+    --color-link-underline-muted: var(--p-ink-900);
+  }
+  [data-theme='mono-light'] {
+    --color-text-mid: var(--p-mono-0);
+    --color-border-line: var(--p-mono-54);
+    --color-border-edge: var(--p-mono-0);
+    --color-bg-nav: var(--p-mono-100);
+    --color-bg-bar: var(--p-mono-100);
+    --color-bg-panel-ghost: var(--p-mono-96);
+    --color-link-underline-muted: var(--p-mono-0);
+  }
+}
+
+/* ── automatic: reduced transparency — translucent bars and panels become solid ── */
+@media (prefers-reduced-transparency: reduce) {
+  :root:not([data-theme]),
+  [data-theme='night'],
+  [data-theme='cvd'],
+  [data-theme='day'] [data-surface='dark'] {
+    --color-bg-nav: var(--p-navy-950);
+    --color-bg-bar: var(--p-navy-950);
+    --color-bg-panel-ghost: var(--p-navy-800);
+    --color-tooltip-bg: var(--p-tooltip-plum-solid);
+  }
+  [data-theme='mono-dark'],
+  [data-theme='mono-light'] [data-surface='dark'] {
+    --color-bg-nav: var(--p-mono-0);
+    --color-bg-bar: var(--p-mono-0);
+    --color-bg-panel-ghost: var(--p-mono-6);
+  }
+  [data-theme='day'] {
+    --color-bg-nav: var(--p-paper-panel);
+    --color-bg-bar: var(--p-paper-panel);
+    --color-bg-panel-ghost: var(--p-paper-panel);
+  }
+  [data-theme='mono-light'] {
+    --color-bg-nav: var(--p-mono-100);
+    --color-bg-bar: var(--p-mono-100);
+    --color-bg-panel-ghost: var(--p-mono-96);
+  }
+}
+
+/* ── automatic: Windows High Contrast and other forced colours ──
+   The system palette replaces every colour; the redundant cues (glyphs, shapes) carry what
+   colour carried. Controls get their boundaries in src/styles/global.css. */
+@media (forced-colors: active) {
+  :root {
+    --cue-display: inline-block;
+  }
+}
+
+/* ── print: Mono light whatever the theme (PLAN-EXPERIENCE §4.5); layout rules in global.css ── */
+@media print {
+  :root,
+  [data-theme],
+  [data-theme] [data-surface='dark'] {
+    color-scheme: light;
+    --color-bg-night: var(--p-mono-100);
+    --color-bg-panel: var(--p-mono-100);
+    --color-bg-panel-ghost: var(--p-mono-100);
+    --color-bg-terminal: var(--p-mono-100);
+    --color-bg-slot: var(--p-mono-100);
+    --color-bg-nav: var(--p-mono-100);
+    --color-bg-bar: var(--p-mono-100);
+    --color-border-line: var(--p-mono-54);
+    --color-border-edge: var(--p-mono-54);
+    --color-text-hi: var(--p-mono-0);
+    --color-text-mid: var(--p-mono-27);
+    --color-text-bright: var(--p-mono-0);
+    --color-accent-terminal-green: var(--p-mono-0);
+    --color-accent-diamond: var(--p-mono-12);
+    --color-accent-gold: var(--p-mono-0);
+    --color-accent-enchant: var(--p-mono-17);
+    --color-accent-enchant-text: var(--p-mono-17);
+    --color-accent-aqua: var(--p-mono-12);
+    --color-accent-redstone: var(--p-mono-0);
+    --color-link: var(--p-mono-0);
+    --color-link-hover: var(--p-mono-0);
+    --color-focus: var(--p-mono-0);
+    --color-tooltip-edge: var(--p-mono-54);
+    --color-tooltip-bg: var(--p-mono-100);
+    --color-tooltip-bg-solid: var(--p-mono-100);
+    --color-text-shadow: var(--p-mono-100);
+    --color-shadow: var(--p-shade-0);
+    --color-shadow-term: var(--p-shade-0);
+    --color-shadow-block: var(--p-shade-0);
+    --color-shadow-inset: var(--p-shade-0);
+    --color-heading-shadow: var(--p-shade-0);
+    --color-heading-shadow-md: var(--p-shade-0);
+    --color-heading-shadow-lo: var(--p-shade-0);
+    --mc-border: var(--p-mono-0);
+    --mc-stone-bg: var(--p-mono-100);
+    --mc-stone-fg: var(--p-mono-0);
+    --mc-grass-bg: var(--p-mono-100);
+    --mc-grass-fg: var(--p-mono-0);
+    --mc-text-shadow: var(--p-mono-100);
+    --cue-display: inline-block;
+    --art-filter: grayscale(1) contrast(1.15);
+  }
 }

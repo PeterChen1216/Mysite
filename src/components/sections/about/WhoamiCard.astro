@@ -107,7 +107,7 @@ const TONES = ['diamond', 'enchant', 'cyan', 'gold', 'redstone', 'white'] as con
     margin: 0;
     font: var(--type-pixel-label);
     letter-spacing: var(--type-pixel-label-tracking);
-    text-transform: uppercase;
+    text-transform: var(--type-label-case);
     color: var(--color-accent-diamond);
   }
   .who__body {
@@ -123,14 +123,14 @@ const TONES = ['diamond', 'enchant', 'cyan', 'gold', 'redstone', 'white'] as con
   }
   /* Links inside running text: underlined, not colour alone (WCAG 1.4.1). */
   .who__body :global(a) {
-    color: var(--color-accent-diamond);
+    color: var(--color-link);
     text-decoration: underline;
     text-decoration-thickness: 1px;
     text-underline-offset: 3px;
   }
   .who__body :global(a:hover),
   .who__body :global(a:focus-visible) {
-    color: var(--color-accent-gold);
+    color: var(--color-link-hover);
   }
   .who__foot {
     display: flex;
@@ -174,7 +174,7 @@ const TONES = ['diamond', 'enchant', 'cyan', 'gold', 'redstone', 'white'] as con
     }
     .who__title {
       max-width: calc(100% - 64px);
-      font-size: 26px;
+      font-size: calc(26px * var(--ts));
     }
   }
 </style>

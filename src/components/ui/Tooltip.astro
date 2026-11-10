@@ -23,15 +23,15 @@ const parts = text.split(/([★✈⇄→✦])/u).filter(Boolean);
     margin: 0;
     padding: 8px 10px;
     border: 2px solid var(--color-tooltip-edge);
-    background: rgb(16 0 16 / 0.94);
+    background: var(--color-tooltip-bg-solid);
     font: var(--type-pixel-tiny);
     letter-spacing: var(--type-pixel-tiny-tracking);
-    text-shadow: 1px 1px 0 #1b1b1b;
+    text-shadow: 1px 1px 0 var(--color-tooltip-text-shadow);
     white-space: pre;
   }
   .sym {
     font-family: var(--font-symbol);
-    font-size: 11px;
+    font-size: calc(11px * var(--ts));
     line-height: 1;
   }
   .tooltip--gold {

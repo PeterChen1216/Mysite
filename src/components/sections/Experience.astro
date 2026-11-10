@@ -62,7 +62,7 @@ const { copy } = data;
     margin: 0;
     font: var(--type-code-label);
     letter-spacing: var(--type-code-label-tracking);
-    text-transform: uppercase;
+    text-transform: var(--type-label-case);
     color: var(--color-accent-diamond);
   }
   .g {
@@ -73,7 +73,7 @@ const { copy } = data;
     font: var(--type-pixel-h3);
     letter-spacing: var(--type-pixel-h3-tracking);
     color: var(--color-text-hi);
-    text-shadow: 3px 3px 0 rgb(0 0 0 / 0.85);
+    text-shadow: 3px 3px 0 var(--color-heading-shadow);
   }
   @media (max-width: 1279px) {
     .exp {

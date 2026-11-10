@@ -23,7 +23,7 @@ interface Props {
   size?: number;
   class?: string;
   style?: string;
-  /** Hard drop shadow like the design (6px 6px 0 rgba(0,0,0,.35)). */
+  /** Hard drop shadow like the design (6 px offset, 35 % black: --color-shadow-block). */
   shadow?: boolean;
   /** Eager-load blocks that are visible on first paint. */
   eager?: boolean;
@@ -58,6 +58,6 @@ const height = Math.round((size * meta.height) / meta.width);
     user-select: none;
   }
   .voxel--shadow {
-    filter: drop-shadow(6px 6px 0 rgb(0 0 0 / 0.35));
+    filter: drop-shadow(6px 6px 0 var(--color-shadow-block));
   }
 </style>

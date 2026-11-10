@@ -111,7 +111,7 @@ const programme = (e: PageData['edu']) =>
   }
   .edu__school a:hover,
   .edu__school a:focus-visible {
-    color: var(--color-accent-diamond);
+    color: var(--color-link);
     text-decoration-color: currentColor;
   }
   .edu__line {
@@ -120,13 +120,13 @@ const programme = (e: PageData['edu']) =>
     color: var(--color-text-mid);
   }
   .edu__line a {
-    color: var(--color-accent-diamond);
+    color: var(--color-link);
     text-decoration: underline;
     text-decoration-thickness: 1px;
   }
   .edu__line a:hover,
   .edu__line a:focus-visible {
-    color: var(--color-accent-gold);
+    color: var(--color-link-hover);
   }
   .edu__gpa {
     color: var(--color-accent-terminal-green);
@@ -153,7 +153,7 @@ const programme = (e: PageData['edu']) =>
     width: 8px;
     height: 8px;
     background: var(--color-accent-gold);
-    box-shadow: 2px 2px 0 rgb(0 0 0 / 0.6);
+    box-shadow: 2px 2px 0 var(--color-shadow);
   }
   .edu__courses {
     display: flex;
@@ -164,7 +164,7 @@ const programme = (e: PageData['edu']) =>
     margin: 0;
     font: var(--type-code-label);
     letter-spacing: var(--type-code-label-tracking);
-    text-transform: uppercase;
+    text-transform: var(--type-label-case);
     color: var(--color-text-mid);
   }
   .edu__course-list {
@@ -178,7 +178,7 @@ const programme = (e: PageData['edu']) =>
   /* Inventory slots, like the off-the-clock icons. */
   .edu__course-list li {
     padding: 3px 8px;
-    background: var(--color-bg-terminal);
+    background: var(--color-bg-slot);
     border: 2px solid var(--color-border-edge);
     font: var(--type-code-sm);
     color: var(--color-text-hi);

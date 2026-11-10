@@ -28,13 +28,13 @@ const { class: cls, dashed = false, labelledby, id, as: Tag = 'article' } = Astr
     padding: 28px;
     background: var(--color-bg-panel);
     border: 2px solid var(--color-border-edge);
-    box-shadow: 6px 6px 0 0 rgb(0 0 0 / 0.6); /* Figma Card/*: p-28, 6px 6px 0 rgba(0,0,0,.6) */
+    box-shadow: 6px 6px 0 0 var(--color-shadow); /* Figma Card/*: p-28, 6 px hard shadow at 60 % */
     min-width: 0;
   }
   .card--dashed {
     border-style: dashed;
     box-shadow: none;
-    background: rgb(18 23 42 / 0.6);
+    background: var(--color-bg-panel-ghost);
   }
   @media (max-width: 767px) {
     .card {

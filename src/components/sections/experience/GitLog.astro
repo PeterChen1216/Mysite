@@ -128,7 +128,7 @@ const commits = rows.map((row) => {
     padding: 8px var(--pad);
     background: var(--color-bg-terminal);
     border: 2px solid var(--color-border-edge);
-    box-shadow: 6px 6px 0 0 rgb(0 0 0 / 0.6);
+    box-shadow: 6px 6px 0 0 var(--color-shadow);
   }
   .log__list {
     margin: 0;
@@ -169,7 +169,7 @@ const commits = rows.map((row) => {
   .commit--diamond {
     --c: var(--color-accent-diamond);
   }
-  /* Figma's enchant #a335ee is 4.0:1 on the terminal background; the text uses the lightened
+  /* Figma's enchant purple is 4.0:1 on the terminal background; the text uses the lightened
      purple of ui/Chip (AA), the node keeps the design colour. */
   .commit--init {
     --c: var(--color-accent-enchant-text);
@@ -190,7 +190,7 @@ const commits = rows.map((row) => {
   .commit--head .commit__node {
     box-shadow:
       0 0 0 3px var(--color-bg-terminal),
-      0 0 10px 2px rgb(57 255 20 / 0.8);
+      0 0 10px 2px var(--color-glow-green);
   }
   .commit__hash {
     grid-area: hash;
@@ -251,7 +251,7 @@ const commits = rows.map((row) => {
   .commit__sub a {
     color: inherit;
     text-decoration: underline;
-    text-decoration-color: rgb(139 148 158 / 0.55);
+    text-decoration-color: var(--color-link-underline-muted);
     text-underline-offset: 3px;
   }
   .commit__sub a:hover,
@@ -273,7 +273,7 @@ const commits = rows.map((row) => {
     display: block;
   }
   .commit--head .commit__block {
-    filter: drop-shadow(0 0 4px rgb(74 237 217 / 0.35));
+    filter: drop-shadow(0 0 4px var(--color-glow-diamond));
   }
   .commit__logo {
     display: block;
@@ -366,7 +366,7 @@ const commits = rows.map((row) => {
       --gap: 12px;
     }
     .commit__title {
-      font-size: 20px;
+      font-size: calc(20px * var(--ts));
     }
     /* Very narrow screens (< 360 px) may wrap the dates rather than overflow. */
     .commit__range {

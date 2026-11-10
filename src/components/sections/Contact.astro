@@ -139,13 +139,13 @@ const { ping } = copy.contact;
   .contact__block--glow {
     right: 198px;
     top: 120px;
-    filter: drop-shadow(0 0 18px rgb(242 201 76 / 0.6));
+    filter: drop-shadow(0 0 18px var(--color-glow-gold));
   }
   /* Diamond: 40 px right of the 680 px terminal (Figma left 1100 = centre + 380). */
   .contact__block--diamond {
     left: calc(50% + 380px);
     top: 360px;
-    filter: drop-shadow(0 0 11px rgb(74 237 217 / 0.35));
+    filter: drop-shadow(0 0 11px var(--color-glow-diamond));
   }
   .contact__block--tnt {
     left: 40px;
@@ -166,7 +166,7 @@ const { ping } = copy.contact;
     margin: 0;
     font: var(--type-code-label);
     letter-spacing: var(--type-code-label-tracking);
-    text-transform: uppercase;
+    text-transform: var(--type-label-case);
     color: var(--color-accent-diamond);
   }
   .g {
@@ -177,14 +177,14 @@ const { ping } = copy.contact;
     font: var(--type-pixel-display);
     letter-spacing: var(--type-pixel-display-tracking);
     color: var(--color-text-hi);
-    text-shadow: 4px 4px 0 rgb(0 0 0 / 0.85);
+    text-shadow: 4px 4px 0 var(--color-heading-shadow);
   }
 
   /* ---------- ping terminal ---------- */
   .contact :global(.contact__term) {
     position: relative;
     width: 680px;
-    box-shadow: 6px 6px 0 0 rgb(0 0 0 / 0.6);
+    box-shadow: 6px 6px 0 0 var(--color-shadow);
   }
   .ping {
     margin: 0;
@@ -280,7 +280,7 @@ const { ping } = copy.contact;
   }
   @media (max-width: 1023px) {
     .contact__title {
-      font-size: 64px;
+      font-size: calc(64px * var(--ts));
     }
     .contact__btns :global(.mc-btn) {
       padding-inline: 18px;
@@ -305,7 +305,7 @@ const { ping } = copy.contact;
       padding: 104px 16px 64px;
     }
     .contact__title {
-      font-size: 44px;
+      font-size: calc(44px * var(--ts));
     }
     .contact__cluster {
       left: 16px;
@@ -322,7 +322,7 @@ const { ping } = copy.contact;
     }
     .contact :global(.contact__term .term__body) {
       padding: 14px;
-      font-size: 13px;
+      font-size: calc(13px * var(--ts));
     }
     .contact__btns :global(.mc-btn) {
       padding: 12px 16px;

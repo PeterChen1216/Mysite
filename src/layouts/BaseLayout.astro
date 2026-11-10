@@ -6,6 +6,8 @@ import '../styles/motion.css';
 import { getCopy, getSite } from '../lib/content';
 import { withBase } from '../lib/paths';
 import { motionCssVars } from '../motion/params';
+import tokensCss from '../styles/tokens.css?raw';
+import { parseTokenCss, resolveTokens } from '../lib/theme-tokens';
 
 interface Props {
   title?: string;
@@ -16,6 +18,8 @@ const [site, copy] = await Promise.all([getSite(), getCopy()]);
 const title = Astro.props.title ?? site.meta.title;
 const description = Astro.props.description ?? site.meta.description;
 const canonical = new URL(Astro.url.pathname, Astro.site);
+// The browser UI colour is the page background, read from the tokens (Night without JavaScript).
+const themeColor = resolveTokens(parseTokenCss(tokensCss), { theme: null })['--color-bg-night'];
 ---
 
 <!doctype html>
@@ -41,7 +45,7 @@ const canonical = new URL(Astro.url.pathname, Astro.site);
     )}
     <link rel="canonical" href={canonical} />
     <link rel="icon" href={withBase('favicon.svg')} type="image/svg+xml" />
-    <meta name="theme-color" content="#0b0f1a" />
+    <meta name="theme-color" content={themeColor} />
     <meta name="color-scheme" content="dark" />
     <meta property="og:type" content="website" />
     <meta property="og:title" content={title} />

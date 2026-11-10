@@ -133,7 +133,7 @@ const cursor = { steps: 3, dur: typingMs(3), delay: at };
     margin: 0;
     font: var(--type-pixel-label);
     letter-spacing: var(--type-pixel-label-tracking);
-    text-transform: uppercase;
+    text-transform: var(--type-label-case);
     color: var(--color-accent-diamond);
     white-space: pre-wrap;
   }
@@ -143,7 +143,7 @@ const cursor = { steps: 3, dur: typingMs(3), delay: at };
     font: var(--type-pixel-display);
     letter-spacing: var(--type-pixel-display-tracking);
     color: var(--color-text-hi);
-    text-shadow: 4px 4px 0 rgb(0 0 0 / 0.6);
+    text-shadow: 4px 4px 0 var(--color-heading-shadow-lo);
   }
   .hero__line {
     display: block;
@@ -201,7 +201,7 @@ const cursor = { steps: 3, dur: typingMs(3), delay: at };
      the pixel font arrives (its stand-in is narrower), and the hero would jump (CLS ≈ 0.18). */
   @media (min-width: 1280px) and (max-width: 1319px) {
     .hero__h1 {
-      font-size: 78px;
+      font-size: calc(78px * var(--ts));
     }
   }
   @media (max-width: 1279px) {
@@ -211,7 +211,7 @@ const cursor = { steps: 3, dur: typingMs(3), delay: at };
       gap: 32px;
     }
     .hero__h1 {
-      font-size: 64px;
+      font-size: calc(64px * var(--ts));
     }
     .hero :global(.stage-wrap) {
       width: clamp(380px, 40vw, 560px);
@@ -223,7 +223,7 @@ const cursor = { steps: 3, dur: typingMs(3), delay: at };
       align-items: stretch;
     }
     .hero__h1 {
-      font-size: 56px;
+      font-size: calc(56px * var(--ts));
     }
     .hero__copy :global(.hero__term) {
       width: 100%;
@@ -239,17 +239,17 @@ const cursor = { steps: 3, dur: typingMs(3), delay: at };
       gap: 32px;
     }
     .hero__h1 {
-      font-size: 44px;
+      font-size: calc(44px * var(--ts));
     }
     .hero__copy :global(.hero__term .term__body) {
-      font-size: 20px;
+      font-size: calc(20px * var(--ts));
       padding: 14px;
     }
   }
   /* The same for the narrowest phones (see the 1280–1319 rule above). */
   @media (max-width: 341px) {
     .hero__h1 {
-      font-size: 40px;
+      font-size: calc(40px * var(--ts));
     }
   }
 </style>

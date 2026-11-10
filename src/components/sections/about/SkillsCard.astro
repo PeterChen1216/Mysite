@@ -71,7 +71,7 @@ const { copy, skills } = data;
   .sk__name {
     font: var(--type-code-label);
     letter-spacing: var(--type-code-label-tracking);
-    text-transform: uppercase;
+    text-transform: var(--type-label-case);
     color: var(--color-text-mid);
   }
   .sk__name::before {
@@ -91,9 +91,9 @@ const { copy, skills } = data;
   /* Inventory slot: terminal background, edge border, a pixel of inset shade. */
   .sk__slot {
     padding: 3px 8px;
-    background: var(--color-bg-terminal);
+    background: var(--color-bg-slot);
     border: 2px solid var(--color-border-edge);
-    box-shadow: inset 2px 2px 0 rgb(0 0 0 / 0.45);
+    box-shadow: inset 2px 2px 0 var(--color-shadow-inset);
     font: var(--type-code-sm);
     color: var(--color-text-hi);
   }
@@ -106,7 +106,7 @@ const { copy, skills } = data;
     margin-left: 6px;
     font: var(--type-code-label);
     letter-spacing: var(--type-code-label-tracking);
-    text-transform: uppercase;
+    text-transform: var(--type-label-case);
     color: var(--color-text-mid);
   }
   @media (max-width: 767px) {

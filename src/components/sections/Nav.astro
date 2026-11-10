@@ -49,14 +49,14 @@ const { copy, links } = data;
     justify-content: space-between;
     gap: 24px;
     padding: 16px var(--gutter);
-    background: rgb(10 14 20 / 0.72);
+    background: var(--color-bg-nav);
     border-bottom: 2px solid var(--color-border-line);
   }
   .nav__logo {
     display: flex;
     align-items: center;
     gap: 12px;
-    color: var(--color-paper);
+    color: var(--color-text-bright);
     text-decoration: none;
   }
   .nav__name {
@@ -87,8 +87,8 @@ const { copy, links } = data;
   .nav__links a:hover,
   .nav__links a:focus-visible,
   .nav__links a[aria-current='true'] {
-    background: rgb(57 255 20 / 0.12);
-    border-color: rgb(57 255 20 / 0.55);
+    background: var(--color-nav-active-bg);
+    border-color: var(--color-nav-active-edge);
     color: var(--color-accent-terminal-green);
   }
   .nav__actions {
@@ -109,7 +109,7 @@ const { copy, links } = data;
     width: 8px;
     height: 8px;
     background: var(--color-accent-terminal-green);
-    box-shadow: 0 0 8px 1px rgb(57 255 20 / 0.8);
+    box-shadow: 0 0 8px 1px var(--color-glow-green);
   }
   @media (max-width: 1279px) {
     .nav {

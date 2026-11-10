@@ -131,9 +131,9 @@ const scale = size / 324;
   .globe__shade {
     background: radial-gradient(
       circle closest-side,
-      rgb(0 0 0 / 0) 0%,
-      rgb(0 0 0 / 0.08) 55%,
-      rgb(0 0 0 / 0.78) 100%
+      var(--color-shade-clear) 0%,
+      var(--color-shade-soft) 55%,
+      var(--color-shade-deep) 100%
     );
   }
   @keyframes globe-spin {

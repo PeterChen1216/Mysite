@@ -100,7 +100,7 @@ const block = BLOCK[p.platform[0] ?? ''] ?? 'gold';
     width: 64px;
     height: 64px;
     image-rendering: pixelated;
-    filter: drop-shadow(6px 6px 0 rgb(0 0 0 / 0.35));
+    filter: drop-shadow(6px 6px 0 var(--color-shadow-block));
   }
   /* Title and label keep clear of the corner block (75 px from the edge + 69 px wide). */
   .pc__title {
@@ -120,7 +120,7 @@ const block = BLOCK[p.platform[0] ?? ''] ?? 'gold';
     padding-right: 124px;
     font: var(--type-code-label);
     letter-spacing: var(--type-code-label-tracking);
-    text-transform: uppercase;
+    text-transform: var(--type-label-case);
     color: var(--color-text-mid);
   }
   .pc__stat::before {
@@ -189,7 +189,7 @@ const block = BLOCK[p.platform[0] ?? ''] ?? 'gold';
   .pc__stack-label {
     font: var(--type-code-label);
     letter-spacing: var(--type-code-label-tracking);
-    text-transform: uppercase;
+    text-transform: var(--type-label-case);
     color: var(--color-text-mid);
   }
   /* Links settle at the bottom when a shorter card is stretched to its row. */
