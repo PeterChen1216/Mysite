@@ -18,6 +18,14 @@ module.exports = [
     gzip: true,
   },
   {
+    // M3: the floating windows (directory, project window, dragging, history), loaded on first
+    // use; the page itself carries only the link interceptor (src/scripts/window-links.ts).
+    name: 'Windows (gz, lazy)',
+    path: 'dist/_astro/windows.*.js',
+    limit: '8 KB',
+    gzip: true,
+  },
+  {
     // §7.4: tier 2's ambient layer, loaded after the page is usable at tier 2 only.
     name: 'Ambient layer (gz, lazy, tier 2)',
     path: 'dist/_astro/ambient.*.js',
