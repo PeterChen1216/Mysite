@@ -6,6 +6,7 @@
  * reduced motion, also when turned on while the page is open) it stands still and scrolls
  * sideways by hand or with the arrow keys.
  */
+import { cueFor } from '../../lib/cues';
 import type { PageData } from '../../lib/page-data';
 import { LOOP } from '../../motion/params';
 
@@ -30,7 +31,10 @@ const seconds = Math.round(widthPx / LOOP.tickerPxPerSecond);
   <ul class="ticker__track">
     {items.map((it) => (
       <li class="ticker__item">
-        <span class={`ticker__tag ticker__tag--${it.tone}`}>[{it.tag}]</span> {it.text}
+        <span class={`ticker__tag ticker__tag--${it.tone}`} data-cue={cueFor(it.tone)}>
+          [{it.tag}]
+        </span>{' '}
+        {it.text}
         <span class="ticker__star" aria-hidden="true">
           ✦
         </span>
@@ -40,7 +44,10 @@ const seconds = Math.round(widthPx / LOOP.tickerPxPerSecond);
   <ul class="ticker__track ticker__track--dup" aria-hidden="true">
     {items.map((it) => (
       <li class="ticker__item">
-        <span class={`ticker__tag ticker__tag--${it.tone}`}>[{it.tag}]</span> {it.text}
+        <span class={`ticker__tag ticker__tag--${it.tone}`} data-cue={cueFor(it.tone)}>
+          [{it.tag}]
+        </span>{' '}
+        {it.text}
         <span class="ticker__star">✦</span>
       </li>
     ))}

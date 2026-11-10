@@ -93,6 +93,13 @@ const { footer, copy, site } = data;
   :global(html.js) .foot__prefs {
     display: inline;
   }
+  /* High Contrast: a control gets a visible boundary (the link-styled button has none). */
+  @media (forced-colors: active) {
+    .foot__prefs {
+      padding: 0 4px;
+      border: 1px solid ButtonText;
+    }
+  }
   @media (max-width: 1023px) {
     .foot {
       grid-template-columns: 1fr;

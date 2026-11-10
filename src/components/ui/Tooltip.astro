@@ -14,7 +14,7 @@ const { text, tone = 'white', class: cls, style } = Astro.props;
 const parts = text.split(/([★✈⇄→✦])/u).filter(Boolean);
 ---
 
-<p class:list={['tooltip', `tooltip--${tone}`, cls]} style={style}>
+<p class:list={['tooltip', `tooltip--${tone}`, cls]} style={style} data-surface="dark">
   {parts.map((p) => (/^[★✈⇄→✦]$/u.test(p) ? <span class="sym">{p}</span> : p))}
 </p>
 

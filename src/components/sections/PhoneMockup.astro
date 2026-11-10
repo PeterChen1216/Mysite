@@ -70,7 +70,13 @@ const ticks = Array.from({ length: 24 }, (_, h) => {
 const numerals = Array.from({ length: 12 }, (_, i) => ({ h: i * 2, ...polar(i * 30, 64) }));
 ---
 
-<div class:list={['phone', cls]} aria-hidden="true" data-particles>
+<div
+  class:list={['phone', cls]}
+  aria-hidden="true"
+  data-particles
+  data-surface="dark"
+  data-type-fixed
+>
   <span class="phone__notch"></span>
   <span class="phone__clock" data-clock="time" data-tz={home}>
     {timeLabel(at(home))}
@@ -462,6 +468,28 @@ const numerals = Array.from({ length: 12 }, (_, i) => ({ h: i * 2, ...polar(i * 
     width: 2px;
     height: calc(var(--r, 50px) + 6px);
     background: var(--tone);
+  }
+  /* Where purple is light (colour-blind safe) or grey (Mono), ink reads on it, not paper. */
+  :global([data-theme='cvd']) .hand--enchant,
+  :global([data-theme^='mono']) .hand--enchant {
+    --on: var(--color-ink);
+  }
+  /* Mono has no hues to tell the hands apart: each gets its own line (PLAN-EXPERIENCE §3.3) —
+     solid, dashed, dotted, dash-dot; the city codes on the tags say the rest. */
+  :global([data-theme^='mono']) .hand--gold .hand__line {
+    background: repeating-linear-gradient(to top, var(--tone) 0 5px, transparent 5px 8px);
+  }
+  :global([data-theme^='mono']) .hand--enchant .hand__line {
+    background: repeating-linear-gradient(to top, var(--tone) 0 2px, transparent 2px 4px);
+  }
+  :global([data-theme^='mono']) .hand--grass .hand__line {
+    background: repeating-linear-gradient(
+      to top,
+      var(--tone) 0 6px,
+      transparent 6px 8px,
+      var(--tone) 8px 10px,
+      transparent 10px 12px
+    );
   }
   .hand__tag {
     position: absolute;

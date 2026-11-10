@@ -39,6 +39,16 @@ import glowGreen from '../../assets/voxel/bg/glow-green.svg';
   .bg__canvas img {
     position: absolute;
     max-width: none;
+    filter: var(--art-filter);
+  }
+  /* The night sky (stars, glows) is a dark-theme picture: the light themes keep only the grid,
+     fainter (its navy lines read as heavy graph paper on a light page). */
+  .bg__stars,
+  .bg__glow {
+    opacity: var(--art-sky, 1);
+  }
+  .bg__grid {
+    opacity: var(--art-grid, 1);
   }
   .bg__grid {
     inset: 0;

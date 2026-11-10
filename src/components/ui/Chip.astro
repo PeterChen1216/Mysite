@@ -1,5 +1,9 @@
 ---
-/** Enchanted-tooltip chip (Figma "Chip"): purple border on near-black, 8-bit label. */
+/**
+ * Enchanted-tooltip chip (Figma "Chip"): purple border on near-black, 8-bit label. A dark object
+ * (stays dark in the light themes); the tone's glyph (data-cue, global.css) shows outside Night.
+ */
+import { cueFor } from '../../lib/cues';
 interface Props {
   tone?: 'enchant' | 'diamond' | 'cyan' | 'gold' | 'grass' | 'redstone' | 'white';
   as?: 'span' | 'li';
@@ -7,7 +11,7 @@ interface Props {
 const { tone = 'diamond', as: Tag = 'span' } = Astro.props;
 ---
 
-<Tag class:list={['chip', `chip--${tone}`]}>
+<Tag class:list={['chip', `chip--${tone}`]} data-surface="dark" data-cue={cueFor(tone)}>
   <slot />
 </Tag>
 

@@ -127,6 +127,8 @@ const scale = size / 324;
     height: 324px;
     max-width: none;
     image-rendering: pixelated;
+    /* Mono: white land on a black ocean, or black land on a light one (§3.4). */
+    filter: var(--art-land-filter);
   }
   .globe__shade {
     background: radial-gradient(

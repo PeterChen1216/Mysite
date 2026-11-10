@@ -231,14 +231,23 @@
   --color-glow-gold: var(--p-glow-gold);
   --color-glow-diamond: var(--p-glow-diamond);
   /* redundant cues: glyphs and shapes beside colour (PLAN-EXPERIENCE §3.3). Night is the design
-     as shipped and relies on the words; the other themes and contrast modes show them. */
+     as shipped and relies on the words; the other themes and contrast modes show them.
+     --cue-display shows the glyphs (ui/Cue); --cue-on (0/1) switches shapes by arithmetic. */
   --cue-display: none;
-  /* art */
-  --art-filter: none;
+  --cue-on: 0;
+  /* art (§3.4): a filter for pictures, one for the globe's land, the night sky's opacity.
+     Empty filters are deliberate: `filter: var(--art-filter) drop-shadow(…)` stays valid. */
+  --art-filter: ;
+  --art-land-filter: ;
+  --art-sky: 1;
+  --art-grid: 1;
 }
-/* In Day the dark objects use a slightly lighter terminal so they read as objects on paper. */
+/* In Day the dark objects use a slightly lighter terminal so they read as objects on paper,
+   and keep the cues the rest of the page shows. */
 [data-theme='day'] [data-surface='dark'] {
   --color-bg-terminal: var(--p-navy-850);
+  --cue-display: inline-block;
+  --cue-on: 1;
 }
 
 /* Colour-blind safe ("Prism"): Night with the accents remapped to the Okabe–Ito set. */
@@ -258,6 +267,7 @@
   --color-nav-active-edge: var(--p-oi-green-55);
   --color-glow-green: var(--p-oi-green-80);
   --cue-display: inline-block;
+  --cue-on: 1;
 }
 
 /* Day ("Overworld"): warm paper ground, white panels; terminals stay dark (see above). */
@@ -319,7 +329,11 @@
   --color-glow-gold: var(--p-glow-gold);
   --color-glow-diamond: var(--p-glow-diamond);
   --cue-display: inline-block;
-  --art-filter: none;
+  --cue-on: 1;
+  --art-filter: ;
+  --art-land-filter: ;
+  --art-sky: 0;
+  --art-grid: 0.4;
 }
 
 /* Mono dark ("Bedrock"): pure black, white ink, greys. Also the dark objects in Mono light. */
@@ -382,8 +396,13 @@
   --color-glow-gold: var(--p-light-20);
   --color-glow-diamond: var(--p-light-20);
   --cue-display: inline-block;
-  /* Pictures render through one filter instead of a second art set (§3.4). */
+  --cue-on: 1;
+  /* Pictures render through one filter instead of a second art set (§3.4); the globe has white
+     land on a black ocean. */
   --art-filter: grayscale(1) contrast(1.15);
+  --art-land-filter: brightness(0) invert(1);
+  --art-sky: 1;
+  --art-grid: 1;
 }
 
 /* Mono light ("Paper"): white, black ink. Printing uses it too (end of file). */
@@ -445,7 +464,12 @@
   --color-glow-gold: var(--p-shade-25);
   --color-glow-diamond: var(--p-shade-25);
   --cue-display: inline-block;
+  --cue-on: 1;
+  /* Black land on a light ocean; no night sky on paper. */
   --art-filter: grayscale(1) contrast(1.15);
+  --art-land-filter: brightness(0);
+  --art-sky: 0;
+  --art-grid: 0.4;
 }
 
 /* ── 3. component ─────────────────────────────────────────────────────────── */
@@ -615,6 +639,7 @@
     --color-tooltip-bg-solid: var(--p-black);
     --color-link-underline-muted: var(--p-slate-200);
     --cue-display: inline-block;
+    --cue-on: 1;
   }
   [data-theme='mono-dark'],
   [data-theme='mono-light'] [data-surface='dark'] {
@@ -679,8 +704,11 @@
    The system palette replaces every colour; the redundant cues (glyphs, shapes) carry what
    colour carried. Controls get their boundaries in src/styles/global.css. */
 @media (forced-colors: active) {
-  :root {
+  :root,
+  [data-theme],
+  [data-theme] [data-surface='dark'] {
     --cue-display: inline-block;
+    --cue-on: 1;
   }
 }
 
@@ -730,6 +758,10 @@
     --mc-grass-fg: var(--p-mono-0);
     --mc-text-shadow: var(--p-mono-100);
     --cue-display: inline-block;
+    --cue-on: 1;
     --art-filter: grayscale(1) contrast(1.15);
+    --art-land-filter: brightness(0);
+    --art-sky: 0;
+    --art-grid: 0;
   }
 }

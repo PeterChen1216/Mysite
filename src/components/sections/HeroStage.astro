@@ -37,7 +37,7 @@ const blocks: Array<{ name: BlockName; x: number; y: number; w: number; glow?: s
 ---
 
 <div class="stage-wrap">
-  <div class="stage">
+  <div class="stage" data-type-fixed>
     <img class="stage__orbit" src={orbit.src} width="460" height="460" alt="" data-loop="orbit" />
     <img
       class="stage__orbit2"
@@ -168,6 +168,14 @@ const blocks: Array<{ name: BlockName; x: number; y: number; w: number; glow?: s
   }
   .stage > * {
     position: absolute;
+  }
+  /* Pictures: as drawn in the colour themes, greyscale in Mono (--art-filter, §3.4). */
+  .stage__orbit,
+  .stage__orbit2,
+  .stage__satellite,
+  .stage__portrait,
+  .stage__photo {
+    filter: var(--art-filter);
   }
   .stage__orbit {
     left: 60px;

@@ -131,18 +131,13 @@ function declared(rules: TokenRule[], ctx: TokenContext, which: 'root' | 'island
   return out;
 }
 
-function substitute(
-  value: string,
-  lookup: (name: string) => string | undefined,
-  depth = 0,
-): string {
-  if (depth > 32) throw new Error(`tokens.css: var() cycle in "${value}"`);
+function substitute(value: string, lookup: (name: string) => string | undefined): string {
   return value.replace(
     /var\(\s*(--[\w-]+)\s*(?:,\s*([^()]*(?:\([^()]*\))?[^()]*))?\)/g,
     (whole: string, name: string, fallback?: string) => {
       const v = lookup(name) ?? fallback;
       // Defined outside tokens.css (the font families come from Astro): left as written.
-      return v === undefined ? whole : substitute(v, lookup, depth + 1);
+      return v === undefined ? whole : substitute(v, lookup);
     },
   );
 }
@@ -151,8 +146,17 @@ function substitute(
 export function resolveTokens(rules: TokenRule[], ctx: TokenContext): Record<string, string> {
   const resolveOn = (decls: Map<string, string>, inherited: Record<string, string>) => {
     const out: Record<string, string> = { ...inherited };
-    const lookup = (name: string): string | undefined =>
-      decls.has(name) ? substitute(decls.get(name)!, lookup) : inherited[name];
+    const resolving = new Set<string>();
+    const lookup = (name: string): string | undefined => {
+      if (!decls.has(name)) return inherited[name];
+      if (resolving.has(name)) throw new Error(`tokens.css: var() cycle through ${name}`);
+      resolving.add(name);
+      try {
+        return substitute(decls.get(name)!, lookup);
+      } finally {
+        resolving.delete(name);
+      }
+    };
     for (const name of decls.keys()) out[name] = lookup(name)!;
     return out;
   };

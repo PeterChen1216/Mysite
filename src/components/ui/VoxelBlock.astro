@@ -53,11 +53,13 @@ const height = Math.round((size * meta.height) / meta.width);
 />
 
 <style>
+  /* --art-filter: nothing in the colour themes, greyscale in Mono (PLAN-EXPERIENCE §3.4). */
   .voxel {
     display: block;
     user-select: none;
+    filter: var(--art-filter);
   }
   .voxel--shadow {
-    filter: drop-shadow(6px 6px 0 var(--color-shadow-block));
+    filter: var(--art-filter) drop-shadow(6px 6px 0 var(--color-shadow-block));
   }
 </style>

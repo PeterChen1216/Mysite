@@ -62,6 +62,21 @@ img {
   z-index: 60;
 }
 
+/* Redundant cues (src/lib/cues.ts): the glyph of a colour-coded label, drawn before it where the
+   theme shows cues (--cue-display; not Night). Generated content, so the label's text — and
+   what screen readers and copy-paste get — is unchanged. */
+[data-cue]::before {
+  content: attr(data-cue);
+  content: attr(data-cue) / '';
+  display: var(--cue-display, none);
+  flex: none;
+  align-self: center;
+  margin-inline-end: 0.5em;
+  font-family: var(--font-symbol);
+  font-size: 0.9em;
+  line-height: 1;
+}
+
 .visually-hidden {
   position: absolute;
   width: 1px;

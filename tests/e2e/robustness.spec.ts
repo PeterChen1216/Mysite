@@ -91,6 +91,25 @@ test.describe('layout holds at every width', () => {
       expect(areas).not.toBe('none');
     });
   }
+  // The other themes show cue glyphs in tags and chips (wider); they share one layout, so one of
+  // them stands for all (PLAN-EXPERIENCE §9.1: prune the matrix to what can interact).
+  for (const width of [320, 390, 768, 1024, 1440]) {
+    test(`no text is cut off at ${width}px with the cue glyphs of the other themes`, async ({
+      page,
+    }) => {
+      await page.addInitScript(() => localStorage.setItem('zhic:prefs:v1', '{"theme":"cvd"}'));
+      await page.setViewportSize({ width, height: 900 });
+      await page.goto(V2);
+      await page.evaluate(() => document.fonts.ready);
+      expect(
+        await page
+          .locator('.chip[data-cue]')
+          .first()
+          .evaluate((el) => getComputedStyle(el, '::before').display),
+      ).not.toBe('none');
+      expect(await textProblems(page)).toEqual([]);
+    });
+  }
   test('long skill lists wrap instead of running off the card', async ({ page }) => {
     await page.goto(V2);
     await expect(page.locator('.sk__basic').first()).toHaveCSS('flex-wrap', 'wrap');

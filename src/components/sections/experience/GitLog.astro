@@ -53,7 +53,7 @@ const commits = rows.map((row) => {
 });
 ---
 
-<div class="log">
+<div class="log" data-surface="dark">
   <span class="log__rail" aria-hidden="true"></span>
   <ol class="log__list">
     {commits.map(({ row, entry, color, logo, block }) => (
@@ -192,6 +192,36 @@ const commits = rows.map((row) => {
       0 0 0 3px var(--color-bg-terminal),
       0 0 10px 2px var(--color-glow-green);
   }
+  /* Shape as well as hue (PLAN-EXPERIENCE §3.3) wherever the cues show (--cue-on: 1; not in
+     Night): diamond commits are diamonds, `init` is a ring, the rest stay squares. */
+  .commit--diamond .commit__node {
+    rotate: calc(45deg * var(--cue-on, 0));
+    scale: calc(1 - 0.25 * var(--cue-on, 0));
+  }
+  .commit--init .commit__node {
+    display: grid;
+    place-items: center;
+  }
+  .commit--init .commit__node::after {
+    content: '';
+    display: var(--cue-display, none);
+    width: 6px;
+    height: 6px;
+    background: var(--color-bg-terminal);
+  }
+  /* Forced colours paint every background as Canvas: draw the rail and nodes in the text
+     colour so the history still reads, with the shapes above telling the kinds apart. */
+  @media (forced-colors: active) {
+    .log__rail,
+    .commit__node {
+      forced-color-adjust: none;
+      background: CanvasText;
+    }
+    .commit--init .commit__node::after {
+      forced-color-adjust: none;
+      background: Canvas;
+    }
+  }
   .commit__hash {
     grid-area: hash;
     margin: 0;
@@ -274,6 +304,9 @@ const commits = rows.map((row) => {
   }
   .commit--head .commit__block {
     filter: drop-shadow(0 0 4px var(--color-glow-diamond));
+  }
+  .commit__logo {
+    filter: var(--art-filter);
   }
   .commit__logo {
     display: block;

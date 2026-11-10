@@ -9,7 +9,7 @@ interface Props {
 const { title, class: cls, font = 'term' } = Astro.props;
 ---
 
-<div class:list={['term', `term--${font}`, cls]}>
+<div class:list={['term', `term--${font}`, cls]} data-surface="dark">
   <div class="term__bar" aria-hidden="true">
     <span class="term__dot term__dot--r"></span>
     <span class="term__dot term__dot--y"></span>
