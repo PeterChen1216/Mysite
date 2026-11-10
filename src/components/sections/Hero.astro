@@ -167,6 +167,12 @@ const cursor = { steps: 3, dur: typingMs(3), delay: at };
     color: var(--color-accent-diamond);
     white-space: pre-wrap;
   }
+  /* Chinese (larger terminal type, so the tags wrap elsewhere): the spaces between tags may
+     wrap too instead of hanging past the edge, as WebKit draws them with a text-spacing
+     override. */
+  :global(:root:lang(zh)) .hero__ln--tags {
+    white-space: break-spaces;
+  }
   .g {
     color: var(--color-accent-terminal-green);
   }

@@ -284,9 +284,11 @@ for (const { locale, path } of LOCALE_PAGES)
       await page.evaluate(() => document.fonts.ready);
       expect(await layoutShift(page)).toBeLessThanOrEqual(0.05);
     });
-    test('CLS ≤ 0.05 when the fonts arrive late', async ({ page }) => {
-      // Every web font held back a second: the page first paints in the fallbacks.
-      await page.route(/\.woff2$/, async (route) => {
+    test('CLS ≤ 0.05 when the pixel CJK face arrives late', async ({ page }) => {
+      test.skip(locale === 'en', 'English pages load no CJK font');
+      // The CJK face held back a second: the page first paints its Chinese in the system sans,
+      // then swaps (both draw an ideograph one em wide, and the line heights are fixed).
+      await page.route(/\/_astro\/cjk\//, async (route) => {
         await new Promise((r) => setTimeout(r, 1000));
         await route.continue();
       });

@@ -385,6 +385,15 @@ const commits = rows.map((row) => {
     .commit__body {
       margin-top: 12px;
     }
+    /* Chinese: a CJK character cannot break like a date's digits, so the dates column keeps at
+       least its widest character, and the decorative hash ("HEAD -> main") wraps first when the
+       row is tight (320 px at 130 % text). */
+    :global(:root:lang(zh)) .commit {
+      grid-template-columns: var(--node) auto minmax(min-content, 1fr) var(--slot);
+    }
+    :global(:root:lang(zh)) .commit__hash {
+      white-space: normal;
+    }
     .commit__block :global(.voxel) {
       width: 33px;
       height: auto;
