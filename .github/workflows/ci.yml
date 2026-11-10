@@ -50,6 +50,11 @@ jobs:
       - name: Content guard
         run: pnpm content:check
 
+      # PLAN-EXPERIENCE §5.4: translations whose English (or Simplified) source changed since they
+      # were made. A report for the owner; it never fails the run.
+      - name: Translation staleness report
+        run: pnpm content:stale
+
       - name: Unit tests (+ coverage ≥ 80 %)
         run: pnpm test
 

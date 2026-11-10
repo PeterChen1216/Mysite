@@ -4,7 +4,8 @@
 - ✅ 三种语言的页面、内容模型、草稿与预览状态、简体草稿、`pnpm content:hant`（繁体草稿）、`pnpm content:stale`、设置里的语言行、首次访问建议、预览提示（`0450191`）
 - ✅ CJK 像素字体：Fusion Pixel 12px（简体 `zh_hans` / 繁体 `zh_hant`，Fontsource 包，OFL）构建时按页面子集化（简 21 KB、繁 23 KB）并改名，只在本语言页面声明；每种语言的字体 token（12 px 倍数、无字距、无大写、更松的行距）（本提交）
 - ✅ E2E 语言矩阵：内容、布局（10 个宽度、文字间距、130 %）、axe 与无 JS 各跑三种语言（Night）；新 `i18n.spec.ts`：路由与 `/zh/` 404、canonical / robots / hreflang / og:locale、预览提示、语言行、首次访问建议、跨字形检查、回退 `lang="en"`、每种语言只加载自己的 CJK 字体、每种语言的 CLS（本提交）
-- ⏳ 下一步：Lighthouse（上线配置）、英文像素对比（工作树对照 `9cd2ecf`）、ADR-017、`content/README.md` 翻译一节、本节总结
+- ✅ Lighthouse 跑三种语言（上线配置，5 次中位数）：英 1.00 / 简 0.99 / 繁 0.99，LCP 0.91 s，CLS 0；预览语言因 `noindex` 不判 SEO。修了两处：首次访问建议改为空闲时显示；预览提示放进 `.page` 里（之前它把背景网格往下推，网格不再铺满首屏，Chrome 就把它当成 LCP，模拟 LCP 2.2–2.4 s）；系统 CJK 正文字体改为页面内声明的别名（`local()` + 只限 CJK 码位）：直接写进字体栈会把 → ★ 这类符号也交给 CJK 字体画成全角（没有 Arial / Courier New 的 Linux、Android 上 git log 的箭头溢出），而一个都没装时浏览器逐字搜系统字体、排版慢一倍（本提交）
+- ⏳ 下一步：英文像素对比（工作树对照 `9cd2ecf`）、ADR-017、`content/README.md` 翻译一节、本节总结
 
 > 更新：2026-11-10（全项目审计 + Clock Stamp 手机重做 + 体验扩展计划 + **X1 基础完成**）· 分支 `claude/happy-einstein-dkkcxx`（未合并，等业主审）
 

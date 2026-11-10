@@ -54,16 +54,101 @@ export function cjkChars(html: string): string {
 export const cjkFontPlaceholder = (locale: TranslatedLocale): string =>
   `__zhic_cjk_font_${locale}__`;
 
+/**
+ * The system CJK sans for running text (PLAN-EXPERIENCE §5.5), as a family of its own limited to
+ * CJK code points. Naming PingFang or Noto Sans CJK directly in a font stack would also hand them
+ * every symbol the Latin fonts lack (→ ★ ·), which CJK fonts draw full-width: on systems without
+ * Arial and Courier New (Linux, Android, ChromeOS) the git log's arrows overflowed. `local()`
+ * takes full or PostScript names; the first one installed wins, else the browser's own fallback
+ * for the page's `lang` does. Apple, Google (Noto Sans SC / CJK), Windows, then Linux desktops.
+ */
+export interface CjkSans {
+  family: string;
+  regular: readonly string[];
+  bold: readonly string[];
+}
+export const CJK_SANS: Readonly<Record<TranslatedLocale, CjkSans>> = {
+  'zh-hans': {
+    family: 'zhic Sans SC',
+    regular: [
+      'PingFang SC Regular',
+      'PingFangSC-Regular',
+      'Noto Sans SC Regular',
+      'NotoSansSC-Regular',
+      'Noto Sans CJK SC Regular',
+      'NotoSansCJKsc-Regular',
+      'Source Han Sans SC Regular',
+      'SourceHanSansSC-Regular',
+      'Microsoft YaHei',
+      'MicrosoftYaHei',
+      'WenQuanYi Zen Hei',
+      'WenQuanYiZenHei',
+    ],
+    bold: [
+      'PingFang SC Semibold',
+      'PingFangSC-Semibold',
+      'Noto Sans SC Bold',
+      'NotoSansSC-Bold',
+      'Noto Sans CJK SC Bold',
+      'NotoSansCJKsc-Bold',
+      'Source Han Sans SC Bold',
+      'SourceHanSansSC-Bold',
+      'Microsoft YaHei Bold',
+      'MicrosoftYaHei-Bold',
+      'WenQuanYi Zen Hei',
+      'WenQuanYiZenHei',
+    ],
+  },
+  // The Hong Kong edition: Hong Kong forms first (PingFang HK, Noto Sans HK / CJK HK).
+  'zh-hant': {
+    family: 'zhic Sans HK',
+    regular: [
+      'PingFang HK Regular',
+      'PingFangHK-Regular',
+      'Noto Sans HK Regular',
+      'NotoSansHK-Regular',
+      'Noto Sans CJK HK Regular',
+      'NotoSansCJKhk-Regular',
+      'Source Han Sans HC Regular',
+      'SourceHanSansHC-Regular',
+      'Microsoft JhengHei',
+      'MicrosoftJhengHeiRegular',
+      'WenQuanYi Zen Hei',
+      'WenQuanYiZenHei',
+    ],
+    bold: [
+      'PingFang HK Semibold',
+      'PingFangHK-Semibold',
+      'Noto Sans HK Bold',
+      'NotoSansHK-Bold',
+      'Noto Sans CJK HK Bold',
+      'NotoSansCJKhk-Bold',
+      'Source Han Sans HC Bold',
+      'SourceHanSansHC-Bold',
+      'Microsoft JhengHei Bold',
+      'MicrosoftJhengHeiBold',
+      'WenQuanYi Zen Hei',
+      'WenQuanYiZenHei',
+    ],
+  },
+};
+
 /** Where `astro dev` serves the whole font (no subset), under any base. */
 export const CJK_DEV_PATH = '/@zhic-cjk/';
 
 /**
- * The `@font-face` rule a page of `locale` inlines. One weight covers 100–900, so headings at 600
- * and 700 use the pixel glyphs as drawn instead of a smeared synthetic bold.
+ * The `@font-face` rules a page of `locale` inlines: the pixel face (one weight covers 100–900, so
+ * headings at 600 and 700 use the pixel glyphs as drawn instead of a smeared synthetic bold) and
+ * the system sans, regular and bold, every one limited to CJK code points.
  */
 export function cjkFontFace(locale: TranslatedLocale, url: string): string {
+  const range = `unicode-range:${CJK_UNICODE_RANGE}`;
+  const sans = CJK_SANS[locale];
+  const local = (names: readonly string[]) => names.map((n) => `local("${n}")`).join(',');
   return (
     `@font-face{font-family:"${CJK_FONTS[locale].family}";src:url("${url}") format("woff2");` +
-    `font-weight:100 900;font-style:normal;font-display:swap;unicode-range:${CJK_UNICODE_RANGE}}`
+    `font-weight:100 900;font-style:normal;font-display:swap;${range}}` +
+    `@font-face{font-family:"${sans.family}";src:${local(sans.regular)};font-weight:100 500;${range}}` +
+    `@font-face{font-family:"${sans.family}";src:${local(sans.bold)};font-weight:600 900;${range}}`
   );
 }

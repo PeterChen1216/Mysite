@@ -45,9 +45,14 @@ export function initLang(): void {
   const pick = suggestLocale(languages, current, [current, ...offered] as Locale[]);
   const banner = banners.find((b) => b.dataset.langSuggest === pick);
   if (!banner) return;
-  banner.hidden = false;
   banner.querySelector('[data-lang-dismiss]')?.addEventListener('click', () => {
     setPrefs({ lang: current });
     banner.hidden = true;
   });
+  // A suggestion can wait until the page has painted and settled: shown when the browser is
+  // idle, it never competes with the first screen (Lighthouse measured LCP 0.5 s later when it
+  // appeared at once).
+  const show = () => (banner.hidden = false);
+  if ('requestIdleCallback' in window) requestIdleCallback(show, { timeout: 2000 });
+  else setTimeout(show, 1000);
 }

@@ -28,8 +28,9 @@ const data = await getPageData(Astro.props.locale);
 
 <BaseLayout data={data}>
   <LangSuggest data={data} />
-  {data.preview && <LangNotice data={data} />}
   <div class="page">
+    <!-- Inside the page, so the background still covers the whole first screen. -->
+    {data.preview && <LangNotice data={data} />}
     <Background />
     <Nav data={data} />
     <main id="main">

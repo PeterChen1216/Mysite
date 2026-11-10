@@ -608,9 +608,10 @@
 /* ── type in Chinese (PLAN-EXPERIENCE §5.5; ADR-017) ─────────────────────────
  * Each font stack (astro.config.mjs) names var(--font-cjk-pixel) or var(--font-cjk-body) before
  * its generic family, so CJK characters use the locale's fonts while Latin keeps the Latin ones:
- * the pixel CJK face (headings, labels, buttons, terminals; declared only on its own locale's
- * page, src/i18n/cjk-font.ts) or the system CJK sans (running text). On an English page both name
- * no installed font, so nothing there changes.
+ * the pixel CJK face (headings, labels, buttons, terminals) or the system CJK sans (running text:
+ * PingFang, Noto Sans CJK, Microsoft YaHei / JhengHei …). Both are declared only on their own
+ * locale's page (src/i18n/cjk-font.ts). On an English page both name no font, so nothing there
+ * changes.
  * The pixel face is drawn on a 12 px grid, so on Chinese pages the pixel text styles take 12 px
  * multiples (84, 48, 24, 12; the 8 and 10 px labels grow to 12, where Chinese is legible); no
  * letter-spacing, no upper-casing (Latin words inside stay as written) and looser leading. */
@@ -618,16 +619,15 @@
   --font-cjk-pixel: zhic-no-cjk;
   --font-cjk-body: zhic-no-cjk;
 }
+/* The pixel face, then the system CJK sans (both declared on the page itself and limited to CJK
+   code points, src/i18n/cjk-font.ts: symbols such as → stay with the Latin fonts). */
 :root:lang(zh-Hans) {
-  --font-cjk-pixel:
-    'zhic Pixel SC', 'PingFang SC', 'Noto Sans SC', 'Noto Sans CJK SC', 'Microsoft YaHei';
-  --font-cjk-body: 'PingFang SC', 'Noto Sans SC', 'Noto Sans CJK SC', 'Microsoft YaHei';
+  --font-cjk-pixel: 'zhic Pixel SC', 'zhic Sans SC';
+  --font-cjk-body: 'zhic Sans SC';
 }
-/* The Hong Kong edition: Hong Kong forms first (PingFang HK, Noto Sans HK). */
 :root:lang(zh-Hant) {
-  --font-cjk-pixel:
-    'zhic Pixel TC', 'PingFang HK', 'Noto Sans HK', 'Noto Sans CJK HK', 'Microsoft JhengHei';
-  --font-cjk-body: 'PingFang HK', 'Noto Sans HK', 'Noto Sans CJK HK', 'Microsoft JhengHei';
+  --font-cjk-pixel: 'zhic Pixel TC', 'zhic Sans HK';
+  --font-cjk-body: 'zhic Sans HK';
 }
 :root:lang(zh),
 [data-type-fixed]:lang(zh) {

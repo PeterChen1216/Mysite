@@ -1,10 +1,34 @@
 // Lighthouse CI (PLAN §9.1, M0 acceptance). Runs against `SITE_STAGE=launched pnpm build`
-// so the page is measured at "/" exactly as it will ship (the preview build is robots-blocked).
+// so the pages are measured at "/" exactly as they will ship (the preview build is robots-blocked).
+// Every locale's page is measured (PLAN-EXPERIENCE §1.3: CLS ≤ 0.05 in every language).
+const { readFileSync } = require('node:fs');
+const { parse } = require('yaml');
+
+/** content/site.yaml `locales`: each language live or preview. */
+const { locales } = parse(readFileSync(`${__dirname}/content/site.yaml`, 'utf8'));
+const PAGES = {
+  en: 'http://localhost/',
+  'zh-hans': 'http://localhost/zh-hans/',
+  'zh-hant': 'http://localhost/zh-hant/',
+};
+
+// A locale still in preview carries `noindex` on purpose (content/site.yaml `locales`), which
+// Lighthouse's SEO category scores as "blocked from indexing": SEO is asserted on live pages only.
+/** @param {number} minScore */
+const median = (minScore) => ['error', { minScore, aggregationMethod: 'median' }];
+const common = {
+  'categories:performance': median(0.95),
+  'categories:accessibility': median(0.95),
+  'categories:best-practices': median(0.95),
+  'largest-contentful-paint': ['error', { maxNumericValue: 2500, aggregationMethod: 'median' }],
+  'cumulative-layout-shift': ['error', { maxNumericValue: 0.05, aggregationMethod: 'median' }],
+};
+
 module.exports = {
   ci: {
     collect: {
       staticDistDir: './dist',
-      url: ['http://localhost/'],
+      url: Object.values(PAGES),
       // Five runs, judged by their median score (below): the first run on a fresh CI runner is
       // often several times slower (cold caches and JIT), and one run must not decide the gate.
       numberOfRuns: 5,
@@ -17,18 +41,15 @@ module.exports = {
       // `median` = the median of each value over the runs. (`median-run` instead takes every
       // value from the one run whose FCP and TTI are closest to the median, which on CI was
       // often the slow cold first run: performance 0.83 and 0.88 next to 1.00 in the others.)
-      assertions: {
-        // M0 acceptance: mobile performance ≥ 95 (no scene yet). §9.1: A11y/BP/SEO ≥ 95.
-        'categories:performance': ['error', { minScore: 0.95, aggregationMethod: 'median' }],
-        'categories:accessibility': ['error', { minScore: 0.95, aggregationMethod: 'median' }],
-        'categories:best-practices': ['error', { minScore: 0.95, aggregationMethod: 'median' }],
-        'categories:seo': ['error', { minScore: 0.95, aggregationMethod: 'median' }],
-        'largest-contentful-paint': [
-          'error',
-          { maxNumericValue: 2500, aggregationMethod: 'median' },
-        ],
-        'cumulative-layout-shift': ['error', { maxNumericValue: 0.1, aggregationMethod: 'median' }],
-      },
+      // M0 acceptance: mobile performance ≥ 95 (no scene yet). §9.1: A11y/BP/SEO ≥ 95.
+      assertMatrix: Object.entries(PAGES).map(([locale, url]) => ({
+        // The static server runs on a port of its own: http://localhost:<port>/zh-hans/.
+        matchingUrlPattern: `^http://localhost(:\\d+)?${new URL(url).pathname}$`,
+        assertions: {
+          ...common,
+          ...(locales[locale] === 'live' ? { 'categories:seo': median(0.95) } : {}),
+        },
+      })),
     },
     upload: {
       target: 'filesystem',

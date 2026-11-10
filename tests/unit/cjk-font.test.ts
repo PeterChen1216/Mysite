@@ -25,6 +25,11 @@ describe('the characters a subset holds', () => {
     expect(face).toContain(`unicode-range:${CJK_UNICODE_RANGE}`);
     expect(face).toContain('font-weight:100 900');
     expect(face).toContain('font-display:swap');
+    // The system CJK sans as its own family, regular and bold, also limited to CJK code points:
+    // named directly in a stack it would also draw symbols such as → (full-width).
+    expect(face).toContain('font-family:"zhic Sans HK";src:local("PingFang HK Regular")');
+    expect(face).toContain('local("Microsoft JhengHei Bold")');
+    expect(face.match(/unicode-range:/g)).toHaveLength(3);
     expect(cjkFontPlaceholder('zh-hans')).not.toBe(cjkFontPlaceholder('zh-hant'));
     // One cut per script, never one for both.
     expect(CJK_FONTS['zh-hans'].source).toMatch(/-sc\//);
