@@ -1,15 +1,79 @@
 # STATUS（会话交接 · PLAN §15.6）
 
-> 更新：2026-11-10（全项目审计 + Clock Stamp 手机重做 + 体验扩展计划 + X1 进行中）· 分支 `claude/happy-einstein-dkkcxx`（未合并，等业主审）
+> 更新：2026-11-10（全项目审计 + Clock Stamp 手机重做 + 体验扩展计划 + **X1 基础完成**）· 分支 `claude/happy-einstein-dkkcxx`（未合并，等业主审）
 
 ## X1 进度（每次推送后更新；新会话从这里接着做）
 - ✅ token 三层 + 颜色 lint（`6add29a`、`132a76f`）
-- ✅ WIP（`ccb78e1`）恢复为可构建：copy.yaml 两处未加引号的逗号；`initPrefs()` 接入 main.ts；地球 `spin()` 按名字找动画（原先会暂停 0.01 ms 的过渡，把 AvGeek 小地球冻住）
-- ✅ 设置窗口 `~/.config`（`PrefsWindow.astro` + 懒加载的 `src/scripts/settings.ts`）：主题 / 动效 / 字号 / 快捷键四组单选，立即生效、存一个 `zhic:prefs:v1`；入口：导航齿轮键、页脚 `prefs`、`,` 键；导航 ⏸ 键与 `p` 键 = 全部暂停；快捷键在输入框里不触发、可在窗口里关掉（2.1.4）。测试：`tests/unit/prefs.test.ts`、`tests/e2e/prefs.spec.ts`
-- ✅ 五套主题可选（Night 默认、Day、Mono dark、Mono light、色盲友好）+ auto 跟随系统明暗；系统「更高对比度」与 forced-colors 自动生效。暗色物件（终端、git log、手机、徽章、chip、设置窗口）带 `data-surface="dark"`，Day 里保持深色。§3.3 冗余符号：ticker 标签与 chip 前的字形（◆ ▶ ■ ● ▲，`src/lib/cues.ts`）、提交节点方 / 菱形 / 环、Mono 下手机表针实线 / 虚线 / 点线；Night 不显示（像素不变）。§3.4 美术：Mono 下图片灰度、地球白陆黑海（或反之）、浅色主题无星空、网格变淡。测试：`tests/unit/contrast.test.ts`（每主题 × 3 种对比模式 × 页面 / 暗色物件的每对文字 × 表面 ≥ 4.5，焦点环、MC 按钮、单选框 ≥ 3）、`tests/e2e/themes.spec.ts`（每主题 axe + CLS、auto、更高对比、forced-colors 边界、Day 暗色物件、Mono 灰度）。顺带修了 `theme-tokens.ts` 的 var() 循环检测（原来会栈溢出）
-- ✅ 动效级别与全部暂停：full（开场 + 循环 + 悬停粒子）/ calm（无开场无粒子，循环慢 3 倍）/ off（全静止，滚动条可手动横滚）/ ⏸ 与 `p`（CSS 循环、地球、手机时钟全部停住，恢复时时钟跳到当前时间）；页面打开时改级别立即生效且开场不重放。地球是带名字的滑块（`role="slider"`）：方向键 15°、PgUp/PgDn 90°、Home 归零；有动效时键盘聚焦让自转停住，无动效时转静止的地图。测试：`tests/e2e/motion.spec.ts`、`robustness.spec.ts`（地球键盘）
-- ✅ 无障碍合同（§4.1 可自动化的行）：目标尺寸 24 px（含间距 / 行内例外，设置窗口里也测）、触屏上 MC 按钮 ≥ 44 × 44 的点击区（不改外观：标签上一个透明的 `::after`，只在 `pointer: coarse`）、文字间距覆盖（1.4.12）与字号 130 % 在各宽度不截断（导航、日期、标题改为需要时换行；Night 像素不变）、`lang`（含汉字必须在 zh 元素里）、悬停内容（玩家卡照片：可悬停、`Esc` 关闭）、Tab 遍历（顺序、可见焦点环、不困住）、减少透明度、打印（Mono light、隐藏导航 / 滚动条 / 首屏美术 / 手机、链接后附网址）。`docs/A11Y-CHECK.md` 已写。测试：`tests/e2e/a11y.spec.ts`、`robustness.spec.ts`
-- ⏳ 下一步：Night 像素最终对比 + Lighthouse（上线配置）→ STATUS 总结、ADR、回写 Figma 清单
+- ✅ WIP（`ccb78e1`）恢复为可构建（`3d79d54`）
+- ✅ 设置窗口与入口、暂停键、快捷键（`3a7cadc`）
+- ✅ 五套主题、暗色物件、冗余符号、主题里的美术、对比度单测（`b5cc67f`）
+- ✅ 动效级别、全部暂停、地球键盘操作（`faefe28`）
+- ✅ 无障碍合同可自动化的行、打印、`docs/A11Y-CHECK.md`（`d5fcbea`）
+- ✅ Night 像素对比、Lighthouse、本总结与 ADR-015/016（本提交）
+- 下一步：业主审 X1（下面「请你决定」），然后 X2 语言
+
+## 🧱 X1 Foundations 交付说明（PLAN-EXPERIENCE §2、§3、§4，§9 的 X1 行）
+
+### 已交付
+| 部分 | 内容 |
+|---|---|
+| 偏好设置 §2 | 一个 `localStorage` 值 `zhic:prefs:v1`：`theme`（night / day / mono-dark / mono-light / cvd / auto）、`motion`（auto / full / calm / off）、`text`（100 / 115 / 130）、`lang`（auto / en / zh-hans / zh-hant，X1 只存不显示，X2 加那一行）、`keys`（单键快捷键开关）。`<head>` 内联脚本（940 B gz，`src/prefs/boot.ts`，与运行时共用 `normalizePrefs` / `resolvePrefs`）在首帧前设置 `data-theme`、`data-motion`、`--text-scale`、`theme-color`、`color-scheme`：无闪烁，CLS 0。没有 JavaScript 时页面就是 Night、静态、和以前一样（入口按钮隐藏）。语言列表只有一个：`src/i18n/locales.ts`（`zh-Hant-HK` 带地区子标签，`LANG_TAG` 校验） |
+| 设置窗口 | `~/.config — prefs`：终端外观下是真正的表单（四组单选，`legend` 是朴素名称，`$ theme --set` 只是皮肤、对读屏隐藏），选了立即生效并保存；`reset` 清除保存值。入口：导航齿轮键、页脚 `prefs`、`,` 键；`Esc` 关闭，焦点回到打开它的地方。代码按需加载（820 B gz，不算首屏）。所有文字在 `content/copy.yaml → prefs` |
+| 主题 §3 | Night（默认，像素不变）、Day（纸色底、白卡片，**终端 / git log / 手机 / 徽章 / chip / 设置窗口保持深色**）、Mono dark、Mono light、色盲友好（Okabe–Ito）。auto 跟随系统明暗且不刷新页面；系统「更高对比度」、「减少透明度」、Windows 高对比度（forced-colors）在任何主题下自动生效；打印永远是 Mono light |
+| 颜色不是唯一信号 §3.3 | ticker 标签与 chip 前的字形 ◆ ▶ ■ ● ▲（`src/lib/cues.ts`，`::before`，不改文字与读屏内容）、提交节点方 / 菱形 / 环、Mono 下手机表针实线 / 虚线 / 点线 / 点划线。在 Night 之外的所有主题、以及 Night + 更高对比度 / forced-colors 时显示 |
+| 主题里的美术 §3.4 | Mono：图片（方块、头像与照片、轨道环、logo、封面、星空）灰度；地球白陆黑海（Mono light 反过来）。浅色主题：无星空，网格 40 %。地球、手机、首屏舞台是固定尺寸的画（`data-type-fixed`，字号设置不放大它们） |
+| 动效 §4.1 | full / calm（无开场、无悬停粒子、循环慢 3 倍）/ off（全静止，滚动条手动横滚）；系统「减少动态效果」永远优先（窗口里有说明）；页面打开时切换立即生效、开场不重放。**全部暂停**：导航 ⏸（按下变 ▶ 与金色边）或 `p`：所有 CSS 循环、地球自转、Clock Stamp 手机的实时时钟都停住，恢复时时钟跳到当前时间（WCAG 2.2.2） |
+| 无障碍合同 §4.1 | 目标尺寸 ≥ 24 px（2.5.8，含间距 / 行内例外）；触屏上每个 MC 按钮 ≥ 44 × 44 的点击区（标签上透明 `::after`，只在 `pointer: coarse`，外观不变）；文字间距覆盖（1.4.12）与字号 130 % 在各宽度不截断；`lang`；悬停内容（玩家卡照片可悬停、`Esc` 关闭，1.4.13）；地球是带名字的滑块：方向键 15°、PgUp/PgDn 90°、Home 归零（2.5.7）；Tab 遍历顺序、焦点环、不困住；forced-colors 下每个控件有可见边界；打印 §4.5 |
+| 文档 | `docs/A11Y-CHECK.md`（十分钟人工检查脚本 + CI 已覆盖的清单）；PLAN §13 ADR-015、ADR-016 |
+
+### 验证（2026-11-10，本容器）
+- `pnpm verify` 全绿：单测 211 通过 / 1 跳过（11 个文件；对比度测试按 主题 × 3 种对比模式 × 页面 / 暗色物件 分 30 组，覆盖 > 800 对文字 × 表面），E2E 172 通过 / 42 跳过（Chromium 桌面 + Pixel 7 移动；按 §9.1 修剪：每个主题只在桌面 full 动效跑一次，动效级别只在 Night 跑；WebKit 只在 CI 跑，本地未跑）
+- 体积：CSS 16.5 KB gz（预算 45）；首屏 JS 5.9 KB gz（内联 940 B + 主脚本 5137 B；预算 180）；设置窗口 820 B 按需
+- Lighthouse（上线配置 `SITE_STAGE=launched`，5 次中位数）：性能 0.99（4 次 0.99、1 次 1.00）/ 无障碍 1.00 / 最佳实践 1.00 / SEO 1.00，LCP 0.91 s，CLS 0，TBT 中位 114 ms。同一容器上 `132a76f`：性能 1.00、LCP 0.91 s、TBT 中位 66 ms——TBT 多了约 50 ms（主脚本变大、样式更多），仍远在门槛内
+- **Night 像素对比**（`/v2/`，1440 / 1024 / 390，`reducedMotion: 'reduce'`，时钟固定在 2026-10-24T16:45Z，等 `document.fonts.ready`，与 `132a76f` 的构建比；页脚版本号里的提交哈希两边都遮住，宽度相同）：页面高度三种宽度都不变；**只有设置入口处的像素不同**——
+  - 1440：导航行（第 21–56 行）：四个区块链接左移 48 px、「online · Seattle」左移 96 px，为 x 1016–1095 的齿轮键与 ⏸ 键让位；RESUME / SAY HI 不动。页脚第 6487–6499 行 x 1205–1241：新的 `prefs` 按钮
+  - 1024：导航行（第 23–50 行）：链接左移 36 px，两个 28 px 键在 x 656–715；按钮不动。页脚第 7091–7103 行 x 789–825：`prefs`
+  - 390：导航第一行（第 21–48 行）x 206–265：两个键；页脚第 10938–10950 行：`prefs` 在 x 16–55，「▲ back to spawn」因此右移 55 px
+  - 其余所有像素逐一相同
+
+### 没做 / 只做了一部分（原因）
+1. **截图基线按主题进 CI（§3.5、§9.1）没做**：整页 PNG 在本容器与 GitHub 运行器上字体光栅化不同，提交的基线会不稳定，且每次更新约 10 MB；Night 的像素对比是用脚本做的（方法见上）。建议：在 CI 运行器上生成并更新基线的工作流，单独做
+2. **Lighthouse 跑 Day（§3.5）没做**：lhci 不能在测量前写 localStorage（要加 puppeteer 脚本）。Day 的对比度与 axe 已在单测 / E2E 里覆盖
+3. **减少数据（`prefers-reduced-data` / `Save-Data`）这一行没做**：它要跳过的主要是 M2 的 WebGL 场景；跳过网页字体会改变 Night 的排版。挪到 M2
+4. **打印不是两页**：A4 打出来 7 页（已缩小字号、收紧区块、去掉装饰与站内跳转按钮，链接附网址，卡片不被截断）。真正的两页摘要需要单独设计的打印版式——见下「请你决定」4
+5. **人工检查（A11Y-CHECK）只跑了能模拟的部分**（第 1 次，2026-11-10，无头 Chromium）：1 键盘巡游（由测试覆盖）✅、3 缩放与字号（320–1920 宽度、文字间距、130 %）✅、4 对比模式（模拟 forced-colors 截图、更高对比度、减少透明度）✅、5 动效 ✅、6 主题一瞥（五个主题 1440 截图）✅、8 打印 ✅；**没跑**：2 VoiceOver / NVDA、4.1 真的 Windows 高对比度截图、6 里的色觉模拟、7 真手机读屏——本环境没有这些工具，需要你或在有设备时跑
+6. 闪烁（2.3.1）没有逐帧计数：目前的开场没有闪烁；「名字闪现」属于 M2 场景，届时检查
+7. WebGL 场景读主题对象（§3.4）属于 M2；CRT 滤镜目前不存在，无需处理
+
+### 与计划的偏离
+- 暂停键是 `p`，不是计划写的空格：页面上按空格是浏览器自己的「向下翻页」，占用它会破坏键盘滚动（ADR-015）
+- 系统「减少动态效果」打开时，无论在设置里选了什么都是 off（只能更少，不能更多）
+- Night 不显示冗余字形（它是原设计，标签本身有文字）；其他主题、更高对比度、forced-colors 都显示
+- 触屏 44 px 用的是不可见的点击区，不是把按钮画大（为了 Night 像素不变）
+- 导航键在 1280 px 以下是 28 px（1024 px 要一行放下 logo、链接、两个键和两个按钮）；385 px 以下两个键和 SAY HI 一起换到 logo 下面（X4 的 hotbar 会替换手机导航）
+- 字号设置不放大首屏舞台与手机（固定尺寸的画）
+- 设置窗口按需加载（计划允许）
+
+### 改过的测试
+- `robustness.spec.ts`：动画探测函数挪到 `tests/e2e/animations.ts` 供两个 spec 共用（行为不变）；新增地球键盘、带字形的主题布局、文字间距、130 % 字号的用例。没有放宽或跳过任何已有测试
+- 冗余字形最初放在 DOM 里，内容测试（`content.spec.ts` 读 textContent）因此失败；改为 `::before` 实现，测试未改
+
+### 需要回写 Figma（我没有改 Figma）
+1. Voxel 变量集合新增模式 Day / Mono dark / Mono light / CVD，取 `src/styles/tokens.css` 的值（含 §3.2 之外补的：卡槽、导航与条带的半透明色、各主题阴影、Mono 的 MC 按钮与终端红绿灯）
+2. 设置窗口 `~/.config`：1440 与 390 两个画框，单选的选中 / 焦点 / 悬停状态，主题小色板
+3. 导航的齿轮键与 ⏸ 键（36 px / 28 px，按下状态 ▶ + 金边）、页脚 `prefs`
+4. 冗余符号：标签与 chip 的 ◆ ▶ ■ ● ▲、提交节点方 / 菱形 / 环、Mono 下手机表针线型
+5. 主题里的美术：Mono 灰度、地球白陆 / 黑陆、浅色主题无星空与淡网格
+6. 地球滑块的焦点环；（可选）打印版式
+
+### 请你决定（都有默认值，已按默认实现）
+1. Q-T1 / Q-T2：设置里用朴素名称、小字写游戏内名称（Overworld、Bedrock、Paper、Prism）；没选过主题的访客一律 Night，即使系统是浅色——可以吗？
+2. 暂停用 `p` 而不是空格——可以吗？
+3. 字号 130 % 时首屏舞台和手机保持原尺寸——可以吗？
+4. 打印：现在 7 页 A4。要一个专门的两页打印版式（类似简历），还是打印就交给 `resume.pdf`？
+5. 设置窗口的文案（`copy.yaml → prefs`）请过目，例如 "Changes apply at once and are saved in this browser only."
+6. Day / Mono / CVD 的配色是计划里的提案，确认或在 Figma 里调整
+7. 385 px 以下导航多一行（到 X4 hotbar 为止）——可以接受吗？
 
 ## 当前状态
 | 里程碑 | 状态 |
@@ -17,6 +81,7 @@
 | M0 骨架与内容迁移 | ✅ 已上线（PeterChen1216/Mysite#2，`ea935de`） |
 | 内容更新：新简历 2026-11-03 | ✅ 已上线（PeterChen1216/Mysite#3，`e6f033c`；业主 R2-4 同意直接合并） |
 | **M1 长页面版（Figma `Home — Voxel / 1440`）** | ✅ **业主 2026-11-09 接受并合并**（PeterChen1216/Mysite#4，squash 合并）；zhic.me/v2/ 更新为 M1；`launched` 仍为 false；Figma 未改 |
+| **X1 基础（设置、主题、动效、无障碍）** | ✅ 完成，在分支 `claude/happy-einstein-dkkcxx` 上等业主审（见上） |
 | M2 体素场景 / M3 窗口 | 未开始 |
 
 线上：zhic.me/（旧站，不变）· zhic.me/v2/（M1 长页面版）· zhic.me/legacy/。
