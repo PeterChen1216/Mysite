@@ -31,6 +31,7 @@ import {
   type LocalizeHooks,
 } from '../i18n/translations';
 import { contentStamp, formatVersion } from './build-info';
+import { downloadName, resumeInfo } from './resume';
 import {
   getAviation,
   getCommunity,
@@ -229,6 +230,8 @@ export async function getPageData(
     trackTag: educationEn[0]?.track ? tagSlug(educationEn[0].track) || undefined : undefined,
     links: {
       resume: withBase('resume.pdf'),
+      /** What the download is saved as: whose résumé, and which (src/lib/resume.ts). */
+      resumeFile: downloadName(profile.name.display, resumeInfo().date),
       email: `mailto:${primaryEmail}`,
       github: github?.url,
       linkedin: linkedin?.url,

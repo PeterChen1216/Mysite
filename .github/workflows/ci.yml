@@ -58,6 +58,13 @@ jobs:
       - name: Unit tests (+ coverage ≥ 80 %)
         run: pnpm test
 
+      # PLAN §7.4: CHANGELOG.md is written from the history after each deploy of main
+      # (deploy.yml); here it is only written to a scratch file, to prove the script still works.
+      - name: CHANGELOG from the history (written for real after each deploy)
+        run: |
+          node scripts/changelog.mjs --out "$RUNNER_TEMP/CHANGELOG.md"
+          head -n 30 "$RUNNER_TEMP/CHANGELOG.md"
+
       - name: Build (fails on any warning)
         run: pnpm build
 
@@ -66,6 +73,34 @@ jobs:
 
       - name: Assemble Pages artifact
         run: pnpm assemble
+
+      # PLAN §7.2 path 2, "see it before it is public": GitHub Pages hosts one site per repository,
+      # so a branch or pull request gets its built site as a download, not an address of its own
+      # (docs/PLAN.md §13 ADR-021). Uploaded before the long E2E step: ready a few minutes in.
+      - name: Upload site preview
+        id: preview
+        uses: actions/upload-artifact@v4
+        with:
+          name: site-${{ github.sha }}
+          path: _site
+          retention-days: 7
+          if-no-files-found: ignore
+
+      - name: Preview link (shown on this run's summary page)
+        if: steps.preview.outputs.artifact-url != ''
+        env:
+          URL: ${{ steps.preview.outputs.artifact-url }}
+          SHA: ${{ github.sha }}
+        run: |
+          {
+            echo "### Preview this commit's site"
+            echo ""
+            echo "1. Download **[site-${SHA}](${URL})** — a zip, kept 7 days (you need to be signed in to GitHub)."
+            echo "2. Unzip it (on a Mac: double-click it in Downloads)."
+            echo "3. In your clone of the repository run \`pnpm preview:site ~/Downloads/site-${SHA}\`, then open the address it prints."
+            echo ""
+            echo "Step by step, with what you will see: docs/CONTENT-GUIDE.md, section 12."
+          } >> "$GITHUB_STEP_SUMMARY"
 
       # The browsers are cached by the lockfile (Playwright's version): a slow download once took
       # most of the job's time (M2, M3); the system packages still come from apt each run.
@@ -80,15 +115,6 @@ jobs:
 
       - name: E2E + axe (Chromium, mobile Chromium, WebKit)
         run: pnpm test:e2e
-
-      - name: Upload site preview
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: site-${{ github.sha }}
-          path: _site
-          retention-days: 7
-          if-no-files-found: ignore
 
       - name: Upload Playwright results
         if: failure()

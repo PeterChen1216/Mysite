@@ -13,7 +13,8 @@ interface Props {
   href: string;
   kind?: 'stone' | 'grass';
   external?: boolean;
-  download?: boolean;
+  /** `true`, or the file name the download is saved as. */
+  download?: boolean | string;
   class?: string;
   /** Accessible name when the visible label is cryptic. */
   ariaLabel?: string;
@@ -33,7 +34,7 @@ const newTab = external ? await getNewTabLabel(Astro.currentLocale) : '';
   class:list={['mc-btn', `mc-btn--${kind}`, cls]}
   href={href}
   {...(external ? { target: '_blank', rel: 'noopener' } : {})}
-  {...(download ? { download: '' } : {})}
+  {...(download ? { download: download === true ? '' : download } : {})}
   {...(ariaLabel ? { 'aria-label': external ? `${ariaLabel} ${newTab}` : ariaLabel } : {})}
   data-particles
 >

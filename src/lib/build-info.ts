@@ -21,11 +21,16 @@ export function formatVersion(base: string, stamp: ContentStamp): string {
   return `v${base}+${stamp.date.replaceAll('-', '')}.${stamp.hash}`;
 }
 
-export function contentStamp(now: Date = new Date()): ContentStamp {
+/**
+ * The last commit that touched `path` (a file or a folder, relative to `cwd`): its date and short
+ * hash. Outside a git checkout (a source tarball), today and "local".
+ */
+export function gitStamp(path: string, now: Date = new Date(), cwd?: string): ContentStamp {
   try {
-    const out = execFileSync('git', ['log', '-1', '--format=%cs %h', '--', 'content'], {
+    const out = execFileSync('git', ['log', '-1', '--format=%cs %h', '--', path], {
       encoding: 'utf8',
       stdio: ['ignore', 'pipe', 'ignore'],
+      ...(cwd ? { cwd } : {}),
     });
     const parsed = parseStamp(out);
     if (parsed) return parsed;
@@ -33,4 +38,9 @@ export function contentStamp(now: Date = new Date()): ContentStamp {
     // Not a git checkout (e.g. a source tarball) — fall through.
   }
   return { date: now.toISOString().slice(0, 10), hash: 'local' };
+}
+
+/** The last change to content/: the site's "updated" date and the version's build part. */
+export function contentStamp(now: Date = new Date()): ContentStamp {
+  return gitStamp('content', now);
 }

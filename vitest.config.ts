@@ -11,6 +11,7 @@ export default defineConfig({
         'src/lib/format.ts',
         'src/lib/paths.ts',
         'src/lib/build-info.ts',
+        'src/lib/resume.ts',
         'src/lib/derive.ts',
         'src/lib/world-clock.ts',
         'src/components/sections/projects-view.ts',

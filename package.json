@@ -15,6 +15,7 @@
     "preview": "astro preview",
     "assemble": "node scripts/assemble-pages.mjs",
     "serve:site": "node scripts/serve.mjs _site",
+    "preview:site": "node scripts/serve.mjs",
     "check": "astro check",
     "lint": "eslint .",
     "lint:colors": "node scripts/check-colors.mjs",
@@ -26,6 +27,8 @@
     "content:check": "node scripts/check-content.mjs",
     "content:hant": "node scripts/content-hant.mjs",
     "content:stale": "node scripts/content-stale.mjs",
+    "resume": "node scripts/resume.mjs",
+    "changelog": "node scripts/changelog.mjs",
     "size": "size-limit && node scripts/check-js-budget.mjs",
     "lhci": "lhci autorun",
     "verify": "pnpm format:check && pnpm lint && pnpm lint:colors && pnpm check && pnpm content:check && pnpm test && pnpm build && pnpm size && pnpm assemble && pnpm test:e2e"
