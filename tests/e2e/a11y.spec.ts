@@ -3,8 +3,8 @@
 // (Contrast: tests/unit/contrast.test.ts; themes and forced colours: themes.spec.ts; motion and
 // pause: motion.spec.ts; zoom, reflow, text spacing and text size: robustness.spec.ts.)
 import { expect, test, type Page } from '@playwright/test';
-import { LANG_TAG, LOCALES, DEFAULT_LOCALE } from '../../src/i18n/locales';
-import { V2 } from './site';
+import { LANG_TAG } from '../../src/i18n/locales';
+import { LOCALE_PAGES, V2 } from './site';
 
 const INTERACTIVE =
   'a[href], button, input, select, textarea, [role="slider"], [tabindex]:not([tabindex="-1"])';
@@ -123,34 +123,36 @@ test.describe('target size (WCAG 2.5.8)', () => {
   });
 });
 
-test.describe('language (WCAG 3.1.1, 3.1.2)', () => {
-  test('<html lang> is the locale’s exact tag; every lang attribute is well formed', async ({
-    page,
-  }) => {
-    await page.goto(V2);
-    expect(await page.locator('html').getAttribute('lang')).toBe(LOCALES[DEFAULT_LOCALE].lang);
-    const tags = await page
-      .locator('[lang]')
-      .evaluateAll((els) => els.map((el) => el.getAttribute('lang') ?? ''));
-    for (const tag of tags) expect(tag).toMatch(LANG_TAG);
-  });
-
-  test('any Chinese text sits in an element marked as Chinese', async ({ page }) => {
-    await page.goto(V2);
-    const unmarked = await page.evaluate(() => {
-      const out: string[] = [];
-      const walker = document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT);
-      for (let n = walker.nextNode(); n; n = walker.nextNode()) {
-        const text = n.textContent ?? '';
-        if (!/\p{Script=Han}/u.test(text)) continue;
-        const lang = n.parentElement?.closest('[lang]')?.getAttribute('lang') ?? '';
-        if (!lang.startsWith('zh')) out.push(text.trim().slice(0, 40));
-      }
-      return out;
+// Every locale's page (PLAN-EXPERIENCE §5.2): its own exact tag, and Chinese never unmarked.
+for (const { locale, path, lang } of LOCALE_PAGES)
+  test.describe(`language (WCAG 3.1.1, 3.1.2) (${locale})`, () => {
+    test('<html lang> is the locale’s exact tag; every lang attribute is well formed', async ({
+      page,
+    }) => {
+      await page.goto(path);
+      expect(await page.locator('html').getAttribute('lang')).toBe(lang);
+      const tags = await page
+        .locator('[lang]')
+        .evaluateAll((els) => els.map((el) => el.getAttribute('lang') ?? ''));
+      for (const tag of tags) expect(tag).toMatch(LANG_TAG);
     });
-    expect(unmarked).toEqual([]);
+
+    test('any Chinese text sits in an element marked as Chinese', async ({ page }) => {
+      await page.goto(path);
+      const unmarked = await page.evaluate(() => {
+        const out: string[] = [];
+        const walker = document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT);
+        for (let n = walker.nextNode(); n; n = walker.nextNode()) {
+          const text = n.textContent ?? '';
+          if (!/\p{Script=Han}/u.test(text)) continue;
+          const lang = n.parentElement?.closest('[lang]')?.getAttribute('lang') ?? '';
+          if (!lang.startsWith('zh')) out.push(text.trim().slice(0, 40));
+        }
+        return out;
+      });
+      expect(unmarked).toEqual([]);
+    });
   });
-});
 
 test.describe('content on hover or focus (WCAG 1.4.13)', () => {
   test.use({ reducedMotion: 'reduce' });

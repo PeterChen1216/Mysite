@@ -2,7 +2,7 @@ import { expect, test, type Page } from '@playwright/test';
 import { glyphParts } from '../../src/lib/derive';
 import { runningAnimations, runningLoops } from './animations';
 import { copy, escapeRe } from './copy';
-import { V2 } from './site';
+import { LOCALE_PAGES, V2 } from './site';
 
 /**
  * Text that is cut off or runs into its neighbours. Checks every visible word against the
@@ -77,21 +77,23 @@ function textProblems(page: Page) {
 test.describe('layout holds at every width', () => {
   test.skip(({ isMobile }) => isMobile, 'desktop projects resize the viewport themselves');
   test.use({ reducedMotion: 'reduce' });
-  // 320 px is the WCAG 1.4.10 reflow width.
-  for (const width of [320, 360, 390, 600, 768, 1024, 1100, 1280, 1440, 1920]) {
-    test(`no text is cut off or overlapping at ${width}px`, async ({ page }) => {
-      await page.setViewportSize({ width, height: 900 });
-      await page.goto(V2);
-      await page.evaluate(() => document.fonts.ready);
-      expect(await textProblems(page)).toEqual([]);
-      // The About grid template is valid for this width (an invalid one is dropped, and the
-      // cards fall back to auto-placement with holes).
-      const areas = await page
-        .locator('.inv')
-        .evaluate((el) => getComputedStyle(el).gridTemplateAreas);
-      expect(areas).not.toBe('none');
-    });
-  }
+  // 320 px is the WCAG 1.4.10 reflow width. Every locale (PLAN-EXPERIENCE §5.5: Chinese strings
+  // are shorter but taller; §9.1: all three locales in Night).
+  for (const { locale, path } of LOCALE_PAGES)
+    for (const width of [320, 360, 390, 600, 768, 1024, 1100, 1280, 1440, 1920]) {
+      test(`no text is cut off or overlapping at ${width}px (${locale})`, async ({ page }) => {
+        await page.setViewportSize({ width, height: 900 });
+        await page.goto(path);
+        await page.evaluate(() => document.fonts.ready);
+        expect(await textProblems(page)).toEqual([]);
+        // The About grid template is valid for this width (an invalid one is dropped, and the
+        // cards fall back to auto-placement with holes).
+        const areas = await page
+          .locator('.inv')
+          .evaluate((el) => getComputedStyle(el).gridTemplateAreas);
+        expect(areas).not.toBe('none');
+      });
+    }
   // The other themes show cue glyphs in tags and chips (wider); they share one layout, so one of
   // them stands for all (PLAN-EXPERIENCE §9.1: prune the matrix to what can interact).
   for (const width of [320, 390, 768, 1024, 1440]) {
@@ -112,36 +114,48 @@ test.describe('layout holds at every width', () => {
     });
   }
   // WCAG 1.4.12: a reader's own spacing (the bookmarklet values) must not clip or overlap text.
-  for (const width of [320, 390, 768, 1024, 1440]) {
-    test(`text-spacing override: nothing cut off at ${width}px`, async ({ page }) => {
-      await page.setViewportSize({ width, height: 900 });
-      await page.goto(V2);
-      await page.addStyleTag({
-        content:
-          '* { line-height: 1.5 !important; letter-spacing: 0.12em !important; word-spacing: 0.16em !important; } p { margin-bottom: 2em !important; }',
+  for (const { locale, path } of LOCALE_PAGES)
+    for (const width of [320, 390, 768, 1024, 1440]) {
+      test(`text-spacing override: nothing cut off at ${width}px (${locale})`, async ({ page }) => {
+        await page.setViewportSize({ width, height: 900 });
+        await page.goto(path);
+        await page.addStyleTag({
+          content:
+            '* { line-height: 1.5 !important; letter-spacing: 0.12em !important; word-spacing: 0.16em !important; } p { margin-bottom: 2em !important; }',
+        });
+        await page.evaluate(() => document.fonts.ready);
+        expect(await textProblems(page)).toEqual([]);
       });
-      await page.evaluate(() => document.fonts.ready);
-      expect(await textProblems(page)).toEqual([]);
-    });
-  }
+    }
   // The settings' largest text size (130 %) at the widths where the layout changes.
-  for (const width of [320, 390, 768, 1024, 1280, 1440]) {
-    test(`text size 130 %: nothing cut off at ${width}px`, async ({ page }) => {
-      await page.addInitScript(() => localStorage.setItem('zhic:prefs:v1', '{"text":130}'));
-      await page.setViewportSize({ width, height: 900 });
-      await page.goto(V2);
-      await page.evaluate(() => document.fonts.ready);
-      // The type really is larger: the headline at 130 % against the same page at 100 %.
-      const h1 = () =>
-        page.locator('h1').evaluate((el) => parseFloat(getComputedStyle(el).fontSize));
-      const scaled = await h1();
-      await page.evaluate(() => document.documentElement.style.removeProperty('--text-scale'));
-      const base = await h1();
-      await page.evaluate(() => document.documentElement.style.setProperty('--text-scale', '1.3'));
-      expect(scaled).toBeCloseTo(base * 1.3, 0);
-      expect(await textProblems(page)).toEqual([]);
-    });
-  }
+  for (const { locale, path } of LOCALE_PAGES)
+    for (const width of [320, 390, 768, 1024, 1280, 1440]) {
+      test(`text size 130 %: nothing cut off at ${width}px (${locale})`, async ({
+        page,
+        browser,
+      }) => {
+        await page.addInitScript(() => localStorage.setItem('zhic:prefs:v1', '{"text":130}'));
+        await page.setViewportSize({ width, height: 900 });
+        await page.goto(path);
+        await page.evaluate(() => document.fonts.ready);
+        // The type really is larger: the headline at 130 % against the same page at 100 %, loaded
+        // in a fresh context. (Removing --text-scale on this page and reading the headline again
+        // raced the preferences script, which may re-apply the stored size at any time.)
+        const h1 = (p: Page) =>
+          p.locator('h1').evaluate((el) => parseFloat(getComputedStyle(el).fontSize));
+        const scaled = await h1(page);
+        const plain = await browser.newContext({
+          viewport: { width, height: 900 },
+          reducedMotion: 'reduce',
+        });
+        const fresh = await plain.newPage();
+        await fresh.goto(path);
+        const base = await h1(fresh);
+        await plain.close();
+        expect(scaled).toBeCloseTo(base * 1.3, 0);
+        expect(await textProblems(page)).toEqual([]);
+      });
+    }
   test('long skill lists wrap instead of running off the card', async ({ page }) => {
     await page.goto(V2);
     await expect(page.locator('.sk__basic').first()).toHaveCSS('flex-wrap', 'wrap');
