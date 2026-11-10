@@ -20,12 +20,25 @@
   --color-accent-terminal-green: #39ff14;
   --color-accent-diamond: #4aedd9;
   --color-accent-gold: #fcdb05;
-  --color-accent-enchant: #a335ee;
+  --color-accent-enchant: #a335ee; /* fills and nodes only: 4.0–4.3:1 as text */
+  --color-accent-enchant-text: #b866f5; /* the same purple lightened to pass WCAG AA as text */
+  --color-accent-aqua: #55ffff; /* tooltip / chip cyan (Figma Tooltip, aviation chip) */
   --color-accent-redstone: #ff5555;
   --color-block-grass: #7cbd4f;
   --color-block-dirt: #8b5a2b;
   --color-block-stone: #8d8d8d;
   --color-block-water: #2457c5;
+  --color-xp-light: #7cf35f; /* the lighter of the XP bar's two greens */
+  /* Enchanted tooltip / chip (Figma Tooltip, Chip): purple edge on near-black */
+  --color-tooltip-edge: #5000ff;
+  --color-tooltip-bg: rgb(16 0 16 / 0.9);
+  /* Ink and paper: outlines, hard shadows and text that must stay pure */
+  --color-ink: #000;
+  --color-paper: #fff;
+  --color-text-shadow: #3f3f3f; /* 2 px shadow under 8-bit labels */
+
+  /* Symbols outside the pixel fonts' Latin subsets (★ ✈ ⇄ → ↗) */
+  --font-symbol: 'Segoe UI Symbol', 'Apple Symbols', 'Noto Sans Symbols 2', system-ui, sans-serif;
 
   /* ── font families ──────────────────────────────────
    * --font-pixel (Pixelify Sans: display/headlines), --font-8bit (Press Start 2P: 8-bit labels &
@@ -74,7 +87,7 @@
   --type-code-label: 500 12px / 1 var(--font-code);
   --type-code-label-tracking: 0.06em;
 
-  /* ── provisional (not Figma variables yet; sync in M1) ── */
+  /* ── layout (not Figma variables) ── */
   --space-unit: 4px; /* pixel grid */
   --space-1: 4px;
   --space-2: 8px;

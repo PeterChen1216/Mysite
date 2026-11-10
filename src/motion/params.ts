@@ -69,7 +69,15 @@ export const PARTICLES = {
   maxMs: 400,
   /** Travel distance range in px. */
   distance: [18, 46],
-  colors: ['#39ff14', '#4aedd9', '#fcdb05', '#a335ee', '#ff5555', '#7cbd4f'],
+  /** Design tokens (src/styles/tokens.css), read when a burst starts so themes recolour them. */
+  colors: [
+    '--color-accent-terminal-green',
+    '--color-accent-diamond',
+    '--color-accent-gold',
+    '--color-accent-enchant',
+    '--color-accent-redstone',
+    '--color-block-grass',
+  ],
 } as const;
 
 /** The CSS-side parameters as a `style` value of custom properties (`--m-…`). */

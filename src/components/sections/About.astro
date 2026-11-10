@@ -117,11 +117,8 @@ const { areas } = cards;
   .inv > :global(.about-card--skills) {
     grid-area: skills;
   }
-  /* Figma Card/* values: 28 px padding, 0.6 shadow, contents clipped (the whoami bookshelf
-     pokes out of the top edge). Card.astro uses 28/30 px and 0.35 — see integration notes. */
+  /* Contents are clipped to the card: the whoami bookshelf pokes out of the top edge. */
   .inv :global(.card) {
-    padding: 28px;
-    box-shadow: 6px 6px 0 0 rgb(0 0 0 / 0.6);
     overflow: clip;
   }
 
@@ -163,9 +160,6 @@ const { areas } = cards;
     }
     .inv__stack {
       grid-template-columns: minmax(0, 1fr);
-    }
-    .inv :global(.card) {
-      padding: 22px 20px;
     }
   }
 </style>

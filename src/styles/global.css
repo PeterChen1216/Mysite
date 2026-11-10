@@ -1,4 +1,4 @@
-/* Base styles for the M0 plain page. Real section design lands in M1 (Figma "Home — Voxel / 1440"). */
+/* Base styles shared by every page: reset, links, focus ring, helpers and font stand-ins. */
 *,
 *::before,
 *::after {
@@ -6,8 +6,8 @@
 }
 
 :root {
-  /* Page side gutter: 64 px (Figma) until the content reaches 1312 px, then centred. */
-  --gutter: max(64px, calc((100% - 1312px) / 2));
+  /* Page side gutter: 64 px (Figma) until the content reaches --content-max, then centred. */
+  --gutter: max(64px, calc((100% - var(--content-max)) / 2));
 }
 
 html {

@@ -76,9 +76,8 @@ export async function getPageData() {
   const projects = await Promise.all(
     projectEntries.map(async (p) => ({ id: p.id, ...p.data, Body: (await render(p)).Content })),
   );
-  const projectFacts = projects.map((p) => ({ ...p, links: p.links }));
   const featured = projects.find((p) => p.featured) ?? projects[0]!;
-  const building = nowProject(projectFacts);
+  const building = nowProject(projects);
   const stamp = contentStamp();
   const year = new Date().getFullYear();
   const route = aviation.watching[0];
@@ -123,7 +122,7 @@ export async function getPageData() {
     ticker: tickerItems({
       edu,
       honors,
-      projects: projectFacts,
+      projects,
       experience,
       interests: interests.items,
       now,

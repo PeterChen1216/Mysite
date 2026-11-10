@@ -22,7 +22,7 @@ const parts = text.split(/([★✈⇄→✦])/u).filter(Boolean);
   .tooltip {
     margin: 0;
     padding: 8px 10px;
-    border: 2px solid #5000ff;
+    border: 2px solid var(--color-tooltip-edge);
     background: rgb(16 0 16 / 0.94);
     font: var(--type-pixel-tiny);
     letter-spacing: var(--type-pixel-tiny-tracking);
@@ -30,7 +30,7 @@ const parts = text.split(/([★✈⇄→✦])/u).filter(Boolean);
     white-space: pre;
   }
   .sym {
-    font-family: 'Segoe UI Symbol', 'Apple Symbols', 'Noto Sans Symbols 2', system-ui, sans-serif;
+    font-family: var(--font-symbol);
     font-size: 11px;
     line-height: 1;
   }
@@ -38,9 +38,9 @@ const parts = text.split(/([★✈⇄→✦])/u).filter(Boolean);
     color: var(--color-accent-gold);
   }
   .tooltip--cyan {
-    color: #55ffff;
+    color: var(--color-accent-aqua);
   }
   .tooltip--white {
-    color: #fff;
+    color: var(--color-paper);
   }
 </style>

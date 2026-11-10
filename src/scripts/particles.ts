@@ -65,6 +65,11 @@ export function initParticles(): void {
 
   const burst = (x: number, y: number) => {
     const now = performance.now();
+    const tokens = getComputedStyle(document.documentElement);
+    const colors = PARTICLES.colors
+      .map((token) => tokens.getPropertyValue(token).trim())
+      .filter(Boolean);
+    if (colors.length === 0) return;
     for (let i = 0; i < PARTICLES.count; i++) {
       const angle = (i / PARTICLES.count) * Math.PI * 2 + rand(-0.2, 0.2);
       const dist = rand(PARTICLES.distance[0], PARTICLES.distance[1]);
@@ -75,7 +80,7 @@ export function initParticles(): void {
         dx: Math.cos(angle) * dist,
         dy: Math.sin(angle) * dist,
         size,
-        color: PARTICLES.colors[Math.floor(Math.random() * PARTICLES.colors.length)]!,
+        color: colors[Math.floor(Math.random() * colors.length)]!,
         born: now,
         life: rand(PARTICLES.minMs, PARTICLES.maxMs),
       });

@@ -16,21 +16,21 @@ const { tone = 'diamond', as: Tag = 'span' } = Astro.props;
     display: inline-flex;
     align-items: flex-start;
     padding: 6px 8px;
-    border: 2px solid #5000ff;
-    background: rgb(16 0 16 / 0.9);
+    border: 2px solid var(--color-tooltip-edge);
+    background: var(--color-tooltip-bg);
     font: var(--type-pixel-tiny);
     letter-spacing: var(--type-pixel-tiny-tracking);
     white-space: nowrap;
   }
   /* Figma's enchant purple #a335ee is 4.3:1 on this background; lightened to pass AA. */
   .chip--enchant {
-    color: #b866f5;
+    color: var(--color-accent-enchant-text);
   }
   .chip--diamond {
     color: var(--color-accent-diamond);
   }
   .chip--cyan {
-    color: #55ffff;
+    color: var(--color-accent-aqua);
   }
   .chip--gold {
     color: var(--color-accent-gold);
@@ -42,6 +42,6 @@ const { tone = 'diamond', as: Tag = 'span' } = Astro.props;
     color: var(--color-accent-redstone);
   }
   .chip--white {
-    color: #fff;
+    color: var(--color-paper);
   }
 </style>

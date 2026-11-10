@@ -5,9 +5,12 @@
 import { readFileSync, existsSync } from 'node:fs';
 import { join } from 'node:path';
 import { gzipSync } from 'node:zlib';
+import { loadSiteConfig } from '../site.config.mjs';
 
 const LIMIT = 180 * 1024;
 const dist = new URL('../dist/', import.meta.url).pathname;
+// Script URLs start with the build's base ("/" after launch, the preview path before).
+const { base } = loadSiteConfig();
 const html = readFileSync(join(dist, 'index.html'), 'utf8');
 
 let total = 0;
@@ -19,12 +22,15 @@ for (const m of html.matchAll(
   const tag = m[0];
   const src = /\ssrc="([^"]+)"/.exec(tag)?.[1];
   if (src) {
-    const file = join(dist, src.replace(/^\/(v2\/)?/, ''));
-    if (existsSync(file)) {
-      const size = gzipSync(readFileSync(file)).length;
-      total += size;
-      parts.push(`${src} ${size} B`);
+    if (/^(?:[a-z]+:)?\/\//i.test(src)) continue; // third-party script: not part of this budget
+    const file = join(dist, src.startsWith(base) ? src.slice(base.length) : src.replace(/^\//, ''));
+    if (!existsSync(file)) {
+      console.error(`✖ ${src} is referenced by index.html but missing from dist/`);
+      process.exit(1);
     }
+    const size = gzipSync(readFileSync(file)).length;
+    total += size;
+    parts.push(`${src} ${size} B`);
   } else if (m[1]?.trim()) {
     const size = gzipSync(m[1]).length;
     total += size;

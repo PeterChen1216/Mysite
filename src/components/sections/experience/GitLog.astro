@@ -172,7 +172,7 @@ const commits = rows.map((row) => {
   /* Figma's enchant #a335ee is 4.0:1 on the terminal background; the text uses the lightened
      purple of ui/Chip (AA), the node keeps the design colour. */
   .commit--init {
-    --c: #b866f5;
+    --c: var(--color-accent-enchant-text);
     --c-node: var(--color-accent-enchant);
   }
   .commit--grass {

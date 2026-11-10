@@ -67,14 +67,14 @@ const filled = Math.round((gpaRatio(edu.gpa) ?? 0) * CELLS);
     height: 16px;
     padding: 2px;
     background: var(--color-bg-terminal);
-    border: 2px solid #000;
+    border: 2px solid var(--color-ink);
   }
   .xp__cell {
     height: 8px;
     background: var(--color-border-line);
   }
   .xp__cell--on {
-    background: #7cf35f;
+    background: var(--color-xp-light);
   }
   .xp__cell--on:nth-child(even) {
     background: var(--color-accent-terminal-green);

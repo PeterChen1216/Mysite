@@ -65,8 +65,8 @@ const TONES = ['diamond', 'enchant', 'cyan', 'gold', 'redstone', 'white'] as con
           {tags.map((t, i) => {
             const tone = TONES[i % TONES.length]!;
             return (
-              <li class:list={['who__tag', { 'who__tag--cyan': tone === 'cyan' }]}>
-                <Chip tone={tone === 'cyan' ? 'diamond' : tone}>{t}</Chip>
+              <li class="who__tag">
+                <Chip tone={tone}>{t}</Chip>
               </li>
             );
           })}
@@ -162,10 +162,6 @@ const TONES = ['diamond', 'enchant', 'cyan', 'gold', 'redstone', 'white'] as con
   }
   .who__tag {
     display: flex;
-  }
-  /* Figma's aviation chip is #55ffff — Chip.astro has no cyan tone (see integration notes). */
-  .who__tag--cyan :global(.chip) {
-    color: #55ffff;
   }
   @media (max-width: 767px) {
     .who__shelf {
