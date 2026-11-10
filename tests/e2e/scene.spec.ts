@@ -538,6 +538,97 @@ test.describe('the scene at tier 3', () => {
     expect(await tierOf(page)).toEqual({ tier: '2', reason: 'watchdog' });
   });
 
+  test('the watchdog under 4 fps: a hidden tab and a held scene are not slow, drawing on is', async ({
+    page,
+  }) => {
+    test.slow();
+    const CYCLES = 6;
+    type Tab = { cycles: number; hidden: boolean; dpr: number; show: () => void };
+    // A tab that hides as a browser does it: frames stop coming while it is hidden, and the one
+    // that was asked for arrives when it shows again. It hides after every frame of the scene, for
+    // longer than the watchdog's one-second window, and after the last of CYCLES stays hidden
+    // until the test shows it.
+    await page.addInitScript(
+      ({ cycles, hiddenMs }) => {
+        const real = window.requestAnimationFrame.bind(window);
+        const held: FrameRequestCallback[] = [];
+        const scene = () =>
+          (
+            document.querySelector('canvas.scene') as
+              (HTMLCanvasElement & { sceneStatus?: { frames: number; dpr: number } }) | null
+          )?.sceneStatus;
+        const set = (hidden: boolean) => {
+          tab.hidden = hidden;
+          document.dispatchEvent(new Event('visibilitychange'));
+          if (!hidden) for (const cb of held.splice(0)) real(deliver(cb));
+        };
+        const tab: Tab = { cycles: 0, hidden: false, dpr: 0, show: () => set(false) };
+        (window as unknown as { tab: Tab }).tab = tab;
+        for (const [key, get] of [
+          ['visibilityState', () => (tab.hidden ? 'hidden' : 'visible')],
+          ['hidden', () => tab.hidden],
+        ] as const)
+          Object.defineProperty(document, key, { configurable: true, get });
+        const deliver =
+          (cb: FrameRequestCallback): FrameRequestCallback =>
+          (t) => {
+            if (tab.hidden) return void held.push(cb);
+            const before = scene()?.frames ?? 0;
+            cb(t);
+            const now = scene();
+            if (!now || now.frames === before || tab.cycles >= cycles) return;
+            tab.dpr ||= now.dpr; // the pixel ratio of the scene's first frame
+            set(true);
+            if (++tab.cycles < cycles) setTimeout(() => set(false), hiddenMs);
+          };
+        window.requestAnimationFrame = (cb) => real(deliver(cb));
+      },
+      { cycles: CYCLES, hiddenMs: 1100 },
+    );
+    // Not open(): its wait runs on frames, and this tab ends up hidden.
+    await page.goto(`${TIER3}&debug=crawl`);
+    await page.waitForFunction(
+      (n) => {
+        const { tab } = window as unknown as { tab: Tab };
+        return tab.cycles === n && tab.hidden && document.documentElement.dataset.scene === 'live';
+      },
+      CYCLES,
+      { timeout: 40_000, polling: 100 },
+    );
+    const full = await page.evaluate(() => (window as unknown as { tab: Tab }).tab.dpr);
+    expect(full).toBeGreaterThan(0);
+    // Every frame so far came out of a pause longer than a slow window: none was a slow frame.
+    // Hold the scene (pause) while the tab is still hidden, then show the tab for good.
+    await page.keyboard.press('p');
+    await expect(page.locator('html')).toHaveAttribute('data-paused', '');
+    await page.evaluate(() => (window as unknown as { tab: Tab }).tab.show());
+    await expect.poll(async () => (await status(page))!.frames).toBeGreaterThan(CYCLES);
+    let held = (await status(page))!;
+    expect(held.running).toBe(false);
+    expect(held.dpr).toBe(full);
+    // Held and settled: a scroll draws a frame, 300 ms slow like every other, and then nothing
+    // asks for the next one. Five seconds of those are not slow either.
+    const before = held.frames;
+    for (let i = 1; i <= 14; i++) {
+      await sceneAt(page, i * 40);
+      await page.waitForTimeout(60);
+    }
+    held = (await status(page))!;
+    expect(held.frames - before).toBeGreaterThanOrEqual(14);
+    expect(held.dpr).toBe(full);
+    expect(await tierOf(page)).toEqual({ tier: '3', reason: 'query' });
+    // Drawing on, a frame every 300 ms and more (under 4 fps): slow. The resolution goes down,
+    // then the tier.
+    await page.keyboard.press('p');
+    await expect
+      .poll(async () => (await status(page))?.dpr ?? 0, { timeout: 15_000 })
+      .toBeLessThan(full);
+    await expect
+      .poll(() => tierOf(page), { timeout: 30_000 })
+      .toEqual({ tier: '2', reason: 'watchdog' });
+    expect(await page.locator('canvas.scene').count()).toBe(0);
+  });
+
   test('?debug=1 shows the HUD: fps, frame time, tier and why, draw calls, pixel ratio', async ({
     page,
   }) => {

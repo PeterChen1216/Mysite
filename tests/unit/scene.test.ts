@@ -619,14 +619,17 @@ describe('airports', () => {
 });
 
 describe('the frame-time watchdog', () => {
-  /** Feed frames at a steady `ms` for `seconds`. */
-  const run = (s: WatchdogState, start: number, ms: number, seconds: number) => {
+  /**
+   * Feed frames `ms` apart for `seconds`. `continued`: each frame was asked for by the one before
+   * it (the renderer draws continuously); false: each was asked for by something else after a rest.
+   */
+  const run = (s: WatchdogState, start: number, ms: number, seconds: number, continued = true) => {
     const actions: string[] = [];
     let state = s;
     let t = start;
-    for (let i = 0; i < (seconds * 1000) / ms; i++) {
+    for (let i = 0; i < Math.round((seconds * 1000) / ms); i++) {
       t += ms;
-      const r = watchdogFrame(state, t);
+      const r = watchdogFrame(state, t, continued);
       state = r.state;
       if (r.action !== 'none') actions.push(r.action);
     }
@@ -639,7 +642,7 @@ describe('the frame-time watchdog', () => {
     expect(r.state.fps).toBeGreaterThan(55);
   });
   it('three slow seconds lower the resolution; at the lowest step it gives up', () => {
-    const slow = 1000 / 30; // 30 fps, frames close enough not to count as a gap
+    const slow = 1000 / 30; // 30 fps
     const a = run(initialWatchdog(), 0, slow, 3.6);
     expect(a.actions).toEqual(['lower']);
     expect(a.state.step).toBe(1);
@@ -647,17 +650,65 @@ describe('the frame-time watchdog', () => {
     expect(b.actions).toEqual(['lower', 'drop']);
     expect(b.state.dropped).toBe(true);
     // Given up: nothing more.
-    expect(watchdogFrame(b.state, b.t + 16).action).toBe('none');
+    expect(watchdogFrame(b.state, b.t + 16, true).action).toBe('none');
+  });
+  it('a continuous run of frames 300 ms apart (under 4 fps) is slow, not idle', () => {
+    // No pause length stands for "idle" any more: only what the renderer says.
+    expect(WATCHDOG).not.toHaveProperty('gapMs');
+    expect(1000 / 300).toBeLessThan(WATCHDOG.minFps);
+    // Four frames close a window: 1.2 s at 3.3 fps. Three of those lower the resolution.
+    const a = run(initialWatchdog(), 0, 300, 3.3);
+    expect(a.actions).toEqual([]);
+    expect(a.state.bad).toBe(2);
+    const b = run(a.state, a.t, 300, 0.6);
+    expect(b.actions).toEqual(['lower']);
+    expect(b.state.step).toBe(1);
+    expect(b.state.fps).toBeCloseTo(1000 / 300, 5);
+    expect(resolutionScale(b.state.step, 0)).toBe(0.75);
+    // Still under: the lowest step, then the tier.
+    const c = run(b.state, b.t, 300, 3.6);
+    expect(c.actions).toEqual(['lower']);
+    expect(resolutionScale(c.state.step, 0)).toBe(0.5);
+    const d = run(c.state, c.t, 300, 3.6);
+    expect(d.actions).toEqual(['drop']);
+    expect(d.state.dropped).toBe(true);
+    // The same holds however slow: at a frame every 2 s, each frame is a slow window.
+    const crawl = run(initialWatchdog(), 0, 2000, 8);
+    expect(crawl.actions).toEqual(['lower']);
   });
   it('a recovery resets the count; a pause in rendering is not a slow frame', () => {
     const slow = run(initialWatchdog(), 0, 1000 / 30, 2.5);
     const fast = run(slow.state, slow.t, 16.7, 1.2);
     expect(fast.state.bad).toBe(0);
     // A 5 s gap (tab hidden) starts a new window.
-    const after = watchdogFrame(fast.state, fast.t + 5000);
+    const after = watchdogFrame(fast.state, fast.t + 5000, false);
     expect(after.state.windowStart).toBe(fast.t + 5000);
+    expect(after.state.frames).toBe(0);
     expect(after.action).toBe('none');
-    expect(WATCHDOG.gapMs).toBeGreaterThan(1000 / WATCHDOG.minFps);
+  });
+  it('frames nobody was waiting for are never slow, however far apart', () => {
+    // A held, settled scene: a frame now and then (a scroll, a theme change), each on its own.
+    for (const ms of [100, 300, 1000, 60_000]) {
+      const idle = run(initialWatchdog(), 0, ms, (ms * 40) / 1000, false);
+      expect(idle.actions).toEqual([]);
+      expect(idle.state).toMatchObject({ step: 0, bad: 0, fps: 0, dropped: false });
+    }
+    // Two slow seconds, then the tab is hidden for a minute: the pause is not the third.
+    const slow = run(initialWatchdog(), 0, 300, 2.7);
+    expect(slow.state.bad).toBe(2);
+    const back = watchdogFrame(slow.state, slow.t + 60_000, false);
+    expect(back.action).toBe('none');
+    expect(back.state).toMatchObject({ step: 0, bad: 2, windowStart: slow.t + 60_000, frames: 0 });
+    // Fast again after it: the count clears. Slow again: the third slow second does count.
+    expect(run(back.state, slow.t + 60_000, 16.7, 1.2).state.bad).toBe(0);
+    expect(run(back.state, slow.t + 60_000, 300, 1.2).actions).toEqual(['lower']);
+    // A stall the browser never reported (the machine slept with the tab showing) arrives as
+    // one very late continued frame: one slow window, not three, and a fast second clears it.
+    const steady = run(initialWatchdog(), 0, 16.7, 2.5);
+    const woke = watchdogFrame(steady.state, steady.t + 3_600_000, true);
+    expect(woke.action).toBe('none');
+    expect(woke.state.bad).toBe(1);
+    expect(run(woke.state, steady.t + 3_600_000, 16.7, 1.2).state.bad).toBe(0);
   });
   it('adaptive resolution: a slow frame while moving drops a step; a second at rest restores it', () => {
     let s = adaptiveFrame({ extra: 0, movedAt: 0 }, 100, 25, true);

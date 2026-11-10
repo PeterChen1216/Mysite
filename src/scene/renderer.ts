@@ -722,6 +722,12 @@ export function startScene(canvas: HTMLCanvasElement, gl: GL, opts: SceneOptions
   let lidTarget = 0;
   let pointer: [number, number] | null = null;
   let wd = initialWatchdog();
+  /**
+   * The frame before this one was judged by the watchdog and asked for this one, so the time
+   * between them is how long this frame took, not a pause (watchdog.ts). Cleared by every frame
+   * until it has earned it again, and when the tab hides.
+   */
+  let chained = false;
   let adaptive: AdaptiveState = { extra: 0, movedAt: 0 };
   const baseDpr = Math.min(devicePixelRatio || 1, 2);
   let warm: { good: number; since: number } | null = { good: 0, since: performance.now() };
@@ -747,6 +753,8 @@ export function startScene(canvas: HTMLCanvasElement, gl: GL, opts: SceneOptions
 
   function frame(now: number) {
     raf = 0;
+    const continued = chained;
+    chained = false;
     if (disposed || !sceneOn() || !visible) return;
     const dt = last ? Math.min(100, now - last) : 16;
     last = now;
@@ -807,9 +815,11 @@ export function startScene(canvas: HTMLCanvasElement, gl: GL, opts: SceneOptions
       }
     }
 
-    // Watchdog and adaptive resolution, judged only while drawing continuously.
-    if (running || !settled) {
-      const r = watchdogFrame(wd, now);
+    // Watchdog and adaptive resolution, judged only while drawing continuously: this frame
+    // counts as slow or fast only if the judged frame before it asked for it.
+    const judged = running || !settled;
+    if (judged) {
+      const r = watchdogFrame(wd, now, continued);
       wd = r.state;
       if (r.action === 'lower') resize();
       if (r.action === 'drop' && (!opts.forced || opts.mayDrop)) {
@@ -836,7 +846,8 @@ export function startScene(canvas: HTMLCanvasElement, gl: GL, opts: SceneOptions
       stats.since = now;
     }
 
-    if (running || !settled || warm || punches.size || moving) request();
+    if (judged || warm || punches.size || moving) request();
+    chained = judged;
   }
 
   /**
@@ -1352,6 +1363,7 @@ export function startScene(canvas: HTMLCanvasElement, gl: GL, opts: SceneOptions
     () => {
       visible = document.visibilityState === 'visible';
       last = 0;
+      chained = false; // a frame still pending from before the tab hid was not slow
       if (visible) request();
     },
     on,

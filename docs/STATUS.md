@@ -1,5 +1,14 @@
 # STATUS（会话交接 · PLAN §15.6）
 
+## M5 进度（每次推送后更新；新会话从这里接着做）
+- ✅ 看门狗不再放过低于约 4 fps 的设备（PLAN §13 ADR-022；`src/scene/watchdog.ts`、`src/scene/renderer.ts`）。以前两帧相隔 > 250 ms 就当作「没在绘制」，所以每帧都 > 250 ms 的连续绘制永远不算慢（`fa274a2` 的 CI 里看门狗 E2E 在繁忙运行器上失败两次，HUD `fps 3 · 60.6 ms · dpr 1.00`）。现在由渲染器说明每一帧是不是上一帧要来的：是 → 多慢都计入；不是（标签页隐藏后回来、暂停 / 静止的场景被叫醒）→ 只重开窗口。`gapMs` 删除；`watchdogFrame` 多一个参数 `continued`
+- ✅ 测试：单测 3 条新的 / 改的（300 ms 一帧连续 → 降两档再放弃；没人等的帧不算慢；隐藏与长停顿）；E2E 新增 `?debug=crawl`（每帧多 300 ms）与「the watchdog under 4 fps: a hidden tab and a held scene are not slow, drawing on is」。原来的看门狗 E2E（`?debug=slow`，60 ms）没有改
+- ✅ 反向验证（本容器，Chromium）：新 E2E 在旧看门狗上失败（15 秒内 dpr 一直是 1）；修复后去掉 `visibilitychange` 里断开连续的那一行也失败（隐藏 3 次后 dpr 变成 0.75）；修复后通过。把 `?debug=slow` 临时改成 300 ms 时，原来的 E2E 在旧代码上同样失败、修复后 3 次都通过（约 12 秒）——即 CI 上那次失败的复现
+- ✅ 本机 `pnpm verify`：单测 489 / 1 跳过，E2E 712 通过 / 222 跳过，10.0 分钟（两条看门狗 E2E：11 秒与 27 秒）
+- ⚠ 分支：这项工作在 `claude/great-meitner-gh4xge` 上，它从 `claude/happy-einstein-dkkcxx` 的 `fa274a2`（M2–M4，尚未合并到 main）接着做，所以这个分支包含那条分支的全部提交
+- ⚠ WebKit 只在 CI 里跑（本容器没有 Playwright WebKit）：新 E2E 在 WebKit 上的第一次结果要看这次推送的 CI
+- 没做：`fa274a2` 的 STATUS 里 M4「没做」只有 7 条，没有找到记录这次 CI 失败的第 8 条（可能在没推送的提交里），所以没有去改它；本节与 ADR-022 记录了同一件事
+
 ## M4 进度（每次推送后更新；新会话从这里接着做）
 - ✅ 第 1 步：`pnpm content:check` 按构建自己的 schema 逐个文件检查（`src/content/check.ts`，新），每条报错写明文件:行、第几项（带公司 / 学校名）、字段、错在哪、该怎么写，并回显写错的值；YAML 写坏（冒号、Tab、重复字段、` #` 截断）不再抛出堆栈，只报第一处并说怎么改；live 语言里的草稿每个文件一行；简历必须是 `content/resume/Resume.pdf` 且是真 PDF（旁边多一个 PDF 也报错）；`content/` 里网站不读的文件、`artifacts/` 里待处理的文件给提示；在 GitHub Actions 里每条问题同时是注解（显示在运行页和提交的对应行）。schema：结束日期 / `draft:` 的报错改成可操作的话，起止日期顺序只在两个日期都写对时才比较（不再多出一条误导的错）。测试：新 `tests/unit/content-check.test.ts`（真实脚本在 main / 指向 main 的 PR / `--strict` 下对 `TODO` / `lorem` / `placeholder` 退出 1、分支上退出 0；两个工作流都在构建前运行检查）
 - ✅ 第 2 步（本机 `pnpm verify`：单测 478 / 1 跳过，E2E 711 通过 / 221 跳过，9.3 分钟）：**简历版本化**——`src/lib/resume.ts`：版本 = `Resume.pdf` 最后一次提交的日期 + 内容 SHA-256 前 8 位；构建发布 `/resume.pdf`（不变）和 `/resume/<日期>-<hash>.pdf`（这一版）；首页与 Contact 的下载按钮存成 `Peter-Chen-Resume-<日期>.pdf`；`pnpm resume [文件]` 显示 / 替换（检查是 PDF，从 `artifacts/` 来的移动）。**CHANGELOG**——`pnpm changelog`（`scripts/changelog.mjs`）从 main 线的提交主题生成 `CHANGELOG.md`（只用主题行，按天、按类型；只改 `content/` 的无前缀提交归入 Content）；`deploy.yml` 新作业 `changelog` 在每次部署成功后生成并由 `github-actions[bot]` 提交（被拒时 rebase 重推；用裸仓库模拟过）；CI 每次推送跑一遍脚本证明可用。**预览**——CI 在组装后、E2E 前上传 `site-<sha>`（约 1 分钟可下载），运行 Summary 页写出下载链接与三步；`pnpm preview:site <解压的文件夹>`（`scripts/serve.mjs` 现在打印要打开的地址，传了 zip 或空文件夹会说怎么做）。新单测 `owner-tools.test.ts`（13），E2E `layout.spec.ts` 加版本地址与下载名
@@ -352,7 +361,7 @@
 | 文字后的遮罩 | 导航、英雄区文字、滚动条和各区块标题之后，场景在着色器里退回天空色（边缘柔和）；有测试在真实场景上逐像素量这些文字的对比度 |
 | 页边方块 | About 两侧边距（≥ 40 px 时）里有 8 个慢慢转的方块，跟着页面滚动（替代 DOM 的两个并补几个；设计里没有，见「请你决定」） |
 | 动效 §4.1 | **calm**：循环慢 3 倍、无光尘、XP 球不追指针、相机无滞后（ADR-018 ④）。**全部暂停**（`p` / ⏸）：一切静止、不再画帧；滚动时相机直接到位（自己不会动）。**动效关闭 / 系统减少动态**：0 级，场景移除 |
-| 看门狗 §7.5 | 连续 3 秒 < 40 fps → 分辨率 1 → 0.75 → 0.5；最低一档仍不行 → 降到 2 级并记住本会话（sessionStorage）。移动中某帧 > 20 ms 时临时再降一档，静止 1 秒恢复。分辨率在下一帧绘制前才切换（不闪空帧）。`?tier=3` 强制时只降分辨率、不降等级（`?debug=slow` 用于测试降级） |
+| 看门狗 §7.5 | 连续 3 秒 < 40 fps → 分辨率 1 → 0.75 → 0.5；最低一档仍不行 → 降到 2 级并记住本会话（sessionStorage）。移动中某帧 > 20 ms 时临时再降一档，静止 1 秒恢复。分辨率在下一帧绘制前才切换（不闪空帧）。`?tier=3` 强制时只降分辨率、不降等级（`?debug=slow` 用于测试降级）。M5 起「是否在连续绘制」由渲染器说明，不再按两帧间隔 > 250 ms 猜（ADR-022） |
 | HUD | `?debug=1`：左下角一行 fps、每帧主线程毫秒、等级与原因、绘制调用、像素比；措辞在 `copy.yaml → scene.hud`（两种中文为草稿） |
 | 打印 | 画布与 HUD 不打印 |
 

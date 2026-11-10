@@ -5,7 +5,7 @@
  * no WebGL 2, or a software renderer (unless `?tier=3` forces the scene), keeps tier 1.
  *
  * `?debug=1` shows the HUD (PLAN §9.3): fps, frame time, tier and why, draw calls, pixel ratio.
- * `?debug=slow` also makes every frame slow on purpose (the watchdog test).
+ * `?debug=slow` and `?debug=crawl` also make every frame slow on purpose (the watchdog tests).
  */
 import { isSoftwareRenderer, type GlProbe } from '../scene/tier';
 import { MOTION_EVENT, resolved } from './prefs';
@@ -129,10 +129,11 @@ async function maybeStart() {
       forced,
       onDrop: drop,
       onStats: hud ? (s) => hud?.stats(s) : undefined,
-      // `?debug=slow`: every frame is slow on purpose once shown, and the watchdog may give up
-      // even under `?tier=3` (the E2E test of the watchdog).
-      slowMs: debug === 'slow' ? 60 : 0,
-      mayDrop: debug === 'slow',
+      // `?debug=slow` (60 ms more a frame: about 14 fps) and `?debug=crawl` (300 ms: under
+      // 4 fps, which the watchdog once took for a scene at rest): every frame is slow on
+      // purpose once shown, and the watchdog may give up even under `?tier=3` (its E2E tests).
+      slowMs: debug === 'slow' ? 60 : debug === 'crawl' ? 300 : 0,
+      mayDrop: debug === 'slow' || debug === 'crawl',
     });
   } catch (e) {
     canvas.remove();
