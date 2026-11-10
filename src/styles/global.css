@@ -180,3 +180,90 @@ img {
   descent-override: 26.2489%;
   line-gap-override: 0%;
 }
+
+/*
+ * Print (PLAN-EXPERIENCE §4.5): Mono light whatever the theme (tokens.css), no backgrounds or
+ * shadows, the moving and decorative parts left out (nav, ticker, hero art, phone, sky, voxel
+ * blocks, the settings window), links followed by where they go, and cards, commits and
+ * terminals kept whole on a page.
+ */
+@media print {
+  @page {
+    margin: 14mm 12mm;
+  }
+  html,
+  body {
+    background: none;
+  }
+  *,
+  *::before,
+  *::after {
+    box-shadow: none !important;
+    text-shadow: none !important;
+    /* The intro's start states must never reach paper. */
+    animation: none !important;
+    transition: none !important;
+  }
+  .skip-link,
+  .nav,
+  .ticker,
+  .bg,
+  .stage-wrap,
+  .phone,
+  .voxel,
+  .globe,
+  .particles-layer,
+  dialog,
+  [data-prefs-open],
+  [data-pause],
+  .foot__top {
+    display: none !important;
+  }
+  .page {
+    overflow: visible;
+  }
+  /* Paper is not a screen: smaller type, tight sections, no on-page jumps or decoration. */
+  html {
+    --text-scale: 0.8 !important;
+  }
+  main > section,
+  main > section > section,
+  .foot {
+    padding-top: 12px !important;
+    padding-bottom: 12px !important;
+    padding-inline: 0 !important;
+    margin: 0 !important;
+  }
+  .card--dashed,
+  .contact .term,
+  .mc-btn[href^='#'],
+  .sh__cmd,
+  .sh__blurb {
+    display: none !important;
+  }
+  .sh,
+  .sh__title {
+    break-after: avoid;
+    break-inside: avoid;
+  }
+  /* Important: some links draw a ↗ in this spot on screen. */
+  a[href^='http']::after {
+    content: ' (' attr(href) ')' !important;
+    font-family: var(--font-code) !important;
+    font-size: 0.85em !important;
+    overflow-wrap: anywhere;
+  }
+  .card,
+  .commit,
+  .term,
+  .chip,
+  li {
+    break-inside: avoid;
+  }
+  h1,
+  h2,
+  h3,
+  h4 {
+    break-after: avoid;
+  }
+}

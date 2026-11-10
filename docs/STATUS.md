@@ -8,7 +8,8 @@
 - ✅ 设置窗口 `~/.config`（`PrefsWindow.astro` + 懒加载的 `src/scripts/settings.ts`）：主题 / 动效 / 字号 / 快捷键四组单选，立即生效、存一个 `zhic:prefs:v1`；入口：导航齿轮键、页脚 `prefs`、`,` 键；导航 ⏸ 键与 `p` 键 = 全部暂停；快捷键在输入框里不触发、可在窗口里关掉（2.1.4）。测试：`tests/unit/prefs.test.ts`、`tests/e2e/prefs.spec.ts`
 - ✅ 五套主题可选（Night 默认、Day、Mono dark、Mono light、色盲友好）+ auto 跟随系统明暗；系统「更高对比度」与 forced-colors 自动生效。暗色物件（终端、git log、手机、徽章、chip、设置窗口）带 `data-surface="dark"`，Day 里保持深色。§3.3 冗余符号：ticker 标签与 chip 前的字形（◆ ▶ ■ ● ▲，`src/lib/cues.ts`）、提交节点方 / 菱形 / 环、Mono 下手机表针实线 / 虚线 / 点线；Night 不显示（像素不变）。§3.4 美术：Mono 下图片灰度、地球白陆黑海（或反之）、浅色主题无星空、网格变淡。测试：`tests/unit/contrast.test.ts`（每主题 × 3 种对比模式 × 页面 / 暗色物件的每对文字 × 表面 ≥ 4.5，焦点环、MC 按钮、单选框 ≥ 3）、`tests/e2e/themes.spec.ts`（每主题 axe + CLS、auto、更高对比、forced-colors 边界、Day 暗色物件、Mono 灰度）。顺带修了 `theme-tokens.ts` 的 var() 循环检测（原来会栈溢出）
 - ✅ 动效级别与全部暂停：full（开场 + 循环 + 悬停粒子）/ calm（无开场无粒子，循环慢 3 倍）/ off（全静止，滚动条可手动横滚）/ ⏸ 与 `p`（CSS 循环、地球、手机时钟全部停住，恢复时时钟跳到当前时间）；页面打开时改级别立即生效且开场不重放。地球是带名字的滑块（`role="slider"`）：方向键 15°、PgUp/PgDn 90°、Home 归零；有动效时键盘聚焦让自转停住，无动效时转静止的地图。测试：`tests/e2e/motion.spec.ts`、`robustness.spec.ts`（地球键盘）
-- ⏳ 下一步：无障碍合同（目标尺寸、文字间距、lang、悬停内容 Esc、字号 130 % 布局、Tab 遍历、打印）→ `docs/A11Y-CHECK.md` → Night 像素对比 + Lighthouse → STATUS 总结 / ADR
+- ✅ 无障碍合同（§4.1 可自动化的行）：目标尺寸 24 px（含间距 / 行内例外，设置窗口里也测）、触屏上 MC 按钮 ≥ 44 × 44 的点击区（不改外观：标签上一个透明的 `::after`，只在 `pointer: coarse`）、文字间距覆盖（1.4.12）与字号 130 % 在各宽度不截断（导航、日期、标题改为需要时换行；Night 像素不变）、`lang`（含汉字必须在 zh 元素里）、悬停内容（玩家卡照片：可悬停、`Esc` 关闭）、Tab 遍历（顺序、可见焦点环、不困住）、减少透明度、打印（Mono light、隐藏导航 / 滚动条 / 首屏美术 / 手机、链接后附网址）。`docs/A11Y-CHECK.md` 已写。测试：`tests/e2e/a11y.spec.ts`、`robustness.spec.ts`
+- ⏳ 下一步：Night 像素最终对比 + Lighthouse（上线配置）→ STATUS 总结、ADR、回写 Figma 清单
 
 ## 当前状态
 | 里程碑 | 状态 |

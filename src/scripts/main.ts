@@ -1,5 +1,6 @@
 /** Client entry for the voxel page: small, dependency-free enhancements. */
 import { initClocks } from './clock';
+import { initDismissible } from './dismiss';
 import { initGlobes } from './globe';
 import { initOffscreenPause } from './offscreen';
 import { initParticles } from './particles';
@@ -14,6 +15,7 @@ const start = () => {
   initParticles();
   initClocks();
   initScrollSpy();
+  initDismissible();
 };
 
 if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', start);

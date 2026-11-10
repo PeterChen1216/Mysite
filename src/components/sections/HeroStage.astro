@@ -78,6 +78,7 @@ const blocks: Array<{ name: BlockName; x: number; y: number; w: number; glow?: s
       data-intro="rise"
       style="--i:1"
       data-particles
+      data-hover-reveal
       tabindex="0"
       aria-labelledby="stage-photo-caption"
     >
@@ -239,6 +240,10 @@ const blocks: Array<{ name: BlockName; x: number; y: number; w: number; glow?: s
   .stage__card:hover .stage__photo,
   .stage__card:focus-visible .stage__photo {
     opacity: 1;
+  }
+  /* Escape hides the photo again until the pointer leaves or focus moves (WCAG 1.4.13). */
+  .stage__card[data-dismissed] .stage__photo {
+    opacity: 0;
   }
   .stage__xp {
     position: absolute;

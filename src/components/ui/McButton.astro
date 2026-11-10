@@ -115,4 +115,18 @@ const newTab = external ? (await getCopy()).labels.new_tab : '';
   .mc-btn:active {
     transform: translateY(2px);
   }
+  /* Touch: every MC button is a primary action and gets a hit area of at least 44 × 44 px
+     (PLAN-EXPERIENCE §4.1) without changing how it looks — an invisible box centred on the
+     label, which sits centred in the button. */
+  @media (pointer: coarse) {
+    .mc-btn__label::after {
+      content: '';
+      position: absolute;
+      left: 50%;
+      top: 50%;
+      width: max(100%, 44px);
+      height: 44px;
+      translate: -50% -50%;
+    }
+  }
 </style>

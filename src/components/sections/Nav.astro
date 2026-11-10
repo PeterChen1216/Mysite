@@ -72,6 +72,9 @@ const { copy, links } = data;
     position: relative;
     z-index: 2;
     display: flex;
+    /* One row at the design's type size; with larger text (settings, text-spacing overrides) the
+       groups wrap instead of running off the page. */
+    flex-wrap: wrap;
     align-items: center;
     justify-content: space-between;
     gap: 24px;
@@ -193,16 +196,16 @@ const { copy, links } = data;
   }
   @media (max-width: 1023px) {
     .nav {
-      flex-wrap: wrap;
       row-gap: 12px;
     }
     .nav__links {
       order: 3;
       width: 100%;
     }
+    /* The links wrap rather than scroll sideways when they don't fit (narrow screens, larger
+       text). */
     .nav__links ul {
-      overflow-x: auto;
-      scrollbar-width: none;
+      flex-wrap: wrap;
     }
   }
   @media (max-width: 767px) {
@@ -228,12 +231,6 @@ const { copy, links } = data;
     }
     .nav__links a {
       padding: 6px 4px;
-    }
-  }
-  @media (max-width: 369px) {
-    .nav__links ul {
-      flex-wrap: wrap;
-      overflow-x: visible;
     }
   }
 </style>

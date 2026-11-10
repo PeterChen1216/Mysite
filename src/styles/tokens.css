@@ -743,6 +743,7 @@
     --color-tooltip-edge: var(--p-mono-54);
     --color-tooltip-bg: var(--p-mono-100);
     --color-tooltip-bg-solid: var(--p-mono-100);
+    --color-paper: var(--p-mono-0); /* white-on-dark labels print in black on white */
     --color-text-shadow: var(--p-mono-100);
     --color-shadow: var(--p-shade-0);
     --color-shadow-term: var(--p-shade-0);

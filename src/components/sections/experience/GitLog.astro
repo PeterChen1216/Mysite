@@ -229,16 +229,15 @@ const commits = rows.map((row) => {
     color: var(--c);
     white-space: nowrap;
   }
-  /* Figma: text/lo (3.0:1) → text/mid for AA. The range stays on one line; a note such as
-     "(expected)" wraps below it when the column is narrow. */
+  /* Figma: text/lo (3.0:1) → text/mid for AA. The range fits on one line at the design's type
+     size; a note such as "(expected)" wraps below it. With larger text or a text-spacing
+     override the range itself may wrap, and a date breaks rather than spill (WCAG 1.4.12). */
   .commit__dates {
     grid-area: dates;
     margin: 0;
     font: var(--type-code-sm);
     color: var(--color-text-mid);
-  }
-  .commit__range {
-    white-space: nowrap;
+    overflow-wrap: break-word;
   }
   /* The self-hosted JetBrains Mono subset has no U+2192, so the fallback font drew a small, low
      arrow. The character stays in the text (copy, screen readers); the mask paints JetBrains
@@ -251,6 +250,9 @@ const commits = rows.map((row) => {
     overflow: hidden;
     vertical-align: 0.06em;
     color: transparent;
+    /* The hidden character must stay inside its one-cell box under text-spacing overrides. */
+    letter-spacing: 0 !important;
+    word-spacing: 0 !important;
     background: var(--color-text-mid);
     -webkit-mask: var(--glyph) center / 0.6em no-repeat;
     mask: var(--glyph) center / 0.6em no-repeat;
@@ -400,10 +402,6 @@ const commits = rows.map((row) => {
     }
     .commit__title {
       font-size: calc(20px * var(--ts));
-    }
-    /* Very narrow screens (< 360 px) may wrap the dates rather than overflow. */
-    .commit__range {
-      white-space: normal;
     }
     .commit__block :global(.voxel) {
       width: 30px;

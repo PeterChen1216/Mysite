@@ -99,6 +99,7 @@ const TONES = ['diamond', 'enchant', 'cyan', 'gold', 'redstone', 'white'] as con
   .who__title {
     max-width: min(620px, calc(100% - 140px));
     margin: 0;
+    overflow-wrap: break-word; /* a long word breaks rather than spill at large text sizes */
     font: var(--type-pixel-h3);
     letter-spacing: var(--type-pixel-h3-tracking);
     color: var(--color-text-hi);
