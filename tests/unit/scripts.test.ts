@@ -2,7 +2,12 @@ import { mkdirSync, mkdtempSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
-import { findBreakage, findPlaceholders, isStrict } from '../../scripts/check-content.mjs';
+import {
+  findBreakage,
+  findPlaceholders,
+  findUnplacedAirports,
+  isStrict,
+} from '../../scripts/check-content.mjs';
 import { loadSiteConfig } from '../../site.config.mjs';
 
 function fixture(files: Record<string, string>): string {
@@ -45,6 +50,21 @@ describe('content guard', () => {
   });
   it.runIf(isStrict())('the real content/ folder has no placeholders (main only)', () => {
     expect(findPlaceholders(join(import.meta.dirname, '../../content'))).toEqual([]);
+  });
+});
+
+describe('watched routes the scene can draw', () => {
+  it('names an airport the WebGL scene has no position for, and nothing else', () => {
+    const dir = fixture({
+      'aviation.yaml':
+        'watching:\n  - { from: SEA, to: NRT, airline: A, aircraft: B, why: C }\n  - { from: sea, to: XYZ, airline: A, aircraft: B, why: C }\n',
+    });
+    const notes = findUnplacedAirports(dir);
+    expect(notes).toHaveLength(1);
+    expect(notes[0]).toMatch(/"XYZ"/);
+    expect(findUnplacedAirports(fixture({ 'aviation.yaml': 'watching: []\n' }))).toEqual([]);
+    expect(findUnplacedAirports(fixture({ 'other.yaml': 'a: 1\n' }))).toEqual([]);
+    expect(findUnplacedAirports(join(import.meta.dirname, '../../content'))).toEqual([]);
   });
 });
 

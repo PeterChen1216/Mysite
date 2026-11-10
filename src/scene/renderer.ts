@@ -111,6 +111,8 @@ const SCRIM_TEXT = [
   '.sh__blurb',
 ].join(',');
 const SCRIM_MAX = 12;
+/** Drawing-buffer size cap (device px): colour + depth ≈ 36 MB, plus the browser's copy. */
+const MAX_PIXELS = 4.5e6;
 const SCRIM_PAD = 10; // css px around the text
 const SCRIM_EDGE = 28; // css px of soft edge beyond that
 /** How far in front of the camera the blocks beside the page float (world units). */
@@ -155,6 +157,8 @@ export interface SceneStatus {
   /** The scene clock (ms; stands still while loops are held) and the Earth's turn (degrees). */
   time: number;
   earth: number;
+  /** Main-thread time per drawn frame, ms (smoothed): §1.3's "≤ 8 ms desktop". */
+  workMs: number;
 }
 
 export interface Scene {
@@ -178,6 +182,7 @@ export function startScene(canvas: HTMLCanvasElement, gl: GL, opts: SceneOptions
     running: false,
     time: 0,
     earth: 0,
+    workMs: 0,
   };
   (canvas as HTMLCanvasElement & { sceneStatus?: SceneStatus }).sceneStatus = status;
 
@@ -288,14 +293,14 @@ export function startScene(canvas: HTMLCanvasElement, gl: GL, opts: SceneOptions
       earthVoxels(EARTH.radius, parseCellSvg(landSvg), parseCellSvg(iceSvg)).map((v) => ({
         pos: v.p,
         size: 1,
+        // Land is grass on every face (its relief shows by shading, as the DOM globe's flat map
+        // has no brown); the ground under a coast too.
         tiles:
-          v.kind === 'land'
-            ? [solidTile('grass'), solidTile('dirt'), solidTile('dirt')]
-            : v.kind === 'ice'
-              ? solidTile('ice')
-              : v.kind === 'dirt'
-                ? solidTile('dirt')
-                : solidTile('water'),
+          v.kind === 'ice'
+            ? solidTile('ice')
+            : v.kind === 'water'
+              ? solidTile('water')
+              : solidTile('grass'),
         flags: FLAG.earth,
       })),
     ),
@@ -451,12 +456,12 @@ export function startScene(canvas: HTMLCanvasElement, gl: GL, opts: SceneOptions
         ? [{ x0: r.left, y0: r.top + scrollY, x1: r.right, y1: r.bottom + scrollY }]
         : [];
     });
-    // After About the scene dissolves into its sky, so Projects and below show as they always
-    // have (M3 adds stops 4–6 there): it starts as About's end comes up through the lower quarter
-    // of the screen and is gone once it passes the upper third.
+    // After About the scene dissolves into its sky as Projects comes up, so Projects and below
+    // show as they always have (M3 adds stops 4–6 there): it starts as About's end passes just
+    // below mid-screen and is gone once it nears the top.
     const about = docRect('#about');
     fadeRange = about
-      ? [about.y + about.h - vh * 0.25, about.y + about.h + vh * 0.2]
+      ? [about.y + about.h - vh * 0.1, about.y + about.h + vh * 0.42]
       : [Infinity, Infinity];
     // Blocks that float beside About's cards, in its margins: where the DOM drew its two (now
     // hidden) and a few more down the sides. They are drawn at a fixed distance in front of the
@@ -597,6 +602,7 @@ export function startScene(canvas: HTMLCanvasElement, gl: GL, opts: SceneOptions
 
     stats.frames++;
     stats.ms += work;
+    status.workMs = status.workMs ? status.workMs * 0.9 + work * 0.1 : work;
     if (opts.onStats && now - stats.since > 500) {
       opts.onStats({
         fps: (stats.frames * 1000) / (now - stats.since),
@@ -875,7 +881,10 @@ export function startScene(canvas: HTMLCanvasElement, gl: GL, opts: SceneOptions
   function applySize() {
     sizeDirty = false;
     const scaleF = resolutionScale(wd.step, adaptive.extra);
-    const dpr = baseDpr * scaleF;
+    // At most MAX_PIXELS in the drawing buffer (a 5K screen would otherwise take ~120 MB of GPU
+    // memory for its buffers; PLAN-EXPERIENCE §7.5: ≤ 96 MB). Square pixels, scaled up crisply.
+    const area = Math.max(1, canvas.clientWidth * canvas.clientHeight);
+    const dpr = Math.min(baseDpr, Math.sqrt(MAX_PIXELS / area)) * scaleF;
     const w = Math.max(1, Math.round(canvas.clientWidth * dpr));
     const h = Math.max(1, Math.round(canvas.clientHeight * dpr));
     if (canvas.width !== w || canvas.height !== h) {

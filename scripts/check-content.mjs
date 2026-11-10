@@ -8,6 +8,9 @@
 //   `live` may hold no `draft`; a translated copy file has exactly copy.yaml's keys; a twin file
 //   (`about.zh-hans.md`) needs its English file; the two private-use characters the build uses
 //   to mark English fallbacks may not appear in content.
+//   Scene notes (warnings, never fail): a watched route (aviation.yaml `watching`) whose airport
+//   the WebGL scene cannot place (src/scene/airports.ts) is listed on the AvGeek card but not
+//   drawn on the scene's Earth.
 import { existsSync, readdirSync, readFileSync, realpathSync, statSync } from 'node:fs';
 import { join, relative } from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
@@ -15,6 +18,7 @@ import { parse } from 'yaml';
 import { collectUnits, orphanTwins } from '../src/i18n/content-files.ts';
 import { TRANSLATED_LOCALES } from '../src/i18n/locales.ts';
 import { copyKeyDiff, liveProblems } from '../src/i18n/translations.ts';
+import { AIRPORTS } from '../src/scene/airports.ts';
 
 export const PATTERNS = [/\bTODO\b/, /\blorem\b/i, /\bplaceholder\b/i];
 /** Owner-facing docs and the raw drop folder are exempt. */
@@ -146,6 +150,31 @@ export function findTranslationProblems(root) {
 }
 
 /**
+ * Watched routes the WebGL scene cannot draw: an airport code it has no position for.
+ * @param {string} root absolute path to content/
+ * @returns {string[]}
+ */
+export function findUnplacedAirports(root) {
+  const file = join(root, 'aviation.yaml');
+  if (!existsSync(file)) return [];
+  const watching = parse(readFileSync(file, 'utf8'))?.watching;
+  if (!Array.isArray(watching)) return [];
+  return watching.flatMap((/** @type {{ from?: unknown, to?: unknown }} */ r) =>
+    [r?.from, r?.to]
+      .map((c) =>
+        String(c ?? '')
+          .trim()
+          .toUpperCase(),
+      )
+      .filter((c) => !(c in AIRPORTS))
+      .map(
+        (c) =>
+          `content/aviation.yaml watching ${String(r?.from)} → ${String(r?.to)}: the scene has no position for "${c}" — the route shows on the AvGeek card but not on the globe (add it to src/scene/airports.ts)`,
+      ),
+  );
+}
+
+/**
  * @param {Record<string, string | undefined>} env
  * @param {string[]} argv
  */
@@ -175,6 +204,8 @@ if (invokedDirectly) {
     else
       console.log(`⚠ ${hits.length} placeholder(s) allowed on this branch; they will block main.`);
   }
+
+  for (const note of findUnplacedAirports(root)) console.log(`warning: ${note}`);
 
   if (failed) {
     console.error('✖ content check failed');

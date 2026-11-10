@@ -22,7 +22,7 @@ export const EARTH = {
   /** Blocks from the centre to the sea (earth.ts). */
   radius: 10,
   /** The drawn outline (sea blocks' corners, land a block higher): what matches the DOM disc. */
-  discRadius: 11.3,
+  discRadius: 11.9,
 };
 
 /** DOM hero stage geometry (HeroStage.astro): the globe's centre and radius in stage px. */
