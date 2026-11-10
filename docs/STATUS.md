@@ -3,7 +3,10 @@
 ## M4 进度（每次推送后更新；新会话从这里接着做）
 - ✅ 第 1 步：`pnpm content:check` 按构建自己的 schema 逐个文件检查（`src/content/check.ts`，新），每条报错写明文件:行、第几项（带公司 / 学校名）、字段、错在哪、该怎么写，并回显写错的值；YAML 写坏（冒号、Tab、重复字段、` #` 截断）不再抛出堆栈，只报第一处并说怎么改；live 语言里的草稿每个文件一行；简历必须是 `content/resume/Resume.pdf` 且是真 PDF（旁边多一个 PDF 也报错）；`content/` 里网站不读的文件、`artifacts/` 里待处理的文件给提示；在 GitHub Actions 里每条问题同时是注解（显示在运行页和提交的对应行）。schema：结束日期 / `draft:` 的报错改成可操作的话，起止日期顺序只在两个日期都写对时才比较（不再多出一条误导的错）。测试：新 `tests/unit/content-check.test.ts`（真实脚本在 main / 指向 main 的 PR / `--strict` 下对 `TODO` / `lorem` / `placeholder` 退出 1、分支上退出 0；两个工作流都在构建前运行检查）
 - ✅ 第 2 步（本机 `pnpm verify`：单测 478 / 1 跳过，E2E 711 通过 / 221 跳过，9.3 分钟）：**简历版本化**——`src/lib/resume.ts`：版本 = `Resume.pdf` 最后一次提交的日期 + 内容 SHA-256 前 8 位；构建发布 `/resume.pdf`（不变）和 `/resume/<日期>-<hash>.pdf`（这一版）；首页与 Contact 的下载按钮存成 `Peter-Chen-Resume-<日期>.pdf`；`pnpm resume [文件]` 显示 / 替换（检查是 PDF，从 `artifacts/` 来的移动）。**CHANGELOG**——`pnpm changelog`（`scripts/changelog.mjs`）从 main 线的提交主题生成 `CHANGELOG.md`（只用主题行，按天、按类型；只改 `content/` 的无前缀提交归入 Content）；`deploy.yml` 新作业 `changelog` 在每次部署成功后生成并由 `github-actions[bot]` 提交（被拒时 rebase 重推；用裸仓库模拟过）；CI 每次推送跑一遍脚本证明可用。**预览**——CI 在组装后、E2E 前上传 `site-<sha>`（约 1 分钟可下载），运行 Summary 页写出下载链接与三步；`pnpm preview:site <解压的文件夹>`（`scripts/serve.mjs` 现在打印要打开的地址，传了 zip 或空文件夹会说怎么做）。新单测 `owner-tools.test.ts`（13），E2E `layout.spec.ts` 加版本地址与下载名
-- 下一步：`CLAUDE.md`、`docs/CONTENT-GUIDE.md`（截图）、演练计时、像素对比、ADR-021、交付说明
+- ⚠ `dd5aeb0` **没有 CI 运行**：它的提交说明正文里写了部署机器人提交用的那个跳过 CI 的标记（方括号 skip ci），GitHub 因此跳过了这次推送的所有工作流。下一次推送（第 3 步）的 CI 覆盖它的内容
+- ✅ 第 3 步：`docs/CONTENT-GUIDE.md`（中文，17 节：每个任务的文件、改前改后、命令与真实输出、结果截图；CI 报错表；预览；自动的东西；一次性准备；清单）与 10 张截图（`docs/content-guide/*.webp`，当前构建、2 倍像素、共约 330 KB）；`content/README.md` 缩成指向指南的入口（「翻译」一节的内容并入指南 §9）；`CLAUDE.md`；PLAN §13 ADR-021；页脚「updated」日期不再算 `content/README.md` 和 `content/artifacts/`（它们不上页面）；`pnpm resume` 对仓库外的文件显示完整路径。演练（全新克隆里照指南做 8 个任务，计时）发现并改了：指南说「`end: present` 的一行带 HEAD」是错的（HEAD 行是状态）；状态行不在 Contact；部署时间是约 11 分钟而不是「几分钟」；`pnpm dev` 在 4321 被占用时换端口；`pnpm resume` 显示 `../../Downloads/…` 这类路径。新单测 `guide.test.ts`（指南和 `CLAUDE.md` 里的每个 `pnpm` 命令都存在、每张图都在且 < 200 KB、目录与章节号一致）
+- ✅ 第 3 步本机 `pnpm verify`：单测 487 / 1 跳过，E2E 711 通过 / 221 跳过，8.6 分钟。像素对比（`/v2/`、`/v2/?tier=1`，1440 / 1024 / 390，对照 `e19a7dc`）：**0 个像素不同，页脚不遮也一样**。本文件的「M4 Owner experience 交付说明」
+- 下一步：等这次推送的 CI（它也是 `dd5aeb0` 内容的第一次 CI）；之后业主按交付说明里的清单自己计时一次
 
 ## M3 进度（每次推送后更新；新会话从这里接着做）
 - ✅ 第 1 步：项目详情页与目录页（每种语言 `/projects/` 与 `/projects/<id>/`，静态、无 JS 可读、canonical / hreflang / noindex 按 X2 规则）、404「chunk not found」（一个根目录 `404.html`，按网址显示三种语言之一；`launched: false` 时 `/v2/` 外的地址「回家」指向旧站根目录）、首页项目标题变成链接、Projects 标题行的 `more ▸`；CJK 字体子集覆盖每种语言的全部页面；首屏 JS 检查跟随静态 import；Lighthouse 加入目录页、Clock Stamp 页与 404。新单测 `tests/unit/pages.test.ts`，新 E2E `tests/e2e/pages.spec.ts`。像素对比（`/v2/`、`/v2/?tier=1`，1440 / 1024 / 390，对照 `31e9882`）：只有 `more ▸`（64 × 24 px）不同
@@ -37,6 +40,90 @@
 - ✅ `23cb131`：场景在状态里报出它此刻用的天空色（`sceneStatus.sky`，取自 token）；测试在所有浏览器里断言它变成 Day 的纸色、并且之后画了新帧；屏幕上的像素只在 Chromium 断言，WebKit 里只记录。**它的 CI 两个作业全绿**（主作业 789 通过 / 195 跳过，含 WebKit；上线配置作业 326 通过）。CI 日志里 WebKit 的记录：`scene sky rgb(11, 15, 26) on screen, page rgb(243, 239, 228)`——场景自己已经换成 Day 的颜色，但截图里画布仍是 Night 的天空。**这一点没有解决**：本机 WebKitGTK 同样的操作屏幕上确实变色；是 CI 的 Playwright WebKit 截图拿到旧画布，还是那个 WebKit 在软件渲染下不再把新帧显示出来，我无法在这里分辨。需要在真的 Safari 上看一眼（见交付说明「没做」10）
 - 下一步：业主审 M2（交付说明里的「请你决定」），并在 Safari 上做「没做」10 的检查
 - 已测：像素对比（`/v2/` 与 `/v2/?tier=1`，Night，1440 / 1024 / 390，对照 `6691017`）逐像素相同（页脚版本号遮住）；Lighthouse 上线配置三种语言通过；WebKitGTK 相对测量
+
+## 📝 M4 Owner experience 交付说明（PLAN §8 M4、§7；PLAN-EXPERIENCE §9 的 M4 行；PLAN §13 ADR-021）
+
+### 一句话
+更新网站内容现在有一份按任务写的中文指南（`docs/CONTENT-GUIDE.md`，带当前网站的截图和真实命令输出）；`pnpm content:check` 不到一秒检查全部内容，每条问题都说出文件:行、哪一项、哪个字段、该怎么写；换简历只要换一个文件（或 `pnpm resume <文件>`），版本地址和下载文件名自动生成；版本号、更新日期和 `CHANGELOG.md` 都不用手写；每次推送的网站可以下载预览；Claude 会话按 `CLAUDE.md` 只改 `content/`、不编事实。网站静止画面逐像素不变。
+
+### 已交付
+| 部分 | 内容 |
+|---|---|
+| 内容指南 `docs/CONTENT-GUIDE.md` | 中文，17 节：三条路（网页 / 本机 / Claude）和每次都一样的三步；文件地图（页面上的东西在哪个文件哪个字段）；YAML 与 Markdown 五条规矩；**任务**：加经历、加 / 改项目（和它的页面）、换简历、改状态行与「现在在做」、加关注的航线、改界面文字、翻译 / 审阅 / 让一种语言上线、主题对内容做了什么；**CI 报错怎么读**（在哪里看、每一步查什么、一条报错的结构、23 种报错与改法，全部是真实输出）；上线前先看效果（`pnpm dev`、CI 预览下载、`/v2/` 何时公开）；自动的东西；让 Claude 改；一次性准备；五分钟清单。例子全用明显的占位（Your Company、2027-01、example.com）。10 张截图 `docs/content-guide/*.webp`（当前构建，2 倍像素，宽图缩到 1600 px，WebP，共 337 KB；`docs/` 不进网站） |
+| `content/README.md` | 缩成入口：最要紧的四条 + 「翻译」一节指向指南 §9（其他内容文件注释里写的 `content/README.md "Translations"` 仍然指得到）。原来的翻译说明全部并入指南 §9，只有一份 |
+| `pnpm content:check` | 按构建自己的 schema 检查每个文件（`src/content/check.ts`，新，纯函数，覆盖率 97 %）：`error: content/experience.yaml:6: item 1 (Your Company) → start: Use the YYYY-MM format, e.g. 2024-07 — you wrote "2027-1"`。拼错字段给「did you mean」和这里允许的字段；缺字段、空值、类型、选项、长度、条数、邮箱、网址、图片路径各有一句人话；Zod 的原话（Invalid input…）不会出现。YAML 写坏（`: `、Tab、重复字段、` #` 截断）只报第一处并说怎么改，**以前会抛出堆栈**。简历必须是 `content/resume/Resume.pdf` 且是真 PDF，旁边多一个 PDF 也报错（网页上传名字不对时，旧简历会悄悄留在线上）。live 语言里的草稿每个文件一行（以前把简体改成 live 会出 250 行）。网站不读的文件（`experience.yml` → did you mean experience.yaml?）和 `artifacts/` 里待处理的文件给提示。旧的每条报错都补上了「怎么改」。在 GitHub Actions 里每条问题同时是注解（文件 + 行） |
+| `TODO:` 拦截的证明 | 单测在子进程里跑真正的脚本：内容里有 `TODO` / `lorem` / `placeholder` 时，推送到 main（`GITHUB_REF=refs/heads/main`）、指向 main 的 PR（`GITHUB_BASE_REF=main`）、`--strict` 都退出 1，分支上退出 0 并给 warning；真实内容在 main 上退出 0。另一条单测读两个工作流，断言 `ci.yml` 在构建前跑 `pnpm content:check`、`deploy.yml` 在构建前跑 `pnpm content:check --strict`，`ci.yml` 对所有分支的推送和指向 main 的 PR 都运行 |
+| 最近更新 / 版本 | 已有（`src/lib/build-info.ts`，页脚 `v0.1.0+<日期>.<提交>` · updated `<日期>`）。补了：`content/README.md` 与 `content/artifacts/` 不再算「内容更新」（它们不上页面；改指南不会让页脚说网站更新了） |
+| `CHANGELOG.md` | `pnpm changelog`（`scripts/changelog.mjs`）从 main 这条线（first-parent）的提交**主题**生成，从 v2 开始（创建 `content/site.yaml` 的提交），按天、按 Content / Features / Fixes / Design / Other changes；没有前缀但只改了 `content/` 的提交（网页编辑器的「Update experience.yaml」）归 Content；从不用提交正文。`deploy.yml` 新作业 `changelog`：每次部署成功后生成并由 `github-actions[bot]` 提交（`chore(changelog): …` 加跳过 CI 的标记），被拒时 rebase 重推。仓库里的这一份是从本分支生成的；合并后 main 的第一次部署会按 main 的历史重写 |
+| 简历版本化 | `src/lib/resume.ts`：版本 = `Resume.pdf` 最后一次提交的日期 + 内容 SHA-256 前 8 位（未提交的替换按今天）。构建发布 `/resume.pdf`（不变，按钮仍链接它）和 `/resume/<日期>-<hash>.pdf`（只有当前这一版；旧版含电话，不保留）。首页与 Contact 的下载按钮存成 `Peter-Chen-Resume-2026-11-09.pdf`（以前是 `resume.pdf`）。`pnpm resume` 显示当前版本；`pnpm resume <文件>` 检查是 PDF（.docx 会被拒绝并说明）、放到位（从 `artifacts/` 来的移动，其他复制），提醒 PDF 会公开，给出要提交的命令 |
+| 预览 | GitHub Pages 一个仓库一个站点，分支没有自己的网址（ADR-021 ①）。CI 在组装后、E2E 前上传 `site-<提交>`（运行开始后约 1 分钟），运行的 Summary 页写出下载链接和三步；`pnpm preview:site <解压的文件夹>` 起本地服务器并打印要打开的地址（传了 zip 或空文件夹会说怎么做）。本机最快的仍是 `pnpm dev` |
+| `CLAUDE.md` | 仓库根目录，英文（读者是模型），58 行：只改 `content/`（除非明确要求）、不编事实（缺就问、`TODO:` 进不了 main、写 `source:`）、不动 `launched` 和语言状态、译文一律 `draft: true`、`artifacts/` 的处理、不把个人信息发给外部服务、不放宽检查；检查命令；分支与提交约定（conventional commits，CHANGELOG 从主题生成）；文档在哪里 |
+| 其他 | `pnpm resume`、`pnpm changelog`、`pnpm preview:site` 三个新命令；`scripts/serve.mjs` 从输入命令的目录解析路径；`.prettierignore` 加 `CHANGELOG.md`；PLAN §13 ADR-021 |
+
+### 验证（2026-11-10，本容器）
+- `pnpm verify`（每次提交前）：第 1 步 `e237276` 单测 465 / 1 跳过，E2E 706 通过 / 221 跳过 / **1 失败**——旧测试 `windows.spec.ts`「from its title…」比较窗口与项目页时手机上的实时时钟跨了一分钟（09:28 / 09:29），与 M4 无关；改为整个浏览器上下文用同一个固定时间后单独重跑通过（2 / 2），并随第 1 步提交。第 2 步 `dd5aeb0`：单测 478 / 1 跳过，E2E **711 通过 / 221 跳过**，9.3 分钟。第 3 步：见顶部「M4 进度」
+- **新纯模块覆盖率**：`src/content/check.ts` 行 98.1 % / 分支 87.8 %；`src/lib/resume.ts` 行 93.3 % / 分支 100 %；`build-info.ts` 仍在门槛之上
+- **CI**：`e237276` **两个作业全绿**（主作业 E2E 含 WebKit；上线配置作业含 Lighthouse）。`dd5aeb0` **没有运行**：提交说明正文里引用了机器人提交用的跳过 CI 标记，GitHub 据此跳过了整次推送——它的内容由下一次推送的 CI 覆盖（见顶部）
+- **像素对比**（`/v2/` 与 `/v2/?tier=1`，Night，1440 / 1024 / 390，`reducedMotion: 'reduce'`，时钟固定 2026-10-24T16:45Z，等 `document.fonts.ready`；对照工作树里重新构建的 `e19a7dc`）：六张整页截图**逐像素相同（0 个像素不同），页脚版本号那一行不遮也相同**——内容的最后一次改动仍是 `f9fac4c`，版本号 `v0.1.0+20261110.f9fac4c` 不变。页面高度 6525 / 7129 / 10979 px 不变。下载按钮多出的 `download` 文件名、新的 `/resume/…pdf` 不产生像素
+- **演练**（照指南做，见下节）：8 个任务的每条命令都在一份全新克隆里运行过，指南里的输出就是那次的输出（路径换成 `/Users/you/…`）
+- **体积**：网站没有新的前端代码；首屏 JS、CSS、场景 chunk 与 M3 相同（`pnpm size` 通过）。新增的 `/resume/<版本>.pdf` 是简历的第二份拷贝（153 KB，只在被请求时下载）
+- **CHANGELOG 作业**：在本机用裸仓库模拟了 `deploy.yml` 的提交步骤：生成 → 提交 → 推送被拒（期间另一个克隆推了一个内容提交）→ `pull --rebase` → 推送成功；再跑一次报告「up to date」（机器人自己的提交不进 CHANGELOG，版本号不变）。**真正的 GitHub 运行只能在合并后的第一次部署时发生**
+
+### 演练（2026-11-10，按指南，计时）
+在一份全新克隆（`git clone` 0.6 秒，`pnpm install` 3.1 秒——用了本机的 pnpm 缓存；业主第一次安装要下载约 500 MB 的 `node_modules`，没有在他的网络上量）里，`pnpm dev` 运行着（横幅 2.9 秒出现，第一页 2.7 秒，之后每页约 0.1 秒），照指南逐节做，每节做完用 `git checkout` 还原。编辑是脚本按指南的片段原样写入的，所以**下面只是机器时间；人读指南、打字的时间要你自己的计时**。
+
+| 任务（指南节） | 做了什么 | 命令与耗时 |
+|---|---|---|
+| 加经历（§3） | 把指南的 Your Company 片段加到 `experience.yaml` 开头；再把 `2027-01` 写成 `2027-1` | `pnpm content:check` 0.72 s ✔；保存后 0.20 s 开发服务器页面上出现 Your Company；写错后检查 0.91 s，报 `experience.yaml:6 … you wrote "2027-1"` |
+| 加项目（§4） | 新建指南里的 `projects/your-project.md` | 检查 0.91 s ✔；0.23 s 后首页有卡片，0.20 s 后 `/v2/projects/your-project/` 有正文 |
+| 换简历（§5） | `pnpm resume`；一个 .docx；一个新 PDF | 0.40 / 0.46（拒绝，未改任何文件）/ 0.37 s；检查 0.84 s ✔ |
+| 状态行（§6） | 改 `status` | 检查 0.74 s；`pnpm content:stale` 0.59 s 列出简繁两条；0.14 s 后页面上出现 |
+| now（§6） | `now.md` 加两行 | 检查 0.79 s；0.12 s 后滚动条出现 `[NOW]` |
+| 航线（§7） | 加指南的 SEA → NRT；再把 NRT 改成 XYZ | 检查 0.78 s ✔；0.12 s 后 AvGeek 卡片出现；XYZ 时 0.77 s，warning + ✔ |
+| 界面文字（§8） | `SEE PROJECTS` → `SEE MY WORK` | 检查 0.91 s；stale 0.54 s 列出 `hero.cta_projects`；0.12 s 后页面上出现 |
+| 语言上线（§9） | `zh-hans: preview` → `live` | 检查 0.78 s，11 行（每个文件一行）+ ✖ |
+| 最后 | `git status` 干净，检查 ✔ | — |
+
+演练发现、已改：① 指南说「`end: present` 的那一行带 HEAD」——错，HEAD 行是状态（`profile.yaml → status`），现在写清并配了截图；② 指南说状态行在 Contact——不在，在英雄区终端和 git log 的 HEAD 行；③「几分钟后上线」——发布前要跑完 Chromium E2E，约 11 分钟（ADR-021 ⑦）；④ `pnpm dev` 在 4321 被占用时换端口——指南改为「打开它打印的 Local 地址」；⑤ `pnpm resume` 对 Downloads 里的文件显示 `../../Downloads/…`——改为完整路径；⑥ 第一次写的演练脚本把航线改 XYZ 那步没改成（脚本的问题，不是指南的），重跑后确认 warning 出现；⑦ 预览「4–5 分钟可下载」——按 CI 实际的步骤时间是约 1 分钟。没有发现让人看不懂的检查信息；`#1 (Annual Dean's List) › name` 这种写法（来自 `content:stale` 共用的格式）在指南里加了一句解释。
+**没有演练的**：GitHub 网页编辑（路 A）和 CI 注解在 GitHub 页面上的样子（这里没有登录的浏览器）；`corepack enable` 在 Mac 上是否要管理员权限（指南给了 `npm install -g pnpm@10` 的替代）；下载 CI 预览 zip 后的 `pnpm preview:site`（用本机的 `_site` 拷贝验证了命令和输出，CI 上传见顶部）
+
+### 业主自己计时一次的清单（PLAN §8 M4 验收：「Peter 独立完成一次更新 ≤ 5 分钟」）
+1. 选一件真实的小更新（例如 `now.md` 加一行，或一段新经历），**开始计时**
+2. 只看 `docs/CONTENT-GUIDE.md`：§1 找文件 → 对应小节照着改
+3. 本机：`git pull` → 改 → `pnpm content:check` 到 `✔` →（可选）`pnpm dev` 看一眼 → `git commit -m "content: …"` → `git push`；网页：铅笔 ✎ → 改 → Commit changes
+4. 推送 / 提交完成时**停表**，把用时和卡住的地方写在这里（STATUS「M4 进度」下面加一行即可）
+5. 约 11 分钟后：Actions 里 Deploy 是 ✓，`https://zhic.me/v2/` 上看到改动，页脚 updated 日期变成今天；随后 `CHANGELOG.md` 多一个 `github-actions[bot]` 的提交
+6. 卡住或某条报错看不懂：把那条报错原样贴给我（或下一个 Claude 会话），我改指南或改报错
+
+### 没做 / 只做了一部分（原因）
+1. **业主实测**：只有你能做（上面的清单）。我的演练是机器时间，不含读和打字
+2. **每个 PR 一个预览网址**：GitHub Pages 做不到，Cloudflare Pages 需要你的账号（ADR-021 ①，下面「请你决定」1）
+3. **CHANGELOG 的提交步骤**、`deploy.yml` 的新作业：只能在合并到 main 后第一次部署时真正运行（裸仓库模拟过）
+4. **GitHub 网页上的样子**（注解框、Summary 页的预览链接、上传文件对话框）：按 GitHub 的文档写，没有用登录的浏览器看过
+5. **截图里没有 GitHub 界面**，只有网站本身（委托：截图来自当前构建）
+6. `content:stale` 的位置写法（`#1 (…) › name`）与 `content:check` 的（`item 1 (…) → name`）不同——两套输出各自一致，没有统一（会改到 X2 的测试与输出，收益小）
+7. 部署 ≈ 11 分钟没有缩短（见「请你决定」3）
+
+### 与计划的偏离（详见 ADR-021）
+- 预览是下载（CI artifact + Summary 页的链接与步骤），不是网址
+- CHANGELOG 每次整份重写（结果等同追加）；由部署后的机器人提交，main 上会有 `github-actions[bot]` 的提交
+- 简历：只发布当前版本的版本地址；下载文件名是 M4 唯一改变访客可见行为的地方（不改像素）
+- `pnpm content:check` 也跑 schema；报错英文、指南中文
+- `CLAUDE.md` 英文
+- 「Actions 2–3 分钟自动部署」现在是约 11 分钟
+
+### 改过的测试（没有放宽任何断言）
+- `tests/unit/scripts.test.ts`「flags an unclosed HTML comment」、`tests/unit/i18n-scripts.test.ts`「a draft is … an error in a live one」「copy keys must match…」：条件与以前完全相同，只是期望的报错文字变成新的（带「怎么改」，live 草稿按文件合并成一行）
+- `tests/e2e/windows.spec.ts`「from its title…」：比较窗口与项目页前给整个浏览器上下文设同一个固定时间（以前两次读之间实时时钟跨分钟就会失败）；比较本身仍是全文逐字相等
+- `tests/e2e/layout.spec.ts`：简历的地址列表多了版本地址（同样逐字节比较），新加下载文件名一条
+- 新：`tests/unit/content-check.test.ts`（26）、`tests/unit/owner-tools.test.ts`（14）、`tests/unit/guide.test.ts`（8）
+
+### 请你决定（都有默认值，已按默认实现）
+1. **预览网址**：你在 Q5 同意过 Cloudflare Pages。要的话需要你注册 Cloudflare、在它的控制台连接这个仓库（构建命令 `pnpm build && pnpm assemble`，输出目录 `_site`，Node 版本取 `.nvmrc`）；之后每个分支 / PR 有自己的网址。默认：不接，用 CI 的下载预览
+2. **main 上的机器人提交**：每次部署后 `github-actions[bot]` 提交 `CHANGELOG.md`（你在 R2-4 说过合并提交只署你的名字——这不是合并提交，但它在 main 上）。不想要的话删掉 `deploy.yml` 的 `changelog` 作业，CHANGELOG 改为需要时手动 `pnpm changelog`
+3. **部署时间**：Deploy 在发布前跑完整的 Chromium E2E（约 9 分钟，CI 在同一个提交上已经跑过同样的测试加 WebKit）。可以改成只跑几条冒烟测试（约 2 分钟上线）——那会减少发布前的守门，所以没有改
+4. **下载文件名** `Peter-Chen-Resume-<日期>.pdf`：日期是简历被提交的那天，不是 PDF 里写的日期。可以吗？
+5. **简历的旧版本**：只保留当前一版的版本地址（旧版含电话）。要保留旧版吗？
 
 ## 🪟 M3 Windows 交付说明（PLAN §8 M3；PLAN-EXPERIENCE §7.3、§9 的 M3 行；PLAN §13 ADR-020）
 

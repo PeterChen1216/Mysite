@@ -9,7 +9,7 @@ import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import { LOG_FORMAT, classify, parseLog, render, since } from '../../scripts/changelog.mjs';
 import { describe as describeResume, pdfProblem, run } from '../../scripts/resume.mjs';
-import { gitStamp } from '../../src/lib/build-info';
+import { contentStamp, gitStamp } from '../../src/lib/build-info';
 import {
   RESUME_SOURCE,
   downloadName,
@@ -71,6 +71,26 @@ describe('the résumé’s version (src/lib/resume.ts)', () => {
     const replaced = resumeInfo(dir, new Date('2027-02-01T00:00:00Z'));
     expect(replaced.date).toBe('2027-02-01');
     expect(replaced.hash).not.toBe(committed.hash);
+  });
+  it('the site’s "updated" date ignores the owner’s README and the artifacts/ drop folder', () => {
+    const dir = repo('2027-01-15T12:00:00Z');
+    const commit = (date: string, file: string, text: string) => {
+      writeFileSync(join(dir, file), text);
+      const env = { ...process.env, GIT_AUTHOR_DATE: date, GIT_COMMITTER_DATE: date };
+      const git = (...args: string[]) =>
+        execFileSync('git', ['-c', 'user.name=T', '-c', 'user.email=t@e.com', ...args], {
+          cwd: dir,
+          env,
+          stdio: 'ignore',
+        });
+      git('add', '.');
+      git('commit', '-q', '-m', `content: ${file}`);
+    };
+    commit('2027-02-01T12:00:00Z', 'content/README.md', 'guide words');
+    commit('2027-02-02T12:00:00Z', 'content/artifacts/screenshot.png', 'png');
+    expect(contentStamp(new Date(), dir).date).toBe('2027-01-15');
+    commit('2027-02-03T12:00:00Z', 'content/now.md', '- something new\n');
+    expect(contentStamp(new Date(), dir).date).toBe('2027-02-03');
   });
   it('outside Git: today, and the content stamp says "local"', () => {
     const dir = mkdtempSync(join(tmpdir(), 'no-git-'));

@@ -73,7 +73,8 @@ export function run(argv, root, cwd = root) {
   return {
     code: 0,
     out: [
-      `✔ ${moved ? 'moved' : 'copied'} ${relative(root, from) || file} → ${RESUME_SOURCE}`,
+      // Inside the repository its path from the root; outside, where it was (not ../../Downloads).
+      `✔ ${moved ? 'moved' : 'copied'} ${relative(root, from).startsWith('..') ? from : relative(root, from)} → ${RESUME_SOURCE}`,
       ...describe(info, base).map((l, i) => (i === 0 ? `  new ${l}` : `  ${l}`)),
       `  the download buttons save it as <your name>-Resume-${info.date}.pdf`,
       'Everything in the PDF is public once it is on the site (phone number, addresses …).',
