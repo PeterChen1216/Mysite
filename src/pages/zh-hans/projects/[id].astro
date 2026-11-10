@@ -1,0 +1,10 @@
+---
+/** A project's own page in zh-hans (M3; PLAN §4.1): one per content/projects/<id>.md. */
+import ProjectPage from '../../../components/ProjectPage.astro';
+import { projectPaths } from '../../../lib/content';
+
+export const getStaticPaths = projectPaths;
+const { id } = Astro.params;
+---
+
+<ProjectPage locale="zh-hans" id={id} />

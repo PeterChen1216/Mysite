@@ -1,0 +1,384 @@
+---
+/**
+ * One project in full (M3; PLAN §4.1 `/projects/<id>`): the body of its window — its own page, and
+ * the same content in a window over the home page (src/scripts/windows.ts takes it from the page).
+ * Everything here is content/projects/<id>.md (or its translation): title, platform, year, status,
+ * tagline, role / place / dates, cover, the Markdown body, stack and links — nothing is added; a
+ * project with little written about it has a short page. A project with `demo: world-clock` keeps
+ * its live Clock Stamp phone beside it, as on the home page.
+ *
+ * Content contract (tests/e2e/projects.spec.ts): inside [data-project="<id>"] the `.meta` lines
+ * read like the card's — "year · platforms · status", "role · location · dates", "Stack: …".
+ */
+import { Image } from 'astro:assets';
+import Chip from '../ui/Chip.astro';
+import McButton from '../ui/McButton.astro';
+import VoxelBlock from '../ui/VoxelBlock.astro';
+import PhoneMockup from './PhoneMockup.astro';
+import { fillTemplate } from '../../lib/derive';
+import { neighbours, projectBlock, projectView, type Project } from './projects-view';
+import type { PageData } from '../../lib/page-data';
+
+interface Props {
+  data: PageData;
+  project: Project;
+  /** h1 on its own page, h2 in a window over the home page. */
+  level: 'h1' | 'h2';
+}
+const { data, project: p, level: Heading } = Astro.props;
+const w = data.copy.windows;
+const copy = data.copy.projects;
+const labels = data.copy.labels;
+const v = projectView(p, copy, labels);
+const { Body } = p;
+const block = p.id === data.featured.id ? 'command' : projectBlock(p);
+const near = neighbours(data.projects, p.id);
+const headingId = `project-${p.id}-heading`;
+const cmd = fillTemplate(w.project_cmd, { id: p.id });
+---
+
+<div class="pd" data-project={p.id}>
+  <nav class="pd__crumbs" aria-label={w.crumbs_label}>
+    <ol>
+      <li>
+        <a href={data.home} data-crumb="home">
+          <span aria-hidden="true">~</span>
+          <span class="visually-hidden">{w.home_label}</span>
+        </a>
+      </li>
+      <li>
+        <a href={data.paths.projects} data-crumb="projects">
+          projects
+        </a>
+      </li>
+      <li>
+        <span aria-current="page">{p.id}</span>
+      </li>
+    </ol>
+  </nav>
+  <p class="pd__cmd" aria-hidden="true">
+    <span class="pd__g">$</span> {cmd}
+  </p>
+  <div class="pd__main">
+    <div class="pd__copy">
+      <header class="pd__head">
+        <span class="pd__icon" aria-hidden="true">
+          <VoxelBlock name={block} size={64} />
+        </span>
+        <div class="pd__titles">
+          <Heading class="pd__title" id={headingId} tabindex="-1">
+            {p.title}
+          </Heading>
+          <p class="meta pd__stat">{v.stat}</p>
+        </div>
+      </header>
+      {p.tagline && <p class="pd__tagline">{p.tagline}</p>}
+      {v.when && <p class="meta pd__when">{v.when}</p>}
+      {p.cover && (
+        <Image
+          class="pd__cover"
+          src={p.cover}
+          alt={p.cover_alt ?? ''}
+          widths={[560, 1120]}
+          sizes="(max-width: 767px) 100vw, 640px"
+        />
+      )}
+      <div class="pd__body" lang={p.bodyLang}>
+        <Body />
+      </div>
+      {p.stack.length > 0 && (
+        <p class="meta pd__stack">
+          <span class="pd__label">{copy.stack_label} </span>
+          {p.stack.map((item, i) => (
+            <Chip tone="diamond">
+              {item}
+              {i < p.stack.length - 1 && (
+                <span class="visually-hidden">{labels.list_separator}</span>
+              )}
+            </Chip>
+          ))}
+        </p>
+      )}
+      {v.links.length > 0 && (
+        <div class="pd__links">
+          {v.links.map((l) => (
+            <McButton
+              href={l.url}
+              kind={l.kind === 'appstore' ? 'grass' : 'stone'}
+              external
+              ariaLabel={`${l.label} — ${p.title}`}
+            >
+              {l.label}
+            </McButton>
+          ))}
+        </div>
+      )}
+    </div>
+    {p.demo === 'world-clock' && (
+      <div class="pd__demo" data-demo="world-clock">
+        <PhoneMockup phone={copy.phone} separator={labels.list_separator} />
+      </div>
+    )}
+  </div>
+  {(near.prev || near.next) && (
+    <nav class="pd__near" aria-label={w.neighbours_label}>
+      {near.prev && (
+        <a
+          class="pd__nb"
+          href={data.paths.project(near.prev.id)}
+          data-project-link={near.prev.id}
+          rel="prev"
+        >
+          <span class="pd__nb-dir">{w.prev}</span>
+          <span class="pd__nb-name">{near.prev.title}</span>
+        </a>
+      )}
+      {near.next && (
+        <a
+          class="pd__nb pd__nb--next"
+          href={data.paths.project(near.next.id)}
+          data-project-link={near.next.id}
+          rel="next"
+        >
+          <span class="pd__nb-dir">{w.next}</span>
+          <span class="pd__nb-name">{near.next.title}</span>
+        </a>
+      )}
+    </nav>
+  )}
+</div>
+
+<style>
+  .pd {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+    min-width: 0;
+  }
+  .pd__crumbs ol {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+    font: var(--type-code-sm);
+    color: var(--color-text-mid);
+  }
+  .pd__crumbs li + li::before {
+    content: '/';
+    content: '/' / '';
+    padding-inline: 2px;
+  }
+  .pd__crumbs a {
+    display: inline-flex;
+    align-items: center;
+    min-height: 24px;
+    padding-inline: 4px;
+    color: var(--color-accent-diamond);
+  }
+  .pd__crumbs a:focus-visible {
+    color: var(--color-accent-gold);
+  }
+  .pd__cmd {
+    margin: 0;
+    font: var(--type-term-md);
+    color: var(--color-text-hi);
+  }
+  .pd__g {
+    color: var(--color-accent-terminal-green);
+  }
+  .pd__main {
+    display: flex;
+    gap: 48px;
+    align-items: flex-start;
+  }
+  .pd__copy {
+    flex: 1 1 0;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 16px;
+  }
+  .pd__head {
+    display: flex;
+    align-items: center;
+    gap: 20px;
+  }
+  .pd__icon {
+    flex: none;
+    line-height: 0;
+  }
+  .pd__titles {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    min-width: 0;
+  }
+  .pd__title {
+    margin: 0;
+    font: var(--type-pixel-h3);
+    letter-spacing: var(--type-pixel-h3-tracking);
+    color: var(--color-text-hi);
+    text-shadow: 3px 3px 0 var(--color-heading-shadow-md);
+    overflow-wrap: anywhere;
+  }
+  .pd__title:focus {
+    outline: none;
+  }
+  .pd__title:focus-visible {
+    outline: 2px solid var(--color-focus);
+    outline-offset: 4px;
+  }
+  .pd__stat {
+    display: flex;
+    gap: 8px;
+    margin: 0;
+    font: var(--type-code-label);
+    letter-spacing: var(--type-code-label-tracking);
+    text-transform: var(--type-label-case);
+    color: var(--color-text-mid);
+  }
+  .pd__stat::before {
+    content: '##';
+    content: '##' / '';
+    color: var(--color-accent-terminal-green);
+  }
+  .pd__tagline,
+  .pd__when,
+  .pd__body {
+    max-width: 640px;
+    margin: 0;
+  }
+  .pd__tagline {
+    font: var(--type-code-body);
+    color: var(--color-text-hi);
+  }
+  .pd__when {
+    font: var(--type-code-sm);
+    color: var(--color-accent-diamond);
+  }
+  .pd__cover {
+    display: block;
+    width: 100%;
+    max-width: 640px;
+    height: auto;
+    border: 2px solid var(--color-border-edge);
+    filter: var(--art-filter);
+  }
+  .pd__body {
+    font: var(--type-code-body);
+    color: var(--color-text-mid);
+  }
+  .pd__body :global(ul) {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+  .pd__body :global(li) {
+    position: relative;
+    padding-left: 20px;
+  }
+  .pd__body :global(li)::before {
+    content: '';
+    position: absolute;
+    left: 2px;
+    top: 0.65em;
+    width: 6px;
+    height: 6px;
+    background: var(--color-accent-terminal-green);
+  }
+  .pd__body :global(p) {
+    margin: 0 0 0.6em;
+  }
+  .pd__stack {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 8px;
+    margin: 0;
+  }
+  .pd__label {
+    font: var(--type-code-label);
+    letter-spacing: var(--type-code-label-tracking);
+    text-transform: var(--type-label-case);
+    color: var(--color-text-mid);
+  }
+  .pd__links {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+  }
+  .pd__links :global(.mc-btn) {
+    text-transform: var(--type-label-case);
+  }
+  .pd__demo {
+    position: relative;
+    flex: none;
+  }
+  .pd__near {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    gap: 12px 24px;
+    padding-top: 16px;
+    border-top: 1px solid var(--color-border-line);
+  }
+  .pd__nb {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    min-height: 44px;
+    color: var(--color-text-hi);
+    text-decoration: none;
+  }
+  .pd__nb--next {
+    margin-left: auto;
+    text-align: right;
+  }
+  .pd__nb-dir {
+    font: var(--type-code-label);
+    letter-spacing: var(--type-code-label-tracking);
+    text-transform: var(--type-label-case);
+    color: var(--color-accent-terminal-green);
+  }
+  .pd__nb-name {
+    font: var(--type-pixel-h4);
+    font-size: calc(18px * var(--ts));
+  }
+  .pd__nb:focus-visible .pd__nb-name {
+    color: var(--color-accent-gold);
+    text-decoration: underline;
+  }
+  @media (hover: hover) {
+    .pd__nb:hover .pd__nb-name {
+      color: var(--color-accent-gold);
+      text-decoration: underline;
+    }
+  }
+  @media (max-width: 1023px) {
+    .pd__main {
+      flex-direction: column;
+      align-items: stretch;
+    }
+    .pd__demo {
+      align-self: center;
+    }
+  }
+  @media (max-width: 767px) {
+    .pd__title {
+      font-size: calc(26px * var(--ts));
+    }
+    .pd__head {
+      gap: 14px;
+    }
+    .pd__icon :global(.voxel) {
+      width: 48px;
+      height: auto;
+    }
+  }
+</style>

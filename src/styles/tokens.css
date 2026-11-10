@@ -182,6 +182,9 @@
   --color-bg-nav: var(--p-night-bar-72);
   --color-bg-bar: var(--p-night-bar-90); /* ticker, footer */
   --color-backdrop: var(--p-night-backdrop); /* behind the settings window */
+  /* behind a floating window (M3): the page and its scene dim to an eighth, in every theme's own
+     ground colour (Figma: "the scene dims to 12 % behind it") */
+  --color-backdrop-window: color-mix(in srgb, var(--color-bg-night) 88%, transparent);
   --color-border-line: var(--p-navy-700);
   --color-border-edge: var(--p-navy-600);
   /* text */

@@ -13,24 +13,26 @@ import Card from '../ui/Card.astro';
 import Chip from '../ui/Chip.astro';
 import NewTab from '../ui/NewTab.astro';
 import VoxelBlock, { type BlockName } from '../ui/VoxelBlock.astro';
-import { projectView, type Project, type ProjectLabels, type ProjectsCopy } from './projects-view';
+import {
+  projectBlock,
+  projectView,
+  type Project,
+  type ProjectLabels,
+  type ProjectsCopy,
+} from './projects-view';
 
 interface Props {
   project: Project;
   copy: ProjectsCopy;
   labels: ProjectLabels;
+  /** The project's own page (M3): its title links there (with JavaScript, it opens over the page). */
+  href: string;
 }
-const { project: p, copy, labels } = Astro.props;
+const { project: p, copy, labels, href } = Astro.props;
 const v = projectView(p, copy, labels);
 const { Body } = p;
 /** Corner block by platform (Figma pairs "This website" with the Terminal block). */
-const BLOCK: Record<string, BlockName> = {
-  web: 'terminal',
-  research: 'bookshelf',
-  cli: 'obsidian',
-  ios: 'command',
-};
-const block = BLOCK[p.platform[0] ?? ''] ?? 'gold';
+const block: BlockName = projectBlock(p);
 ---
 
 <Card as="article" class="pc" id={v.anchor} labelledby={`${v.anchor}-title`}>
@@ -42,7 +44,9 @@ const block = BLOCK[p.platform[0] ?? ''] ?? 'gold';
     )}
   </span>
   <h3 class="pc__title" id={`${v.anchor}-title`}>
-    {p.title}
+    <a class="project-link" href={href} data-project-link={p.id}>
+      {p.title}
+    </a>
   </h3>
   <p class="meta pc__stat">{v.stat}</p>
   {p.tagline && <p class="pc__tagline">{p.tagline}</p>}

@@ -240,6 +240,43 @@ i18n:
   suggest_dismiss: 不用了
   suggest_label: 語言建議
 
+windows:
+  more: 更多 ▸
+  more_label: 全部項目
+  move_label: 移動視窗
+  move_hint: 方向鍵移動視窗，按住 Shift 移得更遠；Enter 或 Home 放回原處。
+  close: 關閉
+  close_label: 關閉視窗
+  hint: 按 Esc 或點擊標題欄，把視窗縮回桌面。
+  loading: 正在載入區塊…
+  failed: 區塊載入失敗。打開這一頁：
+  directory_title: projects/ — 目錄
+  directory_cmd: ls -la ~/projects
+  directory_heading: 全部項目
+  project_title: '~/projects/{id}'
+  project_cmd: 'cat ~/projects/{id}.md'
+  crumbs_label: 你在這裏
+  home_label: 首頁
+  page_title: '{project} — {domain}'
+  directory_page_title: '項目 — {domain}'
+  neighbours_label: 更多項目
+  prev: ← 上一個
+  next: 下一個 →
+  back: cd ~/projects
+  back_home: cd ~
+not_found:
+  page_title: '找不到區塊 — {domain}'
+  title: '404 — 找不到區塊'
+  cmd: 'cd {path}'
+  error: 'cd: 沒有這個區塊：{path}'
+  heading: 找不到區塊
+  body: 這一頁不存在。它可能已經搬走了，也可能還沒有生成。
+  home: cd ~
+  home_label: 回到首頁
+  projects_label: 全部項目
+og:
+  alt: '{title} — {domain}'
+
 scene:
   hud: '幀率 {fps} · {ms} 毫秒 · 圖形等級 {tier}（{reason}）· {draws} 次繪製 · 像素比 {dpr}'
 from:

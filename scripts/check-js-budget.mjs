@@ -5,8 +5,8 @@
 // /_astro/*.js the page references. The WebGL scene (src/scene/renderer.ts → _astro/renderer.*.js)
 // must stay out of the first screen: no page may load or preload it; only import() at run time.
 // The same holds for the lazy X3 chunks: the Earth's map, the terminal prompt, the globe's
-// crosshair and the tier 2 ambient layer.
-import { readFileSync, existsSync } from 'node:fs';
+// crosshair and the tier 2 ambient layer; and for M3's windows (opened on first use).
+import { readFileSync, existsSync, readdirSync } from 'node:fs';
 import { join } from 'node:path';
 import { gzipSync } from 'node:zlib';
 import { loadSiteConfig } from '../site.config.mjs';
@@ -20,8 +20,20 @@ const { base } = loadSiteConfig();
 const kb = (n) => `${(n / 1024).toFixed(1)} KB`;
 let failed = false;
 
-for (const { dir } of Object.values(LOCALES)) {
-  const page = `${dir}index.html`;
+// Every page: each locale's home, its projects directory and project pages (M3), and the 404.
+const pages = [
+  ...Object.values(LOCALES).flatMap(({ dir }) => [
+    `${dir}index.html`,
+    ...readdirSync(join(dist, dir, 'projects'), { recursive: true })
+      .map(String)
+      .filter((f) => f.endsWith('index.html'))
+      .sort()
+      .map((f) => `${dir}projects/${f}`),
+  ]),
+  '404.html',
+];
+for (const page of pages) {
+  const dir = page.replace(/index\.html$/, '');
   const html = readFileSync(join(dist, page), 'utf8');
 
   let total = 0;
@@ -42,9 +54,24 @@ for (const { dir } of Object.values(LOCALES)) {
         console.error(`✖ ${src} is referenced by ${page} but missing from dist/`);
         process.exit(1);
       }
-      const size = gzipSync(readFileSync(file)).length;
-      total += size;
-      parts.push(`${src} ${size} B`);
+      // A module and every chunk it imports statically (not import(): those load on demand).
+      const seen = new Set();
+      /** @param {string} f */
+      const walk = (f) => {
+        if (seen.has(f)) return;
+        seen.add(f);
+        const code = readFileSync(f, 'utf8');
+        for (const m of code.matchAll(
+          /(?:^|[;\s}])(?:import|export)\s*(?:[\w*{}\s,$]*from\s*)?["'](\.\.?\/[^"']+)["']/g,
+        ))
+          walk(join(f, '..', m[1]));
+      };
+      walk(file);
+      for (const f of seen) {
+        const size = gzipSync(readFileSync(f)).length;
+        total += size;
+        parts.push(`${f === file ? src : `↳ ${f.slice(dist.length)}`} ${size} B`);
+      }
     } else if (m[1]?.trim()) {
       const size = gzipSync(m[1]).length;
       total += size;
@@ -53,7 +80,7 @@ for (const { dir } of Object.values(LOCALES)) {
   }
   console.log(`First-screen JS (gz), /${dir}: ${kb(total)} / ${kb(LIMIT)}  [${parts.join(', ')}]`);
   for (const m of html.matchAll(
-    /<(?:script|link)\b[^>]*(?:src|href)="([^"]*\/(?:renderer|earth|prompt|globe-probe|ambient)\.[^"]*)"/g,
+    /<(?:script|link)\b[^>]*(?:src|href)="([^"]*\/(?:renderer|earth|prompt|globe-probe|ambient|windows)\.[^"]*)"/g,
   )) {
     console.error(`✖ /${dir} references a lazy chunk on the first screen: ${m[1]}`);
     failed = true;

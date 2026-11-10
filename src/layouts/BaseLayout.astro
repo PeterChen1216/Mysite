@@ -11,13 +11,19 @@ import { parseTokenCss, resolveTokens } from '../lib/theme-tokens';
 import { bootScript } from '../prefs/boot';
 import { THEMES, type Theme } from '../prefs/model';
 import { CJK_DEV_PATH, cjkFontFace, cjkFontPlaceholder } from '../i18n/cjk-font';
+import { TRANSLATED_LOCALES, type TranslatedLocale } from '../i18n/locales';
 
 interface Props {
   /** The page's data: its locale, head links (canonical, hreflang, robots) and copy. */
   data: Pick<PageData, 'locale' | 'lang' | 'head' | 'copy'>;
+  /**
+   * The 404 (M3) speaks the language of the address it answers for, so it declares the pixel CJK
+   * face of every Chinese locale (each limited to CJK code points, loaded only if used).
+   */
+  allCjk?: boolean;
 }
 
-const { data } = Astro.props;
+const { data, allCjk = false } = Astro.props;
 const { head } = data;
 // The browser UI colour is the page background of each theme, read from the tokens. Without
 // JavaScript it is Night's; the head script switches it with the theme.
@@ -27,15 +33,16 @@ const themeColor = bg(null);
 const boot = bootScript(Object.fromEntries(THEMES.map((t) => [t, bg(t)])) as Record<Theme, string>);
 // A Chinese page declares its own pixel CJK face (and no other page does): the build swaps the
 // placeholder for the subset's URL (src/integrations/cjk-fonts.ts); `astro dev` serves the font.
-const cjk =
-  data.locale === 'en'
+const face = (locale: TranslatedLocale) =>
+  cjkFontFace(
+    locale,
+    import.meta.env.DEV ? `${CJK_DEV_PATH}${locale}.woff2` : cjkFontPlaceholder(locale),
+  );
+const cjk = allCjk
+  ? TRANSLATED_LOCALES.map(face).join('')
+  : data.locale === 'en'
     ? null
-    : cjkFontFace(
-        data.locale,
-        import.meta.env.DEV
-          ? `${CJK_DEV_PATH}${data.locale}.woff2`
-          : cjkFontPlaceholder(data.locale),
-      );
+    : face(data.locale);
 ---
 
 <!doctype html>
@@ -47,6 +54,7 @@ const cjk =
     <meta name="color-scheme" content="dark" />
     <!-- Saved preferences before first paint: theme, motion, text size (src/prefs/boot.ts). -->
     <script is:inline set:html={boot} />
+    <slot name="head" />
     <Font cssVariable="--font-code" preload={[{ weight: 400 }]} />
     <Font cssVariable="--font-pixel" preload={[{ weight: 700 }]} />
     <Font cssVariable="--font-8bit" preload />
@@ -58,7 +66,7 @@ const cjk =
     <meta name="description" content={head.description} />
     {head.keywords.length > 0 && <meta name="keywords" content={head.keywords.join(', ')} />}
     {head.robots && <meta name="robots" content={head.robots} />}
-    <link rel="canonical" href={head.canonical} />
+    {head.canonical && <link rel="canonical" href={head.canonical} />}
     {head.hreflang.map((a) => (
       <link rel="alternate" hreflang={a.hreflang} href={a.href} />
     ))}
@@ -66,7 +74,7 @@ const cjk =
     <meta property="og:type" content="website" />
     <meta property="og:title" content={head.title} />
     <meta property="og:description" content={head.description} />
-    <meta property="og:url" content={head.canonical} />
+    {head.canonical && <meta property="og:url" content={head.canonical} />}
     <meta property="og:locale" content={head.ogLocale} />
     {head.ogAlternates.map((o) => (
       <meta property="og:locale:alternate" content={o} />

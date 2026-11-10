@@ -23,8 +23,10 @@ interface Props {
   project: Project;
   copy: ProjectsCopy;
   labels: ProjectLabels;
+  /** The project's own page (M3): its title links there (with JavaScript, it opens over the page). */
+  href: string;
 }
-const { project: p, copy, labels } = Astro.props;
+const { project: p, copy, labels, href } = Astro.props;
 const v = projectView(p, copy, labels);
 const { Body } = p;
 const bar = statusBar(p.status, labels.status);
@@ -42,7 +44,9 @@ const withPhone = p.demo === 'world-clock';
   </span>
   <div class="pf__copy">
     <h3 class="pf__title" id={`${v.anchor}-title`}>
-      {p.title}
+      <a class="project-link" href={href} data-project-link={p.id}>
+        {p.title}
+      </a>
     </h3>
     <div class="pf__chips">
       <Chip tone="gold">

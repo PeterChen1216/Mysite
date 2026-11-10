@@ -241,6 +241,43 @@ i18n:
   suggest_dismiss: 不用了
   suggest_label: 语言建议
 
+windows:
+  more: 更多 ▸
+  more_label: 全部项目
+  move_label: 移动窗口
+  move_hint: 方向键移动窗口，按住 Shift 移得更远；Enter 或 Home 放回原处。
+  close: 关闭
+  close_label: 关闭窗口
+  hint: 按 Esc 或点击标题栏，把窗口缩回桌面。
+  loading: 正在加载区块…
+  failed: 区块加载失败。打开这一页：
+  directory_title: projects/ — 目录
+  directory_cmd: ls -la ~/projects
+  directory_heading: 全部项目
+  project_title: '~/projects/{id}'
+  project_cmd: 'cat ~/projects/{id}.md'
+  crumbs_label: 你在这里
+  home_label: 首页
+  page_title: '{project} — {domain}'
+  directory_page_title: '项目 — {domain}'
+  neighbours_label: 更多项目
+  prev: ← 上一个
+  next: 下一个 →
+  back: cd ~/projects
+  back_home: cd ~
+not_found:
+  page_title: '找不到区块 — {domain}'
+  title: '404 — 找不到区块'
+  cmd: 'cd {path}'
+  error: 'cd: 没有这个区块：{path}'
+  heading: 找不到区块
+  body: 这一页不存在。它可能已经搬走了，也可能还没有生成。
+  home: cd ~
+  home_label: 回到首页
+  projects_label: 全部项目
+og:
+  alt: '{title} — {domain}'
+
 scene:
   hud: '帧率 {fps} · {ms} 毫秒 · 图形等级 {tier}（{reason}）· {draws} 次绘制 · 像素比 {dpr}'
 from:

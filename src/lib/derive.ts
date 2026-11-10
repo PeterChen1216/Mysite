@@ -130,8 +130,9 @@ export function fillTemplate(
  * {from} and {to} (its airports), `hero.globe_value` {deg} (filled in the browser as the globe
  * turns), `prefs.text.option` {size}, `scene.hud` (the `?debug=1` numbers, filled in the
  * browser), and the X3 catalogue's: the globe's coordinates {deg}, the copy key {handle}, the
- * prompt's {cmd} / {name}, a slot's tooltip {group} {n} {count}, a commit's {hash}. Anywhere else
- * they are unknown and fail the build.
+ * prompt's {cmd} / {name}, a slot's tooltip {group} {n} {count}, a commit's {hash}; and M3's: a
+ * project's {id} and {project} title, the 404's {path}, a share card's {title}. Anywhere else they
+ * are unknown and fail the build.
  */
 export const LOCAL_PLACEHOLDERS: Readonly<Record<string, readonly string[]>> = {
   'hero.avgeek_route': ['from', 'to'],
@@ -151,6 +152,13 @@ export const LOCAL_PLACEHOLDERS: Readonly<Record<string, readonly string[]>> = {
   'labels.year_month': ['month', 'year'],
   'prefs.text.option': ['size'],
   'scene.hud': ['fps', 'ms', 'tier', 'reason', 'draws', 'dpr'],
+  // M3: a project's window and page, the 404 (the address, filled in the browser), share cards.
+  'windows.project_title': ['id'],
+  'windows.project_cmd': ['id'],
+  'windows.page_title': ['project'],
+  'not_found.cmd': ['path'],
+  'not_found.error': ['path'],
+  'og.alt': ['title'],
 };
 
 /**

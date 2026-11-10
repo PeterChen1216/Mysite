@@ -8,7 +8,7 @@
  */
 import { createHash } from 'node:crypto';
 import { readFileSync } from 'node:fs';
-import { mkdir, readFile, writeFile } from 'node:fs/promises';
+import { mkdir, readFile, readdir, writeFile } from 'node:fs/promises';
 import { createRequire } from 'node:module';
 import type { AstroIntegration } from 'astro';
 import subsetFont from 'subset-font';
@@ -39,6 +39,15 @@ export async function subsetFor(locale: TranslatedLocale, text: string): Promise
   return compress(renamed);
 }
 
+/** Every .html file under a folder of the build (a locale's pages). */
+async function htmlFiles(folder: URL): Promise<URL[]> {
+  const entries = await readdir(folder, { recursive: true }).catch(() => [] as string[]);
+  return entries
+    .filter((f) => f.endsWith('.html'))
+    .sort()
+    .map((f) => new URL(f, folder));
+}
+
 export function cjkFonts(): AstroIntegration {
   let base = '/';
   return {
@@ -62,23 +71,33 @@ export function cjkFonts(): AstroIntegration {
       'astro:build:done': async ({ dir, logger }) => {
         const out = new URL('_astro/cjk/', dir);
         await mkdir(out, { recursive: true });
+        // Every page of a locale shares one subset (M3: the home page, the projects directory and
+        // each project's page — whose text a window over the home page shows too). The 404 is
+        // one page for every locale (it speaks the language of the address), so its text joins
+        // each subset and its placeholders are filled for both.
+        const notFound = new URL('404.html', dir);
+        const notFoundHtml = await readFile(notFound, 'utf8').catch(() => null);
+        let notFoundOut = notFoundHtml;
         for (const locale of TRANSLATED_LOCALES) {
-          const page = new URL(`${locale}/index.html`, dir);
-          const html = await readFile(page, 'utf8').catch(() => null);
-          if (html === null) continue;
-          const text = cjkChars(html);
+          const pages = await htmlFiles(new URL(`${locale}/`, dir));
+          if (pages.length === 0) continue;
+          const html = await Promise.all(pages.map((p) => readFile(p, 'utf8')));
+          const text = cjkChars(html.join('') + (notFoundHtml ?? ''));
           const woff2 = await subsetFor(locale, text);
           const hash = createHash('sha256').update(woff2).digest('hex').slice(0, 8);
           const name = `${CJK_FONTS[locale].file}.${hash}.woff2`;
+          const url = `${base}_astro/cjk/${name}`;
           await writeFile(new URL(name, out), woff2);
-          await writeFile(
-            page,
-            html.replaceAll(cjkFontPlaceholder(locale), `${base}_astro/cjk/${name}`),
+          await Promise.all(
+            pages.map((p, i) => writeFile(p, html[i]!.replaceAll(cjkFontPlaceholder(locale), url))),
           );
+          notFoundOut = notFoundOut?.replaceAll(cjkFontPlaceholder(locale), url) ?? null;
           logger.info(
-            `${locale}: ${[...text].length} characters, ${(woff2.length / 1024).toFixed(1)} KB → _astro/cjk/${name}`,
+            `${locale}: ${pages.length} pages, ${[...text].length} characters, ${(woff2.length / 1024).toFixed(1)} KB → _astro/cjk/${name}`,
           );
         }
+        if (notFoundOut !== null && notFoundOut !== notFoundHtml)
+          await writeFile(notFound, notFoundOut);
         await writeFile(new URL('LICENSE-fusion-pixel.txt', out), readFileSync(LICENSE));
       },
     },

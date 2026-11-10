@@ -1,0 +1,171 @@
+---
+/**
+ * The projects directory (M3; Figma "Directory — projects/ (window grown to page)"): `ls -la`
+ * over every project — its block, its title linking to its own page, a line from its frontmatter
+ * (tagline · year · status) and its platform — then the "next chunk" teaser as on the page. The
+ * body of the window that Projects' `more ▸` grows into (HomePage) and of the /projects/ page.
+ * Every fact comes from content/projects/*.md; the words around them from copy.yaml.
+ */
+import VoxelBlock from '../ui/VoxelBlock.astro';
+import { projectBlock, projectView } from './projects-view';
+import type { PageData } from '../../lib/page-data';
+
+interface Props {
+  data: PageData;
+  /** h1 on its own page, h2 in the window over the home page. */
+  level: 'h1' | 'h2';
+  headingId: string;
+}
+const { data, level: Heading, headingId } = Astro.props;
+const w = data.copy.windows;
+const copy = data.copy.projects;
+const TAG_TONE: Record<string, string> = {
+  ios: 'gold',
+  web: 'diamond',
+  research: 'enchant',
+  cli: 'green',
+};
+const rows = data.projects.map((p) => {
+  const v = projectView(p, copy, data.copy.labels);
+  return {
+    p,
+    v,
+    block: p.id === data.featured.id ? ('command' as const) : projectBlock(p),
+    tone: TAG_TONE[p.platform[0] ?? ''] ?? 'green',
+  };
+});
+---
+
+<p class="dir__cmd" aria-hidden="true">
+  <span class="dir__g">$</span> {w.directory_cmd}
+</p>
+<Heading class="visually-hidden" id={headingId} tabindex="-1">
+  {w.directory_heading}
+</Heading>
+<ul class="dir__list">
+  {rows.map(({ p, v, block, tone }) => (
+    <li class="dir__row">
+      <span class="dir__icon" aria-hidden="true">
+        <VoxelBlock name={block} size={44} shadow={false} />
+      </span>
+      <span class="dir__text">
+        <a class="dir__name" href={data.paths.project(p.id)} data-project-link={p.id}>
+          {p.title}
+        </a>
+        <span class="dir__line">{v.line}</span>
+      </span>
+      <span class:list={['dir__tag', `dir__tag--${tone}`]}>[{v.platforms.join(', ')}]</span>
+    </li>
+  ))}
+  <li class="dir__row dir__row--next">
+    <span class="dir__icon" aria-hidden="true">
+      <VoxelBlock name="tnt" size={44} shadow={false} />
+    </span>
+    <span class="dir__text">
+      <span class="dir__name dir__name--next">{copy.next_title}</span>
+      <span class="dir__line">{copy.next_body}</span>
+    </span>
+    {copy.next_tags.length > 0 && (
+      <span class="dir__tag dir__tag--enchant">[{copy.next_tags.join(', ')}]</span>
+    )}
+  </li>
+</ul>
+
+<style>
+  .dir__cmd {
+    margin: 0;
+    font: var(--type-term-md);
+    color: var(--color-text-hi);
+  }
+  .dir__g {
+    color: var(--color-accent-terminal-green);
+  }
+  .dir__list {
+    display: flex;
+    flex-direction: column;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+  .dir__row {
+    position: relative;
+    display: grid;
+    grid-template-columns: 44px minmax(0, 1fr) auto;
+    align-items: center;
+    gap: 6px 16px;
+    padding: 14px 0;
+    border-bottom: 1px solid var(--color-border-line);
+  }
+  .dir__icon {
+    display: block;
+    width: 44px;
+    line-height: 0;
+  }
+  .dir__text {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    min-width: 0;
+  }
+  .dir__name {
+    font: var(--type-pixel-h4);
+    letter-spacing: var(--type-pixel-h4-tracking);
+    color: var(--color-text-hi);
+    text-decoration: none;
+    overflow-wrap: anywhere;
+  }
+  /* The whole row is the link's target; the name keeps the focus ring. */
+  a.dir__name::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+  }
+  a.dir__name:focus-visible {
+    color: var(--color-accent-gold);
+    text-decoration: underline;
+    text-decoration-thickness: 2px;
+    text-underline-offset: 4px;
+  }
+  @media (hover: hover) {
+    .dir__row:hover a.dir__name {
+      color: var(--color-accent-gold);
+      text-decoration: underline;
+      text-decoration-thickness: 2px;
+      text-underline-offset: 4px;
+    }
+    .dir__row:hover {
+      background: var(--color-bg-panel);
+    }
+  }
+  .dir__name--next {
+    color: var(--color-text-mid);
+  }
+  .dir__line {
+    font: var(--type-code-sm);
+    color: var(--color-text-mid);
+  }
+  .dir__tag {
+    font: var(--type-code-sm);
+    white-space: nowrap;
+  }
+  .dir__tag--gold {
+    color: var(--color-accent-gold);
+  }
+  .dir__tag--diamond {
+    color: var(--color-accent-diamond);
+  }
+  .dir__tag--enchant {
+    color: var(--color-accent-enchant-text);
+  }
+  .dir__tag--green {
+    color: var(--color-accent-terminal-green);
+  }
+  @media (max-width: 767px) {
+    .dir__row {
+      grid-template-columns: 44px minmax(0, 1fr);
+    }
+    .dir__tag {
+      grid-column: 2;
+    }
+  }
+</style>

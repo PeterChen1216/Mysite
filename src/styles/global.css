@@ -221,6 +221,27 @@ html[data-ambient] .bg__stars {
   line-height: 1;
 }
 
+/* A project's title linking to its own page (M3): the title as designed until it is pointed at or
+   focused; then it underlines in the focus gold. With JavaScript it opens over the page. */
+.project-link {
+  color: inherit;
+  text-decoration: none;
+}
+.project-link:focus-visible {
+  color: var(--color-accent-gold);
+  text-decoration: underline;
+  text-decoration-thickness: 2px;
+  text-underline-offset: 4px;
+}
+@media (hover: hover) {
+  .project-link:hover {
+    color: var(--color-accent-gold);
+    text-decoration: underline;
+    text-decoration-thickness: 2px;
+    text-underline-offset: 4px;
+  }
+}
+
 .visually-hidden {
   position: absolute;
   width: 1px;

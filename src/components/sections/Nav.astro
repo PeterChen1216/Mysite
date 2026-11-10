@@ -14,10 +14,19 @@ interface Props {
 }
 const { data } = Astro.props;
 const { copy, links } = data;
+// On a page of its own (a project, the directory: M3) the logo and the section links lead back to
+// the home page's sections; on the home page they stay in-page anchors.
+const away = data.page.kind !== 'home';
+const href = (anchor: string) =>
+  away && anchor.startsWith('#') ? `${data.home}${anchor}` : anchor;
 ---
 
 <header class="nav">
-  <a class="nav__logo" href="#top" aria-label={copy.nav.logo_label}>
+  <a
+    class="nav__logo"
+    href={away ? data.home : '#top'}
+    aria-label={away ? `${data.site.domain} — ${copy.windows.home_label}` : copy.nav.logo_label}
+  >
     <VoxelBlock name="terminal" size={39} shadow={false} eager />
     <span class="nav__name">{data.site.domain}</span>
     <span class="nav__cursor" data-loop="blink" aria-hidden="true"></span>
@@ -26,7 +35,7 @@ const { copy, links } = data;
     <ul>
       {copy.nav.links.map((l) => (
         <li>
-          <a href={l.href}>{l.label}</a>
+          <a href={href(l.href)}>{l.label}</a>
         </li>
       ))}
     </ul>

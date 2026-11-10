@@ -1,5 +1,12 @@
 # STATUS（会话交接 · PLAN §15.6）
 
+## M3 进度（每次推送后更新；新会话从这里接着做）
+- ✅ 第 1 步：项目详情页与目录页（每种语言 `/projects/` 与 `/projects/<id>/`，静态、无 JS 可读、canonical / hreflang / noindex 按 X2 规则）、404「chunk not found」（一个根目录 `404.html`，按网址显示三种语言之一；`launched: false` 时 `/v2/` 外的地址「回家」指向旧站根目录）、首页项目标题变成链接、Projects 标题行的 `more ▸`；CJK 字体子集覆盖每种语言的全部页面；首屏 JS 检查跟随静态 import；Lighthouse 加入目录页、Clock Stamp 页与 404。新单测 `tests/unit/pages.test.ts`，新 E2E `tests/e2e/pages.spec.ts`。像素对比（`/v2/`、`/v2/?tier=1`，1440 / 1024 / 390，对照 `31e9882`）：只有 `more ▸`（64 × 24 px）不同
+- ⏳ 第 2 步：漂浮窗口（目录窗口、项目窗口、历史记录、拖拽 / 停靠 / 键盘移动、焦点）——代码已写（`src/lib/windows.ts`、`src/scripts/windows.ts`、`window-links.ts`），未提交
+- ⏳ 第 3 步：场景第 4–6 站（工作台、矿车轨道、灯塔光束）与 WebGL 占比 ≥ 60 %
+- ⏳ 第 4 步：OG 图生成
+- ⏳ 第 5 步：交付说明、ADR-020
+
 ## X3 进度（每次推送后更新；新会话从这里接着做）
 - ✅ `7fa2610`：目录 16 行中 15 行的实现：1 方块「挨打」（含 3 级场景里的方块）、2 卡片抬起 / 聚光、3 物品格（漫游焦点、附魔光、提示框）、4 地球十字线与地区名（按需加载）、6 提交行、7 滚动条高亮、8 导航下划线与方块光标、9 按钮按下（触屏）、10 玩家卡（XP 条按真实 GPA、复制用户名）、11 手机选城市、12 终端小命令行（按需加载）、13 外链状态行、14 区块标题打字、15 像素十字光标、16 回到出生点；第 5 行（航线）推迟——`aviation.yaml` 没有航线。另：2 级环境层（视差星空 + 光尘，按需加载）、区块加载过渡与数据条填充。新单测 `interact.test.ts`、`regions.test.ts`；新 E2E `interactions.spec.ts`、`tier2.spec.ts`
 - ✅ `7fa2610` 推送；本机验证全部做完（像素对比、Lighthouse 三种语言、WebKitGTK 悬停开销、五个主题截图、粒子峰值），写进下面的「X3 Interactions 交付说明」（本提交）

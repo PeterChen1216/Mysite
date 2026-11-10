@@ -10,7 +10,14 @@
  */
 import { DEFAULT_LOCALE, LOCALES, type Locale } from '../i18n/locales';
 import { markFallback } from '../i18n/fallback';
-import { headLinks, liveLocales, localeHome, switchLocales } from '../i18n/routing';
+import {
+  headLinks,
+  liveLocales,
+  localeHome,
+  pagePath,
+  switchLocales,
+  type SitePage,
+} from '../i18n/routing';
 import {
   BODY,
   PROJECT_FIELDS,
@@ -59,7 +66,15 @@ import {
 import { copyrightYears } from './format';
 import { withBase } from './paths';
 
-export async function getPageData(locale: Locale = DEFAULT_LOCALE) {
+/**
+ * `page` is the page being built (M3: the home page, the projects directory or a project's page):
+ * its head links, its language links and the preview notice's link point at the same page in the
+ * other locales.
+ */
+export async function getPageData(
+  locale: Locale = DEFAULT_LOCALE,
+  page: SitePage = { kind: 'home' },
+) {
   const [
     site,
     profileEn,
@@ -143,6 +158,8 @@ export async function getPageData(locale: Locale = DEFAULT_LOCALE) {
         id: p.id,
         ...data,
         Body: (await render(twin ?? p)).Content,
+        /** The body as written (Markdown), for a page's description. */
+        body: (twin ?? p).body,
         /** `en` when the body is the English text on a translated page. */
         bodyLang: locale !== 'en' && !twin ? ('en' as const) : undefined,
       };
@@ -175,11 +192,17 @@ export async function getPageData(locale: Locale = DEFAULT_LOCALE) {
     states: site.locales,
     preview: site.locales[locale] === 'preview',
     home: localeHome(locale, import.meta.env.BASE_URL),
+    /** The page being built, and where the projects directory and each project page live. */
+    page,
+    paths: {
+      projects: pagePath(locale, { kind: 'projects' }, import.meta.env.BASE_URL),
+      project: (id: string) => pagePath(locale, { kind: 'project', id }, import.meta.env.BASE_URL),
+    },
     head: {
       title: meta.title,
       description: meta.description,
       keywords: meta.keywords,
-      ...headLinks(locale, site.locales, `https://${site.domain}`, import.meta.env.BASE_URL),
+      ...headLinks(locale, site.locales, `https://${site.domain}`, import.meta.env.BASE_URL, page),
     },
     site: { ...site, meta, footer: siteFooter },
     copy,
@@ -258,7 +281,7 @@ export async function getPageData(locale: Locale = DEFAULT_LOCALE) {
       locale: l,
       lang: LOCALES[l].lang,
       hreflang: LOCALES[l].hreflang,
-      href: localeHome(l, import.meta.env.BASE_URL),
+      href: pagePath(l, page, import.meta.env.BASE_URL),
       name: i18n[l].name,
       current: l === locale,
       preview: site.locales[l] === 'preview',
@@ -270,11 +293,14 @@ export async function getPageData(locale: Locale = DEFAULT_LOCALE) {
         locale: l,
         lang: LOCALES[l].lang,
         hreflang: LOCALES[l].hreflang,
-        href: localeHome(l, import.meta.env.BASE_URL),
+        href: pagePath(l, page, import.meta.env.BASE_URL),
         ...i18n[l],
       })),
     /** The English page (the preview notice links to it). */
-    english: { href: localeHome(DEFAULT_LOCALE, import.meta.env.BASE_URL), lang: LOCALES.en.lang },
+    english: {
+      href: pagePath(DEFAULT_LOCALE, page, import.meta.env.BASE_URL),
+      lang: LOCALES.en.lang,
+    },
   };
 }
 

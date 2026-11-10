@@ -14,9 +14,12 @@ import Hero from './sections/Hero.astro';
 import LangNotice from './sections/LangNotice.astro';
 import LangSuggest from './sections/LangSuggest.astro';
 import Nav from './sections/Nav.astro';
+import PageScripts from './PageScripts.astro';
 import PrefsWindow from './sections/PrefsWindow.astro';
 import Projects from './sections/Projects.astro';
 import Ticker from './sections/Ticker.astro';
+import Directory from './sections/Directory.astro';
+import Window from './ui/Window.astro';
 import type { Locale } from '../i18n/locales';
 import { getPageData } from '../lib/page-data';
 
@@ -27,6 +30,10 @@ const data = await getPageData(Astro.props.locale);
 // For the WebGL scene (src/scene/, tier 3 only): the routes to draw on its Earth (aviation.yaml
 // `watching`, as airport codes) and the wording of its `?debug=1` line.
 const sceneRoutes = JSON.stringify(data.aviation.watching.map((r) => [r.from, r.to]));
+// The windows over the page (M3): the projects directory that Projects' `more ▸` grows into, and
+// one window that shows a project's page (its body is fetched from that page when opened).
+const w = data.copy.windows;
+const keys = { move: w.move_label, hint: w.move_hint, close: w.close, closeLabel: w.close_label };
 ---
 
 <BaseLayout data={data}>
@@ -47,15 +54,44 @@ const sceneRoutes = JSON.stringify(data.aviation.watching.map((r) => [r.from, r.
     <Footer data={data} />
   </div>
   <PrefsWindow data={data} />
+  <PageScripts />
+  <Window
+    as="dialog"
+    id="directory-window"
+    title={w.directory_title}
+    labelledby="directory-window-heading"
+    keys={keys}
+    data={{ 'window-kind': 'directory', 'window-href': data.paths.projects }}
+  >
+    <Directory data={data} level="h2" headingId="directory-window-heading" />
+    <p class="win-hint">{w.hint}</p>
+  </Window>
+  <Window as="dialog" id="project-window" title="" keys={keys} data={{ 'window-kind': 'project' }}>
+    <div data-project-slot></div>
+    <p class="win-hint" data-project-loading hidden>
+      {w.loading}
+    </p>
+    <p class="win-hint" data-project-failed hidden>
+      {w.failed}{' '}
+      <a href={data.paths.projects} data-project-failed-link>
+        {w.directory_title}
+      </a>
+    </p>
+    <p class="win-hint">{w.hint}</p>
+  </Window>
 </BaseLayout>
-
-<script>
-  import '../scripts/main';
-</script>
 
 <style>
   .page {
     position: relative;
     overflow-x: clip;
+  }
+  .win-hint {
+    margin: 0;
+    font: var(--type-code-sm);
+    color: var(--color-text-mid);
+  }
+  .win-hint a {
+    color: var(--color-accent-diamond);
   }
 </style>

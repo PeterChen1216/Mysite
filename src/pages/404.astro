@@ -1,0 +1,219 @@
+---
+/**
+ * "Chunk not found" (M3; PLAN §4.1 `/404`): the page GitHub Pages serves for every address that
+ * does not exist — one file at the root of the site (scripts/assemble-pages.mjs puts it there
+ * before launch too, when the root is the old site). It is written in all three languages; the
+ * inline head script (src/lib/not-found.ts) shows the one of the address before first paint
+ * (`/zh-hant/…` → Traditional), English otherwise and without JavaScript. Never indexed.
+ */
+import BaseLayout from '../layouts/BaseLayout.astro';
+import Background from '../components/sections/Background.astro';
+import McButton from '../components/ui/McButton.astro';
+import VoxelBlock from '../components/ui/VoxelBlock.astro';
+import Window from '../components/ui/Window.astro';
+import { LOCALES, LOCALE_KEYS } from '../i18n/locales';
+import { notFoundScript } from '../lib/not-found';
+import { getPageData } from '../lib/page-data';
+
+const pages = await Promise.all(LOCALE_KEYS.map((l) => getPageData(l)));
+const en = pages[0]!;
+const base = import.meta.env.BASE_URL;
+const dirs = Object.fromEntries(LOCALE_KEYS.map((l) => [l, LOCALES[l].dir]));
+const langs = Object.fromEntries(LOCALE_KEYS.map((l) => [l, LOCALES[l].lang]));
+const data = {
+  ...en,
+  head: {
+    ...en.head,
+    title: en.copy.not_found.page_title,
+    canonical: '',
+    robots: 'noindex',
+    hreflang: [],
+    ogAlternates: [],
+  },
+};
+---
+
+<BaseLayout data={data} allCjk>
+  <script is:inline slot="head" set:html={notFoundScript(base, dirs, langs)} />
+  <div class="page nf" data-not-found>
+    <Background />
+    <main id="main" class="nf__main">
+      {pages.map((p) => {
+        const t = p.copy.not_found;
+        return (
+          <div class="nf__lang" data-nf={p.locale} lang={p.lang}>
+            <a class="nf__logo" href={p.home} data-nf-home>
+              <VoxelBlock name="terminal" size={39} shadow={false} />
+              <span class="nf__domain">{p.site.domain}</span>
+            </a>
+            <div class="nf__stage">
+              <span class="nf__block nf__block--tnt" aria-hidden="true">
+                <VoxelBlock name="tnt" size={72} />
+              </span>
+              <span class="nf__block nf__block--dirt" aria-hidden="true">
+                <VoxelBlock name="dirt" size={56} />
+              </span>
+              <Window
+                as="section"
+                title={t.title}
+                labelledby={`nf-heading-${p.locale}`}
+                class="nf__win"
+              >
+                <p class="nf__ln" aria-hidden="true">
+                  <span class="nf__g">$</span>{' '}
+                  <span data-nf-cmd={t.cmd}>{t.cmd.replace(/\s*\{\s*path\s*\}/, '')}</span>
+                </p>
+                <p class="nf__ln nf__err" data-nf-error={t.error}>
+                  {t.error.replace(/:?\s*\{\s*path\s*\}/, '')}
+                </p>
+                <h1 class="nf__h" id={`nf-heading-${p.locale}`}>
+                  {t.heading}
+                </h1>
+                <p class="nf__body">{t.body}</p>
+                <div class="nf__links">
+                  <McButton
+                    href={p.home}
+                    kind="grass"
+                    ariaLabel={`${t.home} — ${t.home_label}`}
+                    class="nf__home"
+                  >
+                    {t.home}
+                  </McButton>
+                  <McButton href={p.paths.projects} class="nf__projects">
+                    {t.projects_label}
+                  </McButton>
+                </div>
+              </Window>
+            </div>
+          </div>
+        );
+      })}
+    </main>
+  </div>
+</BaseLayout>
+
+<script>
+  import { shownPath } from '../lib/not-found';
+
+  // The address that was asked for, in the terminal lines; outside the site (before launch: the
+  // old site at the root) "home" is the domain's root and the projects link is not offered.
+  const html = document.documentElement;
+  const path = shownPath(location.pathname);
+  for (const el of document.querySelectorAll<HTMLElement>('[data-nf-cmd]'))
+    el.textContent = (el.dataset.nfCmd ?? '').replace(/\{\s*path\s*\}/, path);
+  for (const el of document.querySelectorAll<HTMLElement>('[data-nf-error]'))
+    el.textContent = (el.dataset.nfError ?? '').replace(/\{\s*path\s*\}/, path);
+  if (html.hasAttribute('data-nf-outside')) {
+    for (const a of document.querySelectorAll<HTMLAnchorElement>('[data-nf-home], .nf__home'))
+      a.href = '/';
+    for (const a of document.querySelectorAll<HTMLElement>('.nf__projects')) a.hidden = true;
+  }
+</script>
+
+<style>
+  .nf {
+    position: relative;
+    min-height: 100svh;
+    overflow: clip;
+  }
+  .nf__main {
+    position: relative;
+    z-index: 1;
+    padding: 24px var(--gutter) 96px;
+  }
+  /* One language at a time: the address's (set before first paint), English without script. */
+  .nf__lang {
+    display: none;
+  }
+  :global(html[data-locale='en']) .nf__lang[data-nf='en'],
+  :global(html[data-locale='zh-hans']) .nf__lang[data-nf='zh-hans'],
+  :global(html[data-locale='zh-hant']) .nf__lang[data-nf='zh-hant'] {
+    display: block;
+  }
+  .nf__logo {
+    display: inline-flex;
+    align-items: center;
+    gap: 12px;
+    min-height: 44px;
+    color: var(--color-text-bright);
+    text-decoration: none;
+  }
+  .nf__domain {
+    font: var(--type-pixel-button);
+    text-shadow: 2px 2px 0 var(--color-text-shadow);
+  }
+  .nf__stage {
+    position: relative;
+    max-width: 760px;
+    margin: 72px auto 0;
+  }
+  .nf__block {
+    position: absolute;
+    line-height: 0;
+  }
+  .nf__block--tnt {
+    top: -52px;
+    right: -28px;
+  }
+  .nf__block--dirt {
+    bottom: -36px;
+    left: -30px;
+  }
+  .nf__stage :global(.nf__win) {
+    position: relative;
+  }
+  .nf__ln {
+    margin: 0;
+    font: var(--type-term-md);
+    overflow-wrap: anywhere;
+  }
+  .nf__g {
+    color: var(--color-accent-terminal-green);
+  }
+  .nf__err {
+    color: var(--color-accent-redstone);
+  }
+  .nf__h {
+    margin: 12px 0 0;
+    font: var(--type-pixel-h2);
+    letter-spacing: var(--type-pixel-h2-tracking);
+    color: var(--color-text-hi);
+    text-shadow: 4px 4px 0 var(--color-heading-shadow);
+  }
+  .nf__body {
+    margin: 0;
+    max-width: 52ch;
+    font: var(--type-code-body);
+    color: var(--color-text-mid);
+  }
+  .nf__links {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+    margin-top: 8px;
+  }
+  .nf__links :global(.mc-btn) {
+    text-transform: var(--type-label-case);
+  }
+  .nf__links :global([hidden]) {
+    display: none;
+  }
+  @media (max-width: 767px) {
+    .nf__main {
+      padding: 16px 16px 64px;
+    }
+    .nf__stage {
+      margin-top: 56px;
+    }
+    .nf__h {
+      font: var(--type-pixel-h3);
+      font-size: calc(32px * var(--ts));
+    }
+    .nf__block--tnt {
+      right: 4px;
+    }
+    .nf__block--dirt {
+      left: 4px;
+    }
+  }
+</style>

@@ -700,6 +700,53 @@ export const copySchema = z
       })
       .strict(),
     /**
+     * Windows (M3; PLAN §5.2): the `more ▸` key, the title-bar keys, the directory of projects and
+     * a project's window and page. {id} is a project's file name, {project} its title.
+     */
+    windows: z
+      .object({
+        more: text,
+        more_label: text,
+        move_label: text,
+        move_hint: text,
+        close: text,
+        close_label: text,
+        hint: text,
+        loading: text,
+        failed: text,
+        directory_title: text,
+        directory_cmd: text,
+        directory_heading: text,
+        project_title: text,
+        project_cmd: text,
+        crumbs_label: text,
+        home_label: text,
+        page_title: text,
+        directory_page_title: text,
+        neighbours_label: text,
+        prev: text,
+        next: text,
+        back: text,
+        back_home: text,
+      })
+      .strict(),
+    /** The 404 page (PLAN §4.1); {path} is the address asked for, filled in the browser. */
+    not_found: z
+      .object({
+        page_title: text,
+        title: text,
+        cmd: text,
+        error: text,
+        heading: text,
+        body: text,
+        home: text,
+        home_label: text,
+        projects_label: text,
+      })
+      .strict(),
+    /** The share card (Open Graph image): its text alternative; {title} = the page's title. */
+    og: z.object({ alt: text }).strict(),
+    /**
      * The WebGL scene (PLAN-EXPERIENCE §7). The canvas is decorative and says nothing; `hud` is the
      * `?debug=1` line: {fps} {ms} {tier} {reason} {draws} {dpr}.
      */

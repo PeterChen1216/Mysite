@@ -32,11 +32,32 @@ const layout = cards === 3 ? 'stack' : cards % 2 === 1 ? 'strip' : 'pairs';
   <span class="projects__diamond" aria-hidden="true">
     <VoxelBlock name="diamond" size={55} />
   </span>
-  <SectionHeader id="projects-title" cmd={copy.cmd} title={copy.title} blurb={copy.blurb} />
-  <ProjectFeatured project={featured} copy={copy} labels={data.copy.labels} />
+  <SectionHeader
+    id="projects-title"
+    cmd={copy.cmd}
+    title={copy.title}
+    blurb={copy.blurb}
+    more={{
+      href: data.paths.projects,
+      text: data.copy.windows.more,
+      label: data.copy.windows.more_label,
+      window: 'directory-window',
+    }}
+  />
+  <ProjectFeatured
+    project={featured}
+    copy={copy}
+    labels={data.copy.labels}
+    href={data.paths.project(featured.id)}
+  />
   <div class="projects__grid" data-layout={layout}>
     {others.map((p) => (
-      <ProjectCard project={p} copy={copy} labels={data.copy.labels} />
+      <ProjectCard
+        project={p}
+        copy={copy}
+        labels={data.copy.labels}
+        href={data.paths.project(p.id)}
+      />
     ))}
     <Card as="article" dashed class="pc pc--next" labelledby="projects-next-title">
       <span class="next__block" aria-hidden="true">

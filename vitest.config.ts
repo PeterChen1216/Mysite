@@ -37,6 +37,8 @@ export default defineConfig({
         'src/lib/regions.ts',
         'src/lib/prompt.ts',
         'src/lib/ambient.ts',
+        // M3: the 404's language and home, the windows' geometry and history.
+        'src/lib/not-found.ts',
         // The WebGL scene's pure parts (the renderer and GL plumbing are covered by E2E).
         'src/scene/tier.ts',
         'src/scene/math.ts',

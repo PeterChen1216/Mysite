@@ -5,6 +5,7 @@
 //     _site/            ← legacy/            (zhic.me unchanged)
 //     _site/legacy/     ← legacy/            (stable URL for the old site)
 //     _site/v2/         ← dist/  (built with base /v2/)
+//     _site/404.html    ← dist/404.html (Pages serves the root's 404 for every missing address)
 //   launched (launched: true)
 //     _site/            ← dist/
 //     _site/legacy/     ← legacy/            (kept ≥ 30 days, PLAN M5)
@@ -38,6 +39,9 @@ if (site.stage === 'launched') {
   cpSync(legacy, out, { recursive: true });
   cpSync(legacy, join(out, 'legacy'), { recursive: true });
   cpSync(dist, join(out, site.previewPath.replaceAll('/', '')), { recursive: true });
+  // GitHub Pages answers every missing address with the root's 404.html: v2's "chunk not found"
+  // (its assets are under /v2/; it sends a missing address outside /v2/ home to the old site).
+  cpSync(join(dist, '404.html'), join(out, '404.html'));
   // Keep the unfinished preview out of search results.
   writeFileSync(join(out, 'robots.txt'), `User-agent: *\nDisallow: ${site.previewPath}\n`);
 }

@@ -153,6 +153,9 @@ function whenIdle(fn: () => void) {
 }
 
 export function initScene(): void {
+  // The world stands behind the home page only (the directory and project pages are windows of
+  // their own, with nothing for the camera to follow).
+  if (!document.querySelector('[data-scene-routes]')) return;
   const debug = debugMode();
   whenIdle(async () => {
     if (debug) {

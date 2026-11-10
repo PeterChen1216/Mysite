@@ -140,6 +140,11 @@ export async function getProjects() {
   );
 }
 
+/** Every project page's params (M3: `/projects/<id>/` in each locale). */
+export async function projectPaths() {
+  return (await getProjects()).map((p) => ({ params: { id: p.id } }));
+}
+
 /**
  * An entry of a twin collection by id, or undefined when there is no such file (getEntry would
  * warn, and a missing translation is normal: the English shows).

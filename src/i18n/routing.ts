@@ -17,6 +17,51 @@ export function localeHome(locale: Locale, base = '/'): string {
   return `${prefix}${LOCALES[locale].dir}`;
 }
 
+/**
+ * The pages of a locale besides its home (M3; PLAN §4.1): the projects directory and one page per
+ * project. `sub` is the path below the locale's home: `''` (home), `projects/`,
+ * `projects/clock-stamp/`. Every page exists in every locale.
+ */
+export type SitePage = { kind: 'home' } | { kind: 'projects' } | { kind: 'project'; id: string };
+
+/** A project id as content/projects/<id>.md names it: lower-case words joined by hyphens. */
+export const PROJECT_ID = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
+
+/** The path of a page below its locale's home (`projects/clock-stamp/`). */
+export function pageSub(page: SitePage): string {
+  if (page.kind === 'home') return '';
+  if (page.kind === 'projects') return 'projects/';
+  if (!PROJECT_ID.test(page.id)) throw new Error(`not a project id: "${page.id}"`);
+  return `projects/${page.id}/`;
+}
+
+/** A page of a locale under `base` (`/v2/zh-hans/projects/clock-stamp/`). */
+export const pagePath = (locale: Locale, page: SitePage, base = '/'): string =>
+  `${localeHome(locale, base)}${pageSub(page)}`;
+
+/**
+ * Which page of the site a URL path is (`/v2/zh-hant/projects/clock-stamp/` → zh-hant, that
+ * project), or null when it is none of them (outside the base, an unknown path, `/zh/`). A path
+ * without its trailing slash, or ending in `index.html`, is the same page.
+ */
+export function routeOf(pathname: string, base = '/'): { locale: Locale; page: SitePage } | null {
+  const prefix = base.endsWith('/') ? base : `${base}/`;
+  const path = pathname.replace(/index\.html$/, '');
+  if (!`${path}/`.startsWith(prefix)) return null;
+  const parts = path.slice(prefix.length).split('/').filter(Boolean);
+  let locale: Locale = DEFAULT_LOCALE;
+  const first = parts[0];
+  const named = LOCALE_KEYS.find((l) => l !== DEFAULT_LOCALE && LOCALES[l].dir === `${first}/`);
+  if (named) {
+    locale = named;
+    parts.shift();
+  }
+  if (parts.length === 0) return { locale, page: { kind: 'home' } };
+  if (parts[0] !== 'projects' || parts.length > 2) return null;
+  if (parts.length === 1) return { locale, page: { kind: 'projects' } };
+  return PROJECT_ID.test(parts[1]!) ? { locale, page: { kind: 'project', id: parts[1]! } } : null;
+}
+
 /** The live locales, in LOCALES order. */
 export const liveLocales = (states: LocaleStates): Locale[] =>
   LOCALE_KEYS.filter((l) => states[l] === 'live');
@@ -33,18 +78,19 @@ export interface Alternate {
 
 /**
  * The `<link rel="alternate" hreflang>` set of a page (absolute URLs; `origin` like
- * `https://zhic.me`): every live locale and `x-default`, the same on each live page. Empty on a
- * preview page, and while only one locale is live (there is nothing to alternate with).
+ * `https://zhic.me`): the same page in every live locale and `x-default`, the same on each live
+ * page. Empty on a preview page, and while only one locale is live (nothing to alternate with).
  */
 export function hreflangLinks(
   current: Locale,
   states: LocaleStates,
   origin: string,
   base = '/',
+  page: SitePage = { kind: 'home' },
 ): Alternate[] {
   const live = liveLocales(states);
   if (states[current] !== 'live' || live.length < 2) return [];
-  const url = (l: Locale) => new URL(localeHome(l, base), origin).href;
+  const url = (l: Locale) => new URL(pagePath(l, page, base), origin).href;
   return [
     ...live.map((l) => ({ hreflang: LOCALES[l].hreflang, href: url(l) })),
     { hreflang: 'x-default', href: url(DEFAULT_LOCALE) },
@@ -66,10 +112,11 @@ export function headLinks(
   states: LocaleStates,
   origin: string,
   base = '/',
+  page: SitePage = { kind: 'home' },
 ): HeadLinks {
-  const hreflang = hreflangLinks(current, states, origin, base);
+  const hreflang = hreflangLinks(current, states, origin, base, page);
   return {
-    canonical: new URL(localeHome(current, base), origin).href,
+    canonical: new URL(pagePath(current, page, base), origin).href,
     robots: states[current] === 'preview' ? 'noindex' : undefined,
     hreflang,
     ogLocale: LOCALES[current].og,

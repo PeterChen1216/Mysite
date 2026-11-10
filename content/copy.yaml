@@ -285,6 +285,55 @@ i18n:
   suggest_dismiss: No thanks
   suggest_label: Language suggestion # read out by screen readers only
 
+# Windows (M3; PLAN §5.2): a section's `more ▸` key grows its window into a directory; a project
+# opens in a window of its own over the page, and is a page of its own (/projects/<id>/) too.
+windows:
+  # The key at the end of a section's command line, and what screen readers hear.
+  more: more ▸
+  more_label: All projects
+  # Every window's title bar: the key that moves it (arrow keys; Enter puts it back) and the close
+  # key. Clicking the bar itself, or Esc, also closes the window.
+  move_label: Move window
+  move_hint: Arrow keys move the window, with Shift further; Enter or Home puts it back.
+  close: close
+  close_label: Close window
+  hint: Esc or click the bar to shrink the window back onto the desk.
+  # While a project's window loads, and if it can't: then a plain link to the project's page.
+  loading: loading chunk…
+  failed: 'Chunk failed to load. Open the page:'
+  # The directory of projects: its title bar, its command line and its name (read out).
+  directory_title: projects/ — directory
+  directory_cmd: ls -la ~/projects
+  directory_heading: Every project
+  # A project's window and page: title bar and command ({id} = its file name), the path above it
+  # (read out as "You are here"), the page's <title> ({project} = its title) and its neighbours.
+  project_title: '~/projects/{id}'
+  project_cmd: 'cat ~/projects/{id}.md'
+  crumbs_label: You are here
+  home_label: Home
+  page_title: '{project} — {domain}'
+  directory_page_title: 'Projects — {domain}'
+  neighbours_label: More projects
+  prev: ← previous
+  next: next →
+  back: cd ~/projects
+  back_home: cd ~
+# The page for an address that does not exist (404): the terminal's reply, the heading and the
+# ways back. {path} is filled in the browser with the address that was asked for.
+not_found:
+  page_title: 'Chunk not found — {domain}'
+  title: '404 — chunk not found'
+  cmd: 'cd {path}'
+  error: 'cd: no such chunk: {path}'
+  heading: Chunk not found
+  body: This page doesn’t exist. It may have moved, or it hasn’t been generated yet.
+  home: cd ~
+  home_label: Back to the home page
+  projects_label: Every project
+# The share card a link to the site shows (Open Graph image): what it says to screen readers.
+og:
+  alt: '{title} — {domain}'
+
 # The WebGL scene behind the page (PLAN-EXPERIENCE §7). It is decorative and says nothing, so this
 # is only the developer line shown with ?debug=1 in the address: frames per second, milliseconds
 # per frame, the graphics tier and why, draw calls and pixel ratio, filled in by the browser.
