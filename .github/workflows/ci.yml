@@ -67,6 +67,14 @@ jobs:
       - name: Assemble Pages artifact
         run: pnpm assemble
 
+      # The browsers are cached by the lockfile (Playwright's version): a slow download once took
+      # most of the job's time (M2, M3); the system packages still come from apt each run.
+      - name: Cache Playwright browsers
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/ms-playwright
+          key: playwright-all-${{ runner.os }}-${{ hashFiles('pnpm-lock.yaml') }}
+
       - name: Install Playwright browsers
         run: pnpm exec playwright install --with-deps chromium webkit
 
@@ -94,7 +102,9 @@ jobs:
   launch:
     name: launch configuration · Lighthouse + E2E
     runs-on: ubuntu-latest
-    timeout-minutes: 20
+    # M3 added the directory, a project page and the 404 to Lighthouse in every locale (10 pages ×
+    # 5 runs, about 10 minutes): 20 minutes left no room for a slow runner.
+    timeout-minutes: 30
     env:
       # Build, assemble and test exactly what flipping `launched: true` would deploy.
       SITE_STAGE: launched
@@ -120,6 +130,12 @@ jobs:
 
       - name: Assemble Pages artifact (launched)
         run: pnpm assemble
+
+      - name: Cache Playwright browsers
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/ms-playwright
+          key: playwright-chromium-${{ runner.os }}-${{ hashFiles('pnpm-lock.yaml') }}
 
       - name: Install Playwright Chromium
         run: pnpm exec playwright install --with-deps chromium

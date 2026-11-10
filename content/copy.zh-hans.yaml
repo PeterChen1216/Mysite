@@ -247,7 +247,6 @@ windows:
   move_label: 移动窗口
   move_hint: 方向键移动窗口，按住 Shift 移得更远；Enter 或 Home 放回原处。
   close: 关闭
-  close_label: 关闭窗口
   hint: 按 Esc 或点击标题栏，把窗口缩回桌面。
   loading: 正在加载区块…
   failed: 区块加载失败。打开这一页：

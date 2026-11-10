@@ -23,10 +23,11 @@ import { CALM, HOVER, LOOP, SCENE } from '../motion/params';
 import { GLOBE_TURN_EVENT, heroGlobe } from '../scripts/globe';
 import { MOTION_EVENT, PREFS_EVENT, isPaused, loopsAllowed, resolved } from '../scripts/prefs';
 import { airport } from './airports';
-import { ATLAS_SIZE, buildAtlas } from './atlas';
+import { ATLAS_SIZE, EXTRA_H, EXTRA_W, buildAtlas, buildExtra } from './atlas';
+import { DIAL_SIZE, dialHands, dialTexels, type DialCity } from './dial';
+import { assembleProgress, beamLevel, beamPulse, nearestIndex, nearestStop } from './path';
 import {
   dampFactor,
-  fadeAt,
   framePose,
   lerpPose,
   orderStops,
@@ -64,8 +65,15 @@ import {
   type AdaptiveState,
 } from './watchdog';
 import {
+  CANYON,
   CUBE_FLOATS,
   EARTH,
+  EXTRA_TILE,
+  WORKBENCH,
+  assembling,
+  beam,
+  canyon,
+  workbench,
   FLAG,
   ISLAND,
   SHAPE,
@@ -93,7 +101,26 @@ const VIEW = {
   hero: { dir: normalize(HERO_VIEW), fov: 30, veil: 0 },
   island: { dir: normalize([0.32, 0.62, 1]), fov: 32, veil: 0.12 },
   orbit: { dir: normalize([-0.62, 0.42, 0.66]), fov: 40, veil: 0.45 },
+  // M3: the workbench on the canyon's rim, from above and in front; the canyon's face, straight on
+  // (the git log scrolls down it); the whole world from far out, a little from the right.
+  workbench: { dir: normalize([0, 0.62, 1]), fov: 34, veil: 0.42 },
+  canyon: { dir: normalize([0, 0.1, 1]), fov: 40, veil: 0.66 },
+  world: { dir: normalize([0.3, 0.22, 1]), fov: 38, veil: 0 },
 };
+/** The names of the stops, in order (status.stopName; the keyboard-flight test). */
+export const STOP_NAMES = [
+  'hero',
+  'island',
+  'orbit',
+  'workbench',
+  'canyon',
+  'canyon-end',
+  'world',
+] as const;
+/** A project block takes this long to assemble when its card comes into view (motion full). */
+const ASSEMBLE_MS = 700;
+/** The minecart rolls to the current row with this time constant (ms). */
+const CART_MS = 220;
 /** The grid plane behind everything (the DOM's 48 px graph paper at stop 1). */
 const GRID = { z: -140, size: 1400, cell: 7.4 };
 /**
@@ -109,8 +136,14 @@ const SCRIM_TEXT = [
   '.ticker',
   '.sh__title',
   '.sh__blurb',
+  // M3: the text below About that stands on the page (or on the see-through "next chunk" card).
+  '.community__head',
+  '.contact__head',
+  '.contact__mail',
+  '.pc--next',
+  '.foot',
 ].join(',');
-const SCRIM_MAX = 12;
+const SCRIM_MAX = 16;
 /** Drawing-buffer size cap (device px): colour + depth ≈ 36 MB, plus the browser's copy. */
 const MAX_PIXELS = 4.5e6;
 const SCRIM_PAD = 10; // css px around the text
@@ -164,6 +197,19 @@ export interface SceneStatus {
   /** Hero blocks punched so far (row 1), and how many cubes are squashing now. */
   punched: number;
   squashing: number;
+  /** M3: the stop the camera is nearest (STOP_NAMES), by index and name; every stop's place. */
+  stop: number;
+  stopName: string;
+  stops: Array<{ name: string; at: number }>;
+  /** Projects whose blocks have assembled on the workbench (their cards came into view). */
+  assembled: string[];
+  /** The git log row the minecart is at (its index among the rows), and its document y. */
+  cartRow: number;
+  cartY: number;
+  /** The beacon's beam brightness now (0 off). */
+  beam: number;
+  /** A window is open over the page: the loops hold (M3). */
+  windowOpen: boolean;
 }
 
 export interface Scene {
@@ -191,6 +237,14 @@ export function startScene(canvas: HTMLCanvasElement, gl: GL, opts: SceneOptions
     sky: [],
     punched: 0,
     squashing: 0,
+    stop: 0,
+    stopName: STOP_NAMES[0],
+    stops: [],
+    assembled: [],
+    cartRow: -1,
+    cartY: 0,
+    beam: 0,
+    windowOpen: false,
   };
   (canvas as HTMLCanvasElement & { sceneStatus?: SceneStatus }).sceneStatus = status;
 
@@ -213,6 +267,8 @@ export function startScene(canvas: HTMLCanvasElement, gl: GL, opts: SceneOptions
     'uScrim',
     'uScrimN',
     'uScrimEdge',
+    'uExtra',
+    'uBeam',
   ] as const);
   const su = uniforms(gl, spriteProg, [
     'uView',
@@ -320,12 +376,22 @@ export function startScene(canvas: HTMLCanvasElement, gl: GL, opts: SceneOptions
     : null;
   const worldCubes = staticCubes();
   const world = cubeGroup(packCubes(worldCubes), gl.STATIC_DRAW);
+  // M3, stops 4–6: the canyon and the workbench on its rim, the projects on the bench (they
+  // assemble as their cards come into view), and the beacon's beam.
+  const projects = readProjects();
+  const bench = workbench(projects.length);
+  const lower = cubeGroup(packCubes([...canyon(), ...bench.cubes]), gl.STATIC_DRAW);
+  const projectGroup = cubeGroup(
+    new Float32Array((projects.length + 1) * 8 * CUBE_FLOATS),
+    gl.DYNAMIC_DRAW,
+  );
+  const beamGroup = cubeGroup(packCubes(beam()), gl.STATIC_DRAW);
   const home = homeIsland();
   const dynamic = cubeGroup(
     new Float32Array((1 + 3 + routes.length) * CUBE_FLOATS),
     gl.DYNAMIC_DRAW,
   );
-  const MAX_PAGE_BLOCKS = 10;
+  const MAX_PAGE_BLOCKS = 128;
   const pageGroup = cubeGroup(new Float32Array(MAX_PAGE_BLOCKS * CUBE_FLOATS), gl.DYNAMIC_DRAW);
   const skyGroup = spriteGroup(packSprites([...stars(), ...glows(), ...motes()]), gl.STATIC_DRAW);
   // The grid is one quad (corner attribute at location 0).
@@ -356,6 +422,45 @@ export function startScene(canvas: HTMLCanvasElement, gl: GL, opts: SceneOptions
   gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST);
   gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST);
 
+  // The second texture: Clock Stamp's live dial (each new minute, while loops run) and the
+  // workbench's faces.
+  const dial = readDial();
+  let dialMinute = -1;
+  const handsAt = (now: Date) => dialHands(now, dial.cities, dial.home);
+  const extra = gl.createTexture()!;
+  gl.bindTexture(gl.TEXTURE_2D, extra);
+  gl.texImage2D(
+    gl.TEXTURE_2D,
+    0,
+    gl.RGBA8UI,
+    EXTRA_W,
+    EXTRA_H,
+    0,
+    gl.RGBA_INTEGER,
+    gl.UNSIGNED_BYTE,
+    buildExtra(dialTexels(handsAt(new Date()))),
+  );
+  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST);
+  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST);
+  const updateDial = (now: Date) => {
+    const minute = Math.floor(now.getTime() / 60_000);
+    if (minute === dialMinute) return;
+    dialMinute = minute;
+    gl.bindTexture(gl.TEXTURE_2D, extra);
+    gl.texSubImage2D(
+      gl.TEXTURE_2D,
+      0,
+      0,
+      0,
+      DIAL_SIZE,
+      DIAL_SIZE,
+      gl.RGBA_INTEGER,
+      gl.UNSIGNED_BYTE,
+      dialTexels(handsAt(now)),
+    );
+  };
+  updateDial(new Date());
+
   /* ── theme ─────────────────────────────────────────────────────────────── */
   let theme: SceneTheme;
   const readTokens = () => {
@@ -379,7 +484,15 @@ export function startScene(canvas: HTMLCanvasElement, gl: GL, opts: SceneOptions
     phase: number;
     spin: number;
   }> = [];
-  let fadeRange: [number, number] = [Infinity, Infinity];
+  /** The minecart's stops (document y), its track beside the log, where it is now. */
+  let rows: number[] = [];
+  let track: { x: number; w: number; top: number; bottom: number } | null = null;
+  let cartY: number | null = null;
+  /** The beam comes on between these scroll positions (stop 5's end → stop 6). */
+  let beamFrom = Infinity;
+  let beamAt = Infinity;
+  /** When each project's card first came into view (performance.now()). */
+  const assembleStart = new Map<string, number>();
   const view = { width: 1, height: 1 };
   const docRect = (sel: string) => {
     const el = document.querySelector(sel);
@@ -399,6 +512,7 @@ export function startScene(canvas: HTMLCanvasElement, gl: GL, opts: SceneOptions
       const s = stage.w / 560;
       out.push({
         at: 0,
+        name: 'hero',
         pose: framePose(
           EARTH.center,
           EARTH.discRadius,
@@ -411,11 +525,18 @@ export function startScene(canvas: HTMLCanvasElement, gl: GL, opts: SceneOptions
     }
     // Stop 2: the home island in the free space of About's header, between title and blurb; where
     // that is too narrow (≤ 1279 px), above the blurb, in the section's top padding — never under
-    // text.
-    const header = docRect('#about .sh');
-    const title = docRect('#about .sh__title');
-    const blurb = docRect('#about .sh__blurb');
-    if (header && title) {
+    // text. Stop 4 frames the workbench the same way in Projects' header.
+    const headerStop = (
+      section: string,
+      name: string,
+      center: Vec3,
+      radius: number,
+      v: { dir: Vec3; fov: number; veil: number },
+    ): Stop | null => {
+      const header = docRect(`${section} .sh`);
+      const title = docRect(`${section} .sh__title`);
+      const blurb = docRect(`${section} .sh__blurb`);
+      if (!header || !title) return null;
       const left = title.right;
       const right = blurb ? blurb.x : header.right;
       const at = Math.max(1, header.y - vh * 0.16);
@@ -427,19 +548,28 @@ export function startScene(canvas: HTMLCanvasElement, gl: GL, opts: SceneOptions
             x: blurb ? blurb.x + blurb.w / 2 : (left + header.right) / 2,
             y: Math.min(header.y, blurb ? blurb.y : header.y) - radiusPx * 0.7,
           };
-      out.push({
+      return {
         at,
+        name,
         pose: framePose(
-          add(ISLAND.center, [0, 1.5, 0]),
-          ISLAND.radius,
+          center,
+          radius,
           { x: spot.x, y: spot.y - at, radiusPx },
           view,
-          VIEW.island.dir,
-          VIEW.island.fov,
-          VIEW.island.veil,
+          v.dir,
+          v.fov,
+          v.veil,
         ),
-      });
-    }
+      };
+    };
+    const island = headerStop(
+      '#about',
+      'island',
+      add(ISLAND.center, [0, 1.5, 0]),
+      ISLAND.radius,
+      VIEW.island,
+    );
+    if (island) out.push(island);
     // Stop 3: orbit height when the AvGeek card (or, without one, Skills) is mid-screen. The Earth
     // is centred on the gap beside that card, so the cards' gaps show its curve.
     const av = docRect('#avgeek') ?? docRect('#skills');
@@ -447,6 +577,7 @@ export function startScene(canvas: HTMLCanvasElement, gl: GL, opts: SceneOptions
       const gapX = av.x > view.width * 0.3 ? av.x - 10 : av.right + 10;
       out.push({
         at: av.y + av.h / 2 - vh / 2,
+        name: 'orbit',
         pose: framePose(
           EARTH.center,
           EARTH.radius,
@@ -458,7 +589,82 @@ export function startScene(canvas: HTMLCanvasElement, gl: GL, opts: SceneOptions
         ),
       });
     }
+    // Stop 4 (M3): the workbench on the canyon's rim, in Projects' header as the island is in
+    // About's; the projects stand on it and assemble as their cards come into view.
+    const bench4 = headerStop(
+      '#projects',
+      'workbench',
+      add(WORKBENCH.center, [0, 1, -0.5]),
+      WORKBENCH.radius,
+      VIEW.workbench,
+    );
+    if (bench4) out.push(bench4);
+    // Stop 5: down the canyon's face beside the git log (the minecart rides beside its rows):
+    // from the log's top to the end of the community log, the camera comes down the face, the
+    // face filling the view's sides wherever the page leaves them open.
+    const logs = [...document.querySelectorAll('#experience .log, #community .log')].map((el) => {
+      const r = el.getBoundingClientRect();
+      return { x: r.left, y: r.top + scrollY, w: r.width, h: r.height };
+    });
+    const canyonPose = (y: number) =>
+      framePose(
+        [0, y, 0],
+        14,
+        { x: view.width / 2, y: vh / 2, radiusPx: vh / 2 },
+        view,
+        VIEW.canyon.dir,
+        VIEW.canyon.fov,
+        VIEW.canyon.veil,
+      );
+    if (logs.length) {
+      const first = logs[0]!;
+      const last = logs[logs.length - 1]!;
+      const a = first.y - vh * 0.25;
+      const b = Math.max(a + 1, last.y + last.h - vh * 0.75);
+      out.push({ at: a, name: 'canyon', pose: canyonPose(CANYON.top - 32) });
+      out.push({ at: b, name: 'canyon-end', pose: canyonPose(CANYON.bottom + 34) });
+    }
+    // Stop 6: Contact — pull back to the whole world: the Earth on its beacon, small, in the free
+    // space beside Contact's terminal, the home island and the canyon falling away below it; the
+    // beacon's beam comes on and rises past the top of the view.
+    const contact = docRect('#contact');
+    const term = docRect('#contact .contact__term');
+    if (contact) {
+      const max = document.documentElement.scrollHeight - vh;
+      const free = term ? term.x : view.width * 0.25;
+      out.push({
+        at: Math.min(max, contact.y + contact.h / 2 - vh / 2),
+        name: 'world',
+        pose: framePose(
+          EARTH.center,
+          EARTH.discRadius,
+          { x: free / 2, y: vh * 0.55, radiusPx: Math.max(28, Math.min(free * 0.3, vh * 0.1)) },
+          view,
+          VIEW.world.dir,
+          VIEW.world.fov,
+          VIEW.world.veil,
+        ),
+      });
+    }
     stops = orderStops(out);
+    status.stops = stops.map((st) => ({ name: st.name ?? '', at: st.at }));
+    beamFrom = stops.find((s) => s.name === 'canyon-end')?.at ?? Infinity;
+    beamAt = stops.find((s) => s.name === 'world')?.at ?? Infinity;
+    // The rows the minecart stops at (document y of each row's middle), and its track beside the
+    // log: in the margin left of it, when there is room.
+    const rowEls = [...document.querySelectorAll('#experience .commit, #community .commit')];
+    rows = rowEls.map((el) => {
+      const r = el.getBoundingClientRect();
+      return r.top + scrollY + Math.min(r.height / 2, 28);
+    });
+    track = null;
+    if (logs.length && rowEls.length) {
+      const room = logs[0]!.x;
+      const top = rowEls[0]!.getBoundingClientRect().top + scrollY;
+      const last = rowEls[rowEls.length - 1]!.getBoundingClientRect();
+      if (room >= 24)
+        track = { x: room / 2, w: Math.min(40, room * 0.7), top, bottom: last.bottom + scrollY };
+    }
     // Text that stands on the page background rather than in a card or bar of its own.
     scrimRects = [...document.querySelectorAll(SCRIM_TEXT)].flatMap((el) => {
       const r = el.getBoundingClientRect();
@@ -466,13 +672,6 @@ export function startScene(canvas: HTMLCanvasElement, gl: GL, opts: SceneOptions
         ? [{ x0: r.left, y0: r.top + scrollY, x1: r.right, y1: r.bottom + scrollY }]
         : [];
     });
-    // After About the scene dissolves into its sky as Projects comes up, so Projects and below
-    // show as they always have (M3 adds stops 4–6 there): it starts as About's end passes just
-    // below mid-screen and is gone once it nears the top.
-    const about = docRect('#about');
-    fadeRange = about
-      ? [about.y + about.h - vh * 0.1, about.y + about.h + vh * 0.42]
-      : [Infinity, Infinity];
     // Blocks that float beside About's cards, in its margins: where the DOM drew its two (now
     // hidden) and a few more down the sides. They are drawn at a fixed distance in front of the
     // camera, so they keep to the page as it scrolls.
@@ -553,7 +752,10 @@ export function startScene(canvas: HTMLCanvasElement, gl: GL, opts: SceneOptions
     last = now;
     const t0 = performance.now();
     const motion = resolved().motion;
-    const running = loopsAllowed();
+    // A window over the page (M3) holds the world as pause does; the page behind it is dimmed.
+    const windowOpen = html.hasAttribute('data-window-open');
+    status.windowOpen = windowOpen;
+    const running = loopsAllowed() && !windowOpen;
     const calm = motion === 'calm';
     if (running) time += dt / (calm ? CALM.loopSlowdown : 1);
     status.running = running;
@@ -570,18 +772,17 @@ export function startScene(canvas: HTMLCanvasElement, gl: GL, opts: SceneOptions
     const settled = poseDistance(cam, target) < 0.02;
     if (settled) cam = target;
     status.settled = settled;
-    const fade = fadeAt(scroll, view.height, fadeRange[0], fadeRange[1]);
+    // M3: the world goes on below About (stops 4–6); it never fades out.
+    const fade = 0;
     status.fade = fade;
-
-    // Nothing of the scene in view: stop drawing until the page scrolls back.
-    if (fade >= 1 && settled) {
-      if (status.state === 'live' || status.state === 'warm') canvas.style.visibility = 'hidden';
-      return;
-    }
-    canvas.style.visibility = '';
+    const si = nearestStop(scroll, stops);
+    status.stop = si;
+    status.stopName = stops[si]?.name ?? '';
 
     stepWorld(dt, running, calm);
     stepPunches(now);
+    const moving = stepLower(dt, now, running && !calm, scroll);
+    if (running) updateDial(new Date());
     if (sizeDirty) applySize();
     draw(cam, fade);
     status.frames++;
@@ -635,7 +836,39 @@ export function startScene(canvas: HTMLCanvasElement, gl: GL, opts: SceneOptions
       stats.since = now;
     }
 
-    if ((running && fade < 1) || !settled || warm || punches.size) request();
+    if (running || !settled || warm || punches.size || moving) request();
+  }
+
+  /**
+   * Stops 4–6: the minecart rolls to the current row (damped at full motion, at once otherwise),
+   * the projects assemble, the beam's level. Returns true while something is still moving.
+   */
+  let assembling_ = false;
+  function stepLower(dt: number, now: number, smooth: boolean, scroll: number): boolean {
+    let moving = false;
+    const vh = view.height;
+    const row = nearestIndex(rows, scroll + vh / 2);
+    status.cartRow = row;
+    if (row >= 0) {
+      const goal = rows[row]!;
+      cartY = cartY === null || !smooth ? goal : cartY + (goal - cartY) * dampFactor(dt, CART_MS);
+      if (Math.abs(goal - cartY) < 0.5) cartY = goal;
+      else moving = true;
+      status.cartY = cartY;
+    }
+    const full = resolved().motion === 'full' && !isPaused();
+    assembling_ = false;
+    for (const p of projects) {
+      const t = assembleProgress(assembleStart.get(p.id), now, ASSEMBLE_MS, full);
+      if (t > 0 && t < 1) assembling_ = true;
+    }
+    status.assembled = projects
+      .filter((p) => assembleProgress(assembleStart.get(p.id), now, ASSEMBLE_MS, full) >= 1)
+      .map((p) => p.id);
+    const on =
+      beamAt > beamFrom ? (scroll - beamFrom) / (beamAt - beamFrom) : scroll >= beamAt ? 1 : 0;
+    status.beam = beamLevel(on, beamPulse(time));
+    return moving || assembling_;
   }
 
   /** Squash, stretch and settle each punched cube, as the DOM block's two frames do. */
@@ -795,6 +1028,10 @@ export function startScene(canvas: HTMLCanvasElement, gl: GL, opts: SceneOptions
     gl.activeTexture(gl.TEXTURE0);
     gl.bindTexture(gl.TEXTURE_2D, atlas);
     gl.uniform1i(cu.uAtlas, 0);
+    gl.activeTexture(gl.TEXTURE1);
+    gl.bindTexture(gl.TEXTURE_2D, extra);
+    gl.uniform1i(cu.uExtra, 1);
+    gl.uniform1f(cu.uBeam, status.beam);
     const sun = sunNow();
     gl.uniform3fv(cu.uSun, sun);
     // The Earth turns so the longitude the hero slider shows faces the stop 1 camera.
@@ -816,6 +1053,38 @@ export function startScene(canvas: HTMLCanvasElement, gl: GL, opts: SceneOptions
     gl.bindVertexArray(world.vao);
     gl.drawElementsInstanced(gl.TRIANGLES, 36, gl.UNSIGNED_SHORT, 0, world.count);
     draws++;
+    // Stops 4–6: the canyon and the workbench (once the camera is low enough to see them), the
+    // projects on the bench, and the beacon's beam at Contact.
+    if (p.target[1] < -30 || p.eye[1] < -20) {
+      gl.bindVertexArray(lower.vao);
+      gl.drawElementsInstanced(gl.TRIANGLES, 36, gl.UNSIGNED_SHORT, 0, lower.count);
+      draws++;
+      const full = resolved().motion === 'full' && !isPaused();
+      const now = performance.now();
+      const pieces: Cube[] = projects.flatMap((pr, i) =>
+        assembling(
+          bench.slots[i]!,
+          WORKBENCH.size,
+          pr.tiles,
+          assembleProgress(assembleStart.get(pr.id), now, ASSEMBLE_MS, full),
+          i + 1,
+        ),
+      );
+      // The "next chunk": a pile of TNT pieces that never comes together.
+      pieces.push(
+        ...assembling(bench.pile, WORKBENCH.size, ['tnt-top', 'tnt-side', 'tnt-top'], 0.18, 99),
+      );
+      gl.bindBuffer(gl.ARRAY_BUFFER, projectGroup.vbo);
+      gl.bufferSubData(gl.ARRAY_BUFFER, 0, packCubes(pieces));
+      gl.bindVertexArray(projectGroup.vao);
+      gl.drawElementsInstanced(gl.TRIANGLES, 36, gl.UNSIGNED_SHORT, 0, pieces.length);
+      draws++;
+    }
+    if (status.beam > 0) {
+      gl.bindVertexArray(beamGroup.vao);
+      gl.drawElementsInstanced(gl.TRIANGLES, 36, gl.UNSIGNED_SHORT, 0, beamGroup.count);
+      draws++;
+    }
     // Moving cubes: the chest lid, the satellite, a plane per route.
     const moving: Cube[] = [chestLid(home.chest.hinge, home.chest.size, lidOpen)];
     const sat = radarPoint(t * SCENE.satelliteRadPerS);
@@ -869,6 +1138,51 @@ export function startScene(canvas: HTMLCanvasElement, gl: GL, opts: SceneOptions
       );
       const size = ((b.px / view.height) * 2 * tanHalf * PAGE_DEPTH) / 1.4;
       beside.push({ pos, size, tiles: b.tiles, flags: FLAG.bob, phase: b.phase, spin: b.spin });
+    }
+    // Stop 5: the minecart's track down the margin beside the git log, and the cart at the
+    // current row. A box `w` × `h` × `d` px centred at document (x, y), PAGE_DEPTH ahead.
+    const unit = (2 * tanHalf * PAGE_DEPTH) / view.height;
+    const boxAt = (x: number, y: number, w: number, h: number, d: number, tiles: Cube['tiles']) => {
+      const nx = (x / view.width) * 2 - 1 - p.shift[0];
+      const ny = 1 - ((y - scrollNow) / view.height) * 2 - p.shift[1];
+      const pos = add(
+        add(p.eye, scale(fwd, PAGE_DEPTH)),
+        add(
+          scale(right, nx * tanHalf * aspect * PAGE_DEPTH),
+          scale(upv, ny * tanHalf * PAGE_DEPTH),
+        ),
+      );
+      beside.push({ pos, size: [w * unit, h * unit, d * unit], tiles });
+    };
+    if (track && track.bottom > scrollNow - 40 && track.top < scrollNow + view.height + 40) {
+      const { x, w } = track;
+      const top = Math.max(track.top, scrollNow - 40);
+      const bottom = Math.min(track.bottom, scrollNow + view.height + 40);
+      // The ties every 24 px, then the two rails over them.
+      for (let y = track.top + 12; y < track.bottom; y += 24)
+        if (y > top && y < bottom && beside.length < MAX_PAGE_BLOCKS - 8)
+          boxAt(x, y, w, 5, w * 0.35, 'planks');
+      const rail = Math.max(2, w * 0.12);
+      for (const side of [-1, 1])
+        boxAt(x + side * w * 0.3, (top + bottom) / 2, rail, bottom - top, rail, solidTile('stone'));
+      if (cartY !== null) {
+        const cw = w * 1.1;
+        const ch = cw * 0.62;
+        boxAt(x, cartY, cw, ch, cw * 0.8, [
+          solidTile('ink'),
+          solidTile('stone'),
+          solidTile('stone'),
+        ]);
+        for (const side of [-1, 1])
+          boxAt(
+            x + side * cw * 0.32,
+            cartY + ch * 0.55,
+            cw * 0.22,
+            cw * 0.22,
+            cw * 0.9,
+            solidTile('ink'),
+          );
+      }
     }
     gl.bindBuffer(gl.ARRAY_BUFFER, dynamic.vbo);
     gl.bufferSubData(gl.ARRAY_BUFFER, 0, packCubes(moving));
@@ -1053,6 +1367,31 @@ export function startScene(canvas: HTMLCanvasElement, gl: GL, opts: SceneOptions
   );
   const skills = document.getElementById('skills');
   if (skills) io.observe(skills);
+  // A project's block assembles on the workbench the first time its card comes into view.
+  const cards = new IntersectionObserver(
+    (entries) => {
+      for (const e of entries) {
+        const id = e.target.id.replace(/^project-/, '');
+        if (e.isIntersecting && !assembleStart.has(id)) {
+          assembleStart.set(id, performance.now());
+          request();
+        }
+      }
+    },
+    { threshold: 0.2 },
+  );
+  for (const pr of projects) {
+    const card = document.getElementById(`project-${pr.id}`);
+    if (card) cards.observe(card);
+  }
+  document.addEventListener(
+    'zhic:windows',
+    () => {
+      last = 0;
+      request();
+    },
+    on,
+  );
   const hero = heroGlobe();
   if (hero) {
     io.observe(hero.element);
@@ -1070,6 +1409,44 @@ export function startScene(canvas: HTMLCanvasElement, gl: GL, opts: SceneOptions
   resize();
   layout();
   request();
+
+  /**
+   * The projects on the workbench, from the page (HomePage.astro `data-scene-projects`): each
+   * project's id and block, in the page's order; Clock Stamp's (`demo: world-clock`) carries the
+   * live dial on its sides.
+   */
+  function readProjects(): Array<{ id: string; tiles: Cube['tiles'] }> {
+    const raw = document.querySelector<HTMLElement>('[data-scene-projects]')?.dataset.sceneProjects;
+    let list: Array<[string, string, number]>;
+    try {
+      list = raw ? (JSON.parse(raw) as Array<[string, string, number]>) : [];
+    } catch {
+      list = [];
+    }
+    const TILES: Record<string, Cube['tiles']> = {
+      command: 'command',
+      terminal: ['planks', 'terminal', 'planks'],
+      bookshelf: ['planks', 'bookshelf', 'planks'],
+      obsidian: 'obsidian',
+      gold: 'gold',
+    };
+    return list.map(([id, block, dial]) => ({
+      id,
+      tiles: dial ? ['command', EXTRA_TILE.dial, 'command'] : (TILES[block] ?? 'gold'),
+    }));
+  }
+
+  /** The Clock Stamp phone's cities (copy.yaml projects.phone), for the dial. */
+  function readDial(): { home: string; cities: DialCity[] } {
+    const raw = document.querySelector<HTMLElement>('[data-scene-dial]')?.dataset.sceneDial;
+    try {
+      const d = raw ? (JSON.parse(raw) as { home: string; cities: string[] }) : null;
+      if (d) return { home: d.home, cities: d.cities.map((time_zone) => ({ time_zone })) };
+    } catch {
+      // nothing to draw: an empty dial
+    }
+    return { home: 'UTC', cities: [] };
+  }
 
   function readRoutes(): Array<{ from: RoutePoint; to: RoutePoint }> {
     const raw = document.querySelector<HTMLElement>('[data-scene-routes]')?.dataset.sceneRoutes;
@@ -1096,6 +1473,7 @@ export function startScene(canvas: HTMLCanvasElement, gl: GL, opts: SceneOptions
       ac.abort();
       ro.disconnect();
       io.disconnect();
+      cards.disconnect();
       delete html.dataset.scene;
       gl.getExtension('WEBGL_lose_context')?.loseContext();
       canvas.remove();

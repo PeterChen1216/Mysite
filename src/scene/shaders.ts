@@ -28,6 +28,7 @@ flat out float vTile;
 flat out float vShade;
 flat out float vDay;
 flat out float vLit;
+flat out float vBeam;
 vec3 qrot(vec4 q, vec3 v) { return v + 2.0 * cross(q.xyz, cross(q.xyz, v) + q.w * v); }
 vec3 roty(float a, vec3 v) { float c = cos(a); float s = sin(a); return vec3(c * v.x + s * v.z, v.y, -s * v.x + c * v.z); }
 void main() {
@@ -55,6 +56,7 @@ void main() {
     vDay = s > 0.1 ? 1.0 : (s > -0.1 ? 0.55 : 0.0);
   }
   vLit = -1.0;
+  vBeam = (flags & 8) != 0 ? 1.0 : 0.0;
   if ((flags & 2) != 0) {
     float da = mod(uSweep - iAnim.x, 6.2832);
     vLit = da < 1.4 ? 1.0 - da / 1.4 : 0.0;
@@ -68,18 +70,23 @@ export const CUBE_FS = `#version 300 es
 precision highp float;
 precision highp int;
 uniform highp usampler2D uAtlas;
+// The second texture (M3): the live 24-hour dial (16 × 16 at its corner, tile 16) and the
+// workbench's faces (8 × 8 tiles 18, 19 …, four to a row of 8 texels, beside it).
+uniform highp usampler2D uExtra;
+// The beacon's beam (stop 6): 0 off, up to 1 at the top of a pulse.
+uniform float uBeam;
 uniform vec3 uPalette[16];
 uniform vec2 uFog;
 uniform float uFade;
 uniform float uNight;
 // The scrim (renderer.ts): behind the page's free-standing text the scene gives way to its sky,
 // so text keeps the contrast of its token background. Rects in device px (gl_FragCoord space).
-uniform vec4 uScrim[12];
+uniform vec4 uScrim[16];
 uniform int uScrimN;
 uniform float uScrimEdge;
 float scrim() {
   float s = 0.0;
-  for (int i = 0; i < 12; i++) {
+  for (int i = 0; i < 16; i++) {
     if (i >= uScrimN) break;
     vec4 r = uScrim[i];
     vec2 d = max(max(r.xy - gl_FragCoord.xy, gl_FragCoord.xy - r.zw), vec2(0.0));
@@ -93,6 +100,7 @@ flat in float vTile;
 flat in float vShade;
 flat in float vDay;
 flat in float vLit;
+flat in float vBeam;
 out vec4 outColor;
 void main() {
   vec3 sky = uPalette[0];
@@ -102,10 +110,24 @@ void main() {
     color = uPalette[int(vTile - 32.0 + 0.5)];
   } else {
     int t = int(vTile + 0.5);
-    ivec2 texel = ivec2(t % 4, t / 4) * 8 + ivec2(min(floor(vUv * 8.0), vec2(7.0)));
-    uvec4 s = texelFetch(uAtlas, texel, 0);
+    uvec4 s;
+    if (t == 16) {
+      s = texelFetch(uExtra, ivec2(min(floor(vUv * 16.0), vec2(15.0))), 0);
+    } else if (t > 16) {
+      ivec2 tile = ivec2((t - 16) % 4, (t - 16) / 4) * 8;
+      s = texelFetch(uExtra, tile + ivec2(min(floor(vUv * 8.0), vec2(7.0))), 0);
+    } else {
+      ivec2 texel = ivec2(t % 4, t / 4) * 8 + ivec2(min(floor(vUv * 8.0), vec2(7.0)));
+      s = texelFetch(uAtlas, texel, 0);
+    }
     color = uPalette[int(s.r / 16u)] * (float(s.g) / 128.0);
     glow = float(s.b) / 255.0;
+  }
+  if (vBeam > 0.5) {
+    // The beam: unshaded, from the sky's colour to the beacon's light as it pulses.
+    float f = smoothstep(uFog.x, uFog.y, vDepth);
+    outColor = vec4(mix(mix(sky, mix(color, uPalette[12], 0.35), uBeam), sky, max(f, scrim())), 1.0);
+    return;
   }
   vec3 night = mix(color * uNight, sky, 0.2);
   color = mix(night, color, max(vDay, glow));
@@ -164,12 +186,12 @@ uniform vec2 uFog;
 uniform float uFade;
 // The scrim (renderer.ts): behind the page's free-standing text the scene gives way to its sky,
 // so text keeps the contrast of its token background. Rects in device px (gl_FragCoord space).
-uniform vec4 uScrim[12];
+uniform vec4 uScrim[16];
 uniform int uScrimN;
 uniform float uScrimEdge;
 float scrim() {
   float s = 0.0;
-  for (int i = 0; i < 12; i++) {
+  for (int i = 0; i < 16; i++) {
     if (i >= uScrimN) break;
     vec4 r = uScrim[i];
     vec2 d = max(max(r.xy - gl_FragCoord.xy, gl_FragCoord.xy - r.zw), vec2(0.0));
@@ -223,12 +245,12 @@ uniform float uAlpha;
 uniform float uCell;
 // The scrim (renderer.ts): behind the page's free-standing text the scene gives way to its sky,
 // so text keeps the contrast of its token background. Rects in device px (gl_FragCoord space).
-uniform vec4 uScrim[12];
+uniform vec4 uScrim[16];
 uniform int uScrimN;
 uniform float uScrimEdge;
 float scrim() {
   float s = 0.0;
-  for (int i = 0; i < 12; i++) {
+  for (int i = 0; i < 16; i++) {
     if (i >= uScrimN) break;
     vec4 r = uScrim[i];
     vec2 d = max(max(r.xy - gl_FragCoord.xy, gl_FragCoord.xy - r.zw), vec2(0.0));

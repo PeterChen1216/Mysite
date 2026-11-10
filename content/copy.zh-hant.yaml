@@ -246,7 +246,6 @@ windows:
   move_label: 移動視窗
   move_hint: 方向鍵移動視窗，按住 Shift 移得更遠；Enter 或 Home 放回原處。
   close: 關閉
-  close_label: 關閉視窗
   hint: 按 Esc 或點擊標題欄，把視窗縮回桌面。
   loading: 正在載入區塊…
   failed: 區塊載入失敗。打開這一頁：

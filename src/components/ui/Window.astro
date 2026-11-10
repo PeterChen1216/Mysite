@@ -21,7 +21,7 @@ interface Props {
   labelledby?: string;
   class?: string;
   /** The window's own words for its keys (copy.yaml `windows`); a dialog needs them. */
-  keys?: { move: string; hint: string; close: string; closeLabel: string };
+  keys?: { move: string; hint: string; close: string };
   /** data-* attributes for the scripts. */
   data?: Record<string, string>;
 }
@@ -60,12 +60,7 @@ const dataAttrs = Object.fromEntries(Object.entries(data).map(([k, v]) => [`data
         >
           <PixelIcon name="move" size={18} />
         </button>
-        <button
-          type="button"
-          class="win__key win__close"
-          data-win-close
-          aria-label={keys.closeLabel}
-        >
+        <button type="button" class="win__key win__close" data-win-close>
           <span aria-hidden="true">[x]</span> {keys.close}
         </button>
         <span class="visually-hidden" id={hintId}>

@@ -150,3 +150,53 @@ export function buildAtlas(): Uint8Array {
  */
 export const SOLID = 32;
 export const solid = (slot: Slot): number => SOLID + SLOT[slot];
+
+/* ── the second texture (M3): the live dial and the workbench ─────────────── */
+
+/** 32 × 16 texels: the dial (16 × 16, written by the renderer each new minute) at (0, 0), then
+ * 8 × 8 tiles four to a row of the texture's 8-texel grid: 18 crafting table top, 19 its side. */
+export const EXTRA_W = 32;
+export const EXTRA_H = 16;
+
+const EXTRA_PAINTERS: Record<number, Painter> = {
+  // The crafting table's top: planks under a 3 × 3 grid of darker cells.
+  18: (x, y, r) =>
+    x === 0 || y === 0 || x === 7 || y === 7
+      ? { slot: 'wood', b: 0.7 }
+      : x % 2 === 0 || y % 2 === 0
+        ? { slot: 'ink', b: 0.9 }
+        : { slot: 'wood', b: jitter(r, 0.06) * 1.1 },
+  // Its side: planks with a saw and a hammer hung on them.
+  19: (x, y, r) =>
+    y === 0 || y === 7
+      ? { slot: 'wood', b: 0.7 }
+      : (x === 2 && y > 1 && y < 6) || (y === 2 && x > 1 && x < 4)
+        ? { slot: 'stone', b: 1.1 }
+        : x === 5 && y > 1 && y < 6
+          ? { slot: 'ink', b: 1 }
+          : { slot: 'wood', b: (y % 3 === 0 ? 0.8 : 1) * jitter(r, 0.05) },
+};
+
+/** The second texture's texels, with `dial` (16 × 16 RGBA8, dial.ts) in its corner. */
+export function buildExtra(dial: Uint8Array): Uint8Array {
+  const data = new Uint8Array(EXTRA_W * EXTRA_H * 4);
+  for (let y = 0; y < 16; y++)
+    for (let x = 0; x < 16; x++)
+      data.set(dial.subarray((y * 16 + x) * 4, (y * 16 + x) * 4 + 4), (y * EXTRA_W + x) * 4);
+  for (const [id, paint] of Object.entries(EXTRA_PAINTERS)) {
+    const t = Number(id) - 16;
+    const ox = (t % 4) * TILE;
+    const oy = Math.floor(t / 4) * TILE;
+    const r = rng(2000 + Number(id) * 31);
+    for (let y = 0; y < TILE; y++)
+      for (let x = 0; x < TILE; x++) {
+        const p = paint(x, y, r);
+        const o = ((oy + y) * EXTRA_W + ox + x) * 4;
+        data[o] = SLOT[p.slot] * 16;
+        data[o + 1] = Math.round(Math.min(1.99, Math.max(0, p.b)) * 128);
+        data[o + 2] = p.glow ? 255 : 0;
+        data[o + 3] = 255;
+      }
+  }
+  return data;
+}

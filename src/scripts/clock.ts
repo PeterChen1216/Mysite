@@ -21,9 +21,15 @@ import {
 } from '../lib/world-clock';
 import { MOTION_EVENT, isPaused } from './prefs';
 
-export function initClocks(): void {
-  const els = [...document.querySelectorAll<HTMLElement>('[data-clock][data-tz]')];
-  if (els.length === 0) return;
+/**
+ * Start the phones under `root` (the page; or a project's window over it, M3). Returns what stops
+ * them again (the window's copy goes when the window closes).
+ */
+export function initClocks(root: ParentNode = document): () => void {
+  const els = [...root.querySelectorAll<HTMLElement>('[data-clock][data-tz]')];
+  if (els.length === 0) return () => undefined;
+  const ac = new AbortController();
+  const on = { signal: ac.signal };
   /** The moment shown while paused. */
   let held: Date | null = null;
 
@@ -70,19 +76,30 @@ export function initClocks(): void {
     timer = window.setTimeout(tick, 60_000 - (Date.now() % 60_000) + 50);
   };
   tick();
-  document.addEventListener(MOTION_EVENT, () => {
-    if (isPaused()) {
-      held ??= new Date();
-      window.clearTimeout(timer);
-      timer = 0;
-    } else if (!timer) tick();
-  });
-  for (const phone of document.querySelectorAll<HTMLElement>('[data-phone]'))
-    initPicker(phone, update);
+  document.addEventListener(
+    MOTION_EVENT,
+    () => {
+      if (isPaused()) {
+        held ??= new Date();
+        window.clearTimeout(timer);
+        timer = 0;
+      } else if (!timer) tick();
+    },
+    on,
+  );
+  for (const phone of root.querySelectorAll<HTMLElement>('[data-phone]')) initPicker(phone, update);
   // Timers are throttled in a background tab: catch up as soon as the page is looked at again.
-  document.addEventListener('visibilitychange', () => {
-    if (!document.hidden && !isPaused()) update();
-  });
+  document.addEventListener(
+    'visibilitychange',
+    () => {
+      if (!document.hidden && !isPaused()) update();
+    },
+    on,
+  );
+  return () => {
+    ac.abort();
+    window.clearTimeout(timer);
+  };
 }
 
 /**

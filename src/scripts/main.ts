@@ -11,6 +11,7 @@ import { initPrefs } from './prefs';
 import { initScene } from './scene-loader';
 import { initScrollSpy } from './scrollspy';
 import { initSlots } from './slots';
+import { initWindowLinks } from './window-links';
 
 const start = () => {
   // First: the loops below follow the motion state it keeps current.
@@ -25,6 +26,7 @@ const start = () => {
   initScrollSpy();
   initDismissible();
   initLang();
+  initWindowLinks();
   // Last, and only once the page is usable: the WebGL scene, at graphics tier 3.
   initScene();
 };

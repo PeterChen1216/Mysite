@@ -115,6 +115,32 @@ export const SCENE = {
 } as const;
 
 /**
+ * Floating windows (M3; PLAN §5.2, Figma "Note — how the scene works"): `more ▸` grows a section's
+ * window into its directory — the frame scales out of the key, then its contents fade in — and a
+ * project's window grows out of its title. Esc or the bar shrinks it back. Calm and off open and
+ * close at once (the state changes, nothing moves); so does reduced motion and pause.
+ */
+export const WINDOW = {
+  /** The frame grows from the key to its place, in pixel steps; then its contents fade in. */
+  growMs: 280,
+  growSteps: 7,
+  fadeMs: 160,
+  /** Shrinking back is quicker. */
+  shrinkMs: 180,
+  /** Arrow keys move a window by this much (with Shift, by `far`). */
+  keyStepPx: 16,
+  keyFarPx: 64,
+  /** A window let go this close to its place or to an edge of the desk docks there. */
+  snapPx: 24,
+  /** Kept between a window and the edges of the desk. */
+  marginPx: 8,
+  /** A press on the bar that moved no further than this is a click (it closes the window). */
+  tapSlopPx: 4,
+  /** The widest a docked window gets (the page's content column). */
+  maxWidthPx: 1312,
+} as const;
+
+/**
  * The hover & interaction catalogue (PLAN-EXPERIENCE §6). Row numbers are the table's. Every
  * timing here reaches the page: scripts import these, CSS reads the `--m-*` properties below.
  * `calm` drops the motion and keeps the state change; `off` keeps only the state change.

@@ -33,6 +33,14 @@ interface Status {
   time: number;
   earth: number;
   sky: number[];
+  stop: number;
+  stopName: string;
+  stops: Array<{ name: string; at: number }>;
+  assembled: string[];
+  cartRow: number;
+  cartY: number;
+  beam: number;
+  windowOpen: boolean;
 }
 const status = (page: Page) =>
   page.evaluate(
@@ -90,7 +98,7 @@ async function textContrastProblems(page: Page): Promise<string[]> {
     };
     const out: Array<{ text: string; rects: number[][]; lum: number; ratio: number }> = [];
     const roots = document.querySelectorAll(
-      '.nav, .hero__copy > :not(.term):not(.hero__ctas), .ticker, .sh',
+      '.nav, .hero__copy > :not(.term):not(.hero__ctas), .ticker, .sh, .community__head, .contact__head, .contact__mail, .pc--next',
     );
     for (const root of roots) {
       const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT);
@@ -312,29 +320,145 @@ test.describe('the scene at tier 3', () => {
     expect((await status(page))!.time).toBe(held.time);
   });
 
-  test('the camera follows the scroll through stops 1–3; after About it fades and stops drawing', async ({
+  test('the camera follows the scroll through stops 1–6, all the way down; held, it stops drawing', async ({
     page,
   }) => {
     await open(page, TIER3);
     await page.keyboard.press('p'); // hold the loops: frames now come only from scrolling
     await sceneAt(page, 0);
-    expect((await status(page))!.fade).toBe(0);
-    const about = await page.locator('#about').evaluate((el) => {
-      const r = el.getBoundingClientRect();
-      return { top: r.top + scrollY, bottom: r.bottom + scrollY };
-    });
-    await sceneAt(page, about.top);
-    expect((await status(page))!.fade).toBe(0);
-    await sceneAt(page, about.bottom + 600);
-    expect((await status(page))!.fade).toBe(1);
-    await expect(page.locator('canvas.scene')).toHaveCSS('visibility', 'hidden');
+    const { stops } = (await status(page))!;
+    // M3: hero, island, orbit (M2) and the workbench, the canyon (top and end), the world.
+    expect(stops.map((s) => s.name)).toEqual([
+      'hero',
+      'island',
+      'orbit',
+      'workbench',
+      'canyon',
+      'canyon-end',
+      'world',
+    ]);
+    for (const [i, s] of stops.entries()) {
+      await sceneAt(page, Math.round(s.at));
+      const now = (await status(page))!;
+      expect(now.stopName, s.name).toBe(s.name);
+      expect(now.stop).toBe(i);
+      // It no longer dissolves after About (M2): the world goes on behind Projects and below.
+      expect(now.fade).toBe(0);
+      await expect(page.locator('canvas.scene')).toHaveCSS('visibility', 'visible');
+    }
+    // Settled and held at the bottom: no more frames until something changes.
     const frames = (await status(page))!.frames;
     await page.waitForTimeout(400);
     expect((await status(page))!.frames).toBe(frames);
-    // Back up: it draws again.
     await sceneAt(page, 0);
     expect((await status(page))!.frames).toBeGreaterThan(frames);
-    await expect(page.locator('canvas.scene')).toHaveCSS('visibility', 'visible');
+    expect((await status(page))!.stopName).toBe('hero');
+  });
+
+  test('keyboard flight: ↓ / PgDn fly through the stops in order, Home flies back (no scroll-jacking)', async ({
+    page,
+    browserName,
+  }) => {
+    test.skip(browserName === 'webkit', 'keyboard scrolling of the page body: Chromium');
+    await open(page, TIER3);
+    await page.keyboard.press('p');
+    await page.locator('body').click({ position: { x: 4, y: 300 } });
+    const seen: string[] = [];
+    const settle = () =>
+      page.waitForFunction(() => {
+        const s = (
+          document.querySelector('canvas.scene') as HTMLCanvasElement & {
+            sceneStatus?: { scroll: number; settled: boolean };
+          }
+        )?.sceneStatus;
+        return !!s && Math.abs(s.scroll - window.scrollY) < 1 && s.settled;
+      });
+    for (let i = 0; i < 60; i++) {
+      const before = await page.evaluate(() => scrollY);
+      await page.keyboard.press(i % 2 ? 'PageDown' : 'ArrowDown');
+      await page.waitForFunction((y) => scrollY !== y, before, { timeout: 2000 }).catch(() => {});
+      await settle();
+      const name = (await status(page))!.stopName;
+      if (seen.at(-1) !== name) seen.push(name);
+      if (
+        await page.evaluate(
+          () => scrollY + innerHeight >= document.documentElement.scrollHeight - 1,
+        )
+      )
+        break;
+    }
+    // Every stop, each once, in order: the camera follows the page; it never jumps or runs back.
+    expect(seen).toEqual(['hero', 'island', 'orbit', 'workbench', 'canyon', 'canyon-end', 'world']);
+    await page.keyboard.press('Home');
+    await page.waitForFunction(() => scrollY === 0);
+    await settle();
+    expect((await status(page))!.stopName).toBe('hero');
+  });
+
+  test('stop 4: each project assembles on the workbench as its card comes into view', async ({
+    page,
+  }) => {
+    await open(page, TIER3);
+    const ids = await page
+      .locator('#projects article[id^="project-"]')
+      .evaluateAll((els) => els.map((e) => e.id.replace('project-', '')));
+    expect((await status(page))!.assembled).toEqual([]);
+    for (const id of ids) {
+      await page.locator(`#project-${id}`).scrollIntoViewIfNeeded();
+      await expect.poll(async () => (await status(page))!.assembled).toContain(id);
+    }
+  });
+
+  test('stop 5: the minecart rides beside the git log, at the row in the middle of the view', async ({
+    page,
+  }) => {
+    await open(page, TIER3);
+    await page.keyboard.press('p');
+    const rows = await page
+      .locator('#experience .commit, #community .commit')
+      .evaluateAll((els) => els.map((e) => e.getBoundingClientRect().top + scrollY));
+    expect(rows.length).toBeGreaterThan(1);
+    for (const i of [0, rows.length - 1]) {
+      const vh = await page.evaluate(() => innerHeight);
+      await sceneAt(page, Math.round(rows[i]! + 20 - vh / 2));
+      await expect.poll(async () => (await status(page))!.cartRow).toBe(i);
+      const s = (await status(page))!;
+      expect(Math.abs(s.cartY - (rows[i]! + 20))).toBeLessThan(40);
+    }
+  });
+
+  test('stop 6: the beacon’s beam is on at Contact and pulses with the ping; pause holds it', async ({
+    page,
+  }) => {
+    await open(page, TIER3);
+    await sceneAt(page, 0);
+    expect((await status(page))!.beam).toBe(0);
+    const bottom = await page.evaluate(() => document.documentElement.scrollHeight - innerHeight);
+    await sceneAt(page, bottom);
+    // Running: the level changes as the pings come (one a second).
+    const levels = new Set<number>();
+    for (let i = 0; i < 8; i++) {
+      levels.add(Math.round((await status(page))!.beam * 100));
+      await page.waitForTimeout(150);
+    }
+    expect(Math.max(...levels)).toBeGreaterThan(0);
+    expect(levels.size).toBeGreaterThan(1);
+    await page.keyboard.press('p');
+    const held = (await status(page))!.beam;
+    await page.waitForTimeout(500);
+    expect((await status(page))!.beam).toBe(held);
+  });
+
+  test('a window open over the page holds the world, which goes on when it closes', async ({
+    page,
+  }) => {
+    await open(page, TIER3);
+    await page.locator('#projects .sh__more').click();
+    await expect(page.locator('dialog[data-window-kind="directory"]')).toBeVisible();
+    await expect.poll(async () => (await status(page))!.windowOpen).toBe(true);
+    await expect.poll(async () => (await status(page))!.running).toBe(false);
+    await page.keyboard.press('Escape');
+    await expect.poll(async () => (await status(page))!.running).toBe(true);
   });
 
   test('pause holds it, calm slows it, motion off removes it and brings the DOM art back', async ({
@@ -559,10 +683,16 @@ test.describe('text over the scene keeps its contrast (the scrim, every theme)',
   );
   for (const theme of THEMES)
     for (const width of [1440, 1024])
-      test(`${theme} at ${width} px: hero, About and the fade into Projects`, async ({ page }) => {
+      test(`${theme} at ${width} px: hero, About, Projects, Experience, Contact`, async ({
+        page,
+      }) => {
+        // Nine places since M3, each two screenshots of a software-drawn scene: held (pause), so
+        // each place is drawn once and settles at once.
+        test.slow();
         await page.setViewportSize({ width, height: 900 });
         await seed(page, { theme });
         await open(page, TIER3);
+        await page.keyboard.press('p');
         await page.addStyleTag({ content: 'canvas.scene { transition: none !important; }' });
         const at = await page.evaluate(() => {
           const top = (sel: string) =>
@@ -572,10 +702,17 @@ test.describe('text over the scene keeps its contrast (the scrim, every theme)',
             header: top('#about .sh') - innerHeight * 0.16,
             avgeek: top('#avgeek') - innerHeight * 0.3,
             fading: about.bottom + scrollY - innerHeight * 0.35,
+            // M3: the workbench in Projects' header, the "next chunk" card, the canyon beside the
+            // git log, the community log's heading, and the world at Contact.
+            projects: top('#projects .sh') - innerHeight * 0.16,
+            next: top('.pc--next') - innerHeight * 0.3,
+            experience: top('#experience .sh') - innerHeight * 0.2,
+            community: top('#community') - innerHeight * 0.3,
+            contact: document.documentElement.scrollHeight - innerHeight,
           };
         });
         const problems: string[] = [];
-        for (const y of [0, at.header, at.avgeek, at.fading]) {
+        for (const y of Object.values(at)) {
           await sceneAt(page, Math.round(y));
           problems.push(
             ...(await textContrastProblems(page)).map((p) => `at ${Math.round(y)}: ${p}`),
@@ -585,7 +722,7 @@ test.describe('text over the scene keeps its contrast (the scrim, every theme)',
       });
 });
 
-test.describe('the WebGL share (§7.2: ≥ 35 % of the desktop scroll length at M2)', () => {
+test.describe('the WebGL share (§7.2: ≥ 60 % of the desktop scroll length at M3)', () => {
   test.skip(
     ({ isMobile, browserName }) => isMobile || browserName !== 'chromium',
     'measured once, on desktop Chromium',
@@ -620,11 +757,9 @@ test.describe('the WebGL share (§7.2: ≥ 35 % of the desktop scroll length at 
         `WebGL share ${width}×${height}: ${(share.share * 100).toFixed(1)} % of ${length} px` +
           ` (mean ${(share.meanVisible * 100).toFixed(1)} % of the view; ${(share.meanWhenInView * 100).toFixed(1)} % where in view)`,
       );
-      // 1024 px is the narrowest desktop layout: About's two-column grid leaves 32 px margins, so
-      // between the hero and AvGeek little of the world shows. It falls short of 35 % and is
-      // reported, not asserted (docs/PLAN.md ADR-018 ⑦); every wider desktop layout is held to it.
-      if (width >= 1280) expect(share.share).toBeGreaterThanOrEqual(0.35);
-      else expect(share.share).toBeGreaterThan(0);
+      // M3 (stops 4–6): ≥ 60 % at every desktop width — 1024 px too, which M2 could only report
+      // (PLAN §13 ADR-018 ⑦): the canyon's face now fills the margins beside every section.
+      expect(share.share).toBeGreaterThanOrEqual(0.6);
     });
   }
 });

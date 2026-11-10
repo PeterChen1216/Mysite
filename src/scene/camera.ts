@@ -41,6 +41,8 @@ export interface Stop {
   /** Scroll position (px) at which the camera has arrived at this stop. */
   at: number;
   pose: Pose;
+  /** What it shows (the HUD, tests). */
+  name?: string;
 }
 
 export interface Viewport {

@@ -292,11 +292,10 @@ windows:
   more: more ▸
   more_label: All projects
   # Every window's title bar: the key that moves it (arrow keys; Enter puts it back) and the close
-  # key. Clicking the bar itself, or Esc, also closes the window.
+  # key ("[x] close"). Clicking the bar itself, or Esc, also closes the window.
   move_label: Move window
   move_hint: Arrow keys move the window, with Shift further; Enter or Home puts it back.
   close: close
-  close_label: Close window
   hint: Esc or click the bar to shrink the window back onto the desk.
   # While a project's window loads, and if it can't: then a plain link to the project's page.
   loading: loading chunk…

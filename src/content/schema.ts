@@ -710,7 +710,6 @@ export const copySchema = z
         move_label: text,
         move_hint: text,
         close: text,
-        close_label: text,
         hint: text,
         loading: text,
         failed: text,

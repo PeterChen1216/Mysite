@@ -22,6 +22,9 @@ import Directory from './sections/Directory.astro';
 import Window from './ui/Window.astro';
 import type { Locale } from '../i18n/locales';
 import { getPageData } from '../lib/page-data';
+import { projectBlock } from './sections/projects-view';
+// A project's window shows the markup of the project's page (src/scripts/windows.ts).
+import '../styles/project-detail.css';
 
 interface Props {
   locale: Locale;
@@ -30,15 +33,35 @@ const data = await getPageData(Astro.props.locale);
 // For the WebGL scene (src/scene/, tier 3 only): the routes to draw on its Earth (aviation.yaml
 // `watching`, as airport codes) and the wording of its `?debug=1` line.
 const sceneRoutes = JSON.stringify(data.aviation.watching.map((r) => [r.from, r.to]));
+// Stops 4–6 (M3): each project's block on the workbench (id, block, 1 for the one with the live
+// Clock Stamp dial), and the phone's cities for that dial.
+const sceneProjects = JSON.stringify(
+  data.projects.map((p) => [
+    p.id,
+    p.id === data.featured.id ? 'command' : projectBlock(p),
+    p.demo === 'world-clock' ? 1 : 0,
+  ]),
+);
+const phone = data.copy.projects.phone;
+const sceneDial = JSON.stringify({
+  home: phone.home_zone,
+  cities: phone.cities.map((c) => c.time_zone),
+});
 // The windows over the page (M3): the projects directory that Projects' `more ▸` grows into, and
 // one window that shows a project's page (its body is fetched from that page when opened).
 const w = data.copy.windows;
-const keys = { move: w.move_label, hint: w.move_hint, close: w.close, closeLabel: w.close_label };
+const keys = { move: w.move_label, hint: w.move_hint, close: w.close };
 ---
 
 <BaseLayout data={data}>
   <LangSuggest data={data} />
-  <div class="page" data-scene-routes={sceneRoutes} data-scene-hud={data.copy.scene.hud}>
+  <div
+    class="page"
+    data-scene-routes={sceneRoutes}
+    data-scene-projects={sceneProjects}
+    data-scene-dial={sceneDial}
+    data-scene-hud={data.copy.scene.hud}
+  >
     <!-- Inside the page, so the background still covers the whole first screen. -->
     {data.preview && <LangNotice data={data} />}
     <Background />

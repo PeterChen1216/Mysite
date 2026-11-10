@@ -10,7 +10,8 @@
  * Stop 3 (AvGeek): the Earth from orbit height — the tilted ring is a radar whose blocks light up
  *   as the sweep passes, a satellite on it, and the routes from content/aviation.yaml `watching`
  *   as dashed great-circle arcs (none until the owner lists some).
- * Stops 4–6 (M3) add their own groups; nothing here assumes they don't exist.
+ * Stops 4–6 (M3, below): the canyon under the home island, the workbench on its rim, and the beacon's
+ * beam for the pull-back at Contact.
  */
 import { SOLID, TILE_INDEX, rng, type TileName } from './atlas';
 import { arcLift, greatCircleArc, greatCirclePoint, latLonToVec } from './geo';
@@ -61,6 +62,8 @@ export const FLAG = {
   sweep: 2,
   /** Bobs up and down (anim phase). */
   bob: 4,
+  /** The beacon's beam: glows at the renderer's pulse, unshaded (M3, stop 6). */
+  beam: 8,
 } as const;
 
 export interface Cube {
@@ -465,4 +468,161 @@ export function orbHomes(count = 8, seed = 3): Vec3[] {
     const a = (i / count) * Math.PI * 2 + r() * 0.4;
     return add(ISLAND.center, [Math.cos(a) * 4.2, 2.6 + r() * 2.2, Math.sin(a) * 3.4]);
   });
+}
+
+/* ── stops 4–6 (M3) ─────────────────────────────────────────────────────────── */
+
+/**
+ * The canyon below the home island (PLAN-EXPERIENCE §7.3, stops 4–6): a landmass split by a
+ * gorge, its front face towards the camera. The camera comes down its face past Projects and
+ * Experience, so wherever the page leaves room — its margins, the gaps between cards, the bands
+ * between sections — the world shows: grass at the rim, dirt, then stone with ores and the odd
+ * glowstone, a back wall deep in the gorge. Block edge `block`; the gorge is `inner` wide each side
+ * of x = 0; the face is at z = 0, the back wall at z = `back`.
+ */
+export const CANYON = {
+  top: -72,
+  bottom: -192,
+  inner: 11,
+  outer: 66,
+  block: 3,
+  back: -30,
+};
+
+/** The workbench ledge across the rim (stop 4): where the projects are made. */
+export const WORKBENCH = {
+  /** The ledge's top surface centre. */
+  center: [0, CANYON.top + 1.5, 9] as Vec3,
+  /** Rough radius, for framing it on screen. */
+  radius: 8.5,
+  /** A project block's edge. */
+  size: 1.7,
+};
+
+/** Tile ids of the second texture (the renderer's `extra`): the live dial and the workbench. */
+export const EXTRA_TILE = { dial: 16, craftingTop: 18, craftingSide: 19 } as const;
+
+/** The canyon's face, walls and back: cube instances (static). */
+export function canyon(seed = 77): Cube[] {
+  const r = rng(seed);
+  const { top, bottom, inner, outer, block: b, back } = CANYON;
+  const cubes: Cube[] = [];
+  const rows = Math.round((top - bottom) / b);
+  const tile = (row: number): Cube['tiles'] => {
+    if (row === 0) return GRASS;
+    if (row < 3) return 'dirt';
+    const x = r();
+    if (row > rows - 6 && x < 0.25) return 'obsidian';
+    if (x < 0.045) return 'diamond-ore';
+    if (x < 0.065) return 'gold';
+    if (x < 0.08) return 'glowstone';
+    return 'stone';
+  };
+  for (let row = 0; row < rows; row++) {
+    const y = top - row * b - b / 2;
+    // The gorge's edge wanders a little, row by row, each side on its own.
+    for (const side of [-1, 1]) {
+      const edge = inner + Math.floor(r() * 2.4) * b * 0.5;
+      for (let x = edge; x < outer; x += b) {
+        cubes.push({ pos: [side * (x + b / 2), y, -b / 2], size: b, tiles: tile(row) });
+        // The wall's side in the gorge: a few blocks deep at its edge.
+        if (x === edge)
+          for (let z = 1; z < 4; z++)
+            cubes.push({ pos: [side * (x + b / 2), y, -b / 2 - z * b], size: b, tiles: tile(row) });
+      }
+    }
+    // The back of the gorge.
+    for (let x = -inner - b; x < inner + b; x += b)
+      cubes.push({ pos: [x + b / 2, y, back], size: b, tiles: row === 0 ? GRASS : 'stone' });
+  }
+  return cubes;
+}
+
+/**
+ * The workbench (stop 4): a grass ledge across the rim, a crafting table at its back, a pedestal
+ * per project in a row in front (the projects stand on them: `pedestals`), and room for the
+ * "next chunk" pile beside them.
+ */
+export function workbench(projects: number): { cubes: Cube[]; slots: Vec3[]; pile: Vec3 } {
+  const c = WORKBENCH.center;
+  const cubes: Cube[] = [];
+  const b = 1.5;
+  // The ledge: 13 × 6 blocks, its top surface at c[1].
+  for (let i = -6; i <= 6; i++)
+    for (let k = -3; k <= 2; k++) {
+      cubes.push({ pos: add(c, [i * b, -b / 2, k * b]), size: b, tiles: GRASS });
+      if (Math.abs(i) < 5 && k > -3)
+        cubes.push({ pos: add(c, [i * b, -b * 1.5, k * b]), size: b, tiles: 'dirt' });
+    }
+  // The crafting table at the back.
+  cubes.push({
+    pos: add(c, [0, 0.8, -3]),
+    size: 1.6,
+    tiles: [EXTRA_TILE.craftingTop, EXTRA_TILE.craftingSide, 'planks'],
+  });
+  // One pedestal per project (and one more for the pile), centred in a row in front.
+  const n = projects + 1;
+  const gap = 3;
+  const slots: Vec3[] = [];
+  for (let i = 0; i < n; i++) {
+    const x = (i - (n - 1) / 2) * gap;
+    cubes.push({ pos: add(c, [x, 0.25, 1.2]), size: [1.4, 0.5, 1.4], tiles: 'stone' });
+    slots.push(add(c, [x, 0.5 + WORKBENCH.size / 2 + 0.05, 1.2]));
+  }
+  return { cubes, slots: slots.slice(0, projects), pile: slots[projects]! };
+}
+
+/**
+ * A project's block as it assembles (0 → 1) when its card comes into view: eight quarter blocks
+ * fly in from around it, turning, and click together; from 1 on it is one whole block.
+ */
+export function assembling(
+  center: Vec3,
+  size: number,
+  tiles: Cube['tiles'],
+  t: number,
+  seed = 1,
+): Cube[] {
+  if (t >= 1) return [{ pos: center, size, tiles }];
+  const r = rng(seed);
+  const e = Math.max(0, Math.min(1, t));
+  const k = 1 - (1 - e) ** 3; // ease out
+  const half = size / 2;
+  const out: Cube[] = [];
+  for (const dx of [-1, 1])
+    for (const dy of [-1, 1])
+      for (const dz of [-1, 1]) {
+        const home: Vec3 = [(dx * half) / 2, (dy * half) / 2, (dz * half) / 2];
+        const away: Vec3 = [
+          dx * (0.5 + r() * 0.6) * size,
+          dy * (0.3 + r() * 0.5) * size + size * 0.9,
+          dz * (0.5 + r() * 0.6) * size,
+        ];
+        const turn = (1 - k) * (r() * 2 - 1) * Math.PI;
+        out.push({
+          pos: add(center, add(home, scale(away, 1 - k))),
+          size: half * (0.6 + 0.4 * k),
+          tiles,
+          quat: quatAxisAngle([0, 1, 0], turn),
+        });
+      }
+  return out;
+}
+
+/**
+ * The beacon's beam (stop 6): a column of glowing blocks from the beacon under the Earth up into
+ * the sky (through the Earth, as a beacon's beam goes through blocks). FLAG.beam: its brightness
+ * is the renderer's pulse, timed with the ping line.
+ */
+export function beam(): Cube[] {
+  const base = EARTH.center[1] - EARTH.radius - 1.8;
+  const cubes: Cube[] = [];
+  for (let y = base; y < 160; y += 2.5)
+    cubes.push({
+      pos: [EARTH.center[0], y + 1.25, EARTH.center[2]],
+      size: [0.7, 2.5, 0.7],
+      tiles: solidTile('diamond'),
+      flags: FLAG.beam,
+    });
+  return cubes;
 }

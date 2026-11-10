@@ -39,6 +39,7 @@ export default defineConfig({
         'src/lib/ambient.ts',
         // M3: the 404's language and home, the windows' geometry and history.
         'src/lib/not-found.ts',
+        'src/lib/windows.ts',
         // The WebGL scene's pure parts (the renderer and GL plumbing are covered by E2E).
         'src/scene/tier.ts',
         'src/scene/math.ts',
@@ -51,6 +52,9 @@ export default defineConfig({
         'src/scene/watchdog.ts',
         'src/scene/share.ts',
         'src/scene/airports.ts',
+        // M3: stops 4–6 (the minecart, the beam, the live dial).
+        'src/scene/path.ts',
+        'src/scene/dial.ts',
       ],
       // PLAN §9.1: key utility functions ≥ 80 %, per file so one module can't hide behind others.
       thresholds: { lines: 80, functions: 80, branches: 80, statements: 80, perFile: true },
