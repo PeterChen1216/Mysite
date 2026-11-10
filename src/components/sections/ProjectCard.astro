@@ -272,6 +272,8 @@ const block: BlockName = projectBlock(p);
       -webkit-line-clamp: 3;
       line-clamp: 3;
       overflow: hidden;
+      /* A long word ("schools/cities" at 320 px with the largest text) breaks, never clipped. */
+      overflow-wrap: anywhere;
     }
     :global(html.js) .pc__body :global(li:not(:first-child)),
     :global(html.js) .pc__body :global(li ~ p),

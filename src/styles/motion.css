@@ -118,6 +118,21 @@ html.motion [data-loop='orbit-sway'] {
     rotate: var(--m-sway-deg);
   }
 }
+/* Phones (X4): the two rings fade in with the globe they circle, as the blocks and the name tag
+   already do. There the stage sits at the foot of the first screen, and a ring drawn from the first
+   frame would be the screen's largest paint (its LCP) for a picture that is decoration. */
+@media (max-width: 767px) {
+  html.intro [data-loop='orbit'] {
+    animation:
+      loop-spin calc(var(--m-orbit-turn) * var(--loop-slow, 1)) linear infinite,
+      intro-fade var(--m-globe-fade-dur) ease-out var(--m-globe-delay) backwards;
+  }
+  html.intro [data-loop='orbit-sway'] {
+    animation:
+      loop-sway calc(var(--m-sway-dur) * var(--loop-slow, 1)) ease-in-out infinite alternate,
+      intro-fade var(--m-globe-fade-dur) ease-out var(--m-globe-delay) backwards;
+  }
+}
 @keyframes loop-spin {
   to {
     rotate: 360deg;

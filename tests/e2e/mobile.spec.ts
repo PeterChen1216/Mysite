@@ -242,7 +242,9 @@ test.describe('the hotbar (§8.2)', () => {
   }) => {
     await page.goto(V2);
     const hidden = () => page.evaluate(() => document.documentElement.dataset.bars ?? 'shown');
-    await page.mouse.wheel(0, 900);
+    // A scroll as a swipe makes it (mobile WebKit has no mouse wheel to send).
+    const scroll = (dy: number) => page.evaluate((y) => window.scrollBy(0, y), dy);
+    await scroll(900);
     await expect.poll(hidden).toBe('hidden');
     // Moved off screen, never out of the accessibility tree or the Tab order.
     await expect
@@ -250,9 +252,9 @@ test.describe('the hotbar (§8.2)', () => {
       .toBeGreaterThanOrEqual(PHONE.height - 1);
     await expect(hotbar(page).getByRole('link').first()).toBeAttached();
     expect(await hotbar(page).evaluate((el) => getComputedStyle(el).visibility)).toBe('visible');
-    await page.mouse.wheel(0, -200);
+    await scroll(-200);
     await expect.poll(hidden).toBe('shown');
-    await page.mouse.wheel(0, 900);
+    await scroll(900);
     await expect.poll(hidden).toBe('hidden');
     await hotbar(page).getByRole('link').first().focus();
     await expect.poll(hidden).toBe('shown');

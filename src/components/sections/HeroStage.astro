@@ -467,11 +467,13 @@ const badges = [
       height: 318px;
       opacity: 0.45;
     }
+    /* The frame's 358 × 118 box (centred at y 171) squashes the 540 × 200 ring: it keeps its own
+       proportions here, centred on the same line (an image is never shown distorted). */
     .stage-wrap .stage__orbit2 {
       left: 0;
-      top: 112px;
+      top: calc(171px - 358px * 100 / 540);
       width: 358px;
-      height: 118px;
+      height: calc(358px * 200 / 540);
       transform: none;
       opacity: 0.6;
     }

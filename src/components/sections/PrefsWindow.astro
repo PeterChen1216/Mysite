@@ -514,10 +514,16 @@ const keys = [
       max-height: none;
       margin: 0;
     }
-    /* The hotbar shows above the dimmed page, ⚙ selected (::backdrop inherits nothing everywhere
-       yet, so the bar's height is written out). */
+    /* The hotbar shows through the backdrop, undimmed, ⚙ selected: the backdrop still covers it,
+       so a tap there is a tap outside the window, which closes it, in every browser (the bar
+       itself is inert while the window is open). ::backdrop inherits nothing everywhere yet, so
+       the bar's height is written out. */
     .prefs::backdrop {
-      bottom: calc(64px + env(safe-area-inset-bottom));
+      background: linear-gradient(
+        to top,
+        transparent calc(64px + env(safe-area-inset-bottom)),
+        var(--color-backdrop) 0
+      );
     }
     .prefs__close {
       min-height: 44px;
