@@ -4,6 +4,8 @@
 > 本文是**可执行的项目章程 + 实施计划**，不是灵感板。目标读者是接手实现的 Opus 会话，以及作为业主的 Peter。
 > 任何与本文冲突的即兴想法，先写进 §13 决策记录，再改代码。
 >
+> **2026-11-10 起**：M2 之后的顺序与范围以 [`PLAN-EXPERIENCE.md`](PLAN-EXPERIENCE.md) 为准（主题、多语言、无障碍、hover 目录、图形分级与 WebGL 占比、移动端）；本文的目标、边界、护栏与 M0–M5 的验收仍然有效。实际技术栈见 §13 ADR-009 / ADR-014（Astro 7、原生 TS，无 React）。
+>
 > 关联资产：Figma 原型 https://www.figma.com/design/cA9xh6uSZZvmFCUzrAhxjk （页 `Home — Voxel`：长页面版、🎬 Scroll-driven scene 相机停靠版、🧱 Components、🎨 Style tile、✨ Motion & Interactions）
 > 参考站：https://0z5a.github.io/ （单场景 + 相机路径 + 漂浮窗口的交互范式）
 

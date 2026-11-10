@@ -3,7 +3,7 @@
 Zhicheng (Peter) Chen's personal site — v2, built with [Astro](https://astro.build) and deployed to GitHub Pages.
 
 - **Edit content:** only touch [`content/`](content/) (YAML + Markdown). Every field is schema-checked in CI.
-- **Plan & decisions:** [`docs/PLAN.md`](docs/PLAN.md) · [`docs/DECISIONS.md`](docs/DECISIONS.md) · [`docs/STATUS.md`](docs/STATUS.md)
+- **Plan & decisions:** [`docs/PLAN.md`](docs/PLAN.md) · [`docs/PLAN-EXPERIENCE.md`](docs/PLAN-EXPERIENCE.md) (themes, languages, accessibility, hover, WebGL share, mobile) · [`docs/DECISIONS.md`](docs/DECISIONS.md) · [`docs/STATUS.md`](docs/STATUS.md)
 - **Old site:** kept in [`legacy/`](legacy/); it stays at https://zhic.me/ until `launched: true` in `content/site.yaml`, and at `/legacy/` afterwards. The v2 preview lives at https://zhic.me/v2/.
 
 ## Develop

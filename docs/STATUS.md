@@ -1,6 +1,6 @@
 # STATUS（会话交接 · PLAN §15.6）
 
-> 更新：2026-11-09（M1 已接受并合并）· 分支 `claude/affectionate-dirac-6zpbqu`
+> 更新：2026-11-10（全项目审计 + Clock Stamp 手机重做 + 体验扩展计划）· 分支 `claude/happy-einstein-dkkcxx`（未合并，等业主审）
 
 ## 当前状态
 | 里程碑 | 状态 |
@@ -11,6 +11,40 @@
 | M2 体素场景 / M3 窗口 | 未开始 |
 
 线上：zhic.me/（旧站，不变）· zhic.me/v2/（M1 长页面版）· zhic.me/legacy/。
+
+---
+
+## 🔎 2026-11-10 全项目审计（分支 `claude/happy-einstein-dkkcxx`，未合并）
+
+基线：格式 / lint / 类型 / 内容检查 / 单测 123 / 构建 / 体积 / E2E 73 全绿；改动后单测 130、E2E 79（Chromium + 移动 Chromium；WebKit 只在 CI 跑，本地未跑），Lighthouse（上线配置，5 次中位数）100 / 100 / 100 / 100，LCP ≈ 0.76 s，CLS 0，首屏 JS 2.7 KB gz。
+
+### 已修（有把握的）
+| 类别 | 内容 |
+|---|---|
+| **线上旧站（zhic.me/ 现在就在用）** | 每次访问 4 个 404：`css/custom.css`、`css/academicons.css`、`js/jquery-2.1.3.min.js`（文件从未存在）与 `main.css` 引用的背景图 → 已去掉；HTML 标签不配对（多余 `</div>`、未闭合 `<ul>`、页面容器未闭合）→ 已配平；"Information School" 的链接是空的 → 已包住文字；头像 2.9 MB → 99 KB（显示 135 px，还被当作 favicon）；删除模板前主人留下的注释块（跳转到别人主页的 meta、别人的论文新闻、未用脚本）；删除没有任何引用的 `bootstrap.css`、`css/style.css`、`stylesheet.css`、`font-awesome/`（共 780 KB）。除头像重采样与新链接外，渲染逐像素不变 |
+| **Clock Stamp 手机样机** | 原样机是 "STAMP + 坐标 + 地球"，不是 App 的样子，而且坐标换行后被地球盖住。按业主截图重做为 App 的世界时钟界面（像素风）：城市名、时差、时间、日期、24 小时表盘（夜间点阵地图）+ 每城一根指针。**跑真实时间**（每分钟走针；无 JS 时显示构建用的固定时刻）。表盘标记按业主要求为 **FRA / SEA / SHA**；SEA 在本地时区，所以是带定位箭头的"这里"指针。城市在 `content/copy.yaml → projects.phone` 改；`projects/clock-stamp.md` 新增 `demo: world-clock`（以前任何 featured 的 iOS 项目都会显示这部手机） |
+| 不一致 | 多处写死的同一颜色收进 `tokens.css`（AA 紫 `#b866f5` 4 处而 token 仍是 `#a335ee`、`#55ffff` 4 处、`#5000ff` 3 处、墨/纸/字影）；符号字体栈 4 处 → `--font-symbol`；`--gutter` 用 `--content-max`；hover 粒子颜色改为运行时读 token（为主题切换铺路）。**整页截图 1440 / 1024 / 390 逐像素相同** |
+| 过期 / 多余 | `WhoamiCard` 的 cyan 颜色补丁（`Chip` 早已有 cyan）；`About` 里重复 `Card` 默认值的 padding / 阴影覆盖；`page-data.ts` 里一次什么都没改的数组复制；未使用的 `hashkey-pixel.svg`；几处过期注释（"M0 plain page"、"sync in M1"、"see integration notes"） |
+| 脚本 | `check-js-budget.mjs` 把预览路径写死为 `v2/`，且引用的脚本文件不存在时静默跳过（会少算）→ 改为读 `site.config`，缺文件即失败 |
+| 文案拼写（只改拼写 / 语法，不改意思） | `site.yaml`：an personal → a personal；页脚 "Expected to updated by each 2 weeks." → "Expected to be updated every 2 weeks."；`about.md`：Tech fans → tech fan、colaboration → collaboration；`profile.yaml`：UW 27' → UW ’27（原 E6） |
+
+### 请你过目（没动，需要你决定）
+1. **是否上线**（`launched: true`）。旧站仍显示过期事实：GPA 3.81、Junior、June 2027、"Time Stamp"、"about to release… April/May"、163 邮箱。上线是修这些最干净的办法。
+2. `legacy/work/njzposts.pdf`（5 MB）公开可访问、没有任何页面链接它 → 删除？（原 E3）
+3. 两个项目都是 `featured: true`（Clock Stamp、X Community Notes），但只有第一个用大卡片；`featured` 同时决定滚动条里出现哪些项目。是想要两个大卡，还是只留一个 featured？
+4. Dean's List 在 About 相邻两张卡里各出现一次、写法不同（`education.yaml → honors` 与 `honors.yaml`）。留哪一处？
+5. 导航的 RESUME 在新标签页打开，Hero / Contact 的是下载。统一成哪一种？
+6. `projects/classmate-map.md` 的句子 "Created a map show the current schools/cities…" 语法不通，需要你重写；新简历没有这个项目，是否保留？（原 E1）
+7. `interests.yaml`："flight routes, seats, crafts, mileage plans" 的 crafts 是否想写 aircraft？
+8. HashKey logo 在 44 px 的格子里几乎看不清（深色方块里的小字标）。换成只有图形的版本，或放大格子？
+9. `content/images/avatar.jpg` 源文件 2.9 MB（访客拿到的是 2–7 KB，不影响速度，只影响仓库体积）。要不要缩到 1200 px？
+10. `tokens.css` 里有 18 个没被用到的 token（`--space-*` 的一部分、`--shadow-hard`、`--radius`、`--type-term-lg`、`--color-block-dirt/stone`、`--color-text-lo`）。它们对应 Figma 变量，我保留了；要不要清掉？
+11. 远端分支 `claude/affectionate-dirac-6zpbqu`（与 main 完全相同）和 `claude/upbeat-jones`（已合并）可以删除。
+12. **Figma 没改**：手机样机节点（22:1158）还是旧设计；下面 D 的偏差清单也还没回写。需要的话我来改 Figma。
+13. 小的技术债（不影响访客）：`getCopy()` 每个按钮 / 新标签提示各算一次（一次构建约 25 次，页面多了再做缓存）；导航高亮按"可见比例"选区块，很高的区块在边界处可能输给矮的邻居（现有测试都过）；`content/README.md` 提到的 `docs/CONTENT-GUIDE.md` 要到 M4 才有。
+
+### 新计划：`docs/PLAN-EXPERIENCE.md`
+回应"更多动态图形 / WebGL 占比、主题（多语言、黑白、色盲、更多无障碍）、更多 hover、移动端要有计划"。七条工作线（设置与 token、主题、无障碍、语言、hover 目录、图形分级与 WebGL 占比、移动端），每条有边界、预算、验收；里程碑改为 **X1 基础 → X2 语言 → M2 场景 → X3 交互 → M3 窗口 → X4 移动 → M4 → M5**；末尾 10 个问题等你回答（都有默认值）。五套主题的配色已算过对比度，全部 ≥ AA。
 
 ---
 
