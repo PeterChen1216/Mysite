@@ -85,3 +85,20 @@ tools:   # 页面上的外链"工具栏"
 | R2-4 | 新简历更新是否直接上线 | **评审 + CI 通过后以业主账号 squash 合并上线**（合并提交只署业主名） | 旧首页的 `/work/Resume.pdf` 同步变为新简历 |
 
 同时由新简历确定：项目正式名为 **Clock Stamp**（已上架 App Store），研究项目 X Community Notes、TA、Merit Interactive 实习、志愿经历与技能均按简历原文迁入。
+
+---
+
+## 2026-11-10 · 第三轮（Peter，审计与体验扩展计划之后）
+
+| # | 问题 | 决定 | 对计划的影响 |
+|---|---|---|---|
+| R3-1 | 语言（PLAN-EXPERIENCE Q-L1） | **英文 + 中文，中文要简体和繁体两个版本** | 三个语言版本：`/`（en）、`/zh-hans/`（简体，`lang="zh-Hans"`）、`/zh-hant/`（繁體，`lang="zh-Hant"`）；按"字体"而不是按地区命名。取代此前"v2 仅英文"。细节见 `PLAN-EXPERIENCE.md` §5 |
+| R3-2 | 体验扩展计划整体 | **同意按计划推进**（"sounds good, for now"），由 Opus（xhigh）逐个里程碑实现，从 X1 开始 | 顺序 X1 → X2 → M2 → X3 → M3 → X4 → M4 → M5；其余开放问题按计划里的默认值 |
+| R3-3 | Clock Stamp 手机表盘上的城市标记 | **FRA – Frankfurt、SEA – Seattle、SHA – Shanghai** | `content/copy.yaml → projects.phone.cities`（已实现） |
+
+由 R3-1 带出的做法（待业主确认的只有 Q-L3）：
+- 简体由业主写或审定，是中文的源头；繁体先由脚本从简体**只转换字形**（不改用词）生成草稿，业主读过、改掉一对多的错字（发→發/髮、后→後/后 等）后才上线，之后繁体文本归业主手工维护，脚本不再覆盖。
+- 两种中文各用各的像素字体切分（Fusion Pixel `zh_hans` / `zh_hant`）和各自的系统正文字体，不混用。
+- 首次访问只"建议"语言、不自动跳转：`zh-TW` / `zh-HK` / `zh-MO` / `zh-Hant` → 繁體；`zh-CN` / `zh-SG` / `zh` → 简体。
+- **Q-L3（未答，默认按字形转换）**：繁体要不要用地区用词（台湾：軟體、網路；或香港用词）？
+

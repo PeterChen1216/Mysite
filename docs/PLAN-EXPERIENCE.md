@@ -12,7 +12,7 @@
 | A | Preferences & tokens | One settings surface (theme, motion, language, text size); every colour through tokens | **X1** |
 | B | Themes | Night (default), Day, Mono dark, Mono light, Colour-blind-safe; honours OS contrast settings | **X1** |
 | C | Accessibility programme | WCAG 2.2 AA as a tested contract, plus pause-all, 200 % zoom, print | **X1** → every milestone |
-| D | Languages | English + 简体中文 first; structure ready for more | **X2** |
+| D | Languages | English + Chinese in **both scripts** (简体 and 繁體); structure ready for more | **X2** |
 | E | Hover & interaction catalogue | A designed, consistent response for every interactive thing, with touch and keyboard twins | **X3** |
 | F | Dynamic graphics / WebGL | Graphics tiers, one shared renderer, a stated share of the page that is live | **M2** (re-scoped) |
 | G | Mobile build | Hotbar navigation, touch-first interactions, mobile graphics tiers, device matrix | **X4** |
@@ -64,7 +64,7 @@ A terminal window, `~/.config` (opened from a key in the nav, from `prefs` in th
 ```
 $ theme --set night|day|mono-dark|mono-light|cvd        [auto follows the OS]
 $ motion --set full|calm|off                             [auto follows the OS]
-$ lang --set en|zh                                       [auto follows the browser]
+$ lang --set en|zh-hans|zh-hant                          [auto follows the browser]
 $ text --size 100|115|130
 $ reset
 ```
@@ -173,33 +173,36 @@ None by default. If block sounds are ever added (PLAN §"micro-interactions"), t
 
 ## 5. Workstream D — languages
 
-### 5.1 Decision needed first
-PLAN/DECISIONS currently say "English only for v2". The owner has now asked for more language versions, so this plan assumes: **English (default) + 简体中文**, structure ready for a third (日本語 is the natural next, given the pixel font below has a Japanese cut). Recorded as open question Q-L1 (§10).
+### 5.1 Decided (owner, 2026-11-10 — DECISIONS R3-1)
+**English (default) + Chinese in both scripts: Simplified (`zh-Hans`, 简体中文) and Traditional (`zh-Hant`, 繁體中文).** Three locales ship in X2. The structure stays ready for a fourth (日本語 is the natural next: the pixel font below has a Japanese cut). This replaces "English only for v2" in PLAN §1.4 / §5.4.
 
 ### 5.2 Architecture (static, no client-side translation)
-- Routes: `/` (en), `/zh/` (zh-Hans). Astro i18n routing with `prefixDefaultLocale: false`; each page statically generated per locale.
+- Routes: `/` (en), `/zh-hans/`, `/zh-hant/` — named by **script**, not region (`zh-cn` / `zh-tw` would wrongly tell a Singapore or Hong Kong reader the page is not for them). `lang` attributes are `zh-Hans` and `zh-Hant`. Astro i18n routing with `prefixDefaultLocale: false`; each page statically generated per locale. `/zh/` is not a page: it is listed nowhere and, if requested, 404s like any unknown path.
 - `<link rel="alternate" hreflang>` pairs + `x-default`; `og:locale`; canonical per locale.
-- The language key in settings is a link to the same section on the other locale (works without JS); "auto" only *suggests* on first visit (a dismissible one-line banner), it never redirects (redirects break sharing and crawlers).
+- The language choice in settings is three links (English · 简体中文 · 繁體中文), each to the same section on that locale (works without JS), each written in its own language with its own `lang`. "auto" only *suggests* on first visit (a dismissible one-line banner), it never redirects (redirects break sharing and crawlers). Mapping for the suggestion, from `navigator.languages` in order: `zh-Hant*`, `zh-TW`, `zh-HK`, `zh-MO` → Traditional; `zh-Hans*`, `zh-CN`, `zh-SG`, `zh-MY`, bare `zh` → Simplified.
 
 ### 5.3 Content model
 | Kind | Where | Rule |
 |---|---|---|
-| Interface copy | `content/copy.yaml` → `content/copy.<lang>.yaml` | same keys, schema-checked; a missing key fails the build (no silent English) |
+| Interface copy | `content/copy.yaml` → `content/copy.zh-hans.yaml`, `content/copy.zh-hant.yaml` | same keys, schema-checked; a missing key fails the build (no silent English) |
 | Facts with no language (dates, GPA, URLs, stack names, IATA codes) | unchanged, single source | never duplicated |
-| Facts with language (role titles, highlights, project bullets, about.md) | a `zh:` sibling next to the English field, or `about.zh.md` | **optional per field**; a missing translation falls back to English, marked `lang="en"` so screen readers pronounce it correctly |
+| Facts with language (role titles, highlights, project bullets, about.md) | `zh-hans:` and `zh-hant:` siblings next to the English field, or `about.zh-hans.md` / `about.zh-hant.md` | **optional per field and per script**; a missing translation falls back to English, marked `lang="en"` so screen readers pronounce it correctly |
 | Proper nouns (company, school, product names) | keep the official name; add the official local name only if one exists | owner decides per name |
 | Résumé PDF | English only unless the owner supplies a second PDF | the button label says so |
 
-### 5.4 Who writes the Chinese
-The owner. Claude may draft, but a draft is committed with `draft: true` on the field and the content guard blocks it from `main` exactly like `TODO:` (PLAN §7.5). No machine translation reaches the live site unread.
+### 5.4 Who writes the Chinese, and how the two scripts stay in step
+- **Simplified is the source**, written or approved by the owner. Claude may draft, but a draft is committed with `draft: true` on the field and the content guard blocks it from `main` exactly like `TODO:` (PLAN §7.5). No machine translation reaches the live site unread.
+- **Traditional is derived, then owned.** A script (`pnpm content:hant`, build-time only, OpenCC data as a dev dependency) converts every Simplified field that has no Traditional sibling and writes the result into the content files as `draft: true`. It converts **script only** (OpenCC `s2t`): characters change, wording does not, so it never rewrites 软件 into 軟體 or picks Taiwan over Hong Kong usage on the owner's behalf. The owner then reads it, fixes the handful of one-to-many characters a converter can get wrong (发 → 發 / 髮, 后 → 後 / 后, 干 → 乾 / 幹 / 干, 面 → 麵 / 面 …), adjusts wording if a regional flavour is wanted, and removes `draft`. From then on that Traditional text is hand-owned: the script never overwrites a field that exists.
+- **Staleness is reported, not hidden.** Each translated field records the hash of the text it was made from. When the English changes, both Chinese fields are listed in a CI report; when the Simplified changes, its Traditional sibling is. A stale translation still shows (it is the owner's approved text) until updated; a missing one falls back to English with `lang="en"`.
+- Proper nouns follow each script's own official form where one exists (華盛頓大學 / 华盛顿大学), otherwise stay in English — owner decides per name (Q-L2).
 
 ### 5.5 Type
-- Pixel CJK: **Fusion Pixel** (SIL OFL; 12 px grid; has zh-Hans, zh-Hant, ja, ko cuts) for headings, labels and terminal text; body in a system CJK sans (`PingFang SC`, `Noto Sans SC`, `Microsoft YaHei`) for reading comfort.
-- Subset at build time to the glyphs actually used on the page (a script walks the built HTML per locale); budget ≤ 160 KB; loaded only on `/zh/`.
+- Pixel CJK: **Fusion Pixel** (SIL OFL; 12 px grid) for headings, labels and terminal text — its `zh_hans` cut on `/zh-hans/` and its `zh_hant` cut on `/zh-hant/`, never one for both: the same code point is drawn differently in each tradition (骨, 直, 门/門 radicals), and the wrong cut reads as a foreign font. Body in a system CJK sans for reading comfort: `PingFang SC`, `Noto Sans SC`, `Microsoft YaHei` for Simplified; `PingFang TC`, `Noto Sans TC`, `Microsoft JhengHei` for Traditional. The `lang` attribute must be exact so browsers pick the right glyph forms in fallback fonts too.
+- Subset at build time to the glyphs actually used on the page (a script walks the built HTML per locale); budget ≤ 160 KB **per script**; each loaded only on its own locale.
 - Line-height and tracking tokens get a per-locale override (CJK needs looser leading, no letter-spacing, no `text-transform: uppercase`).
-- Layout tests (text not cut off, 10 widths) run per locale: Chinese strings are shorter but taller; German-length strings are the stress case if a third language comes.
+- Layout tests (text not cut off, 10 widths) run per locale: Chinese strings are shorter but taller, and Traditional glyphs are denser at small pixel sizes (legibility check at 12 px in the manual pass); German-length strings are the stress case if a Latin language comes later.
 
-**Acceptance (D):** `/zh/` builds from content with zero untranslated interface strings; untranslated facts are English with `lang="en"`; hreflang validates; CLS ≤ 0.05 on `/zh/`; font payload within budget; every E2E content test runs for both locales.
+**Acceptance (D):** `/zh-hans/` and `/zh-hant/` build from content with zero untranslated interface strings; untranslated facts are English with `lang="en"`; no Simplified-only character appears on `/zh-hant/` and no Traditional-only one on `/zh-hans/` (a test checks every Han character on each page against the other script's conversion table, with an allow-list for names); hreflang validates for all three locales + `x-default`; CLS ≤ 0.05 on both; font payload within budget; every E2E content test runs for both locales.
 
 ---
 
@@ -352,7 +355,7 @@ CI covers 320 / 360 / 390 / 412 / 430 in Chromium and WebKit emulation; the real
 | Milestone | Scope | Depends on | Effort | Acceptance |
 |---|---|---|---|---|
 | **X1 Foundations** | settings window, prefs storage + no-flash head script, remaining tokens + lint rule, five themes, forced-colors, motion levels + pause-all, print CSS, `docs/A11Y-CHECK.md` | Figma theme modes | ≤ 1 week | §2, §3, §4 |
-| **X2 Languages** | i18n routing, `copy.zh.yaml`, per-field translations, Fusion Pixel subset pipeline, hreflang, locale test matrix | X1 (language lives in settings); owner's Chinese text | ≤ 1 week + owner writing time | §5 |
+| **X2 Languages** | i18n routing for en / zh-Hans / zh-Hant, `copy.zh-hans.yaml` + `copy.zh-hant.yaml`, per-field translations, the Simplified → Traditional draft script, staleness report, Fusion Pixel subset pipeline (two cuts), hreflang, locale test matrix | X1 (language lives in settings); owner's Simplified text and review of the Traditional | ≤ 1.5 weeks + owner writing and review time | §5 |
 | **M2 Scene** (re-scoped) | graphics tiers + capability check, shared renderer, world for stops 1–3, theme-aware scene, watchdog, debug HUD | X1 | ≤ 1.5 weeks | §7 (35 % share), PLAN §8 M2 |
 | **X3 Interactions** | the 16-row catalogue, Tier 2 ambient canvas, chunk-load transitions, live data dressing | X1; Figma hover components | ≤ 1 week | §6, §7.4 |
 | **M3 Windows** | PLAN §8 M3 + scene stops 4–6 (60 % share), project detail pages, 404, OG images per locale and theme | M2, X3 | ≤ 1 week | PLAN §8 M3, §7 |
@@ -364,7 +367,7 @@ CI covers 320 / 360 / 390 / 412 / 430 in Chromium and WebKit emulation; the real
 Launch is independent of this table: `launched: true` can be flipped today (M1 is accepted); each milestone then ships to the live site as it lands.
 
 ### 9.1 How the result is assured (additions to PLAN §9)
-- **Matrix, not one page.** CI's content, layout and `axe` suites run over `theme × locale × motion level × tier`, pruned to the pairs that can interact (≈ 14 runs, not 120): every theme once in English at full motion; both locales in Night; each motion level and each tier in Night/English.
+- **Matrix, not one page.** CI's content, layout and `axe` suites run over `theme × locale × motion level × tier`, pruned to the pairs that can interact (≈ 14 runs, not 120): every theme once in English at full motion; all three locales in Night; each motion level and each tier in Night/English.
 - **Contrast as a unit test** over the token table (§3.5).
 - **Visual baselines** per theme and per locale at 390 and 1440, static (reduced motion, frozen clock) so they are deterministic — the method used on 2026-11-10 to prove the token cleanup changed no pixel.
 - **Budgets in CI** (§1.3) including the new CSS and CJK font limits.
@@ -375,8 +378,9 @@ Launch is independent of this table: `launched: true` can be flipped today (M1 i
 ## 10. Open questions for the owner
 | # | Question | Default if unanswered |
 |---|---|---|
-| Q-L1 | Languages: English + 简体中文 now, 日本語 later? Any other? | en + zh-Hans |
-| Q-L2 | Will you write/approve the Chinese text yourself (§5.4)? Should company and school names use official Chinese names where they exist? | owner writes; official names only |
+| ~~Q-L1~~ | **Answered 2026-11-10:** English + Chinese in both Simplified and Traditional (DECISIONS R3-1). 日本語 or others: not now. | — |
+| Q-L3 | Traditional Chinese flavour: script-only conversion of your Simplified text (same wording, Traditional characters), or regional wording — Taiwan (軟體, 網路) or Hong Kong? | script-only, tagged `zh-Hant`, which you then review |
+| Q-L2 | Will you write/approve the Simplified text yourself and review the generated Traditional (§5.4)? Should company and school names use official Chinese names where they exist? | owner writes Simplified and reviews Traditional; official names only |
 | Q-T1 | Theme names: Night / Day / Mono dark / Mono light / Colour-blind safe — or in-world names (Night, Overworld, Bedrock, Paper, Prism)? | plain names in settings, in-world names as subtitles |
 | Q-T2 | Should "auto" follow the OS light/dark setting, or should Night stay the default for everyone who has not chosen? | Night for everyone; OS contrast/forced-colors always honoured |
 | Q-G1 | The WebGL share target (60 % of scroll on desktop by M3): right ambition, or more (the reference site is ~100 %)? | 60 % |
@@ -394,7 +398,8 @@ Launch is independent of this table: `launched: true` can be flipped today (M1 i
 | X-R1 | The test matrix slows CI past 10 minutes | M | M | pruned pairs (§9.1); themes/locales in parallel jobs; screenshots only on PRs that touch `src/` |
 | X-R2 | Themes multiply design debt (five palettes × every component) | H | M | semantic tokens only; Mono and CVD are remaps, not redesigns; contrast unit test |
 | X-R3 | Chinese layout breaks pixel alignment (12 px grid vs 8/10 px labels) | M | M | per-locale type tokens; Fusion Pixel only at 12 px multiples; layout suite per locale |
-| X-R4 | Translations go stale against English | H | M | fallback + `lang="en"` instead of blocking; a weekly CI report lists fields whose English changed after their translation |
+| X-R4 | Translations go stale against English, or Traditional drifts from Simplified | H | M | source hashes on every translated field; a CI report lists what is stale in each script; fallback + `lang="en"` instead of blocking |
+| X-R9 | Script conversion picks the wrong character (one Simplified form, several Traditional ones) or mixes scripts on a page | M | M | conversion output is always a draft the owner reads; the cross-script character test in acceptance (D); names on an allow-list |
 | X-R5 | WebGL share goal fights the performance budget | M | H | tiers + watchdog; share is measured only at Tier 3; scene never blocks LCP |
 | X-R6 | Hover catalogue becomes noise | M | M | one behaviour per element type; `calm` keeps state changes without motion; design review in Figma first |
 | X-R7 | Mobile hotbar covers content or fights browser bars | M | M | hides on scroll down; safe-area insets; in-app browser check in the matrix |
