@@ -274,7 +274,7 @@ not_found:
   home_label: 回到首頁
   projects_label: 全部項目
 og:
-  alt: '{title} — {domain}'
+  alt: '體素世界前的一個終端視窗：{title}'
 
 scene:
   hud: '幀率 {fps} · {ms} 毫秒 · 圖形等級 {tier}（{reason}）· {draws} 次繪製 · 像素比 {dpr}'
@@ -477,3 +477,35 @@ from:
   about.slot_tip: 7bcf65b3
   projects.phone.pick_label: 2055fb5a
   experience.show_cmd: d014beb9
+  windows.more: 0f152ee5
+  windows.more_label: 6f33f409
+  windows.move_label: e01e1451
+  windows.move_hint: 4c2e8ea2
+  windows.close: a1e25e38
+  windows.hint: 6ba647e6
+  windows.loading: 9b023df6
+  windows.failed: 00952bd1
+  windows.directory_title: 3af19f5e
+  windows.directory_cmd: 347b54da
+  windows.directory_heading: 6f33f409
+  windows.project_title: 21ffa82f
+  windows.project_cmd: 74c0322a
+  windows.crumbs_label: a25e50b6
+  windows.home_label: 51ad1039
+  windows.page_title: d8d4e1e7
+  windows.directory_page_title: 3c7332ac
+  windows.neighbours_label: a363f575
+  windows.prev: 6d742751
+  windows.next: 1694b322
+  windows.back: 18a6ac0e
+  windows.back_home: 4316bf5f
+  not_found.page_title: 6a70fe73
+  not_found.title: 20c38e15
+  not_found.cmd: b57fadaf
+  not_found.error: ca550daf
+  not_found.heading: 19c543dd
+  not_found.body: cf3cfd9c
+  not_found.home: 4316bf5f
+  not_found.home_label: b7e60605
+  not_found.projects_label: 6f33f409
+  og.alt: 6494fcc5

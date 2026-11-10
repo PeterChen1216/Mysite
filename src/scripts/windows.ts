@@ -288,7 +288,10 @@ async function openProject(id: string, opener: HTMLElement | null) {
   slot.replaceChildren(body);
   const heading = body.querySelector<HTMLElement>('h2[id]');
   if (heading) w.dialog.setAttribute('aria-labelledby', heading.id);
-  if (title) title.textContent = doc.querySelector('[data-win-title]')?.textContent ?? '';
+  if (title) {
+    title.textContent = doc.querySelector('[data-win-title]')?.textContent?.trim() ?? '';
+    title.title = title.textContent; // the full title when the bar shortens it
+  }
   document.title = doc.title || pageTitle;
   w.stopClocks = initClocks(body);
   place(w);

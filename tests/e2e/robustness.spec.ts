@@ -162,6 +162,47 @@ test.describe('layout holds at every width', () => {
   });
 });
 
+// M3: the directory, a project's page and the 404 in every locale, and the windows over the home
+// page: no text cut off at the reflow width and on a desktop, with a reader's own spacing and at
+// the largest text size (pruned to the widths where these layouts change).
+test.describe('the pages and windows of M3 hold too', () => {
+  test.skip(({ isMobile }) => isMobile, 'desktop projects resize the viewport themselves');
+  test.use({ reducedMotion: 'reduce' });
+  const SPACING =
+    '* { line-height: 1.5 !important; letter-spacing: 0.12em !important; word-spacing: 0.16em !important; } p { margin-bottom: 2em !important; }';
+  for (const { locale, path } of LOCALE_PAGES) {
+    const pages = [`${path}projects/`, `${path}projects/clock-stamp/`, `${path}no/such/chunk/`];
+    for (const [mode, widths] of [
+      ['as built', [320, 768, 1440]],
+      ['text-spacing override', [320, 1440]],
+      ['text size 130 %', [320, 1440]],
+    ] as const)
+      for (const width of widths)
+        test(`${mode}: nothing cut off at ${width}px (${locale})`, async ({ page }) => {
+          if (mode === 'text size 130 %')
+            await page.addInitScript(() => localStorage.setItem('zhic:prefs:v1', '{"text":130}'));
+          await page.setViewportSize({ width, height: 900 });
+          for (const url of pages) {
+            await page.goto(url);
+            if (mode === 'text-spacing override') await page.addStyleTag({ content: SPACING });
+            await page.evaluate(() => document.fonts.ready);
+            expect(await textProblems(page), url).toEqual([]);
+          }
+        });
+  }
+  for (const width of [320, 1440])
+    test(`a window open over the page: nothing cut off at ${width}px`, async ({ page }) => {
+      await page.setViewportSize({ width, height: 900 });
+      await page.goto(V2);
+      await page.locator('#projects .sh__more').click();
+      await expect(page.locator('dialog[data-window-kind="directory"]')).toBeVisible();
+      expect(await textProblems(page)).toEqual([]);
+      await page.locator('dialog[open] a[data-project-link]').first().click();
+      await expect(page.locator('dialog[data-window-kind="project"] [data-project]')).toBeVisible();
+      expect(await textProblems(page)).toEqual([]);
+    });
+});
+
 // Every graphics tier (PLAN-EXPERIENCE §7, acceptance F), at full motion (reduced motion would
 // make every tier static): the scene sits behind the content and must not move or hide any of it.
 test.describe('layout holds at every graphics tier', () => {

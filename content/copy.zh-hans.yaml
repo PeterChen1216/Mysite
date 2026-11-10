@@ -275,7 +275,7 @@ not_found:
   home_label: 回到首页
   projects_label: 全部项目
 og:
-  alt: '{title} — {domain}'
+  alt: '体素世界前的一个终端窗口：{title}'
 
 scene:
   hud: '帧率 {fps} · {ms} 毫秒 · 图形等级 {tier}（{reason}）· {draws} 次绘制 · 像素比 {dpr}'
@@ -478,3 +478,35 @@ from:
   about.slot_tip: cb3d851f
   projects.phone.pick_label: 76565f5d
   experience.show_cmd: d014beb9
+  windows.more: ca4410d9
+  windows.more_label: 2ee62be7
+  windows.move_label: f07faaf0
+  windows.move_hint: fe653012
+  windows.close: "97959247"
+  windows.hint: 7474601d
+  windows.loading: 855b8c86
+  windows.failed: b1de74e0
+  windows.directory_title: eb19d106
+  windows.directory_cmd: 347b54da
+  windows.directory_heading: 32ba05b9
+  windows.project_title: 21ffa82f
+  windows.project_cmd: 74c0322a
+  windows.crumbs_label: 4b7cb016
+  windows.home_label: d2187d52
+  windows.page_title: d8d4e1e7
+  windows.directory_page_title: 73ec633e
+  windows.neighbours_label: 790311c7
+  windows.prev: 25ebce85
+  windows.next: ae7eeb4e
+  windows.back: 18a6ac0e
+  windows.back_home: 4316bf5f
+  not_found.page_title: 47a82f20
+  not_found.title: 0ef38b07
+  not_found.cmd: b57fadaf
+  not_found.error: 7fb08dc4
+  not_found.heading: 115efb54
+  not_found.body: 1ece1a3e
+  not_found.home: 4316bf5f
+  not_found.home_label: a3be40d0
+  not_found.projects_label: 32ba05b9
+  og.alt: fdddf06b

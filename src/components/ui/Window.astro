@@ -46,7 +46,7 @@ const dataAttrs = Object.fromEntries(Object.entries(data).map(([k, v]) => [`data
       <i></i>
       <i></i>
     </span>
-    <span class="win__title" aria-hidden="true" data-win-title>
+    <span class="win__title" aria-hidden="true" data-win-title title={title || undefined}>
       {title}
     </span>
     {keys && (
@@ -164,6 +164,9 @@ const dataAttrs = Object.fromEntries(Object.entries(data).map(([k, v]) => [`data
   .win--float {
     display: none;
     position: fixed;
+    /* Placed by script, never in between: no transition (reduced motion's global 0.01 ms one
+       would show the window at its fallback place for a frame). */
+    transition-property: none;
     inset: auto;
     left: var(--win-x, 50%);
     top: var(--win-y, 48px);

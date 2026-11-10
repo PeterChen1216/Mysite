@@ -7,7 +7,8 @@ import { expect, test, type Page } from '@playwright/test';
 import { loadSiteConfig } from '../../site.config.mjs';
 import { stripComments } from '../../src/content/guards';
 import { LOCALES } from '../../src/i18n/locales';
-import { hreflangLinks, pagePath, type SitePage } from '../../src/i18n/routing';
+import { hreflangLinks, ogImagePath, pagePath, type SitePage } from '../../src/i18n/routing';
+import { THEMES } from '../../src/prefs/model';
 import { contentFor } from './locale';
 import { LOCALE_PAGES, LOCALE_STATES, STAGE, V2 } from './site';
 
@@ -144,6 +145,55 @@ for (const { locale, lang, state } of LOCALE_PAGES)
       }
     });
   });
+
+test.describe('share cards (Open Graph images)', () => {
+  test.skip(({ isMobile }) => isMobile, 'files and head tags do not depend on the device');
+  for (const { locale } of LOCALE_PAGES)
+    test(`${locale}: every page names its card, 1200 × 630, drawn at build time`, async ({
+      page,
+      request,
+    }) => {
+      const { projects, copy, site } = contentFor(locale);
+      const pages: SitePage[] = [
+        { kind: 'home' },
+        { kind: 'projects' },
+        ...projects.map((p) => ({ kind: 'project' as const, id: p.id })),
+      ];
+      for (const kind of pages) {
+        await page.goto(pagePath(locale, kind, V2));
+        const url = new URL(ogImagePath(locale, kind, V2), ORIGIN).href;
+        await expect(page.locator('meta[property="og:image"]')).toHaveAttribute('content', url);
+        await expect(page.locator('meta[name="twitter:card"]')).toHaveAttribute(
+          'content',
+          'summary_large_image',
+        );
+        const title = await page.title();
+        await expect(page.locator('meta[property="og:image:alt"]')).toHaveAttribute(
+          'content',
+          copy.og.alt.replace('{title}', title).replace('{domain}', String(site.domain)),
+        );
+      }
+      // The files: the cards of every page, and the home page's in every theme.
+      const files = [
+        ...pages.map((kind) => ogImagePath(locale, kind, V2)),
+        ...THEMES.filter((t) => t !== 'night').map((t) =>
+          ogImagePath(locale, { kind: 'home' }, V2, t),
+        ),
+      ];
+      for (const file of files) {
+        const res = await request.get(file);
+        expect(res.status(), file).toBe(200);
+        expect(res.headers()['content-type']).toBe('image/png');
+        const png = await res.body();
+        // The PNG header: width and height at bytes 16–23.
+        expect([png.readUInt32BE(16), png.readUInt32BE(20)], file).toEqual([1200, 630]);
+      }
+    });
+  test('the 404 has no card (it is never shared)', async ({ page }) => {
+    await page.goto(`${V2}nowhere`);
+    await expect(page.locator('meta[property="og:image"]')).toHaveCount(0);
+  });
+});
 
 test.describe('without JavaScript every project is a plain link away and reads in full', () => {
   test.use({ javaScriptEnabled: false });

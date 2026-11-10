@@ -329,9 +329,10 @@ not_found:
   home: cd ~
   home_label: Back to the home page
   projects_label: Every project
-# The share card a link to the site shows (Open Graph image): what it says to screen readers.
+# The share card a link to the site shows (Open Graph image): its text alternative ({title} = the
+# page's title).
 og:
-  alt: '{title} — {domain}'
+  alt: 'A terminal window over a voxel world: {title}'
 
 # The WebGL scene behind the page (PLAN-EXPERIENCE §7). It is decorative and says nothing, so this
 # is only the developer line shown with ?debug=1 in the address: frames per second, milliseconds

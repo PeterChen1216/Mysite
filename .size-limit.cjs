@@ -39,6 +39,15 @@ module.exports = [
     gzip: true,
   },
   {
+    // M3: the share cards (Open Graph images), every page in every locale and the home page in
+    // every theme. Fetched by link previews, never by a visitor's page.
+    name: 'Share cards (raw PNG, all)',
+    path: 'dist/og/**/*.png',
+    limit: '1 MB',
+    gzip: false,
+    brotli: false,
+  },
+  {
     name: 'Images (raw, budget 1.5 MB)',
     path: 'dist/_astro/*.{webp,avif,png,jpg,jpeg,svg}',
     limit: '1.5 MB',

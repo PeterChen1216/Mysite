@@ -391,7 +391,7 @@ export function startScene(canvas: HTMLCanvasElement, gl: GL, opts: SceneOptions
     new Float32Array((1 + 3 + routes.length) * CUBE_FLOATS),
     gl.DYNAMIC_DRAW,
   );
-  const MAX_PAGE_BLOCKS = 128;
+  const MAX_PAGE_BLOCKS = 192;
   const pageGroup = cubeGroup(new Float32Array(MAX_PAGE_BLOCKS * CUBE_FLOATS), gl.DYNAMIC_DRAW);
   const skyGroup = spriteGroup(packSprites([...stars(), ...glows(), ...motes()]), gl.STATIC_DRAW);
   // The grid is one quad (corner attribute at location 0).
@@ -1158,13 +1158,15 @@ export function startScene(canvas: HTMLCanvasElement, gl: GL, opts: SceneOptions
       const { x, w } = track;
       const top = Math.max(track.top, scrollNow - 40);
       const bottom = Math.min(track.bottom, scrollNow + view.height + 40);
-      // The ties every 24 px, then the two rails over them.
-      for (let y = track.top + 12; y < track.bottom; y += 24)
-        if (y > top && y < bottom && beside.length < MAX_PAGE_BLOCKS - 8)
-          boxAt(x, y, w, 5, w * 0.35, 'planks');
+      // The ties every 24 px, and the two rails over them in 24 px lengths (one long box would
+      // lean with the perspective; short ones each sit where the page is).
       const rail = Math.max(2, w * 0.12);
-      for (const side of [-1, 1])
-        boxAt(x + side * w * 0.3, (top + bottom) / 2, rail, bottom - top, rail, solidTile('stone'));
+      for (let y = track.top + 12; y < track.bottom; y += 24)
+        if (y > top - 24 && y < bottom + 24 && beside.length < MAX_PAGE_BLOCKS - 12) {
+          boxAt(x, y, w, 5, w * 0.35, 'planks');
+          for (const side of [-1, 1])
+            boxAt(x + side * w * 0.3, y, rail, 24, rail, solidTile('stone'));
+        }
       if (cartY !== null) {
         const cw = w * 1.1;
         const ch = cw * 0.62;
@@ -1173,6 +1175,8 @@ export function startScene(canvas: HTMLCanvasElement, gl: GL, opts: SceneOptions
           solidTile('stone'),
           solidTile('stone'),
         ]);
+        // Its load: a block of gold ore peeking out of the top.
+        boxAt(x, cartY - ch * 0.42, cw * 0.56, cw * 0.32, cw * 0.5, 'gold');
         for (const side of [-1, 1])
           boxAt(
             x + side * cw * 0.32,

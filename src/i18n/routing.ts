@@ -40,6 +40,21 @@ export const pagePath = (locale: Locale, page: SitePage, base = '/'): string =>
   `${localeHome(locale, base)}${pageSub(page)}`;
 
 /**
+ * Where a page's share card (Open Graph image, M3) is, under `base`: `og/<locale>/<page>.png` —
+ * `home`, `projects`, `projects/<id>`; a theme other than the default Night adds `.<theme>`.
+ */
+export function ogImagePath(
+  locale: Locale,
+  page: SitePage,
+  base = '/',
+  theme: string | null = null,
+): string {
+  const prefix = base.endsWith('/') ? base : `${base}/`;
+  const name = page.kind === 'home' ? 'home' : pageSub(page).replace(/\/$/, '');
+  return `${prefix}og/${locale}/${name}${theme ? `.${theme}` : ''}.png`;
+}
+
+/**
  * Which page of the site a URL path is (`/v2/zh-hant/projects/clock-stamp/` → zh-hant, that
  * project), or null when it is none of them (outside the base, an unknown path, `/zh/`). A path
  * without its trailing slash, or ending in `index.html`, is the same page.

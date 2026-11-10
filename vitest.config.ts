@@ -40,6 +40,7 @@ export default defineConfig({
         // M3: the 404's language and home, the windows' geometry and history.
         'src/lib/not-found.ts',
         'src/lib/windows.ts',
+        'src/og/layout.ts',
         // The WebGL scene's pure parts (the renderer and GL plumbing are covered by E2E).
         'src/scene/tier.ts',
         'src/scene/math.ts',

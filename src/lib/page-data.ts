@@ -14,6 +14,7 @@ import {
   headLinks,
   liveLocales,
   localeHome,
+  ogImagePath,
   pagePath,
   switchLocales,
   type SitePage,
@@ -203,6 +204,9 @@ export async function getPageData(
       description: meta.description,
       keywords: meta.keywords,
       ...headLinks(locale, site.locales, `https://${site.domain}`, import.meta.env.BASE_URL, page),
+      /** The page's share card (src/pages/og/), in the default theme (none on the 404). */
+      image: new URL(ogImagePath(locale, page, import.meta.env.BASE_URL), `https://${site.domain}`)
+        .href as string | undefined,
     },
     site: { ...site, meta, footer: siteFooter },
     copy,
