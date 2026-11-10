@@ -159,6 +159,8 @@ export interface SceneStatus {
   earth: number;
   /** Main-thread time per drawn frame, ms (smoothed): §1.3's "≤ 8 ms desktop". */
   workMs: number;
+  /** The sky colour the scene draws with now, 0–255 per channel (from the theme tokens). */
+  sky: number[];
 }
 
 export interface Scene {
@@ -183,6 +185,7 @@ export function startScene(canvas: HTMLCanvasElement, gl: GL, opts: SceneOptions
     time: 0,
     earth: 0,
     workMs: 0,
+    sky: [],
   };
   (canvas as HTMLCanvasElement & { sceneStatus?: SceneStatus }).sceneStatus = status;
 
@@ -352,6 +355,7 @@ export function startScene(canvas: HTMLCanvasElement, gl: GL, opts: SceneOptions
   const readTokens = () => {
     const cs = getComputedStyle(html);
     theme = readTheme((name) => cs.getPropertyValue(`--scene-${name}`));
+    status.sky = [...theme.palette.subarray(0, 3)].map((c) => Math.round(c * 255));
   };
   readTokens();
 
