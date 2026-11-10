@@ -6,7 +6,7 @@
 import Card from '../../ui/Card.astro';
 import CardTitle from '../../ui/CardTitle.astro';
 import VoxelBlock from '../../ui/VoxelBlock.astro';
-import { educationDates } from '../../../lib/derive';
+import { educationDates, fillTemplate } from '../../../lib/derive';
 import type { PageData } from '../../../lib/page-data';
 
 interface Props {
@@ -24,6 +24,14 @@ const programme = (e: PageData['edu']) =>
   ]
     .filter(Boolean)
     .join(' · ');
+/** A course's tooltip (PLAN-EXPERIENCE §6 row 3; src/scripts/slots.ts): "… · 2 of 6". */
+const tip = (n: number, count: number) =>
+  fillTemplate(
+    copy.about.slot_tip,
+    { group: copy.about.coursework, n: String(n), count: String(count) },
+    [],
+    'copy.yaml about.slot_tip',
+  );
 ---
 
 <Card class="about-card about-card--edu" id="education" labelledby="about-education">
@@ -62,9 +70,9 @@ const programme = (e: PageData['edu']) =>
         {e.coursework.length > 0 && (
           <div class="edu__courses">
             <h4 class="edu__label">{copy.about.coursework}</h4>
-            <ul class="edu__course-list">
-              {e.coursework.map((c) => (
-                <li>{c}</li>
+            <ul class="edu__course-list" data-slots>
+              {e.coursework.map((c, i) => (
+                <li data-tip={tip(i + 1, e.coursework.length)}>{c}</li>
               ))}
             </ul>
           </div>

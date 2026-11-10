@@ -70,6 +70,8 @@ const layout = cards === 3 ? 'stack' : cards % 2 === 1 ? 'strip' : 'pairs';
 
 <style>
   .projects {
+    /* A lifted card's edge takes the section's accent (ui/Card.astro); the teaser its own. */
+    --card-accent: var(--color-accent-gold);
     position: relative;
     display: flex;
     flex-direction: column;
@@ -116,6 +118,9 @@ const layout = cards === 3 ? 'stack' : cards % 2 === 1 ? 'strip' : 'pairs';
   }
 
   /* "next chunk" teaser */
+  .projects :global(.pc--next) {
+    --card-accent: var(--color-accent-enchant);
+  }
   .next__block {
     position: absolute;
     top: -10px;

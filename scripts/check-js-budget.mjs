@@ -4,6 +4,8 @@
 // HTML, so size-limit alone can't see them: count inline <script> bodies plus every external
 // /_astro/*.js the page references. The WebGL scene (src/scene/renderer.ts → _astro/renderer.*.js)
 // must stay out of the first screen: no page may load or preload it; only import() at run time.
+// The same holds for the lazy X3 chunks: the Earth's map, the terminal prompt, the globe's
+// crosshair and the tier 2 ambient layer.
 import { readFileSync, existsSync } from 'node:fs';
 import { join } from 'node:path';
 import { gzipSync } from 'node:zlib';
@@ -50,8 +52,10 @@ for (const { dir } of Object.values(LOCALES)) {
     }
   }
   console.log(`First-screen JS (gz), /${dir}: ${kb(total)} / ${kb(LIMIT)}  [${parts.join(', ')}]`);
-  for (const m of html.matchAll(/<(?:script|link)\b[^>]*(?:src|href)="([^"]*renderer\.[^"]*)"/g)) {
-    console.error(`✖ /${dir} references the lazy scene chunk on the first screen: ${m[1]}`);
+  for (const m of html.matchAll(
+    /<(?:script|link)\b[^>]*(?:src|href)="([^"]*\/(?:renderer|earth|prompt|globe-probe|ambient)\.[^"]*)"/g,
+  )) {
+    console.error(`✖ /${dir} references a lazy chunk on the first screen: ${m[1]}`);
     failed = true;
   }
   if (total > LIMIT) {

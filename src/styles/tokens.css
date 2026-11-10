@@ -139,11 +139,15 @@
   --p-neon-green-80: rgb(57 255 20 / 0.8);
   --p-glow-gold: rgb(242 201 76 / 0.6);
   --p-glow-diamond: rgb(74 237 217 / 0.35);
+  --p-enchant-glint: rgb(184 102 245 / 0.55);
+  --p-day-violet-glint: rgb(116 34 196 / 0.3);
+  --p-oi-purple-glint: rgb(204 121 167 / 0.5);
   --p-paper-bar-88: rgb(255 253 246 / 0.88);
   --p-paper-bar-94: rgb(255 253 246 / 0.94);
   --p-paper-ghost: rgb(255 253 246 / 0.6);
   --p-paper-backdrop: rgb(22 27 34 / 0.45);
   --p-paper-shadow: rgb(60 48 20 / 0.22);
+  --p-paper-shadow-hard: rgb(60 48 20 / 0.42);
   --p-ink-underline: rgb(75 85 99 / 0.55);
   --p-day-green-10: rgb(17 115 10 / 0.1);
   --p-day-green-55: rgb(17 115 10 / 0.55);
@@ -216,6 +220,7 @@
   /* shadows: hard pixel shadows under things, and under big headings */
   --color-shadow: var(--p-shade-60); /* cards, panels */
   --color-shadow-term: var(--p-shade-50); /* terminals, the player card */
+  --color-shadow-lift: var(--p-shade-85); /* a card lifted by hover or focus (harder) */
   --color-shadow-block: var(--p-shade-35); /* voxel blocks and icons */
   --color-shadow-inset: var(--p-shade-45); /* inventory-slot inset */
   --color-heading-shadow: var(--p-shade-85); /* section headings */
@@ -233,6 +238,7 @@
   --color-glow-green: var(--p-neon-green-80);
   --color-glow-gold: var(--p-glow-gold);
   --color-glow-diamond: var(--p-glow-diamond);
+  --color-glint: var(--p-enchant-glint); /* an inventory slot's enchant glint (row 3) */
   /* redundant cues: glyphs and shapes beside colour (PLAN-EXPERIENCE §3.3). Night is the design
      as shipped and relies on the words; the other themes and contrast modes show them.
      --cue-display shows the glyphs (ui/Cue); --cue-on (0/1) switches shapes by arithmetic. */
@@ -273,6 +279,7 @@
   --color-nav-active-bg: var(--p-oi-green-12);
   --color-nav-active-edge: var(--p-oi-green-55);
   --color-glow-green: var(--p-oi-green-80);
+  --color-glint: var(--p-oi-purple-glint);
   --cue-display: inline-block;
   --cue-on: 1;
 }
@@ -319,6 +326,7 @@
   --color-text-shadow: var(--p-grey-25);
   --color-shadow: var(--p-paper-shadow);
   --color-shadow-term: var(--p-shade-35);
+  --color-shadow-lift: var(--p-paper-shadow-hard);
   --color-shadow-block: var(--p-shade-25);
   --color-shadow-inset: var(--p-light-06);
   --color-heading-shadow: var(--p-paper-shade);
@@ -335,6 +343,7 @@
   --color-glow-green: var(--p-day-green-55);
   --color-glow-gold: var(--p-glow-gold);
   --color-glow-diamond: var(--p-glow-diamond);
+  --color-glint: var(--p-day-violet-glint);
   --cue-display: inline-block;
   --cue-on: 1;
   --art-filter: ;
@@ -388,6 +397,7 @@
   --color-text-shadow: var(--p-grey-25);
   --color-shadow: var(--p-shade-60);
   --color-shadow-term: var(--p-shade-50);
+  --color-shadow-lift: var(--p-shade-85);
   --color-shadow-block: var(--p-shade-35);
   --color-shadow-inset: var(--p-shade-45);
   --color-heading-shadow: var(--p-shade-85);
@@ -404,6 +414,7 @@
   --color-glow-green: var(--p-light-60);
   --color-glow-gold: var(--p-light-20);
   --color-glow-diamond: var(--p-light-20);
+  --color-glint: var(--p-light-60);
   --cue-display: inline-block;
   --cue-on: 1;
   /* Pictures render through one filter instead of a second art set (§3.4); the globe has white
@@ -458,6 +469,7 @@
   --color-text-shadow: var(--p-mono-100);
   --color-shadow: var(--p-shade-25);
   --color-shadow-term: var(--p-shade-25);
+  --color-shadow-lift: var(--p-shade-45);
   --color-shadow-block: var(--p-shade-25);
   --color-shadow-inset: var(--p-light-06);
   --color-heading-shadow: var(--p-mono-85);
@@ -474,6 +486,7 @@
   --color-glow-green: var(--p-shade-25);
   --color-glow-gold: var(--p-shade-25);
   --color-glow-diamond: var(--p-shade-25);
+  --color-glint: var(--p-shade-25);
   --cue-display: inline-block;
   --cue-on: 1;
   /* Black land on a light ocean; no night sky on paper. */

@@ -68,6 +68,8 @@ export const CALM = { loopSlowdown: 3 } as const;
 export const GLOBE_TILE_PX = 648;
 
 export const PARTICLES = {
+  /** No more than this many alive at once, whatever triggers them (PLAN-EXPERIENCE §6, E). */
+  cap: 60,
   /** Hover burst: 16 pixel particles of 4 or 6 px, 300–400 ms (PLAN §5.2). */
   count: 16,
   sizes: [4, 6],
@@ -112,6 +114,70 @@ export const SCENE = {
   planeMs: 9000,
 } as const;
 
+/**
+ * The hover & interaction catalogue (PLAN-EXPERIENCE §6). Row numbers are the table's. Every
+ * timing here reaches the page: scripts import these, CSS reads the `--m-*` properties below.
+ * `calm` drops the motion and keeps the state change; `off` keeps only the state change.
+ */
+export const HOVER = {
+  /** 1 · voxel block: a two-frame squash, a burst in its own colours, then it bobs back. */
+  punch: { ms: 350, particles: 16, squash: [1.12, 0.86], stretch: [0.92, 1.1], bobPx: 6 },
+  /** 2 · card: lifts 4 px on a harder shadow in two steps; a grid spotlight follows the pointer. */
+  card: { liftPx: 4, ms: 120, steps: 2, spotPx: 220 },
+  /** 3 · inventory slot: the glint sweeps once; the tooltip rises 6 px. */
+  glintMs: 560,
+  tooltip: { risePx: 6, ms: 120, gapPx: 6 },
+  /** 4 · globe: the crosshair's readout follows the pointer, at most once per frame. */
+  crosshairPx: 9,
+  /** 6 · commit row: the node pulses twice; the rail segment lights in one sweep. */
+  commit: { pulseMs: 300, pulses: 2, railMs: 240 },
+  /** 8 · nav link: the pixel underline slides from where it was. */
+  navSlide: { ms: 160, steps: 4 },
+  /** 13 · external link: the ↗ hops one pixel up-right. */
+  hopPx: 1,
+  /** 14 · section header: the `$ command` types, then the heading resolves. */
+  header: { msPerChar: 22, minMs: 280, maxMs: 700, resolveMs: 260, resolveSteps: 4 },
+  /** 16 · back to spawn: a block falls while the page scrolls up behind it. */
+  spawn: { fallMs: 900, fallVh: 70, spinDeg: 200 },
+} as const;
+
+/**
+ * Chunk-load transitions (PLAN-EXPERIENCE §7.4; graphics tier 2 and up, motion full): as a
+ * section first comes into view its cards rise in turn and their borders resolve from dashed to
+ * solid; the data bars (XP, status) fill to their real value. Once per section per visit.
+ */
+export const ENTER = {
+  risePx: 24,
+  ms: 420,
+  staggerMs: 70,
+  /** The border stays dashed until this share of the rise, then turns solid. */
+  dashUntil: 0.7,
+  /** Each cell of a data bar lights this long after the one before it. */
+  cellMs: 28,
+  /** How far below the viewport a section is noticed, so it starts before it shows. */
+  marginPct: 12,
+} as const;
+
+/**
+ * The tier 2 ambient layer (PLAN-EXPERIENCE §7.4, §8.5): a three-layer parallax star field and
+ * rising motes on one 2D canvas behind the page.
+ */
+export const AMBIENT = {
+  /** Scroll factors of the far, middle and near layers. */
+  factors: [0.2, 0.5, 1],
+  /** Stars per layer, per 1000 × 1000 css px of sky. */
+  density: [60, 26, 12],
+  /** Star sizes per layer, css px (pixel squares). */
+  sizes: [2, 2, 3],
+  /** Rising motes over the first screen (§8.5: ≤ 24 particles on phones). */
+  motes: 18,
+  moteRisePxPerS: 14,
+  /** §8.5: the star field at 30 fps. */
+  fps: 30,
+  /** Device pixel ratio cap (§8.5). */
+  maxDpr: 2,
+} as const;
+
 /** The CSS-side parameters as a `style` value of custom properties (`--m-…`). */
 export function motionCssVars(): string {
   const ms = (n: number) => `${n}ms`;
@@ -146,6 +212,31 @@ export function motionCssVars(): string {
     '--m-photo-swap': `${ms(UI.photoSwap.ms)} steps(${UI.photoSwap.steps})`,
     '--m-calm-slow': String(CALM.loopSlowdown),
     '--m-scene-fade': ms(SCENE.fadeMs),
+    // The hover & interaction catalogue (HOVER) and the chunk-load transitions (ENTER).
+    '--m-punch': ms(HOVER.punch.ms),
+    '--m-punch-squash': HOVER.punch.squash.join(' '),
+    '--m-punch-stretch': HOVER.punch.stretch.join(' '),
+    '--m-punch-bob': px(HOVER.punch.bobPx),
+    '--m-card': `${ms(HOVER.card.ms)} steps(${HOVER.card.steps})`,
+    '--m-card-lift': px(HOVER.card.liftPx),
+    '--m-spot': px(HOVER.card.spotPx),
+    '--m-glint': ms(HOVER.glintMs),
+    '--m-tip': ms(HOVER.tooltip.ms),
+    '--m-tip-rise': px(HOVER.tooltip.risePx),
+    '--m-cross': px(HOVER.crosshairPx),
+    '--m-pulse': ms(HOVER.commit.pulseMs),
+    '--m-pulses': String(HOVER.commit.pulses),
+    '--m-rail': ms(HOVER.commit.railMs),
+    '--m-nav-slide': `${ms(HOVER.navSlide.ms)} steps(${HOVER.navSlide.steps})`,
+    '--m-hop': px(HOVER.hopPx),
+    '--m-resolve': `${ms(HOVER.header.resolveMs)} steps(${HOVER.header.resolveSteps})`,
+    '--m-spawn-fall': ms(HOVER.spawn.fallMs),
+    '--m-spawn-drop': `${HOVER.spawn.fallVh}vh`,
+    '--m-spawn-spin': `${HOVER.spawn.spinDeg}deg`,
+    '--m-enter-rise': px(ENTER.risePx),
+    '--m-enter': ms(ENTER.ms),
+    '--m-enter-stagger': ms(ENTER.staggerMs),
+    '--m-enter-cell': ms(ENTER.cellMs),
   };
   return Object.entries(vars)
     .map(([k, v]) => `${k}:${v}`)

@@ -37,6 +37,19 @@ const typed = lines.map((l) => {
 });
 // The last line, `$ █`, types like the others before the cursor starts blinking.
 const cursor = { steps: 3, dur: typingMs(3), delay: at };
+// With JavaScript that line is a key that opens a real prompt (PLAN-EXPERIENCE §6 row 12,
+// src/scripts/prompt.ts). It can only say what the page says: these words and facts.
+const themeNames = Object.fromEntries(
+  Object.entries(copy.prefs.theme.options).map(([k, o]) => [k, o.name]),
+);
+const prompt = JSON.stringify({
+  ...copy.hero.prompt,
+  whoami: hero.whoami,
+  interests: hero.tags.map((t) => `${t}/`).join('   '),
+  sections: copy.nav.links.map((l) => l.label),
+  resume: { href: links.resume, name: links.resume.split('/').pop() },
+  themes: themeNames,
+});
 ---
 
 <section class="hero" aria-labelledby="hero-title" id="top">
@@ -79,6 +92,7 @@ const cursor = { steps: 3, dur: typingMs(3), delay: at };
         class="hero__ln"
         aria-hidden="true"
         data-intro="type"
+        data-prompt={prompt}
         style={`--steps:${cursor.steps};--dur:${cursor.dur}ms;--d:${cursor.delay}ms`}
       >
         <span class="g">$ </span>
@@ -99,7 +113,10 @@ const cursor = { steps: 3, dur: typingMs(3), delay: at };
       {data.socials.map((s) => (
         <li>
           <a href={s.url} rel="me noopener" target="_blank">
-            {s.display} <span aria-hidden="true">↗</span>
+            {s.display}{' '}
+            <span class="ext-arrow" aria-hidden="true">
+              ↗
+            </span>
             <NewTab />
           </a>
         </li>
@@ -179,6 +196,69 @@ const cursor = { steps: 3, dur: typingMs(3), delay: at };
   .hero__cursor {
     color: var(--color-accent-terminal-green);
   }
+  /* Row 12: the `$ █` line as a key (made by src/scripts/interact.ts) looks as it did. */
+  .hero__copy :global(.hero__prompt) {
+    display: inline;
+    margin: 0;
+    padding: 0;
+    border: 0;
+    background: none;
+    font: inherit;
+    letter-spacing: inherit;
+    line-height: inherit;
+    color: inherit;
+    text-align: inherit;
+    cursor: text;
+  }
+  @media (forced-colors: active) {
+    .hero__copy :global(.hero__prompt),
+    .hero__copy :global(.prompt__input) {
+      border: 1px solid ButtonText;
+    }
+  }
+  /* The open prompt: the terminal keeps its height and scrolls (nothing on the page moves). */
+  .hero__copy :global(.term__body--prompt) {
+    overflow-y: auto;
+    scrollbar-width: thin;
+    scrollbar-color: var(--color-border-edge) transparent;
+  }
+  .hero__copy :global(.prompt__log) {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+  .hero__copy :global(.prompt__log > p),
+  .hero__copy :global(.prompt__hint) {
+    margin: 0;
+    color: var(--color-text-mid);
+    overflow-wrap: anywhere;
+  }
+  .hero__copy :global(.prompt__log > .prompt__echo) {
+    color: var(--color-text-hi);
+  }
+  .hero__copy :global(.prompt) {
+    margin: 0;
+  }
+  .hero__copy :global(.prompt__dollar) {
+    color: var(--color-accent-terminal-green);
+    white-space: pre;
+  }
+  .hero__copy :global(.prompt) {
+    display: flex;
+    align-items: baseline;
+    color: var(--color-text-hi);
+  }
+  .hero__copy :global(.prompt__input) {
+    flex: 1;
+    min-width: 0;
+    margin: 0;
+    padding: 0;
+    border: 0;
+    background: none;
+    font: inherit;
+    color: var(--color-text-hi);
+    caret-color: var(--color-accent-terminal-green);
+  }
   .hero__ctas {
     display: flex;
     flex-wrap: wrap;
@@ -197,7 +277,12 @@ const cursor = { steps: 3, dur: typingMs(3), delay: at };
     color: var(--color-text-mid);
     text-decoration: none;
   }
-  .hero__links a:hover,
+  @media (hover: hover) {
+    .hero__links a:hover {
+      color: var(--color-accent-diamond);
+      text-decoration: underline;
+    }
+  }
   .hero__links a:focus-visible {
     color: var(--color-accent-diamond);
     text-decoration: underline;

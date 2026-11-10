@@ -30,6 +30,11 @@ interface Props {
   label?: string;
   /** Its value as words; {deg} = degrees turned (interactive only). */
   valueText?: string;
+  /**
+   * The crosshair's words (interactive only; PLAN-EXPERIENCE §6 row 4, src/scripts/globe-probe.ts):
+   * latitude / longitude templates ({deg}) and the continent and ocean names.
+   */
+  probe?: { lat: object; lon: object; regions: object };
 }
 const {
   size = 324,
@@ -38,6 +43,7 @@ const {
   interactive = false,
   label = '',
   valueText = '{deg}',
+  probe,
 } = Astro.props;
 if (interactive && !label) throw new Error('An interactive PixelGlobe needs a label');
 const slider: HTMLAttributes<'div'> = interactive
@@ -51,6 +57,7 @@ const slider: HTMLAttributes<'div'> = interactive
       'aria-valuenow': 0,
       'aria-valuetext': valueText.replace(/\{\s*deg\s*\}/g, '0'),
       'data-value-text': valueText,
+      ...(probe ? { 'data-probe': JSON.stringify(probe) } : {}),
     }
   : { 'aria-hidden': 'true' };
 const scale = size / 324;
@@ -172,6 +179,64 @@ const scale = size / 324;
       var(--color-shade-soft) 55%,
       var(--color-shade-deep) 100%
     );
+  }
+  /* Row 4: the crosshair (in the disc, through the point) and its readout (above the point). Made
+     by src/scripts/globe-probe.ts; outside .globe__inner, so it shows over the WebGL Earth too. */
+  .globe :global(.globe__probe) {
+    position: absolute;
+    inset: 0;
+    -webkit-mask: var(--mask) 0 0 / 100% 100% no-repeat;
+    mask: var(--mask) 0 0 / 100% 100% no-repeat;
+    pointer-events: none;
+    opacity: 0;
+  }
+  .globe :global(.globe__probe-h),
+  .globe :global(.globe__probe-v) {
+    position: absolute;
+    left: 0;
+    top: 0;
+    background: var(--color-accent-gold);
+    opacity: 0.85;
+  }
+  .globe :global(.globe__probe-h) {
+    width: 100%;
+    height: 2px;
+  }
+  .globe :global(.globe__probe-v) {
+    width: 2px;
+    height: 100%;
+  }
+  .globe :global(.globe__probe-label) {
+    position: absolute;
+    left: 0;
+    top: 0;
+    z-index: 2;
+    padding: 6px 8px;
+    border: 2px solid var(--color-tooltip-edge);
+    background: var(--color-tooltip-bg-solid);
+    font: var(--type-pixel-tiny);
+    letter-spacing: var(--type-pixel-tiny-tracking);
+    color: var(--color-accent-gold);
+    white-space: nowrap;
+    pointer-events: none;
+    transform: translate(-50%, calc(-100% - var(--m-cross)));
+    /* The hero stage may be drawn smaller (--s); the readout keeps its 8 px type. */
+    zoom: calc(1 / var(--s, 1));
+    opacity: 0;
+  }
+  .globe :global(.globe__probe-label[data-side='below']) {
+    transform: translate(-50%, var(--m-cross));
+  }
+  .globe :global(.globe__probe[data-on='true']),
+  .globe :global(.globe__probe-label[data-on='true']) {
+    opacity: 1;
+  }
+  @media (forced-colors: active) {
+    .globe :global(.globe__probe-h),
+    .globe :global(.globe__probe-v) {
+      forced-color-adjust: none;
+      background: Highlight;
+    }
   }
   @keyframes globe-spin {
     from {

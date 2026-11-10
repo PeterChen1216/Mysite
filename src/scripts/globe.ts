@@ -96,6 +96,30 @@ export function initGlobes(): void {
       report();
     };
     hero = { element: globe, angle: position, set: turnTo };
+    // Row 4 (PLAN-EXPERIENCE §6): the crosshair and its readout load the first time the globe is
+    // pointed at, touched or focused (src/scripts/globe-probe.ts).
+    let probing = false;
+    const probe = (first: { x: number; y: number; kind: 'pointer' | 'press' | 'focus' }) => {
+      if (probing) return;
+      probing = true;
+      void import('./globe-probe').then((m) => m.attachProbe(globe, position, first));
+    };
+    const at = (e: PointerEvent, kind: 'pointer' | 'press') => {
+      const r = globe.getBoundingClientRect();
+      return {
+        x: ((e.clientX - r.left) * GLOBE_PX) / r.width,
+        y: ((e.clientY - r.top) * GLOBE_PX) / r.height,
+        kind,
+      };
+    };
+    globe.addEventListener(
+      'pointerenter',
+      (e) => e.pointerType === 'mouse' && probe(at(e, 'pointer')),
+    );
+    globe.addEventListener('pointerdown', (e) => probe(at(e, 'press')));
+    globe.addEventListener('focus', () => {
+      if (globe.matches(':focus-visible')) probe({ x: 0, y: 0, kind: 'focus' });
+    });
     const template = globe.dataset.valueText ?? '{deg}';
     const report = () => {
       const deg = Math.round(position()) % 360;

@@ -112,6 +112,12 @@ const seconds = Math.round(widthPx / LOOP.tickerPxPerSecond);
   .ticker:focus-within .ticker__track {
     animation-play-state: paused;
   }
+  /* Row 7 (PLAN-EXPERIENCE §6): the item under the pointer brightens (its tag keeps its colour). */
+  @media (hover: hover) {
+    .ticker__item:hover {
+      color: var(--color-text-hi);
+    }
+  }
   @keyframes ticker {
     to {
       transform: translateX(-100%);

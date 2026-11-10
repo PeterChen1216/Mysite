@@ -23,7 +23,12 @@ const { copy } = data;
     title={copy.experience.title}
     blurb={copy.experience.blurb}
   />
-  <GitLog rows={data.log} entries={data.experience} headHref="#contact" />
+  <GitLog
+    rows={data.log}
+    entries={data.experience}
+    headHref="#contact"
+    showCmd={copy.experience.show_cmd}
+  />
 </section>
 {data.community.length > 0 && (
   <section id="community" class="exp exp--community" aria-labelledby="community-title">
@@ -35,7 +40,12 @@ const { copy } = data;
         {copy.experience.community_title}
       </h2>
     </header>
-    <GitLog rows={data.communityLog} entries={data.community} tone="community" />
+    <GitLog
+      rows={data.communityLog}
+      entries={data.community}
+      tone="community"
+      showCmd={copy.experience.show_cmd}
+    />
   </section>
 )}
 

@@ -1,5 +1,13 @@
 ---
-/** Inventory-slot panel (Figma "Card/*"): panel background, edge border, hard shadow. */
+/**
+ * Inventory-slot panel (Figma "Card/*"): panel background, edge border, hard shadow.
+ *
+ * Hover & interaction (PLAN-EXPERIENCE §6 row 2): under the pointer, with focus inside, or while a
+ * finger presses it, the card lifts 4 px on a harder shadow and its edge takes the accent of its
+ * section (`--card-accent`, set by the section). Under a mouse a faint grid spotlight follows the
+ * pointer inside it, behind the content (src/scripts/interact.ts moves it; transform only). Calm
+ * keeps the lift and drops the step into it.
+ */
 interface Props {
   class?: string;
   dashed?: boolean;
@@ -16,12 +24,15 @@ const { class: cls, dashed = false, labelledby, id, as: Tag = 'article' } = Astr
   id={id}
   data-particles
 >
+  <span class="card__spot" aria-hidden="true"></span>
   <slot />
 </Tag>
 
 <style>
   .card {
     position: relative;
+    /* Its own stack, so the spotlight (z-index −1) is drawn over the panel, under the content. */
+    isolation: isolate;
     display: flex;
     flex-direction: column;
     gap: 16px;
@@ -30,11 +41,58 @@ const { class: cls, dashed = false, labelledby, id, as: Tag = 'article' } = Astr
     border: 2px solid var(--color-border-edge);
     box-shadow: 6px 6px 0 0 var(--color-shadow); /* Figma Card/*: p-28, 6 px hard shadow at 60 % */
     min-width: 0;
+    transition:
+      translate var(--m-card),
+      box-shadow var(--m-card),
+      border-color var(--m-card);
   }
   .card--dashed {
     border-style: dashed;
     box-shadow: none;
     background: var(--color-bg-panel-ghost);
+  }
+  /* Lifted: on hover (a mouse), with focus inside (the keyboard), pressed (touch). */
+  @media (hover: hover) {
+    .card:hover {
+      translate: 0 calc(-1 * var(--m-card-lift));
+      box-shadow: 10px 10px 0 0 var(--color-shadow-lift);
+      border-color: var(--card-accent, var(--color-border-edge));
+    }
+  }
+  .card:focus-within,
+  .card[data-press] {
+    translate: 0 calc(-1 * var(--m-card-lift));
+    box-shadow: 10px 10px 0 0 var(--color-shadow-lift);
+    border-color: var(--card-accent, var(--color-border-edge));
+  }
+  /* The spotlight: a square of the page's graph paper, fading out from its centre. */
+  .card__spot {
+    position: absolute;
+    left: 0;
+    top: 0;
+    z-index: -1;
+    width: var(--m-spot);
+    height: var(--m-spot);
+    background-image:
+      linear-gradient(var(--color-border-edge) 1px, transparent 1px),
+      linear-gradient(90deg, var(--color-border-edge) 1px, transparent 1px);
+    background-size: 12px 12px;
+    -webkit-mask-image: radial-gradient(closest-side, currentColor, transparent);
+    mask-image: radial-gradient(closest-side, currentColor, transparent);
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity var(--m-card);
+  }
+  @media (hover: hover) and (pointer: fine) {
+    :global(html.js) .card:hover > .card__spot {
+      opacity: 0.6;
+      will-change: transform;
+    }
+  }
+  @media (forced-colors: active) {
+    .card__spot {
+      display: none;
+    }
   }
   @media (max-width: 767px) {
     .card {

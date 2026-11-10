@@ -32,6 +32,11 @@ export default defineConfig({
         'src/lib/theme-tokens.ts',
         'src/lib/cues.ts',
         'src/lib/mono-art.ts',
+        // The hover & interaction catalogue and the tier 2 motion (X3).
+        'src/lib/interact.ts',
+        'src/lib/regions.ts',
+        'src/lib/prompt.ts',
+        'src/lib/ambient.ts',
         // The WebGL scene's pure parts (the renderer and GL plumbing are covered by E2E).
         'src/scene/tier.ts',
         'src/scene/math.ts',

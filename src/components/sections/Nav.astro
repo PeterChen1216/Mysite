@@ -98,6 +98,9 @@ const { copy, links } = data;
     height: 16px;
     background: var(--color-accent-terminal-green);
   }
+  .nav__links {
+    position: relative;
+  }
   .nav__links ul {
     display: flex;
     gap: 4px;
@@ -106,6 +109,7 @@ const { copy, links } = data;
     list-style: none;
   }
   .nav__links a {
+    position: relative;
     display: block;
     padding: 8px 14px;
     border: 1px solid transparent;
@@ -114,12 +118,59 @@ const { copy, links } = data;
     text-decoration: none;
     white-space: nowrap;
   }
-  .nav__links a:hover,
+  /* Hover only where there is hover (no sticky hover on touch screens; PLAN-EXPERIENCE §6). */
+  @media (hover: hover) {
+    .nav__links a:hover {
+      background: var(--color-nav-active-bg);
+      border-color: var(--color-nav-active-edge);
+      color: var(--color-accent-terminal-green);
+    }
+  }
   .nav__links a:focus-visible,
   .nav__links a[aria-current='true'] {
     background: var(--color-nav-active-bg);
     border-color: var(--color-nav-active-edge);
     color: var(--color-accent-terminal-green);
+  }
+  /* Row 8 (PLAN-EXPERIENCE §6): the current section's link ends in a block cursor, in its right
+     padding (where there is one: the phone layout has none). */
+  @media (min-width: 768px) {
+    .nav__links a[aria-current='true']::after {
+      content: '';
+      position: absolute;
+      right: 4px;
+      top: 50%;
+      width: 6px;
+      height: 12px;
+      translate: 0 -50%;
+      background: currentColor;
+    }
+  }
+  /* … and a 2 px pixel underline slides to the link under the pointer or keyboard focus, from where
+     it was (src/scripts/interact.ts places it: transform only). */
+  .nav__links :global(.nav__underline) {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 1px;
+    height: 2px;
+    background: var(--color-accent-terminal-green);
+    transform-origin: 0 0;
+    opacity: 0;
+    pointer-events: none;
+    transition:
+      translate var(--m-nav-slide),
+      scale var(--m-nav-slide),
+      opacity var(--m-nav-slide);
+  }
+  .nav__links :global(.nav__underline[data-on='true']) {
+    opacity: 1;
+  }
+  @media (forced-colors: active) {
+    .nav__links :global(.nav__underline) {
+      forced-color-adjust: none;
+      background: Highlight;
+    }
   }
   .nav__actions {
     display: flex;
@@ -153,7 +204,12 @@ const { copy, links } = data;
     color: var(--color-text-mid);
     cursor: pointer;
   }
-  .nav__key:hover,
+  @media (hover: hover) {
+    .nav__key:hover {
+      border-color: var(--color-nav-active-edge);
+      color: var(--color-accent-terminal-green);
+    }
+  }
   .nav__key:focus-visible {
     border-color: var(--color-nav-active-edge);
     color: var(--color-accent-terminal-green);

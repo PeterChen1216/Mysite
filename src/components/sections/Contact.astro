@@ -229,6 +229,15 @@ const { ping } = copy.contact;
     shape-rendering: crispEdges;
     filter: drop-shadow(2px 2px 0 var(--color-text-shadow));
   }
+  /* Row 13: the pixel ↗ of an external button hops a pixel up-right. */
+  @media (hover: hover) {
+    .contact__btns :global(.mc-btn:hover) .ext {
+      translate: var(--m-hop) calc(-1 * var(--m-hop));
+    }
+  }
+  .contact__btns :global(.mc-btn:focus-visible) .ext {
+    translate: var(--m-hop) calc(-1 * var(--m-hop));
+  }
   .contact__mail {
     display: flex;
     flex-wrap: wrap;

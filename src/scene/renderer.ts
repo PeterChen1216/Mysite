@@ -19,7 +19,7 @@
  */
 import iceSvg from '../assets/voxel/globe/ice.svg?raw';
 import landSvg from '../assets/voxel/globe/land.svg?raw';
-import { CALM, LOOP, SCENE } from '../motion/params';
+import { CALM, HOVER, LOOP, SCENE } from '../motion/params';
 import { GLOBE_TURN_EVENT, heroGlobe } from '../scripts/globe';
 import { MOTION_EVENT, PREFS_EVENT, isPaused, loopsAllowed, resolved } from '../scripts/prefs';
 import { airport } from './airports';
@@ -39,7 +39,7 @@ import {
   type Stop,
 } from './camera';
 import { earthVoxels, parseCellSvg } from './earth';
-import { domGlobeCenterLon, sunDirection } from './geo';
+import { HERO_VIEW, domGlobeCenterLon, sunDirection } from './geo';
 import { buffer, cubeGeometry, instancedVao, program, uniforms, type GL } from './gl';
 import {
   DEG,
@@ -90,7 +90,7 @@ import {
 
 /** Where the camera looks from at each stop (from the subject towards the camera) and its lens. */
 const VIEW = {
-  hero: { dir: normalize([0.16, 0.1, 1]), fov: 30, veil: 0 },
+  hero: { dir: normalize(HERO_VIEW), fov: 30, veil: 0 },
   island: { dir: normalize([0.32, 0.62, 1]), fov: 32, veil: 0.12 },
   orbit: { dir: normalize([-0.62, 0.42, 0.66]), fov: 40, veil: 0.45 },
 };
@@ -161,6 +161,9 @@ export interface SceneStatus {
   workMs: number;
   /** The sky colour the scene draws with now, 0–255 per channel (from the theme tokens). */
   sky: number[];
+  /** Hero blocks punched so far (row 1), and how many cubes are squashing now. */
+  punched: number;
+  squashing: number;
 }
 
 export interface Scene {
@@ -186,6 +189,8 @@ export function startScene(canvas: HTMLCanvasElement, gl: GL, opts: SceneOptions
     earth: 0,
     workMs: 0,
     sky: [],
+    punched: 0,
+    squashing: 0,
   };
   (canvas as HTMLCanvasElement & { sceneStatus?: SceneStatus }).sceneStatus = status;
 
@@ -313,7 +318,8 @@ export function startScene(canvas: HTMLCanvasElement, gl: GL, opts: SceneOptions
   const routeGroup = routes.length
     ? cubeGroup(packCubes(routes.flatMap((r) => routeDashes(r.from, r.to))), gl.STATIC_DRAW)
     : null;
-  const world = cubeGroup(packCubes(staticCubes()), gl.STATIC_DRAW);
+  const worldCubes = staticCubes();
+  const world = cubeGroup(packCubes(worldCubes), gl.STATIC_DRAW);
   const home = homeIsland();
   const dynamic = cubeGroup(
     new Float32Array((1 + 3 + routes.length) * CUBE_FLOATS),
@@ -523,6 +529,15 @@ export function startScene(canvas: HTMLCanvasElement, gl: GL, opts: SceneOptions
   let visible = true;
   let disposed = false;
   const stats = { frames: 0, since: performance.now(), ms: 0 };
+  /**
+   * Punched blocks (PLAN-EXPERIENCE §6 row 1): the hero stage's DOM blocks, hidden at this tier,
+   * still say where each block is (src/scripts/interact.ts); a punch on one squashes the cubes
+   * that stand for it here — the stage's first four (the grass-and-dirt chunk) are heroChunk's
+   * six cubes, the other six blocks heroBlocks' in stage order (world.ts staticCubes).
+   */
+  const CHUNK = [6, 7, 8, 9, 10, 11];
+  const PUNCH_CUBES = [CHUNK, CHUNK, CHUNK, CHUNK, [0], [1], [2], [3], [4], [5]];
+  const punches = new Map<number, number>(); // cube index → when it was punched
 
   const sceneOn = () => html.dataset.tier === '3';
 
@@ -566,6 +581,7 @@ export function startScene(canvas: HTMLCanvasElement, gl: GL, opts: SceneOptions
     canvas.style.visibility = '';
 
     stepWorld(dt, running, calm);
+    stepPunches(now);
     if (sizeDirty) applySize();
     draw(cam, fade);
     status.frames++;
@@ -619,7 +635,41 @@ export function startScene(canvas: HTMLCanvasElement, gl: GL, opts: SceneOptions
       stats.since = now;
     }
 
-    if ((running && fade < 1) || !settled || warm) request();
+    if ((running && fade < 1) || !settled || warm || punches.size) request();
+  }
+
+  /** Squash, stretch and settle each punched cube, as the DOM block's two frames do. */
+  function stepPunches(now: number) {
+    if (!punches.size) return;
+    const k = EARTH.radius / 162; // world units per stage px (world.ts stagePoint)
+    gl.bindBuffer(gl.ARRAY_BUFFER, world.vbo);
+    for (const [i, at] of punches) {
+      const c = worldCubes[i]!;
+      const t = (now - at) / HOVER.punch.ms;
+      const edge = typeof c.size === 'number' ? c.size : c.size[1];
+      let size: [number, number, number] = [edge, edge, edge];
+      let lift = 0;
+      if (t < 0.25)
+        size = [
+          edge * HOVER.punch.squash[0],
+          edge * HOVER.punch.squash[1],
+          edge * HOVER.punch.squash[0],
+        ];
+      else if (t < 0.5) {
+        size = [
+          edge * HOVER.punch.stretch[0],
+          edge * HOVER.punch.stretch[1],
+          edge * HOVER.punch.stretch[0],
+        ];
+        lift = HOVER.punch.bobPx * k;
+      } else if (t < 1) lift = HOVER.punch.bobPx * k * (1 - (t - 0.5) / 0.5) ** 2;
+      const base = (size[1] - edge) / 2; // squash on its base, not its centre
+      const moved =
+        t >= 1 ? c : { ...c, size, pos: [c.pos[0], c.pos[1] + base + lift, c.pos[2]] as Vec3 };
+      gl.bufferSubData(gl.ARRAY_BUFFER, i * CUBE_FLOATS * 4, packCubes([moved]));
+      if (t >= 1) punches.delete(i);
+    }
+    status.squashing = punches.size;
   }
 
   /** Move what moves on its own: the Earth's turn, orbs, lid, satellite, planes. */
@@ -952,6 +1002,17 @@ export function startScene(canvas: HTMLCanvasElement, gl: GL, opts: SceneOptions
     on,
   );
   document.addEventListener('pointerleave', () => (pointer = null), on);
+  document.addEventListener(
+    'zhic:punch',
+    (e) => {
+      const block = (e as CustomEvent<{ block: number }>).detail?.block;
+      for (const i of PUNCH_CUBES[block] ?? []) punches.set(i, performance.now());
+      status.punched++;
+      status.squashing = punches.size;
+      request();
+    },
+    on,
+  );
   document.addEventListener(
     MOTION_EVENT,
     () => {

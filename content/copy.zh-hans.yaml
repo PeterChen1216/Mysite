@@ -36,6 +36,41 @@ hero:
   eyebrow_prefix: '// 玩家:'
   globe_label: 地球
   globe_value: '已转动 {deg}°'
+  globe_lat: { n: '北纬 {deg}°', s: '南纬 {deg}°' }
+  globe_lon: { e: '东经 {deg}°', w: '西经 {deg}°' }
+  globe_regions:
+    north_america: 北美洲
+    south_america: 南美洲
+    europe: 欧洲
+    africa: 非洲
+    asia: 亚洲
+    oceania: 大洋洲
+    antarctica: 南极洲
+    pacific: 太平洋
+    atlantic: 大西洋
+    indian: 印度洋
+    arctic: 北冰洋
+    southern: 南大洋
+  copy_handle: 复制
+  copy_label: '复制 {handle}'
+  copied: 已复制
+  # 命令本身保持英文（终端的样子）；它们打印出来的说明是中文。
+  prompt:
+    open: 在终端里输入命令
+    label: 命令
+    hint: '输入 help 查看命令。按 Esc 关闭。'
+    help:
+      - 'help — 这份列表'
+      - 'whoami — 我是谁'
+      - 'ls — 本页的各个栏目'
+      - 'cat interests.txt — 我的兴趣'
+      - 'open resume — 下载我的英文简历'
+      - 'theme night | day | mono | paper | prism — 更换主题'
+      - 'clear — 清屏'
+      - 'exit — 关闭命令行'
+    not_found: '找不到命令：{cmd} —— 试试 help'
+    theme_set: '主题：{name}'
+    opening: '正在打开 {name}…'
   avgeek_badge: AvGeek  ✈  航线 · 座位 · 里程
   avgeek_route: AvGeek  ✈  {from} ⇄ {to}
 
@@ -62,6 +97,7 @@ about:
   track_suffix: 方向
   minor_prefix: 辅修
   coursework: 相关课程
+  slot_tip: '{group} · 第 {n} 项，共 {count} 项'
   avgeek_panels:
     watching: 关注中
     seat_rules: 选座规则
@@ -94,6 +130,8 @@ projects:
       - { code: SEA, name: Seattle, time_zone: America/Los_Angeles }
       - { code: SHA, name: Shanghai, time_zone: Asia/Shanghai }
     weather: Open-Meteo
+    # 只给读屏读的说明（手机画面本身仍是英文）。
+    pick_label: 显示此城市的时间：
     hours: 24h
     tab_list: List
     tab_clock: Clock
@@ -104,6 +142,7 @@ experience:
   blurb: 我走过的路，最新的在前。HEAD 指向接下来的事。
   head_hint: 打个招呼 ↓
   head_dates: 现在 →
+  show_cmd: 'git show {hash}'
   community_cmd: git log --oneline ~/community
   community_title: 社区
 
@@ -374,3 +413,32 @@ from:
   i18n.suggest_dismiss: f6ad0e81
   i18n.suggest_label: d8923b60
   scene.hud: 9fea2546
+  hero.globe_lat.n: a3d7584b
+  hero.globe_lat.s: d254fde0
+  hero.globe_lon.e: f7891b62
+  hero.globe_lon.w: 37f6ee9e
+  hero.globe_regions.north_america: 8551e40e
+  hero.globe_regions.south_america: 665db136
+  hero.globe_regions.europe: 8313d0d9
+  hero.globe_regions.africa: f7112718
+  hero.globe_regions.asia: c6b2610f
+  hero.globe_regions.oceania: 3b7bf69f
+  hero.globe_regions.antarctica: 54be24ac
+  hero.globe_regions.pacific: c7a96b79
+  hero.globe_regions.atlantic: 62958c69
+  hero.globe_regions.indian: 2677ccbc
+  hero.globe_regions.arctic: b1287c32
+  hero.globe_regions.southern: ec7cb03b
+  hero.copy_handle: 166b0224
+  hero.copy_label: ad7226d1
+  hero.copied: 380117b9
+  hero.prompt.open: 86eaff26
+  hero.prompt.label: f400330b
+  hero.prompt.hint: d27f7fb1
+  hero.prompt.help: 5d0c8264
+  hero.prompt.not_found: ced804e4
+  hero.prompt.theme_set: 7f2f180b
+  hero.prompt.opening: e4eee8d7
+  about.slot_tip: cb3d851f
+  projects.phone.pick_label: 76565f5d
+  experience.show_cmd: d014beb9

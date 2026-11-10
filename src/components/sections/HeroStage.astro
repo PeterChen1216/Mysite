@@ -5,6 +5,10 @@
  * three tooltips whose text comes from content/ via src/lib/derive.ts. Decorative except the
  * tooltips, which repeat facts available elsewhere on the page, and the player card: it takes
  * keyboard focus so the photo can be revealed without a mouse.
+ *
+ * The player card (PLAN-EXPERIENCE §6 row 10): hovered, focused or tapped, the photo replaces the
+ * portrait, the XP bar along its foot fills (again) to the real GPA ratio it shows at rest, and the
+ * name tag offers a key that copies the GitHub handle (src/scripts/interact.ts).
  */
 import { Image } from 'astro:assets';
 import orbit from '../../assets/voxel/hero/orbit.png';
@@ -14,12 +18,16 @@ import portrait from '../../assets/voxel/hero/portrait-pixel.svg';
 import PixelGlobe from '../ui/PixelGlobe.astro';
 import Tooltip from '../ui/Tooltip.astro';
 import VoxelBlock, { type BlockName } from '../ui/VoxelBlock.astro';
+import { fillTemplate, gpaRatio } from '../../lib/derive';
 import type { PageData } from '../../lib/page-data';
 
 interface Props {
   data: PageData;
 }
 const { data } = Astro.props;
+// The XP bar shows the real GPA ratio (education.yaml `gpa`); without a GPA it stays full.
+const xp = gpaRatio(data.edu.gpa) ?? 1;
+const handle = data.githubHandle;
 
 // Figma positions (px within the 560×640 stage), in the order they drop in.
 const blocks: Array<{ name: BlockName; x: number; y: number; w: number; glow?: string }> = [
@@ -53,6 +61,11 @@ const blocks: Array<{ name: BlockName; x: number; y: number; w: number; glow?: s
         interactive
         label={data.copy.hero.globe_label}
         valueText={data.copy.hero.globe_value}
+        probe={{
+          lat: data.copy.hero.globe_lat,
+          lon: data.copy.hero.globe_lon,
+          regions: data.copy.hero.globe_regions,
+        }}
       />
     </div>
     <img
@@ -93,14 +106,29 @@ const blocks: Array<{ name: BlockName; x: number; y: number; w: number; glow?: s
         sizes="156px"
         loading="lazy"
       />
-      <span class="stage__xp" aria-hidden="true"></span>
+      <span class="stage__xp" aria-hidden="true" style={`--xp:${xp.toFixed(4)}`}></span>
       <figcaption id="stage-photo-caption" class="visually-hidden">
         {data.profile.avatar_alt}
       </figcaption>
     </figure>
-    {data.githubHandle && (
+    {handle && (
       <p class="stage__tag" data-intro="rise" style="--i:2">
-        <span class="stage__tag-in">{data.githubHandle}</span>
+        <span class="stage__tag-in">{handle}</span>
+        <button
+          type="button"
+          class="stage__copy"
+          data-copy={handle}
+          data-copied={data.copy.hero.copied}
+          aria-label={fillTemplate(
+            data.copy.hero.copy_label,
+            { handle },
+            [],
+            'copy.yaml hero.copy_label',
+          )}
+        >
+          {data.copy.hero.copy_handle}
+        </button>
+        <span class="visually-hidden" role="status" data-copy-status></span>
       </p>
     )}
     <!-- Badges are anchored to the right edge: their text length depends on content. -->
@@ -237,26 +265,105 @@ const blocks: Array<{ name: BlockName; x: number; y: number; w: number; glow?: s
     /* src/motion/params.ts UI.photoSwap */
     transition: opacity var(--m-photo-swap);
   }
-  .stage__card:hover .stage__photo,
-  .stage__card:focus-visible .stage__photo {
+  @media (hover: hover) {
+    .stage__card:hover .stage__photo {
+      opacity: 1;
+    }
+  }
+  .stage__card:focus-visible .stage__photo,
+  .stage__card[data-active] .stage__photo {
     opacity: 1;
   }
   /* Escape hides the photo again until the pointer leaves or focus moves (WCAG 1.4.13). */
   .stage__card[data-dismissed] .stage__photo {
     opacity: 0;
   }
+  /* The XP bar: filled to the GPA ratio (--xp), the rest an empty track. Hovered, focused or
+     tapped (motion full) it fills again from empty: a track-coloured cover over the bar shrinks
+     back to the ratio (transform only). */
   .stage__xp {
     position: absolute;
     left: 0;
     right: 0;
     bottom: 0;
     height: 6px;
-    background: var(--color-accent-terminal-green);
+    background: linear-gradient(
+      90deg,
+      var(--color-accent-terminal-green) calc(var(--xp, 1) * 100%),
+      var(--color-bg-slot) 0
+    );
+  }
+  .stage__xp::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: var(--color-bg-slot);
+    transform-origin: 100% 0;
+    scale: 0 1;
+  }
+  @media (hover: hover) {
+    :global(html.motion[data-motion='full']) .stage__card:hover .stage__xp::before {
+      animation: xp-fill var(--m-enter) steps(12);
+    }
+  }
+  :global(html.motion[data-motion='full']) .stage__card:focus-visible .stage__xp::before,
+  :global(html.motion[data-motion='full']) .stage__card[data-active] .stage__xp::before {
+    animation: xp-fill var(--m-enter) steps(12);
+  }
+  @keyframes xp-fill {
+    from {
+      scale: 1 1;
+    }
+    to {
+      scale: calc(1 - var(--xp, 1)) 1;
+    }
   }
   .stage__tag {
     left: 18px;
     top: 408px;
     margin: 0;
+  }
+  /* The copy key sits beside the tag (absolute: nothing moves), shown with the card's hover,
+     focus or tap, or its own focus; it needs JavaScript. */
+  .stage__copy {
+    position: absolute;
+    left: calc(100% + 4px);
+    top: 0;
+    display: none;
+    height: 100%;
+    padding: 0 8px;
+    border: 0;
+    background: var(--color-tag-bg);
+    font: var(--type-pixel-tiny);
+    letter-spacing: var(--type-pixel-tiny-tracking);
+    color: var(--color-accent-terminal-green);
+    white-space: nowrap;
+    cursor: pointer;
+    opacity: 0;
+    pointer-events: none;
+    zoom: var(--inv, 1);
+  }
+  :global(html.js) .stage__copy {
+    display: block;
+  }
+  @media (hover: hover) {
+    .stage__card:hover ~ .stage__tag .stage__copy,
+    .stage__tag:hover .stage__copy {
+      opacity: 1;
+      pointer-events: auto;
+    }
+  }
+  .stage__card:focus-visible ~ .stage__tag .stage__copy,
+  .stage__card[data-active] ~ .stage__tag .stage__copy,
+  .stage__copy:focus-visible,
+  .stage__copy[data-done] {
+    opacity: 1;
+    pointer-events: auto;
+  }
+  @media (forced-colors: active) {
+    .stage__copy {
+      border: 1px solid ButtonText;
+    }
   }
   .stage__tag-in {
     display: block;

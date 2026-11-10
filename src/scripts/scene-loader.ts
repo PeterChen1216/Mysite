@@ -13,11 +13,36 @@ import { applyTier, currentTier, debugMode, lowerForSession, setGlProbe, tierFor
 
 type SceneModule = typeof import('../scene/renderer');
 type HudModule = typeof import('./scene-hud');
+type AmbientModule = typeof import('./ambient');
 
 let ready = false; // the page is usable (load, then idle)
 let probing = false;
 let scene: ReturnType<SceneModule['startScene']> | null = null;
 let hud: ReturnType<HudModule['showHud']> | null = null;
+let ambient: ReturnType<AmbientModule['startAmbient']> | null = null;
+let ambientLoading = false;
+
+/**
+ * Tier 2's 2D ambient layer (PLAN-EXPERIENCE §7.4; src/scripts/ambient.ts): its own small chunk,
+ * loaded once the page is usable, at motion full (calm has no parallax and no particles, §4.1);
+ * removed when the tier or the level changes. Never beside the WebGL scene (tier 3).
+ */
+async function syncAmbient() {
+  const want = () => ready && currentTier() === 2 && resolved().motion === 'full';
+  if (!want()) {
+    ambient?.dispose();
+    ambient = null;
+    return;
+  }
+  if (ambient || ambientLoading) return;
+  ambientLoading = true;
+  try {
+    const { startAmbient } = await import('./ambient');
+    if (want() && !ambient) ambient = startAmbient();
+  } finally {
+    ambientLoading = false;
+  }
+}
 
 /** Make the context the scene will draw with, or say why not. */
 function probe(forced: boolean): {
@@ -76,6 +101,7 @@ function drop(why: 'watchdog' | 'lost') {
   scene = null;
   applyTier(resolved().motion);
   updateHud();
+  void syncAmbient();
 }
 
 async function maybeStart() {
@@ -136,11 +162,13 @@ export function initScene(): void {
     }
     ready = true;
     void maybeStart();
+    void syncAmbient();
   });
   // A visitor who turns motion back on (or off) mid-visit: the tier follows (src/scripts/tier.ts).
   document.addEventListener(MOTION_EVENT, () => {
     updateHud();
     if (scene) scene.sync();
     else void maybeStart();
+    void syncAmbient();
   });
 }

@@ -5,9 +5,15 @@
  * The separators are real text (visually hidden), so each <dd> reads exactly
  * "A, B, C; basic D" — for screen readers, copy/paste and the content tests (the list separator
  * is copy.yaml `labels.list_separator`).
+ *
+ * Hover & interaction (PLAN-EXPERIENCE §6 row 3): with JavaScript the slots are one roving-tabindex
+ * list (Tab reaches it once, arrow keys move, Home / End); under the pointer, with focus, or
+ * tapped, a slot's enchant glint sweeps across and its tooltip rises with the group's name, its
+ * place and the count (copy.yaml about.slot_tip; src/scripts/slots.ts).
  */
 import Card from '../../ui/Card.astro';
 import CardTitle from '../../ui/CardTitle.astro';
+import { fillTemplate } from '../../../lib/derive';
 import type { PageData } from '../../../lib/page-data';
 
 interface Props {
@@ -16,12 +22,29 @@ interface Props {
 const { data } = Astro.props;
 const { copy, skills } = data;
 const sep = copy.labels.list_separator;
+/** Per group, each slot's tooltip: "Programming · 2 of 7" (its place, and how many there are). */
+const tips: Record<string, string[]> = Object.fromEntries(
+  skills.groups.map((g) => {
+    const all = [...g.items, ...g.basic];
+    return [
+      g.name,
+      all.map((_, i) =>
+        fillTemplate(
+          copy.about.slot_tip,
+          { group: g.name, n: String(i + 1), count: String(all.length) },
+          [],
+          'copy.yaml about.slot_tip',
+        ),
+      ),
+    ];
+  }),
+);
 ---
 
 <Card class="about-card about-card--skills" id="skills" labelledby="about-skills">
   <div class="sk">
     <CardTitle as="h3" id="about-skills" label={copy.about.card_skills} />
-    <dl class="sk__list">
+    <dl class="sk__list" data-slots>
       {skills.groups.map((g) => (
         <div class="sk__row">
           <dt class="sk__name">{g.name}</dt>
@@ -29,7 +52,9 @@ const sep = copy.labels.list_separator;
             {g.items.map((item, i) => (
               <>
                 {i > 0 && <span class="visually-hidden">{sep}</span>}
-                <span class="sk__slot">{item}</span>
+                <span class="sk__slot" data-tip={tips[g.name]![i]}>
+                  {item}
+                </span>
               </>
             ))}
             {g.basic.length > 0 && (
@@ -40,7 +65,12 @@ const sep = copy.labels.list_separator;
                   {g.basic.map((item, i) => (
                     <>
                       {i > 0 && <span class="visually-hidden">{sep}</span>}
-                      <span class="sk__slot sk__slot--basic">{item}</span>
+                      <span
+                        class="sk__slot sk__slot--basic"
+                        data-tip={tips[g.name]![g.items.length + i]}
+                      >
+                        {item}
+                      </span>
                     </>
                   ))}
                 </span>

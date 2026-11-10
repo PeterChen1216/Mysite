@@ -35,6 +35,44 @@ hero:
   globe_value: '已轉動 {deg}°'
   avgeek_badge: AvGeek  ✈  航線 · 座位 · 里程
   avgeek_route: AvGeek  ✈  {from} ⇄ {to}
+  globe_lat:
+    n: 北緯 {deg}°
+    s: 南緯 {deg}°
+  globe_lon:
+    e: 東經 {deg}°
+    w: 西經 {deg}°
+  globe_regions:
+    north_america: 北美洲
+    south_america: 南美洲
+    europe: 歐洲
+    africa: 非洲
+    asia: 亞洲
+    oceania: 大洋洲
+    antarctica: 南極洲
+    pacific: 太平洋
+    atlantic: 大西洋
+    indian: 印度洋
+    arctic: 北冰洋
+    southern: 南大洋
+  copy_handle: 複製
+  copy_label: 複製 {handle}
+  copied: 已複製
+  prompt:
+    open: 在終端裏輸入命令
+    label: 命令
+    hint: 輸入 help 查看命令。按 Esc 關閉。
+    help:
+      - help — 這份列表
+      - whoami — 我是誰
+      - ls — 本頁的各個欄目
+      - cat interests.txt — 我的興趣
+      - open resume — 下載我的英文簡歷
+      - theme night | day | mono | paper | prism — 更換主題
+      - clear — 清屏
+      - exit — 關閉命令行
+    not_found: 找不到命令：{cmd} —— 試試 help
+    theme_set: 主題：{name}
+    opening: 正在打開 {name}…
 
 ticker:
   label: 狀態
@@ -66,6 +104,7 @@ about:
     news: 航線新聞
     fare_examples: 票價實驗室
     tools: 常用工具
+  slot_tip: "{group} · 第 {n} 項，共 {count} 項"
 
 projects:
   cmd: ls ~/projects --sort=shipping
@@ -94,6 +133,7 @@ projects:
     hours: 24h
     tab_list: List
     tab_clock: Clock
+    pick_label: 顯示此城市的時間：
 
 experience:
   cmd: git log --oneline --graph ~/career
@@ -103,6 +143,7 @@ experience:
   head_dates: 現在 →
   community_cmd: git log --oneline ~/community
   community_title: 社區
+  show_cmd: git show {hash}
 
 contact:
   cmd: ping {host} --count 1
@@ -371,3 +412,32 @@ from:
   i18n.suggest_dismiss: 1ae0017b
   i18n.suggest_label: 3921dabc
   scene.hud: a9ab427d
+  hero.globe_lat.n: c9e94ebc
+  hero.globe_lat.s: d3b0e5c4
+  hero.globe_lon.e: 07ca45e4
+  hero.globe_lon.w: b4a435cc
+  hero.globe_regions.north_america: 21f9a82a
+  hero.globe_regions.south_america: 478a3ce5
+  hero.globe_regions.europe: fc32106f
+  hero.globe_regions.africa: c495676b
+  hero.globe_regions.asia: 242c6120
+  hero.globe_regions.oceania: a5173218
+  hero.globe_regions.antarctica: ebc2e598
+  hero.globe_regions.pacific: bd7f3093
+  hero.globe_regions.atlantic: c37cd6c0
+  hero.globe_regions.indian: 622b5df7
+  hero.globe_regions.arctic: 4bdaba93
+  hero.globe_regions.southern: 5044171c
+  hero.copy_handle: 435f6d8b
+  hero.copy_label: 766bfdc9
+  hero.copied: 94a13ba8
+  hero.prompt.open: a832cd72
+  hero.prompt.label: c8d669da
+  hero.prompt.hint: fc994647
+  hero.prompt.help: 6696b502
+  hero.prompt.not_found: ce74391b
+  hero.prompt.theme_set: cb899697
+  hero.prompt.opening: 80b89246
+  about.slot_tip: 7bcf65b3
+  projects.phone.pick_label: 2055fb5a
+  experience.show_cmd: d014beb9

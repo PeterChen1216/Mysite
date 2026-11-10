@@ -58,9 +58,25 @@ test.describe('the Clock Stamp phone', () => {
     await expectFace(page, new Date(now.getTime() + 45_000));
   });
 
-  test('is hidden from assistive technology', async ({ page }) => {
+  // PLAN-EXPERIENCE §6 row 11: with JavaScript the hands' tags are keys (tests/e2e/
+  // interactions.spec.ts), so the phone is no longer hidden as a whole — its pictures still are.
+  test('its pictures are hidden from assistive technology; its hands are a named group of keys', async ({
+    page,
+  }) => {
     await page.goto(V2);
-    await expect(page.locator('.phone')).toHaveAttribute('aria-hidden', 'true');
+    const phone = page.locator('.phone');
+    expect(
+      await phone.evaluate((el) =>
+        [...el.children, ...(el.querySelector('.dial')?.children ?? [])]
+          .filter((c) => !c.classList.contains('dial') && !c.querySelector('button'))
+          .filter((c) => c.getAttribute('aria-hidden') !== 'true')
+          .map((c) => c.className),
+      ),
+    ).toEqual([]);
+    const group = page.getByRole('group', { name: copy.projects.phone.pick_label, exact: true });
+    await expect(group.getByRole('button')).toHaveCount(cities.length);
+    for (const c of cities)
+      await expect(group.getByRole('button', { name: new RegExp(c.name) })).toHaveText(mark(c));
   });
 
   test.describe('without JavaScript', () => {
@@ -68,6 +84,13 @@ test.describe('the Clock Stamp phone', () => {
     test('shows the sample moment it was built for', async ({ page }) => {
       await page.goto(V2);
       await expectFace(page, SAMPLE_MOMENT);
+    });
+    test('is hidden from assistive technology (pure decoration: its tags are not keys)', async ({
+      page,
+    }) => {
+      await page.goto(V2);
+      await expect(page.locator('.phone')).toHaveAttribute('aria-hidden', 'true');
+      await expect(page.locator('.phone button')).toHaveCount(0);
     });
   });
 });

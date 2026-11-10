@@ -95,6 +95,13 @@ export const sunDirection = (date: Date): Vec3 => {
 };
 
 /**
+ * Where the stop 1 camera looks at the Earth from (from the Earth towards the camera, before
+ * normalising): a little to the right and above. Shared with the globe's crosshair
+ * (src/lib/regions.ts), which reads the WebGL Earth the way it is drawn.
+ */
+export const HERO_VIEW: Vec3 = [0.16, 0.1, 1];
+
+/**
  * The hero's DOM globe (src/components/ui/PixelGlobe.astro) turned by `deg` shows this longitude
  * at its centre: its map strip starts 485 px left of the disc and moves 1.8 px per degree, and
  * map x 0 is 180° W.

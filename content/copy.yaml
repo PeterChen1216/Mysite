@@ -42,6 +42,47 @@ hero:
   # {deg} is how far it has been turned.
   globe_label: Globe
   globe_value: 'turned {deg}°'
+  # Under the pointer (or, from the keyboard, at its centre) the globe shows where that is: a
+  # latitude, a longitude ({deg}: whole degrees) and the continent or ocean (read from the globe's
+  # own map). Decoration: screen readers have the slider's value above.
+  globe_lat: { n: '{deg}°N', s: '{deg}°S' }
+  globe_lon: { e: '{deg}°E', w: '{deg}°W' }
+  globe_regions:
+    north_america: North America
+    south_america: South America
+    europe: Europe
+    africa: Africa
+    asia: Asia
+    oceania: Oceania
+    antarctica: Antarctica
+    pacific: Pacific Ocean
+    atlantic: Atlantic Ocean
+    indian: Indian Ocean
+    arctic: Arctic Ocean
+    southern: Southern Ocean
+  # The player card's name tag: a key that copies the GitHub handle ({handle}).
+  copy_handle: copy # the key's word
+  copy_label: 'Copy {handle}' # read out by screen readers
+  copied: copied # after a copy (also read out)
+  # The hero terminal's last line, `$ █`, is a real prompt (an easter egg): click it, or Tab to it
+  # and press Enter. Commands stay in English; what they print comes from here and from your
+  # content ({cmd} and {name} are filled in as it runs).
+  prompt:
+    open: Type a command in the terminal # the line's name (read out)
+    label: Command # the text field's name (read out)
+    hint: 'Type help for the commands. Esc closes.'
+    help:
+      - 'help — this list'
+      - 'whoami — who I am'
+      - 'ls — the sections of this page'
+      - 'cat interests.txt — what I am into'
+      - 'open resume — download my résumé'
+      - 'theme night | day | mono | paper | prism — change the theme'
+      - 'clear — clear the screen'
+      - 'exit — close the prompt'
+    not_found: 'command not found: {cmd} — try help'
+    theme_set: 'theme: {name}'
+    opening: 'opening {name}…'
   avgeek_badge: AvGeek  ✈  routes · seats · mileage
   # Replaces avgeek_badge once aviation.yaml `watching` has a route ({from}/{to}: its airports).
   avgeek_route: AvGeek  ✈  {from} ⇄ {to}
@@ -63,6 +104,9 @@ about:
   card_off: off --the-clock
   card_avgeek: avgeek
   card_skills: inventory --skills
+  # The tooltip over a skill or a course under the pointer or keyboard focus: its group, where it
+  # is in the group and how many there are ({group} {n} {count}).
+  slot_tip: '{group} · {n} of {count}'
   avgeek_title: Routes, seats, mileage plans.
   now_link: Open in the App Store
   skills_basic: basic # "…; basic Java"
@@ -113,6 +157,9 @@ projects:
       - { code: SEA, name: Seattle, time_zone: America/Los_Angeles }
       - { code: SHA, name: Shanghai, time_zone: Asia/Shanghai }
     weather: Open-Meteo
+    # The hands are keys: point at one, tap it or Tab to it, and its city is shown. Read out
+    # before the city names.
+    pick_label: Show the time in
     hours: 24h
     tab_list: List
     tab_clock: Clock
@@ -123,6 +170,8 @@ experience:
   blurb: Where I’ve been, newest first. HEAD points at whatever comes next.
   head_hint: say hi ↓
   head_dates: now →
+  # What a commit's hash becomes under the pointer or focus ({hash}).
+  show_cmd: 'git show {hash}'
   # The smaller log below the commit history: entries with `kind: volunteer` in experience.yaml.
   community_cmd: git log --oneline ~/community
   community_title: Community

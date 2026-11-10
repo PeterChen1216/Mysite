@@ -12,6 +12,7 @@
 import { z } from 'astro/zod';
 import { LOCALE_STATES } from '../i18n/locales';
 import { BODY, HASH, PROJECT_FIELDS, fieldsOf, translatedFields, type Fields } from '../i18n/translations';
+import { GLOBE_REGIONS } from '../lib/regions';
 import { isTimeZone } from '../lib/world-clock';
 import { MOTION_LEVELS, THEMES } from '../prefs/model';
 
@@ -459,6 +460,29 @@ export const copySchema = z
         avgeek_badge: text,
         /** Badge once aviation.yaml `watching` has a route; {from} and {to} are its airports. */
         avgeek_route: text,
+        /**
+         * Where the globe's crosshair is (PLAN-EXPERIENCE §6 row 4): latitude and longitude
+         * ({deg} = whole degrees) and the continent or ocean under it.
+         */
+        globe_lat: z.object({ n: text, s: text }).strict(),
+        globe_lon: z.object({ e: text, w: text }).strict(),
+        globe_regions: z.record(z.enum(GLOBE_REGIONS), text),
+        /** The player card's copy key (row 10): its word, its name ({handle}), and after a copy. */
+        copy_handle: text,
+        copy_label: text,
+        copied: text,
+        /** The hero terminal's prompt (row 12): {cmd} the unknown command, {name} what it names. */
+        prompt: z
+          .object({
+            open: text,
+            label: text,
+            hint: text,
+            help: lines,
+            not_found: text,
+            theme_set: text,
+            opening: text,
+          })
+          .strict(),
       })
       .strict(),
     ticker: z
@@ -489,6 +513,8 @@ export const copySchema = z
         track_suffix: text,
         minor_prefix: text,
         coursework: text,
+        /** A skill's or course's tooltip (row 3): {group}, {n} (its place) and {count}. */
+        slot_tip: text,
         /** Panel headings, keyed like aviation.yaml. */
         avgeek_panels: z
           .object({
@@ -550,6 +576,8 @@ export const copySchema = z
               .max(4),
             /** Under the date, where the app names its weather source. */
             weather: text,
+            /** Read out before the city names: the hands are keys (row 11). */
+            pick_label: text,
             /** The 24-hour switch and the two tabs at the bottom. */
             hours: text,
             tab_list: text,
@@ -565,6 +593,8 @@ export const copySchema = z
         blurb: text,
         head_hint: text,
         head_dates: text,
+        /** What a commit's hash becomes under the pointer or focus (row 6); {hash}. */
+        show_cmd: text,
         /** Heading of the community log (volunteer entries), shown below the commit history. */
         community_cmd: text,
         community_title: text,

@@ -8,8 +8,13 @@
  *
  * It runs on the real time. The markup is built for a fixed sample moment, which is what shows
  * without JavaScript; src/scripts/clock.ts then sets every `data-clock` element to now and moves
- * the hands on each new minute. Purely decorative (aria-hidden); zones, cities and labels live in
- * content/copy.yaml → projects.phone.
+ * the hands on each new minute. Zones, cities and labels live in content/copy.yaml →
+ * projects.phone.
+ *
+ * Decorative (aria-hidden) but for its hands' tags (PLAN-EXPERIENCE §6 row 11): with JavaScript
+ * they are keys in a named group — point at one, tap it or Tab to it, and its city becomes the
+ * selected one (name, offset, big time and date switch to it) while the other hands dim. Without
+ * JavaScript they are plain tags and the whole phone is hidden from assistive technology.
  */
 import land from '../../assets/voxel/globe/land.svg';
 import mask from '../../assets/voxel/globe/ocean-mask.svg';
@@ -27,9 +32,11 @@ import type { ProjectsCopy } from './projects-view';
 
 interface Props {
   phone: ProjectsCopy['phone'];
+  /** copy.yaml labels.list_separator: between a hand's code and its city in its name. */
+  separator: string;
   class?: string;
 }
-const { phone, class: cls } = Astro.props;
+const { phone, separator, class: cls } = Astro.props;
 
 // Drawn for a fixed moment at build time; clock.ts takes over in the browser.
 const SAMPLE = SAMPLE_MOMENT;
@@ -54,6 +61,9 @@ const hands = away.map((c, i) => ({
   reach: REACH[i % REACH.length]!,
   layer: away.length - i,
 }));
+/** A hand's key is named by what it shows and its city: "FRA, Frankfurt" (or just the city). */
+const keyName = (c: { code?: string | undefined; name: string }) =>
+  c.code ? `${c.code}${separator}${c.name}` : c.name;
 
 // Dial geometry (px in the 180 px face): a tick per hour, a numeral every two hours.
 const R = 90;
@@ -73,6 +83,7 @@ const numerals = Array.from({ length: 12 }, (_, i) => ({ h: i * 2, ...polar(i * 
 <div
   class:list={['phone', cls]}
   aria-hidden="true"
+  data-phone
   data-particles
   data-surface="dark"
   data-type-fixed
@@ -94,7 +105,9 @@ const numerals = Array.from({ length: 12 }, (_, i) => ({ h: i * 2, ...polar(i * 
       <i></i>
       <i></i>
     </span>
-    <span class="phone__city">{selected.name}</span>
+    <span class="phone__city" data-clock-city>
+      {selected.name}
+    </span>
     <span class="phone__key phone__key--add"></span>
   </div>
   <p class="phone__offset" data-clock="offset" data-tz={selected.time_zone} data-home={home}>
@@ -121,7 +134,7 @@ const numerals = Array.from({ length: 12 }, (_, i) => ({ h: i * 2, ...polar(i * 
     {phone.weather}
   </p>
 
-  <div class="dial" style={`--mask:url("${mask.src}")`}>
+  <div class="dial" style={`--mask:url("${mask.src}")`} data-pick-label={phone.pick_label}>
     <div class="dial__face">
       <img class="dial__map" src={land.src} width="360" height="180" alt="" draggable="false" />
       <img
@@ -150,7 +163,7 @@ const numerals = Array.from({ length: 12 }, (_, i) => ({ h: i * 2, ...polar(i * 
         {n.h}
       </span>
     ))}
-    {hands.map((c) => (
+    {hands.map((c, i) => (
       <span
         class={`hand hand--${c.tone}`}
         data-clock="hand"
@@ -158,13 +171,26 @@ const numerals = Array.from({ length: 12 }, (_, i) => ({ h: i * 2, ...polar(i * 
         style={`--a:${angle(c.time_zone)};--r:${c.reach}px;z-index:${c.layer}`}
       >
         <i class="hand__line" />
-        <b class="hand__tag">{c.mark}</b>
+        <b
+          class="hand__tag"
+          data-city={c.name}
+          data-city-tz={c.time_zone}
+          data-city-name={keyName(c)}
+          data-selected={i === 0 ? '' : undefined}
+        >
+          {c.mark}
+        </b>
       </span>
     ))}
     <span class="hand hand--here" data-clock="hand" data-tz={home} style={`--a:${angle(home)}`}>
       <i class="hand__line"></i>
-      <b class:list={['hand__tag', { 'hand__tag--icon': !here }]}>
-        <svg class="px" viewBox="0 0 8 8" width="8" height="8">
+      <b
+        class:list={['hand__tag', { 'hand__tag--icon': !here }]}
+        data-city={here?.name}
+        data-city-tz={here ? home : undefined}
+        data-city-name={here ? keyName(here) : undefined}
+      >
+        <svg class="px" viewBox="0 0 8 8" width="8" height="8" aria-hidden="true">
           <path d="M7 0h1v1H7zM5 1h2v1H5zM3 2h4v1H3zM1 3h5v1H1zM0 4h6v1H0zM4 5h1v3H4zM5 5h1v1H5z"></path>
         </svg>
         {here && (here.code ?? here.name)}
@@ -511,6 +537,24 @@ const numerals = Array.from({ length: 12 }, (_, i) => ({ h: i * 2, ...polar(i * 
   }
   .hand--here .hand__line {
     height: 40px;
+  }
+  /* Row 11: with JavaScript the tags are buttons (src/scripts/clock.ts) that look as they did. */
+  button.hand__tag {
+    margin: 0;
+    border: 0;
+    appearance: none;
+    letter-spacing: normal;
+    text-align: center;
+    cursor: pointer;
+  }
+  /* Once a visitor has picked a city, the other hands dim (opacity: nothing moves). */
+  .dial[data-picked] .hand:not([data-picked]) {
+    opacity: 0.4;
+  }
+  @media (forced-colors: active) {
+    button.hand__tag {
+      border: 1px solid ButtonText;
+    }
   }
   /* "Here": the location arrow, then the code of the city in the home zone when one is listed. */
   .hand--here .hand__tag {

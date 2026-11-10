@@ -129,11 +129,23 @@ export function fillTemplate(
  * Placeholders filled per use rather than page-wide, by copy.yaml key: `hero.avgeek_route` takes
  * {from} and {to} (its airports), `hero.globe_value` {deg} (filled in the browser as the globe
  * turns), `prefs.text.option` {size}, `scene.hud` (the `?debug=1` numbers, filled in the
- * browser). Anywhere else they are unknown and fail the build.
+ * browser), and the X3 catalogue's: the globe's coordinates {deg}, the copy key {handle}, the
+ * prompt's {cmd} / {name}, a slot's tooltip {group} {n} {count}, a commit's {hash}. Anywhere else
+ * they are unknown and fail the build.
  */
 export const LOCAL_PLACEHOLDERS: Readonly<Record<string, readonly string[]>> = {
   'hero.avgeek_route': ['from', 'to'],
   'hero.globe_value': ['deg'],
+  'hero.globe_lat.n': ['deg'],
+  'hero.globe_lat.s': ['deg'],
+  'hero.globe_lon.e': ['deg'],
+  'hero.globe_lon.w': ['deg'],
+  'hero.copy_label': ['handle'],
+  'hero.prompt.not_found': ['cmd'],
+  'hero.prompt.theme_set': ['name'],
+  'hero.prompt.opening': ['name'],
+  'about.slot_tip': ['group', 'n', 'count'],
+  'experience.show_cmd': ['hash'],
   'hero.summon_ok': ['status'],
   'hero.whoami_line': ['name', 'programme', 'year'],
   'labels.year_month': ['month', 'year'],

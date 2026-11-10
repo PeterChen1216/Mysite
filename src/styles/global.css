@@ -71,6 +71,29 @@ img {
 html[data-scene] .scene {
   opacity: 1;
 }
+/* Graphics tier 2's ambient layer (src/scripts/ambient.ts): parallax stars and motes on one 2D
+   canvas behind the page, in place of the page's still star pictures (Background.astro). */
+.ambient {
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  display: block;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity var(--m-scene-fade) ease-out;
+}
+.ambient.ambient--on {
+  opacity: 1;
+}
+html[data-ambient] .bg__stars {
+  opacity: 0;
+  visibility: hidden;
+  transition:
+    opacity var(--m-scene-fade),
+    visibility 0s linear var(--m-scene-fade);
+}
 /* `?debug=1` (src/scripts/scene-hud.ts). */
 .scene-hud {
   position: fixed;
@@ -91,6 +114,96 @@ html[data-scene] .scene {
   height: 100vh;
   pointer-events: none;
   z-index: 60;
+}
+
+/* Row 15 (PLAN-EXPERIENCE §6): on a desktop, a pixel crosshair over the voxel blocks and the hero
+   stage's art and — at graphics tier 3 — over the bare page where the WebGL world shows through;
+   the system's own cursor over text and controls. The cursor is inherited, so the containers that
+   take it hand `auto` back to every child that is not itself one of them (links keep their hand,
+   the globe its grab). Black and white, so it reads on every theme. */
+@media (hover: hover) and (pointer: fine) {
+  img.voxel:not(a *, button *),
+  .stage,
+  html[data-scene='live']
+    :is(main, .hero, .hero__copy, .about, .inv, .inv__stack, .projects, .projects__grid, .exp) {
+    cursor:
+      url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='17' height='17' shape-rendering='crispEdges'%3E%3Cpath d='M7 0h3v7h7v3h-7v7H7v-7H0V7h7z' fill='%23000'/%3E%3Cpath d='M8 1h1v7h7v1H9v7H8V9H1V8h7z' fill='%23fff'/%3E%3C/svg%3E")
+        8 8,
+      crosshair;
+  }
+  .stage > :is(.stage__card, .stage__tip, .stage__tag),
+  html[data-scene='live']
+    :is(main, .hero, .hero__copy, .about, .inv, .inv__stack, .projects, .projects__grid, .exp)
+    > :not(main, section, .hero__copy, .stage-wrap, .inv, .inv__stack, .projects__grid) {
+    cursor: auto;
+  }
+}
+
+/* Row 3 (PLAN-EXPERIENCE §6; src/scripts/slots.ts): an inventory slot's enchant glint — a band of
+   light that sweeps across it once (transform only, inside the slot) — and the one tooltip. */
+[data-slots] [data-tip] {
+  position: relative;
+  overflow: clip;
+}
+[data-slots] [data-tip][data-glint]::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(105deg, transparent 30%, var(--color-glint) 50%, transparent 70%);
+  translate: -100% 0;
+  pointer-events: none;
+  animation: glint var(--m-glint) steps(8) forwards;
+}
+@keyframes glint {
+  to {
+    translate: 100% 0;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  [data-slots] [data-tip][data-glint]::after {
+    animation: none;
+    display: none;
+  }
+}
+.tip {
+  position: fixed;
+  left: 0;
+  top: 0;
+  z-index: 66;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  max-width: min(320px, calc(100vw - 16px));
+  padding: 8px 10px;
+  border: 2px solid var(--color-tooltip-edge);
+  background: var(--color-bg-terminal);
+  box-shadow: 4px 4px 0 0 var(--color-shadow);
+  font: var(--type-code-sm);
+  opacity: 0;
+  visibility: hidden;
+  translate: 0 var(--m-tip-rise);
+  pointer-events: none;
+  transition:
+    opacity var(--m-tip) steps(2),
+    translate var(--m-tip) steps(2),
+    visibility 0s linear var(--m-tip);
+}
+.tip[data-side='below'] {
+  translate: 0 calc(-1 * var(--m-tip-rise));
+}
+.tip[data-on='true'] {
+  opacity: 1;
+  visibility: visible;
+  translate: 0 0;
+  pointer-events: auto;
+  transition-delay: 0s;
+}
+.tip__name {
+  color: var(--color-text-hi);
+  font: var(--type-code-bold);
+}
+.tip__line {
+  color: var(--color-accent-enchant-text);
 }
 
 /* Redundant cues (src/lib/cues.ts): the glyph of a colour-coded label, drawn before it where the
@@ -245,6 +358,9 @@ html[data-scene] .scene {
   .globe,
   .particles-layer,
   .scene,
+  .ambient,
+  .linkline,
+  .tip,
   .scene-hud,
   dialog,
   [data-prefs-open],

@@ -94,7 +94,21 @@ const newTab = external ? await getNewTabLabel(Astro.currentLocale) : '';
     --lo: var(--mc-grass-lo);
     --fg: var(--mc-grass-fg);
   }
-  .mc-btn:hover,
+  /* Hover only where there is hover: a tap must not leave a button lit (PLAN-EXPERIENCE §6). */
+  @media (hover: hover) {
+    .mc-btn:hover {
+      --bg: var(--mc-hover-bg);
+      --hi: var(--mc-hover-hi);
+      --lo: var(--mc-hover-lo);
+      --fg: var(--mc-hover-fg);
+      color: var(--fg);
+    }
+    .mc-btn--grass:hover {
+      --bg: var(--mc-grass-hover-bg);
+      --hi: var(--mc-grass-hover-hi);
+      --lo: var(--mc-grass-hover-lo);
+    }
+  }
   .mc-btn:focus-visible {
     --bg: var(--mc-hover-bg);
     --hi: var(--mc-hover-hi);
@@ -102,7 +116,6 @@ const newTab = external ? await getNewTabLabel(Astro.currentLocale) : '';
     --fg: var(--mc-hover-fg);
     color: var(--fg);
   }
-  .mc-btn--grass:hover,
   .mc-btn--grass:focus-visible {
     --bg: var(--mc-grass-hover-bg);
     --hi: var(--mc-grass-hover-hi);
@@ -112,6 +125,7 @@ const newTab = external ? await getNewTabLabel(Astro.currentLocale) : '';
     outline: 2px solid var(--color-focus);
     outline-offset: 3px;
   }
+  /* Row 9: every kind presses down 2 px (a tap too: src/scripts/interact.ts lets iOS show it). */
   .mc-btn:active {
     transform: translateY(2px);
   }

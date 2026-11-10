@@ -257,9 +257,21 @@ const label = copy.about.avgeek_panels;
     content: '↗' / '';
     font-size: 0.85em;
   }
-  .av__tool:hover,
+  @media (hover: hover) {
+    .av__tool:hover {
+      border-color: var(--color-accent-diamond);
+      color: var(--color-accent-gold);
+    }
+    .av__tool:hover::after {
+      translate: var(--m-hop) calc(-1 * var(--m-hop));
+    }
+  }
   .av__tool:focus-visible {
     border-color: var(--color-accent-diamond);
     color: var(--color-accent-gold);
+  }
+  /* Row 13: the ↗ hops a pixel up-right. */
+  .av__tool:focus-visible::after {
+    translate: var(--m-hop) calc(-1 * var(--m-hop));
   }
 </style>

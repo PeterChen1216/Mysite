@@ -227,9 +227,20 @@ const block = BLOCK[p.platform[0] ?? ''] ?? 'gold';
     font-family: var(--font-symbol);
     font-size: 0.7em;
   }
-  .pc__links a:hover,
+  @media (hover: hover) {
+    .pc__links a:hover {
+      color: var(--color-accent-gold);
+    }
+    .pc__links a:hover::after {
+      translate: var(--m-hop) calc(-1 * var(--m-hop));
+    }
+  }
   .pc__links a:focus-visible {
     color: var(--color-accent-gold);
+  }
+  /* Row 13: the ↗ hops a pixel up-right. */
+  .pc__links a:focus-visible::after {
+    translate: var(--m-hop) calc(-1 * var(--m-hop));
   }
   @media (max-width: 767px) {
     .pc__block {

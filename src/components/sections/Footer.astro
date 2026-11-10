@@ -1,8 +1,10 @@
 ---
 /**
  * Footer (Figma "Footer"): copyright · domain, tagline, version · last updated, `prefs` (opens the
- * settings window; shown when JavaScript runs), back to top.
+ * settings window; shown when JavaScript runs), back to top — where, at full motion, a grass block
+ * falls while the page scrolls up behind it (PLAN-EXPERIENCE §6 row 16; src/scripts/interact.ts).
  */
+import grass from '../../assets/voxel/blocks/grass.svg';
 import Glyphs from '../ui/Glyphs.astro';
 import type { PageData } from '../../lib/page-data';
 
@@ -33,7 +35,7 @@ const { footer, copy, site } = data;
     >
       {copy.footer.prefs}
     </button>
-    <a class="foot__top" href="#top">
+    <a class="foot__top" href="#top" data-spawn-block={grass.src}>
       <Glyphs text={copy.footer.back_to_top} />
     </a>
   </div>
