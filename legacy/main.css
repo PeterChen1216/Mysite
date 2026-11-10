@@ -44,11 +44,6 @@ body {
     -webkit-text-size-adjust: 100%
 }
 
-body:after {
-    display: none;
-    content: url("images/background/background1.JPG") url("images/background/background2.jpg")
-}
-
 h1,
 h2,
 h3,
@@ -702,20 +697,7 @@ pre>code {
     }
 }
 
-.shallow-bg {
-    /* background-image: url("images/background/background1.JPG"); */
-    background-image: url("images/background/background_hkust_2.jpg");
-    background-size: cover;
-    background-repeat: no-repeat;
-    background-position: center center
-}
-
-.deep-bg {
-    background-image: url("images/background/background2.JPG");
-    background-size: cover;
-    background-repeat: no-repeat;
-    background-position: center center
-}
+/* .shallow-bg / .deep-bg pointed at background photos that were never in this repository. */
 
 .profile-wrapper {
     border-radius: 25px;

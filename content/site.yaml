@@ -11,7 +11,7 @@ features:
 
 meta:
   title: Zhicheng (Peter) Chen
-  description: This is an personal/academic website
+  description: This is a personal/academic website
   keywords:
     - Zhicheng Chen
     - Peter Chen
@@ -19,4 +19,4 @@ meta:
 footer:
   copyright_holder: Peter Chen
   copyright_start: 2025
-  update_note: Expected to updated by each 2 weeks.
+  update_note: Expected to be updated every 2 weeks.
