@@ -1,10 +1,12 @@
 /**
  * Hover burst (PLAN §5.2): 16 square pixel particles (4 or 6 px) fly out radially from the pointer
  * over 300–400 ms when it enters an element marked `data-particles`. One fixed canvas overlay,
- * pointer-events: none; only runs while particles are alive. Off for reduced motion (also when
- * it is turned on while the page is open) and for devices without a hover-capable fine pointer.
+ * pointer-events: none, made on the first burst; only runs while particles are alive. Plays at
+ * motion level "full" only (not calm or off, not while paused, not with reduced motion — also when
+ * any of those starts while the page is open) and on devices with a hover-capable fine pointer.
  */
 import { PARTICLES } from '../motion/params';
+import { burstsAllowed } from './prefs';
 
 interface Particle {
   x: number;
@@ -20,30 +22,35 @@ interface Particle {
 const rand = (min: number, max: number) => min + Math.random() * (max - min);
 
 export function initParticles(): void {
-  if (!document.documentElement.classList.contains('motion')) return;
   if (!matchMedia('(hover: hover) and (pointer: fine)').matches) return;
-  const reduce = matchMedia('(prefers-reduced-motion: reduce)');
 
-  const canvas = document.createElement('canvas');
-  canvas.setAttribute('aria-hidden', 'true');
-  canvas.className = 'particles-layer';
-  document.body.append(canvas);
-  const ctx = canvas.getContext('2d');
-  if (!ctx) return;
-
+  let canvas: HTMLCanvasElement | undefined;
+  let ctx: CanvasRenderingContext2D | null = null;
   let dpr = 1;
   const resize = () => {
+    if (!canvas) return;
     dpr = Math.min(2, window.devicePixelRatio || 1);
     canvas.width = Math.round(innerWidth * dpr);
     canvas.height = Math.round(innerHeight * dpr);
   };
-  resize();
-  addEventListener('resize', resize, { passive: true });
+  const layer = () => {
+    if (!canvas) {
+      canvas = document.createElement('canvas');
+      canvas.setAttribute('aria-hidden', 'true');
+      canvas.className = 'particles-layer';
+      document.body.append(canvas);
+      ctx = canvas.getContext('2d');
+      resize();
+      addEventListener('resize', resize, { passive: true });
+    }
+    return ctx;
+  };
 
   const live: Particle[] = [];
   let raf = 0;
 
   const frame = (now: number) => {
+    if (!ctx) return;
     ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
     ctx.clearRect(0, 0, innerWidth, innerHeight);
     for (let i = live.length - 1; i >= 0; i--) {
@@ -64,6 +71,7 @@ export function initParticles(): void {
   };
 
   const burst = (x: number, y: number) => {
+    if (!layer()) return;
     const now = performance.now();
     const tokens = getComputedStyle(document.documentElement);
     const colors = PARTICLES.colors
@@ -92,7 +100,7 @@ export function initParticles(): void {
   document.addEventListener(
     'pointerover',
     (e) => {
-      if (e.pointerType !== 'mouse' || reduce.matches) return;
+      if (e.pointerType !== 'mouse' || !burstsAllowed()) return;
       const el = (e.target as Element | null)?.closest('[data-particles]') ?? null;
       if (el && el !== current) burst(e.clientX, e.clientY);
       current = el;

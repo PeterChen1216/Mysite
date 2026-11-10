@@ -58,6 +58,12 @@ export const LOOP = {
   tickerPxPerSecond: 40,
 } as const;
 
+/**
+ * Motion level "calm" (PLAN-EXPERIENCE §4.1): no intro, no particles, and the loops that remain
+ * run this many times slower (cursor blink, orbit rings, globe, ticker).
+ */
+export const CALM = { loopSlowdown: 3 } as const;
+
 /** Width of one globe map tile in px; one tile scrolling past = one rotation. */
 export const GLOBE_TILE_PX = 648;
 
@@ -112,6 +118,7 @@ export function motionCssVars(): string {
     '--m-globe-tile': px(GLOBE_TILE_PX),
     '--m-btn-hover': `${ms(UI.buttonHover.ms)} steps(${UI.buttonHover.steps})`,
     '--m-photo-swap': `${ms(UI.photoSwap.ms)} steps(${UI.photoSwap.steps})`,
+    '--m-calm-slow': String(CALM.loopSlowdown),
   };
   return Object.entries(vars)
     .map(([k, v]) => `${k}:${v}`)

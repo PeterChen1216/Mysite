@@ -35,6 +35,10 @@ hero:
   cta_projects: SEE PROJECTS
   cta_resume: DOWNLOAD RESUME
   eyebrow_prefix: '// player:' # "// player: Peter Chen · UW iSchool ’27 · Seattle, Washington"
+  # The hero globe is a slider for the keyboard: arrow keys turn it. Read out by screen readers;
+  # {deg} is how far it has been turned.
+  globe_label: Globe
+  globe_value: 'turned {deg}°'
   avgeek_badge: AvGeek  ✈  routes · seats · mileage
   # Replaces avgeek_badge once aviation.yaml `watching` has a route ({from}/{to}: its airports).
   avgeek_route: AvGeek  ✈  {from} ⇄ {to}
@@ -138,9 +142,54 @@ contact:
 
 footer:
   tagline: built with voxels, coffee & too many flights
+  prefs: prefs # opens the settings window
   back_to_top: ▲ back to spawn
   rights: All rights reserved.
   updated: updated
+
+# The settings window (~/.config) and the keys in the nav that open it and pause the page.
+# The `cmd` lines are decoration; the `legend` and `name` lines are what screen readers read.
+# Each choice applies at once and is saved in the visitor's browser only.
+prefs:
+  open_label: Settings # the gear key in the nav (read out by screen readers)
+  pause_label: Pause animations # the pause key in the nav: pressed = paused
+  title: '~/.config — prefs' # the window's title bar
+  heading: Settings # the window's name (read out)
+  intro: Changes apply at once and are saved in this browser only.
+  close: close
+  reset_cmd: reset
+  reset: Reset to defaults
+  theme:
+    cmd: theme --set
+    legend: Theme
+    # One per theme: a plain name, and its in-world name (or a short note) under it.
+    options:
+      night: { name: Night, note: the default }
+      day: { name: Day, note: Overworld }
+      mono-dark: { name: Mono dark, note: Bedrock }
+      mono-light: { name: Mono light, note: Paper }
+      cvd: { name: Colour-blind safe, note: Prism }
+      auto: { name: Auto, note: Night or Day, like your device }
+    contrast_note: Your device asks for more contrast, so every theme uses stronger lines and text.
+  motion:
+    cmd: motion --set
+    legend: Motion
+    options:
+      auto: { name: Auto, note: like your device }
+      full: { name: Full, note: everything moves }
+      calm: { name: Calm, note: no intro or sparks, slower loops }
+      off: { name: 'Off', note: nothing moves }
+    reduced_note: Your device asks for reduced motion, so the page stays still whatever you pick.
+  text:
+    cmd: text --size
+    legend: Text size
+    option: '{size}%' # {size} = 100, 115 or 130
+  keys:
+    cmd: keys --shortcuts
+    legend: Keyboard shortcuts
+    on: 'On'
+    off: 'Off'
+    note: '“,” opens this window and “p” pauses animations, when you are not typing in a field.'
 
 # Small words used inside dates and lists.
 labels:

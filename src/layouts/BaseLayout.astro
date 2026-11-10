@@ -8,6 +8,9 @@ import { withBase } from '../lib/paths';
 import { motionCssVars } from '../motion/params';
 import tokensCss from '../styles/tokens.css?raw';
 import { parseTokenCss, resolveTokens } from '../lib/theme-tokens';
+import { DEFAULT_LOCALE, LOCALES } from '../i18n/locales';
+import { bootScript } from '../prefs/boot';
+import { THEMES, type Theme } from '../prefs/model';
 
 interface Props {
   title?: string;
@@ -18,20 +21,23 @@ const [site, copy] = await Promise.all([getSite(), getCopy()]);
 const title = Astro.props.title ?? site.meta.title;
 const description = Astro.props.description ?? site.meta.description;
 const canonical = new URL(Astro.url.pathname, Astro.site);
-// The browser UI colour is the page background, read from the tokens (Night without JavaScript).
-const themeColor = resolveTokens(parseTokenCss(tokensCss), { theme: null })['--color-bg-night'];
+// The browser UI colour is the page background of each theme, read from the tokens. Without
+// JavaScript it is Night's; the head script switches it with the theme.
+const tokenRules = parseTokenCss(tokensCss);
+const bg = (theme: Theme | null) => resolveTokens(tokenRules, { theme })['--color-bg-night']!;
+const themeColor = bg(null);
+const boot = bootScript(Object.fromEntries(THEMES.map((t) => [t, bg(t)])) as Record<Theme, string>);
 ---
 
 <!doctype html>
-<html lang="en" style={motionCssVars()}>
+<html lang={LOCALES[DEFAULT_LOCALE].lang} style={motionCssVars()}>
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <script is:inline>
-      // Motion only when JS runs and reduced motion isn't requested (src/styles/motion.css).
-      if (!matchMedia('(prefers-reduced-motion: reduce)').matches)
-        document.documentElement.classList.add('motion');
-    </script>
+    <meta name="theme-color" content={themeColor} />
+    <meta name="color-scheme" content="dark" />
+    <!-- Saved preferences before first paint: theme, motion, text size (src/prefs/boot.ts). -->
+    <script is:inline set:html={boot} />
     <Font cssVariable="--font-code" preload={[{ weight: 400 }]} />
     <Font cssVariable="--font-pixel" preload={[{ weight: 700 }]} />
     <Font cssVariable="--font-8bit" preload />
@@ -45,8 +51,6 @@ const themeColor = resolveTokens(parseTokenCss(tokensCss), { theme: null })['--c
     )}
     <link rel="canonical" href={canonical} />
     <link rel="icon" href={withBase('favicon.svg')} type="image/svg+xml" />
-    <meta name="theme-color" content={themeColor} />
-    <meta name="color-scheme" content="dark" />
     <meta property="og:type" content="website" />
     <meta property="og:title" content={title} />
     <meta property="og:description" content={description} />

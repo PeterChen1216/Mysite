@@ -117,7 +117,7 @@ const scale = size / 324;
   }
   /* Spins only when the motion class is set (JS on, no reduced motion) — see src/styles/motion.css. */
   :global(html.motion) .globe__strip {
-    animation: globe-spin var(--m-globe-turn) linear infinite;
+    animation: globe-spin calc(var(--m-globe-turn) * var(--loop-slow, 1)) linear infinite;
     will-change: transform;
   }
   .globe__strip img {

@@ -4,6 +4,7 @@
  * updates on each new minute. Elements carry `data-clock` and the zone in `data-tz`:
  *   time → 01:45 · hour → 01 · minute → 45 · date → Sat, Oct 24
  *   offset → +16h (from the zone in `data-home`) · hand → sets `--a`, the hand's angle on the dial
+ * Pause-all (WCAG 2.2.2: auto-updating content) holds it; on resume it jumps to now.
  */
 import {
   dateLabel,
@@ -14,6 +15,7 @@ import {
   timeLabel,
   zonedParts,
 } from '../lib/world-clock';
+import { MOTION_EVENT, isPaused } from './prefs';
 
 export function initClocks(): void {
   const els = [...document.querySelectorAll<HTMLElement>('[data-clock][data-tz]')];
@@ -52,13 +54,23 @@ export function initClocks(): void {
   };
 
   // One timer, re-armed for the start of each minute, so the face never lags the real clock.
+  let timer = 0;
   const tick = () => {
+    window.clearTimeout(timer);
+    timer = 0;
+    if (isPaused()) return;
     update();
-    setTimeout(tick, 60_000 - (Date.now() % 60_000) + 50);
+    timer = window.setTimeout(tick, 60_000 - (Date.now() % 60_000) + 50);
   };
   tick();
+  document.addEventListener(MOTION_EVENT, () => {
+    if (isPaused()) {
+      window.clearTimeout(timer);
+      timer = 0;
+    } else if (!timer) tick();
+  });
   // Timers are throttled in a background tab: catch up as soon as the page is looked at again.
   document.addEventListener('visibilitychange', () => {
-    if (!document.hidden) update();
+    if (!document.hidden && !isPaused()) update();
   });
 }

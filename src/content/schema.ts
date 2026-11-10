@@ -11,6 +11,7 @@
  */
 import { z } from 'astro/zod';
 import { isTimeZone } from '../lib/world-clock';
+import { MOTION_LEVELS, THEMES } from '../prefs/model';
 
 /** Astro's `image()` schema helper (or a stand-in in tests); generic so the image type flows through. */
 export type ImageHelper<I extends z.ZodType = z.ZodType> = () => I;
@@ -350,6 +351,7 @@ export const skillsSchema = z
 // Interface text from the Figma design. Facts never live here (PLAN §2.4).
 const lines = z.array(text).min(1);
 const navLink = z.object({ label: text, href: text }).strict();
+const prefOption = z.object({ name: text, note: text }).strict();
 export const copySchema = z
   .object({
     id,
@@ -377,6 +379,9 @@ export const copySchema = z
         cta_projects: text,
         cta_resume: text,
         eyebrow_prefix: text,
+        /** The hero globe as a keyboard slider: its name, and its value ({deg} = degrees turned). */
+        globe_label: text,
+        globe_value: text,
         avgeek_badge: text,
         /** Badge once aviation.yaml `watching` has a route; {from} and {to} are its airports. */
         avgeek_route: text,
@@ -508,7 +513,49 @@ export const copySchema = z
         emails_label: text,
       })
       .strict(),
-    footer: z.object({ tagline: text, back_to_top: text, rights: text, updated: text }).strict(),
+    footer: z
+      .object({
+        tagline: text,
+        back_to_top: text,
+        rights: text,
+        updated: text,
+        /** The footer button that opens the settings window. */
+        prefs: text,
+      })
+      .strict(),
+    /** The settings window (PLAN-EXPERIENCE §2.1) and the nav keys that open it and pause. */
+    prefs: z
+      .object({
+        open_label: text,
+        pause_label: text,
+        title: text,
+        heading: text,
+        intro: text,
+        close: text,
+        reset_cmd: text,
+        reset: text,
+        theme: z
+          .object({
+            cmd: text,
+            legend: text,
+            /** Every theme, and `auto`: a plain name and a note (the in-world name). */
+            options: z.record(z.enum([...THEMES, 'auto']), prefOption),
+            contrast_note: text,
+          })
+          .strict(),
+        motion: z
+          .object({
+            cmd: text,
+            legend: text,
+            options: z.record(z.enum([...MOTION_LEVELS, 'auto']), prefOption),
+            reduced_note: text,
+          })
+          .strict(),
+        /** `option` is a template: {size} = 100, 115 or 130. */
+        text: z.object({ cmd: text, legend: text, option: text }).strict(),
+        keys: z.object({ cmd: text, legend: text, on: text, off: text, note: text }).strict(),
+      })
+      .strict(),
     labels: z
       .object({
         now: text,

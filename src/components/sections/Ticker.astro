@@ -99,7 +99,7 @@ const seconds = Math.round(widthPx / LOOP.tickerPxPerSecond);
     display: flex;
   }
   :global(html.motion) .ticker__track {
-    animation: ticker var(--ticker-s, 60s) linear infinite;
+    animation: ticker calc(var(--ticker-s, 60s) * var(--loop-slow, 1)) linear infinite;
   }
   .ticker:hover .ticker__track,
   .ticker:focus-within .ticker__track {

@@ -1,7 +1,11 @@
 /*
- * Intro + ambient motion. Everything is keyed on `html.motion`, which an inline <head> script adds
- * only when JavaScript runs and the visitor hasn't asked for reduced motion. Without it, the page
- * is fully static and complete (PLAN §5.2 reduced-motion, §6.4 a11y).
+ * Intro + ambient motion, by motion level (PLAN-EXPERIENCE §4.1; src/prefs/model.ts). The inline
+ * <head> script sets them before first paint, only when JavaScript runs:
+ *   html.intro   the load sequence plays (motion "full")
+ *   html.motion  loops may run ("full", or "calm" where they run slower: --loop-slow)
+ *   html[data-motion='off'], or no class at all (no JavaScript, reduced motion): fully static
+ * html[data-paused] (the pause key) holds every loop. Without the classes the page is complete
+ * (PLAN §5.2 reduced-motion, §6.4 a11y).
  * Timings are the `--m-*` custom properties from src/motion/params.ts (motionCssVars on <html>).
  *
  * Intro animations fill `backwards` only: the hidden start state covers each delay, and once an
@@ -10,7 +14,7 @@
  */
 
 /* ---------- headline words: rise + unblur, staggered ---------- */
-html.motion [data-intro='word'] {
+html.intro [data-intro='word'] {
   display: inline-block;
   animation: intro-word var(--m-word-dur) var(--m-word-ease) backwards;
   animation-delay: calc(var(--i, 0) * var(--m-word-stagger));
@@ -24,7 +28,7 @@ html.motion [data-intro='word'] {
 }
 
 /* ---------- terminal lines: typed left → right (per-line --steps/--dur/--d from Hero) ---------- */
-html.motion [data-intro='type'] {
+html.intro [data-intro='type'] {
   animation: intro-type var(--dur, 600ms) steps(var(--steps, 20), end) backwards;
   animation-delay: var(--d, 0ms);
 }
@@ -38,7 +42,7 @@ html.motion [data-intro='type'] {
 }
 
 /* ---------- globe: scale + fade in ---------- */
-html.motion [data-intro='globe'] {
+html.intro [data-intro='globe'] {
   animation:
     intro-globe-scale var(--m-globe-scale-dur) ease-out var(--m-globe-delay) backwards,
     intro-fade var(--m-globe-fade-dur) ease-out var(--m-globe-delay) backwards;
@@ -55,7 +59,7 @@ html.motion [data-intro='globe'] {
 }
 
 /* ---------- blocks: drop, overshoot, settle (70 % = Figma's 420 ms of 600 ms) ---------- */
-html.motion [data-intro='drop'] {
+html.intro [data-intro='drop'] {
   animation: intro-drop var(--m-drop-dur) backwards;
   animation-delay: calc(var(--m-drop-delay) + var(--i, 0) * var(--m-drop-stagger));
 }
@@ -79,7 +83,7 @@ html.motion [data-intro='drop'] {
 }
 
 /* ---------- cards / tooltips: slide up, staggered ---------- */
-html.motion [data-intro='rise'] {
+html.intro [data-intro='rise'] {
   animation: intro-rise var(--m-rise-dur) ease-out backwards;
   animation-delay: calc(var(--m-rise-delay) + var(--i, 0) * var(--m-rise-stagger));
 }
@@ -90,9 +94,12 @@ html.motion [data-intro='rise'] {
   }
 }
 
-/* ---------- ambient loops ---------- */
+/* ---------- ambient loops (slower when calm) ---------- */
+html[data-motion='calm'] {
+  --loop-slow: var(--m-calm-slow);
+}
 html.motion [data-loop='blink'] {
-  animation: loop-blink var(--m-blink) steps(1, end) infinite;
+  animation: loop-blink calc(var(--m-blink) * var(--loop-slow, 1)) steps(1, end) infinite;
 }
 @keyframes loop-blink {
   50% {
@@ -100,11 +107,11 @@ html.motion [data-loop='blink'] {
   }
 }
 html.motion [data-loop='orbit'] {
-  animation: loop-spin var(--m-orbit-turn) linear infinite;
+  animation: loop-spin calc(var(--m-orbit-turn) * var(--loop-slow, 1)) linear infinite;
 }
 /* Figma sways the tilted second ring (17:127); a full spin of an ellipse looks wrong. */
 html.motion [data-loop='orbit-sway'] {
-  animation: loop-sway var(--m-sway-dur) ease-in-out infinite alternate;
+  animation: loop-sway calc(var(--m-sway-dur) * var(--loop-slow, 1)) ease-in-out infinite alternate;
 }
 @keyframes loop-sway {
   to {
@@ -121,6 +128,22 @@ html.motion [data-loop='orbit-sway'] {
 html.motion [data-offscreen],
 html.motion [data-offscreen] * {
   animation-play-state: paused !important;
+}
+
+/* Pause-all (the ⏸ key in the nav, or `p`; WCAG 2.2.2) holds every loop where it is. Scripted
+   loops (the globe, the phone clock) listen for the same state in src/scripts/prefs.ts. */
+html[data-paused] *,
+html[data-paused] *::before,
+html[data-paused] *::after {
+  animation-play-state: paused !important;
+}
+
+/* Motion "off" chosen in the settings: as static as reduced motion (below and global.css). */
+html[data-motion='off'] *,
+html[data-motion='off'] *::before,
+html[data-motion='off'] *::after {
+  transition-duration: 0.01ms !important;
+  scroll-behavior: auto !important;
 }
 
 /* Belt and braces: the class is never added under reduced motion, but kill any stray motion
