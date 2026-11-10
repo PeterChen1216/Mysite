@@ -224,14 +224,26 @@ describe('schemas reject mistakes an owner could make', () => {
     );
   });
 
-  it('copy: the phone clock needs a real IANA time zone', () => {
+  it('copy: the phone clock needs real IANA time zones and 1–4 cities', () => {
     const copy = copySchema.parse(singleton('copy')(read('copy.yaml'))[0]);
-    const withZone = (time_zone: string) => ({
+    const withPhone = (phone: Record<string, unknown>) => ({
       ...copy,
-      projects: { ...copy.projects, phone: { ...copy.projects.phone, time_zone } },
+      projects: { ...copy.projects, phone: { ...copy.projects.phone, ...phone } },
     });
-    expect(() => copySchema.parse(withZone('Asia/Shanghai'))).not.toThrow();
-    expect(() => copySchema.parse(withZone('Seattle'))).toThrow(/IANA/);
+    const city = (time_zone: string) => ({ name: 'City', time_zone });
+    expect(() => copySchema.parse(withPhone({ home_zone: 'Asia/Shanghai' }))).not.toThrow();
+    expect(() => copySchema.parse(withPhone({ home_zone: 'Seattle' }))).toThrow(/IANA/);
+    expect(() => copySchema.parse(withPhone({ cities: [city('Europe/Paris')] }))).not.toThrow();
+    expect(() => copySchema.parse(withPhone({ cities: [city('Paris')] }))).toThrow(/IANA/);
+    expect(() => copySchema.parse(withPhone({ cities: [] }))).toThrow();
+    expect(() =>
+      copySchema.parse(withPhone({ cities: Array.from({ length: 5 }, () => city('UTC')) })),
+    ).toThrow();
+  });
+  it('project: `demo` only takes a demo the site can draw', () => {
+    const p = { title: 'x', status: 'wip', platform: ['ios'], year: 2026, source: 's' };
+    expect(() => projectSchema(image).parse({ ...p, demo: 'world-clock' })).not.toThrow();
+    expect(() => projectSchema(image).parse({ ...p, demo: 'pong' })).toThrow();
   });
   it('copy: every project status has exactly one label', () => {
     const copy = copySchema.parse(singleton('copy')(read('copy.yaml'))[0]);

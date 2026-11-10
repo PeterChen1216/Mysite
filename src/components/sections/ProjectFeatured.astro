@@ -1,8 +1,9 @@
 ---
 /**
  * Featured build (Figma Card/Featured 22:1020): chips, title, tagline + bullets, a status terminal
- * built only from the project's data (stack, derive.statusBar, dates), link buttons and — for an
- * iOS build — the decorative phone mock-up (22:1158) with Command / Glow blocks.
+ * built only from the project's data (stack, derive.statusBar, dates), link buttons and — for a
+ * project with `demo: world-clock` — the live Clock Stamp phone (PhoneMockup) with Command /
+ * Glow blocks.
  *
  * Content contract (tests/e2e/content.spec.ts): inside #project-<id> the first `.meta` reads
  * "year · platforms · status" (the chip row; the separators are visually hidden), then one `.meta`
@@ -32,7 +33,7 @@ const cells = Array.from({ length: bar.total }, (_, i) => i < bar.filled);
 // parts share one <span> so the chip's flex box doesn't swallow the space after the symbol.
 const SYMBOL = /^[★✈⇄→✦]$/u;
 const featuredParts = copy.featured.split(/([★✈⇄→✦])/u).filter(Boolean);
-const withPhone = p.platform.includes('ios');
+const withPhone = p.demo === 'world-clock';
 ---
 
 <Card as="article" class="pf" id={v.anchor} labelledby={`${v.anchor}-title`}>

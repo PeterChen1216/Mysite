@@ -10,6 +10,7 @@
  * Keep this file free of `astro:*` virtual imports so Vitest can load it directly.
  */
 import { z } from 'astro/zod';
+import { isTimeZone } from '../lib/world-clock';
 
 /** Astro's `image()` schema helper (or a stand-in in tests); generic so the image type flows through. */
 export type ImageHelper<I extends z.ZodType = z.ZodType> = () => I;
@@ -22,6 +23,10 @@ const httpUrl = z.url({ protocol: /^https?$/ });
 export const yearMonth = z
   .string()
   .regex(/^\d{4}-(0[1-9]|1[0-2])$/, 'Use the YYYY-MM format, e.g. 2024-07');
+/** An IANA time zone name, e.g. `America/Los_Angeles` (checked at build time). */
+const timeZone = text.refine(isTimeZone, {
+  message: 'Use an IANA time zone name, e.g. America/Los_Angeles',
+});
 const semver = z.string().regex(/^\d+\.\d+\.\d+$/, 'Use MAJOR.MINOR.PATCH, e.g. 0.1.0');
 /** Where a fact comes from (PLAN §7.5). Free text: a link or a short note. */
 const source = text;
@@ -306,6 +311,11 @@ export const projectSchema = <I extends z.ZodType>(image: ImageHelper<I>) =>
       stack: z.array(text).max(8).default([]),
       year: z.number().int().min(2000).max(2100),
       featured: z.boolean().default(false),
+      /**
+       * A live miniature of the product, drawn beside the project when it is the featured one.
+       * `world-clock`: the phone with a 24-hour dial (copy.yaml `projects.phone`).
+       */
+      demo: z.enum(['world-clock']).optional(),
       source,
     })
     .strict()
@@ -431,24 +441,25 @@ export const copySchema = z
         next_body: text,
         next_tags: z.array(text).default([]),
         next_progress: text,
-        /** Decorative phone mock-up beside the featured build (aria-hidden). */
+        /**
+         * The phone drawn beside a project with `demo: world-clock` (decorative, aria-hidden): a
+         * 24-hour dial with one hand per city, after the app's own clock face.
+         */
         phone: z
           .object({
-            stamp: text,
-            place: text,
-            coords: text,
-            /** IANA zone for the live clock, e.g. America/Los_Angeles (checked at build time). */
-            time_zone: text.refine(
-              (tz) => {
-                try {
-                  new Intl.DateTimeFormat('en-US', { timeZone: tz });
-                  return true;
-                } catch {
-                  return false;
-                }
-              },
-              { message: 'Use an IANA time zone name, e.g. America/Los_Angeles' },
-            ),
+            /** The viewer's "here": the status-bar clock, the arrow hand, and what +16h counts from. */
+            home_zone: timeZone,
+            /** The first city is the selected one (name, big clock, date); 1–4 cities. */
+            cities: z
+              .array(z.object({ name: text.max(12), time_zone: timeZone }).strict())
+              .min(1)
+              .max(4),
+            /** Under the date, where the app names its weather source. */
+            weather: text,
+            /** The 24-hour switch and the two tabs at the bottom. */
+            hours: text,
+            tab_list: text,
+            tab_clock: text,
           })
           .strict(),
       })

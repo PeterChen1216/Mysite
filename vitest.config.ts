@@ -12,6 +12,7 @@ export default defineConfig({
         'src/lib/paths.ts',
         'src/lib/build-info.ts',
         'src/lib/derive.ts',
+        'src/lib/world-clock.ts',
         'src/components/sections/projects-view.ts',
         'src/motion/params.ts',
         'src/content/parsers.ts',

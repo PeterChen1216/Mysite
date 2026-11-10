@@ -93,13 +93,21 @@ projects:
   # Chips on the "next chunk" card; leave the list empty ([]) for none.
   next_tags: [TBD]
   next_progress: generating chunk (-1, 3)…
-  # Decorative phone beside the featured build (hidden from screen readers): a sample stamp in
-  # the app's style, and the IANA time zone its live clock and date show.
+  # The phone beside a project with `demo: world-clock` (Clock Stamp), drawn after the app's clock
+  # face and hidden from screen readers. It runs on the real time: `home_zone` is "here" (the
+  # status-bar clock, the arrow hand, and what "+16h" counts from); each city gets a hand on the
+  # 24-hour dial, and the first one is the selected city (name, big clock, date). 1–4 cities,
+  # IANA time zone names.
   phone:
-    stamp: STAMP
-    place: 'SEA · Seattle, WA'
-    coords: '47.6062° N, 122.3321° W'
-    time_zone: America/Los_Angeles
+    home_zone: America/Los_Angeles
+    cities:
+      - { name: Tokyo, time_zone: Asia/Tokyo }
+      - { name: Berlin, time_zone: Europe/Berlin }
+      - { name: Auckland, time_zone: Pacific/Auckland }
+    weather: Open-Meteo
+    hours: 24h
+    tab_list: List
+    tab_clock: Clock
 
 experience:
   cmd: git log --oneline --graph ~/career

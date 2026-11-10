@@ -10,6 +10,7 @@ end: present
 stack: [SwiftUI, MapKit, WeatherKit, Open-Meteo]
 year: 2026
 featured: true
+demo: world-clock
 source: Resume.pdf (2026-11-03); shipped verified on the live App Store listing (DECISIONS R2-3); featured = legacy ShowCase
 ---
 
