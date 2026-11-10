@@ -1,6 +1,11 @@
 # STATUS（会话交接 · PLAN §15.6）
 
-> 更新：2026-11-10（全项目审计 + Clock Stamp 手机重做 + 体验扩展计划）· 分支 `claude/happy-einstein-dkkcxx`（未合并，等业主审）
+> 更新：2026-11-10（全项目审计 + Clock Stamp 手机重做 + 体验扩展计划 + X1 进行中）· 分支 `claude/happy-einstein-dkkcxx`（未合并，等业主审）
+
+## X1 进度（每次推送后更新；新会话从这里接着做）
+- ✅ token 三层 + 颜色 lint（`6add29a`、`132a76f`）
+- ✅ WIP（`ccb78e1`）恢复为可构建：copy.yaml 两处未加引号的逗号；`initPrefs()` 接入 main.ts；地球 `spin()` 按名字找动画（原先会暂停 0.01 ms 的过渡，把 AvGeek 小地球冻住）
+- ⏳ 下一步：设置窗口（`~/.config`）与入口（导航齿轮 / 暂停键、页脚 `prefs`、`,` 键）→ 五套主题可选 + 暗色物件 + 冗余符号 → 动效级别 / 全部暂停测试 → 无障碍合同（目标尺寸、文字间距、lang、地球方向键、forced-colors、打印）→ 对比度单测 → `docs/A11Y-CHECK.md` → Night 像素对比 + Lighthouse
 
 ## 当前状态
 | 里程碑 | 状态 |

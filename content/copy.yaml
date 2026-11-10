@@ -169,7 +169,7 @@ prefs:
       mono-dark: { name: Mono dark, note: Bedrock }
       mono-light: { name: Mono light, note: Paper }
       cvd: { name: Colour-blind safe, note: Prism }
-      auto: { name: Auto, note: Night or Day, like your device }
+      auto: { name: Auto, note: 'Night or Day, like your device' }
     contrast_note: Your device asks for more contrast, so every theme uses stronger lines and text.
   motion:
     cmd: motion --set
@@ -177,7 +177,7 @@ prefs:
     options:
       auto: { name: Auto, note: like your device }
       full: { name: Full, note: everything moves }
-      calm: { name: Calm, note: no intro or sparks, slower loops }
+      calm: { name: Calm, note: 'no intro or sparks, slower loops' }
       off: { name: 'Off', note: nothing moves }
     reduced_note: Your device asks for reduced motion, so the page stays still whatever you pick.
   text:

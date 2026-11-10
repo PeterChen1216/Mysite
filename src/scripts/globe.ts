@@ -25,21 +25,24 @@ export function initGlobes(): void {
   for (const globe of document.querySelectorAll<HTMLElement>('[data-globe]')) {
     const strip = globe.querySelector<HTMLElement>('[data-globe-strip]');
     if (!strip) continue;
-    const spin = (): Animation | undefined => strip.getAnimations()[0];
+    // The spin by name: a property change under reduced motion or motion "off" also runs a
+    // (0.01 ms) transition on the strip, and pausing that one would freeze the map.
+    const spin = (): Animation | undefined =>
+      strip.getAnimations().find((a) => (a as CSSAnimation).animationName === 'globe-spin');
     const turnMs = (anim: Animation) => Number(anim.effect?.getComputedTiming().duration) || 1;
 
     let inView = false;
     let held = false; // dragged or focused: the visitor is turning it
-    /** Degrees turned while there was no spin to carry them (no motion). */
-    let stillDeg = 0;
+    /** Degrees turned while there was no spin to carry them (no motion); undefined = untouched. */
+    let stillDeg: number | undefined;
 
     const sync = () => {
       const anim = spin();
       if (!anim) return;
-      if (stillDeg) {
+      if (stillDeg !== undefined) {
         // Motion came back after the still map was turned: carry the turn over to the spin.
         anim.currentTime = (stillDeg / 360) * turnMs(anim);
-        stillDeg = 0;
+        stillDeg = undefined;
         strip.style.removeProperty('translate');
       }
       if (inView && !held && loopsAllowed()) anim.play();
@@ -59,7 +62,7 @@ export function initGlobes(): void {
     /** Where the map is now, in degrees from where it started. */
     const position = (): number => {
       const anim = spin();
-      if (!anim) return stillDeg;
+      if (!anim) return stillDeg ?? 0;
       return wrap((Number(anim.currentTime ?? 0) / turnMs(anim)) * 360);
     };
     const turnTo = (deg: number) => {
@@ -69,7 +72,9 @@ export function initGlobes(): void {
         anim.currentTime = (wrap(deg) / 360) * ms;
       } else {
         stillDeg = wrap(deg);
-        strip.style.translate = `${(stillDeg / 360) * GLOBE_TILE_PX}px 0`;
+        // As the spin draws that angle (translateX from −1 tile to 0), so the strip still covers
+        // the whole disc.
+        strip.style.translate = `${(stillDeg / 360 - 1) * GLOBE_TILE_PX}px 0`;
       }
       report();
     };
