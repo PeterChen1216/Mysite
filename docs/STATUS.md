@@ -9,7 +9,9 @@
 - ✅ `aa02a4d` 的 CI（也是 `dd5aeb0` 内容的第一次 CI）：**主作业全绿**——1108 通过、0 不稳定（含 WebKit），E2E 19.8 分钟；新步骤都跑了：CHANGELOG 脚本（47 个提交）、组装后上传 `site-aa02a4d…`（作业开始后 63 秒）、Summary 页的预览链接。**我用 API 下载了这个 zip，解压，用 `pnpm preview:site <文件夹>` 打开：`/v2/` 200、`/v2/resume.pdf` 200、下载名 `Peter-Chen-Resume-2026-11-09.pdf`、页脚 `v0.1.0+20261110.f9fac4c`**；传 zip 本身时它说先解压。**上线配置作业失败 1 个**：[chromium]「the scene in every theme › cvd」世界占屏 4.7 % / 重试 4.4 % < 5 %（18:28 UTC）。这是 M2 起就有的测试：它按真实时间量，地球被照亮的部分随钟点和地球停下的朝向变；同一次 CI 的主作业 18:18 UTC 量到 night 5.3 %、cvd 5.2 %（刚过线）。M4 没有碰场景（静止画面逐像素不变）
 - ✅ 第 4 步：这个测试在 Chromium 里恢复 M2 `5d1a308` 的固定时钟（2026-11-10T20:00Z）和 Home 键（同一面地球、同一个昼夜），本机连跑 3 次每个主题都是同一个数：night 10.2、day 10.9、mono-dark 10.4、mono-light 10.9、cvd 10.1 %（门槛仍是 5 %）；WebKit 照旧用真实时间（那两步在 WebKit 里不行，`768e421`；WebKit 同一时刻量到 13.7 %）
 - ✅ 第 4 步本机 `pnpm verify`：单测 487 / 1 跳过，E2E 711 通过 / 221 跳过，8.8 分钟
-- 下一步：等第 4 步推送的 CI；之后业主按交付说明里的清单自己计时一次
+- ✅ `fa274a2` 的 CI：**两个作业全绿**——上线配置作业第一次就通过（固定时间后 Chromium 的世界占屏 8.3–9.2 %，CI 的字体与渲染和本机不同，但每个主题都远高于 5 %）；主作业第一次 1 个失败：[chromium]「the watchdog: slow frames lower the resolution…」重试也失败（15 秒内分辨率没有降），**重跑失败的作业后 1108 通过 / 0 不稳定**。这条测试 M4 没有碰，以前每次 CI 都通过；失败时的 HUD 是 `fps 3 · 60.6 ms · tier 3 · dpr 1.00`——CI 机器那一刻太忙，两帧之间超过 250 ms，看门狗把这种间隔当成「没在画」（`src/scene/watchdog.ts` `gapMs`）而不是「画得慢」，于是从不降级。**这是一个真问题（M5 的事，没有改）**：一台慢到每秒不到 4 帧的设备，看门狗永远不会把它降到 2 级。见交付说明「没做」8
+- ✅ 第 5 步（本机 `pnpm verify`：单测 487 / 1 跳过，E2E 711 通过 / 221 跳过，9.1 分钟）：本文件与指南的最后修改（指南 §15 写明 corepack 第一次会下载 pnpm、要回答 Y；`pnpm content:hant`、`pnpm content:stale --accept` 也在全新克隆里跑过）
+- 下一步：业主按交付说明里的清单自己计时一次；M5 时看看门狗对「每秒不到 4 帧」的盲区
 
 ## M3 进度（每次推送后更新；新会话从这里接着做）
 - ✅ 第 1 步：项目详情页与目录页（每种语言 `/projects/` 与 `/projects/<id>/`，静态、无 JS 可读、canonical / hreflang / noindex 按 X2 规则）、404「chunk not found」（一个根目录 `404.html`，按网址显示三种语言之一；`launched: false` 时 `/v2/` 外的地址「回家」指向旧站根目录）、首页项目标题变成链接、Projects 标题行的 `more ▸`；CJK 字体子集覆盖每种语言的全部页面；首屏 JS 检查跟随静态 import；Lighthouse 加入目录页、Clock Stamp 页与 404。新单测 `tests/unit/pages.test.ts`，新 E2E `tests/e2e/pages.spec.ts`。像素对比（`/v2/`、`/v2/?tier=1`，1440 / 1024 / 390，对照 `31e9882`）：只有 `more ▸`（64 × 24 px）不同
@@ -66,7 +68,7 @@
 ### 验证（2026-11-10，本容器）
 - `pnpm verify`（每次提交前）：第 1 步 `e237276` 单测 465 / 1 跳过，E2E 706 通过 / 221 跳过 / **1 失败**——旧测试 `windows.spec.ts`「from its title…」比较窗口与项目页时手机上的实时时钟跨了一分钟（09:28 / 09:29），与 M4 无关；改为整个浏览器上下文用同一个固定时间后单独重跑通过（2 / 2），并随第 1 步提交。第 2 步 `dd5aeb0`：单测 478 / 1 跳过，E2E **711 通过 / 221 跳过**，9.3 分钟。第 3 步：见顶部「M4 进度」
 - **新纯模块覆盖率**：`src/content/check.ts` 行 98.1 % / 分支 87.8 %；`src/lib/resume.ts` 行 93.3 % / 分支 100 %；`build-info.ts` 仍在门槛之上
-- **CI**：`e237276` **两个作业全绿**（主作业 E2E 含 WebKit；上线配置作业含 Lighthouse）。`dd5aeb0` **没有运行**：提交说明正文里引用了机器人提交用的跳过 CI 标记，GitHub 据此跳过了整次推送。`aa02a4d`：主作业全绿（1108 通过），上线配置作业 1 个旧场景测试按真实时间低于门槛（见顶部，第 4 步改为在 Chromium 里固定时间）；最后一次推送的结果见顶部「M4 进度」
+- **CI**：最后一个代码提交 `fa274a2` **两个作业全绿**（主作业重跑一次：看门狗测试在 CI 机器过忙时失败，见「没做」8）。`e237276` **两个作业全绿**（主作业 E2E 含 WebKit；上线配置作业含 Lighthouse）。`dd5aeb0` **没有运行**：提交说明正文里引用了机器人提交用的跳过 CI 标记，GitHub 据此跳过了整次推送。`aa02a4d`：主作业全绿（1108 通过），上线配置作业 1 个旧场景测试按真实时间低于门槛（见顶部，第 4 步改为在 Chromium 里固定时间）；最后一次推送的结果见顶部「M4 进度」
 - **像素对比**（`/v2/` 与 `/v2/?tier=1`，Night，1440 / 1024 / 390，`reducedMotion: 'reduce'`，时钟固定 2026-10-24T16:45Z，等 `document.fonts.ready`；对照工作树里重新构建的 `e19a7dc`）：六张整页截图**逐像素相同（0 个像素不同），页脚版本号那一行不遮也相同**——内容的最后一次改动仍是 `f9fac4c`，版本号 `v0.1.0+20261110.f9fac4c` 不变。页面高度 6525 / 7129 / 10979 px 不变。下载按钮多出的 `download` 文件名、新的 `/resume/…pdf` 不产生像素
 - **演练**（照指南做，见下节）：8 个任务的每条命令都在一份全新克隆里运行过，指南里的输出就是那次的输出（路径换成 `/Users/you/…`）
 - **体积**：网站没有新的前端代码；首屏 JS、CSS、场景 chunk 与 M3 相同（`pnpm size` 通过）。新增的 `/resume/<版本>.pdf` 是简历的第二份拷贝（153 KB，只在被请求时下载）
@@ -88,7 +90,7 @@
 | 最后 | `git status` 干净，检查 ✔ | — |
 
 演练发现、已改：① 指南说「`end: present` 的那一行带 HEAD」——错，HEAD 行是状态（`profile.yaml → status`），现在写清并配了截图；② 指南说状态行在 Contact——不在，在英雄区终端和 git log 的 HEAD 行；③「几分钟后上线」——发布前要跑完 Chromium E2E，约 11 分钟（ADR-021 ⑦）；④ `pnpm dev` 在 4321 被占用时换端口——指南改为「打开它打印的 Local 地址」；⑤ `pnpm resume` 对 Downloads 里的文件显示 `../../Downloads/…`——改为完整路径；⑥ 第一次写的演练脚本把航线改 XYZ 那步没改成（脚本的问题，不是指南的），重跑后确认 warning 出现；⑦ 预览「4–5 分钟可下载」——按 CI 实际的步骤时间是约 1 分钟。没有发现让人看不懂的检查信息；`#1 (Annual Dean's List) › name` 这种写法（来自 `content:stale` 共用的格式）在指南里加了一句解释。
-**预览也演练了**：从 `aa02a4d` 的 CI 下载 `site-aa02a4d…zip`（12 MB）→ 解压 → `pnpm preview:site <文件夹>` → `/v2/` 打开（见顶部）。**没有演练的**：GitHub 网页编辑（路 A）、上传文件对话框、CI 注解与 Summary 页在 GitHub 页面上的样子（这里没有登录的浏览器）；`corepack enable` 在 Mac 上是否要管理员权限（指南给了 `npm install -g pnpm@10` 的替代）
+`pnpm content:hant`（1.7 秒，「every Simplified field has a Traditional one」）、改了状态的英文和简体之后 `pnpm content:stale --accept zh-hans content/profile.yaml`（记录来源后简体不再列出，繁体照指南所说列出）、`corepack enable`（第一次运行 pnpm 时它先下载 pnpm 10.28.0——指南 §15 补了这一句）也在全新克隆里跑过。**预览也演练了**：从 `aa02a4d` 的 CI 下载 `site-aa02a4d…zip`（12 MB）→ 解压 → `pnpm preview:site <文件夹>` → `/v2/` 打开（见顶部）。**没有演练的**：GitHub 网页编辑（路 A）、上传文件对话框、CI 注解与 Summary 页在 GitHub 页面上的样子（这里没有登录的浏览器）；`corepack enable` 在 Mac 上是否要管理员权限（指南给了 `npm install -g pnpm@10` 的替代）
 
 ### 业主自己计时一次的清单（PLAN §8 M4 验收：「Peter 独立完成一次更新 ≤ 5 分钟」）
 1. 选一件真实的小更新（例如 `now.md` 加一行，或一段新经历），**开始计时**
@@ -106,6 +108,7 @@
 5. **截图里没有 GitHub 界面**，只有网站本身（委托：截图来自当前构建）
 6. `content:stale` 的位置写法（`#1 (…) › name`）与 `content:check` 的（`item 1 (…) → name`）不同——两套输出各自一致，没有统一（会改到 X2 的测试与输出，收益小）
 7. 部署 ≈ 11 分钟没有缩短（见「请你决定」3）
+8. **看门狗的盲区（发现，没修，属 M5）**：`fa274a2` 的 CI 里看门狗测试失败两次，HUD 显示每秒 3–4 帧、每帧 60 ms、分辨率仍是 1。`src/scene/watchdog.ts` 把两帧间隔超过 250 ms 当成「没在画」并重新开始计时，所以每秒不到 4 帧的设备永远不会被判为「慢」、不会降分辨率或降到 2 级。改它会改场景的行为，不在 M4 范围；重跑后测试通过
 
 ### 与计划的偏离（详见 ADR-021）
 - 预览是下载（CI artifact + Summary 页的链接与步骤），不是网址

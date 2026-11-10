@@ -536,6 +536,7 @@ $ cd Mysite
 $ corepack enable
 $ pnpm install
 ```
+第一次运行 `pnpm` 时 corepack 会先下载 pnpm 本身（`! Corepack is about to download https://registry.npmjs.org/pnpm/-/pnpm-10.28.0.tgz`），问你是否继续时回答 `Y`。`pnpm install` 第一次要下载依赖（`node_modules` 约 500 MB），之后几秒。
 之后每次：`git pull` → 改 → `pnpm content:check` → `git add content/…` → `git commit -m "content: …"` → `git push`。
 
 ---
