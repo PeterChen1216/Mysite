@@ -20,7 +20,7 @@
 import iceSvg from '../assets/voxel/globe/ice.svg?raw';
 import landSvg from '../assets/voxel/globe/land.svg?raw';
 import { CALM, LOOP, SCENE } from '../motion/params';
-import { heroGlobe } from '../scripts/globe';
+import { GLOBE_TURN_EVENT, heroGlobe } from '../scripts/globe';
 import { MOTION_EVENT, PREFS_EVENT, isPaused, loopsAllowed, resolved } from '../scripts/prefs';
 import { airport } from './airports';
 import { ATLAS_SIZE, buildAtlas } from './atlas';
@@ -989,7 +989,10 @@ export function startScene(canvas: HTMLCanvasElement, gl: GL, opts: SceneOptions
   const skills = document.getElementById('skills');
   if (skills) io.observe(skills);
   const hero = heroGlobe();
-  if (hero) io.observe(hero.element);
+  if (hero) {
+    io.observe(hero.element);
+    hero.element.addEventListener(GLOBE_TURN_EVENT, request, on);
+  }
   canvas.addEventListener(
     'webglcontextlost',
     (e) => {

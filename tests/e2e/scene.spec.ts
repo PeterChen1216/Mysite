@@ -445,8 +445,14 @@ test.describe('the scene in every theme', () => {
       page,
     }) => {
       await seed(page, { theme });
+      // The same day and night, and the same face of the Earth, on every run.
+      await page.clock.install({ time: new Date('2026-11-10T20:00:00Z') });
       await open(page, TIER3);
       await page.keyboard.press('p');
+      await page.getByRole('slider', { name: copy.hero.globe_label, exact: true }).focus();
+      await page.keyboard.press('Home');
+      await expect.poll(async () => Math.round((await status(page))!.earth)).toBe(0);
+      await page.locator('h1').click(); // focus away (its ring is not part of the world)
       await sceneAt(page, 0);
       // The content hidden: what is left is the canvas.
       await page.addStyleTag({ content: '.page, .scene-hud { visibility: hidden !important; }' });
@@ -479,6 +485,9 @@ test.describe('the scene in every theme', () => {
           24
         )
           world++;
+      console.log(
+        `${theme}: the world covers ${((world / (width * height)) * 100).toFixed(1)} % of the screen`,
+      );
       expect(world / (width * height)).toBeGreaterThan(0.08);
     });
   }
@@ -561,8 +570,10 @@ test.describe('the WebGL share (§7.2: ≥ 35 % of the desktop scroll length at 
     test(`${width} × ${height}`, async ({ page }, info) => {
       test.slow();
       await page.setViewportSize({ width, height });
-      // At full motion, as a visitor sees it: each sample is the scene at that moment.
+      // Held (pause): each sample is the world at that scroll position without the motes and
+      // sweeps that come and go — a lower bound, the same on every run, and fast enough for CI.
       await open(page, TIER3);
+      await page.keyboard.press('p');
       const length = await page.evaluate(
         () => document.documentElement.scrollHeight - window.innerHeight,
       );

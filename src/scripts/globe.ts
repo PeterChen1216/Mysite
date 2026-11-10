@@ -34,6 +34,8 @@ export interface HeroGlobe {
   set(deg: number): void;
 }
 let hero: HeroGlobe | null = null;
+/** Fired on the hero globe when the visitor turns it (keys, drag). */
+export const GLOBE_TURN_EVENT = 'zhic:globe-turn';
 export const heroGlobe = (): HeroGlobe | null => hero;
 
 export function initGlobes(): void {
@@ -99,6 +101,8 @@ export function initGlobes(): void {
       const deg = Math.round(position()) % 360;
       globe.setAttribute('aria-valuenow', String(deg));
       globe.setAttribute('aria-valuetext', template.replace(/\{\s*deg\s*\}/, String(deg)));
+      // The WebGL Earth follows even while nothing else moves (pause, motion off).
+      globe.dispatchEvent(new CustomEvent(GLOBE_TURN_EVENT));
     };
 
     globe.addEventListener('keydown', (e) => {
