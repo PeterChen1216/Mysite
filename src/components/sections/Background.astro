@@ -1,21 +1,60 @@
 ---
-/** Starfield, grid and glows behind the hero (Figma bg/* layers). Decorative. */
+/**
+ * Starfield, grid and glows behind the hero (Figma bg/* layers). Decorative.
+ *
+ * Each coloured picture has a grey copy for the Mono themes (bg/mono/, written by `pnpm art:mono`;
+ * src/lib/mono-art.ts). A theme shows one or the other through --art-colour / --art-mono; the
+ * copies load only when a Mono theme first shows them. The white stars are the same in both.
+ */
 import grid from '../../assets/voxel/bg/grid.svg';
 import starsWhite from '../../assets/voxel/bg/stars-white.svg';
 import starsGold from '../../assets/voxel/bg/stars-gold.svg';
 import starsDiamond from '../../assets/voxel/bg/stars-diamond.svg';
 import glowCyan from '../../assets/voxel/bg/glow-cyan.svg';
 import glowGreen from '../../assets/voxel/bg/glow-green.svg';
+import gridMono from '../../assets/voxel/bg/mono/grid.svg';
+import starsGoldMono from '../../assets/voxel/bg/mono/stars-gold.svg';
+import starsDiamondMono from '../../assets/voxel/bg/mono/stars-diamond.svg';
+import glowCyanMono from '../../assets/voxel/bg/mono/glow-cyan.svg';
+import glowGreenMono from '../../assets/voxel/bg/mono/glow-green.svg';
+
+/** In paint order; `mono` is the grey copy of a coloured picture. */
+const art = [
+  { cls: 'bg__grid', src: grid.src, mono: gridMono.src, width: 1440, height: 1100 },
+  { cls: 'bg__stars', src: starsWhite.src, width: 1440, height: 1000 },
+  { cls: 'bg__stars', src: starsGold.src, mono: starsGoldMono.src, width: 1440, height: 1000 },
+  {
+    cls: 'bg__stars',
+    src: starsDiamond.src,
+    mono: starsDiamondMono.src,
+    width: 1440,
+    height: 1000,
+  },
+  { cls: 'bg__glow bg__glow--cyan', src: glowCyan.src, mono: glowCyanMono.src },
+  { cls: 'bg__glow bg__glow--green', src: glowGreen.src, mono: glowGreenMono.src },
+];
 ---
 
 <div class="bg" aria-hidden="true">
   <div class="bg__canvas">
-    <img class="bg__grid" src={grid.src} width="1440" height="1100" alt="" />
-    <img class="bg__stars" src={starsWhite.src} width="1440" height="1000" alt="" />
-    <img class="bg__stars" src={starsGold.src} width="1440" height="1000" alt="" />
-    <img class="bg__stars" src={starsDiamond.src} width="1440" height="1000" alt="" />
-    <img class="bg__glow bg__glow--cyan" src={glowCyan.src} alt="" />
-    <img class="bg__glow bg__glow--green" src={glowGreen.src} alt="" />
+    {art.map(({ cls, src, mono, width, height }) =>
+      mono ? (
+        <>
+          <img class:list={[cls, 'bg__art--colour']} {src} {width} {height} alt="" />
+          <img
+            class:list={[cls, 'bg__art--mono']}
+            src={mono}
+            {width}
+            {height}
+            alt=""
+            loading="lazy"
+            decoding="async"
+          />
+        </>
+      ) : (
+        <img class={cls} {src} {width} {height} alt="" />
+      ),
+    )}
   </div>
 </div>
 
@@ -39,7 +78,14 @@ import glowGreen from '../../assets/voxel/bg/glow-green.svg';
   .bg__canvas img {
     position: absolute;
     max-width: none;
-    filter: var(--art-filter);
+  }
+  /* Colour themes draw the picture, the Mono themes its grey copy: no filter over the page
+     background, which WebKit would redo on every repaint in front of it (src/lib/mono-art.ts). */
+  .bg__art--colour {
+    display: var(--art-colour, block);
+  }
+  .bg__art--mono {
+    display: var(--art-mono, none);
   }
   /* The night sky (stars, glows) is a dark-theme picture: the light themes keep only the grid,
      fainter (its navy lines read as heavy graph paper on a light page). */

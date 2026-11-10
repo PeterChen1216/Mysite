@@ -22,6 +22,7 @@
     "format:check": "prettier --check .",
     "test": "vitest run --coverage",
     "test:e2e": "playwright test --trace off",
+    "art:mono": "node scripts/make-mono-art.mjs",
     "content:check": "node scripts/check-content.mjs",
     "content:hant": "node scripts/content-hant.mjs",
     "content:stale": "node scripts/content-stale.mjs",

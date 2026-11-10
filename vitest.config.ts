@@ -31,6 +31,7 @@ export default defineConfig({
         'src/i18n/font-names.ts',
         'src/lib/theme-tokens.ts',
         'src/lib/cues.ts',
+        'src/lib/mono-art.ts',
       ],
       // PLAN §9.1: key utility functions ≥ 80 %, per file so one module can't hide behind others.
       thresholds: { lines: 80, functions: 80, branches: 80, statements: 80, perFile: true },

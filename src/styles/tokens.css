@@ -236,9 +236,13 @@
   --cue-display: none;
   --cue-on: 0;
   /* art (§3.4): a filter for pictures, one for the globe's land, the night sky's opacity.
-     Empty filters are deliberate: `filter: var(--art-filter) drop-shadow(…)` stays valid. */
+     Empty filters are deliberate: `filter: var(--art-filter) drop-shadow(…)` stays valid.
+     The page background is not filtered: it shows its coloured pictures (--art-colour) or their
+     grey copies (--art-mono), as `display` values (sections/Background.astro). */
   --art-filter: ;
   --art-land-filter: ;
+  --art-colour: block;
+  --art-mono: none;
   --art-sky: 1;
   --art-grid: 1;
 }
@@ -332,6 +336,8 @@
   --cue-on: 1;
   --art-filter: ;
   --art-land-filter: ;
+  --art-colour: block;
+  --art-mono: none;
   --art-sky: 0;
   --art-grid: 0.4;
 }
@@ -401,6 +407,8 @@
      land on a black ocean. */
   --art-filter: grayscale(1) contrast(1.15);
   --art-land-filter: brightness(0) invert(1);
+  --art-colour: none;
+  --art-mono: block;
   --art-sky: 1;
   --art-grid: 1;
 }
@@ -468,6 +476,8 @@
   /* Black land on a light ocean; no night sky on paper. */
   --art-filter: grayscale(1) contrast(1.15);
   --art-land-filter: brightness(0);
+  --art-colour: none;
+  --art-mono: block;
   --art-sky: 0;
   --art-grid: 0.4;
 }
@@ -809,6 +819,8 @@
     --cue-on: 1;
     --art-filter: grayscale(1) contrast(1.15);
     --art-land-filter: brightness(0);
+    --art-colour: none;
+    --art-mono: block;
     --art-sky: 0;
     --art-grid: 0;
   }

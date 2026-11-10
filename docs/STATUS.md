@@ -7,7 +7,16 @@
 - ✅ Lighthouse 三种语言；中文页面的 LCP / 排版修正（`b46cc93`）
 - ✅ 本总结、ADR-017、`content/README.md`「翻译」、简历按钮标「英文」、繁体版自称修正（`0d4065d`）
 - ✅ CI 上才出现的三处（本提交）：中文 git log 的日期栏在 320 px + 130 % 时只剩 14 px、放不下一个汉字 → 中文页面的日期栏至少留一个字宽、哈希可以换行；WebKit 里中文终端标签行在文字间距覆盖下多出 2 px → 中文页面标签之间的空格可以折行；「字体晚到」的 CLS 测试改为只推迟 CJK 字体（推迟全部字体时 CI 上的**英文**页面 CLS 是 0.46，见「没做」10）
+- ✅ CI 里 WebKit 唯一失败的测试（`prefs.spec.ts`「一个存储值」，从「五套主题」那次提交起就红，X1、X2 都带着它交付）——**原因和修法见下面「WebKit 单色主题变慢」**
 - 下一步：业主审 X2（下面「请你审阅」「请你决定」），然后 M2
+
+## 🔧 WebKit 单色主题变慢（2026-11-10，X2 之后）
+- **现象**：CI 的 WebKit 里 `prefs.spec.ts:106` 超过 30 秒。它不是卡在某一步，而是整条测试变慢：选了 Mono dark 之后页面每次重绘都很慢。同一次 CI 里，同一个主题测试 Night 5.3 秒、Mono light 11.2 秒、Mono dark 25.6 秒。
+- **原因**：单色主题给页面背景的 6 张整页 SVG（网格、三层星星、两团光晕）各加了一个 CSS 滤镜（`grayscale(1) contrast(1.15)`）。背景在所有东西后面，前面任何地方重绘，WebKit 都要把这些滤镜重算一遍。Chromium 里几乎没有代价，所以本地一直是绿的。
+- **修法**：这 6 张图每张只有一种颜色，滤镜的结果事先就能算出来。`pnpm art:mono` 生成颜色已换好的灰度副本（`src/assets/voxel/bg/mono/`，已提交；`src/lib/mono-art.ts`），单色主题直接显示副本，背景不再有滤镜。副本只在单色主题第一次显示时才下载，Night / Day / 色盲主题不会去取。改了彩色原图后要重新运行 `pnpm art:mono`，否则单元测试失败。
+- **验证**：Night 与 Day 在 1440 / 1024 / 390 逐像素不变；Mono dark / Mono light 与改动前最多差 2 / 255（滤镜的取整）。在本机装的 WebKitGTK 2.52 里量重绘：英雄区一次更新 Mono dark 116 ms → 67 ms（Night 60 ms）；整屏重绘 Mono dark 约 495 ms → 317 ms（Night 251 ms）。
+- **没做，留给 M2 判断**：① 单色主题剩下的约 25 % 差距来自地球陆地、英雄区图片和方块上的滤镜（每个都不大）。② 同一次测量里，**Night 去掉所有 `drop-shadow` 滤镜后整屏重绘从 251 ms 降到约 125 ms**——方块的像素投影在 WebKit 里占了一半绘制时间。M2 的 WebGL 场景会接管桌面端的英雄区，静态回退（手机、无 WebGL）可以考虑把投影烘焙进图片。
+- 本机的 WebKit 是系统包 `webkit2gtk-driver`（不是 Playwright 的 WebKit，引擎相同），只用来量相对快慢；CI 仍是 WebKit 的唯一正式检查。
 
 ## 🌐 X2 Languages 交付说明（PLAN-EXPERIENCE §5，§9 的 X2 行；PLAN §13 ADR-017）
 
@@ -44,7 +53,7 @@
 6. `astro dev` 用的是完整字体（不子集化）；只有构建产物子集化
 7. 系统 CJK 字体的 `local()` 名称只在 Linux（文泉驿）上实测过；macOS / Windows / Android 的名称按字体的官方名写，没有设备实测（不匹配时浏览器按 `lang` 自己选中文字体，不会坏）
 8. `docs/CONTENT-GUIDE.md`（M4）还不存在；翻译说明先写进 `content/README.md`「翻译」一节
-10. **CI 上有、本地没有的问题（不是 X2 引起的，没修）**：① 推迟全部网页字体 1 秒时，CI 机器上**英文**页面的 CLS 是 0.46（本容器里约 0.01）——CI 的 Ubuntu 没有 X1 用作替身的 Liberation / Arimo / Roboto，标题在替身字体下换行不同；正常加载时 CLS 是 0。② WebKit 里 `prefs.spec.ts`「一个存储值；刷新后选择还在」超时（`9cd2ecf` 上就失败，X1 遗留）。这两项都值得在 M2 前单独看
+10. **CI 上有、本地没有的问题（不是 X2 引起的，没修）**：① 推迟全部网页字体 1 秒时，CI 机器上**英文**页面的 CLS 是 0.46（本容器里约 0.01）——CI 的 Ubuntu 没有 X1 用作替身的 Liberation / Arimo / Roboto，标题在替身字体下换行不同；正常加载时 CLS 是 0。② WebKit 里 `prefs.spec.ts`「一个存储值；刷新后选择还在」超时（`9cd2ecf` 上就失败，X1 遗留）——**已修，见上面「WebKit 单色主题变慢」**。①仍值得在 M2 前单独看
 9. A11Y-CHECK 新增第 9 步「语言」，只在无头 Chromium 里看过截图（12 px 中文清楚），没有真读屏、真手机
 
 ### 与计划的偏离

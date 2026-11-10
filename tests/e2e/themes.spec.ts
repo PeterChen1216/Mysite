@@ -148,6 +148,27 @@ test.describe('auto and the device', () => {
   });
 });
 
+/**
+ * The page background (sections/Background.astro): how many coloured pictures and how many grey
+ * copies are drawn, how many pictures carry a CSS filter, and whether the grid's grey copy loaded.
+ */
+const backgroundArt = (page: Page) =>
+  page.evaluate(() => {
+    const drawn = (sel: string) =>
+      [...document.querySelectorAll<HTMLImageElement>(sel)].filter(
+        (img) => getComputedStyle(img).display !== 'none',
+      );
+    return {
+      colour: drawn('.bg__art--colour').length,
+      mono: drawn('.bg__art--mono').length,
+      filtered: drawn('.bg img').filter((img) => getComputedStyle(img).filter !== 'none').length,
+      // The grid's copy is always in view; the others load when they scroll or resize into it.
+      gridLoaded: [...document.querySelectorAll<HTMLImageElement>('.bg__grid.bg__art--mono')].some(
+        (img) => img.complete && img.naturalWidth > 0,
+      ),
+    };
+  });
+
 test.describe('what makes the themes work', () => {
   test.use({ reducedMotion: 'reduce' });
 
@@ -161,6 +182,13 @@ test.describe('what makes the themes work', () => {
         .first()
         .evaluate((el) => getComputedStyle(el).filter),
     ).toBe('none');
+    // The page background shows its coloured pictures; the grey copies are not even fetched.
+    expect(await backgroundArt(page)).toEqual({
+      colour: 5,
+      mono: 0,
+      filtered: 0,
+      gridLoaded: false,
+    });
   });
 
   test('Day: a light page whose terminals, git log and chips stay dark', async ({ page }) => {
@@ -216,6 +244,17 @@ test.describe('what makes the themes work', () => {
       await page.locator('.stage__photo').evaluate((el) => getComputedStyle(el).filter),
     ).toContain('grayscale(1)');
   });
+
+  for (const theme of ['mono-dark', 'mono-light']) {
+    test(`${theme}: the page background is grey copies of its pictures, with no filter to redo`, async ({
+      page,
+    }) => {
+      await visit(page, { theme });
+      await expect
+        .poll(() => backgroundArt(page))
+        .toEqual({ colour: 0, mono: 5, filtered: 0, gridLoaded: true });
+    });
+  }
 
   test('the theme-color follows the theme', async ({ page }) => {
     await visit(page, { theme: 'mono-light' });
