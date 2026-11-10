@@ -13,7 +13,11 @@ import { copy } from './copy';
 import { V2 } from './site';
 
 const { home_zone: home, cities } = copy.projects.phone;
-const selected = cities[0]!;
+// As PhoneMockup.astro: the city in the home zone is "here"; the first of the others is selected.
+const here = cities.find((c) => c.time_zone === home);
+const away = cities.filter((c) => c !== here);
+const selected = away[0] ?? cities[0]!;
+const mark = (c: (typeof cities)[number]) => c.code ?? c.name;
 
 /** What the phone must show at `moment`: the selected city's clock and every hand's angle. */
 async function expectFace(page: Page, moment: Date) {
@@ -30,15 +34,18 @@ async function expectFace(page: Page, moment: Date) {
     timeLabel(zonedParts(moment, home)),
   );
   const hands = phone.locator('[data-clock="hand"]');
-  await expect(hands).toHaveCount(cities.length + 1); // one per city, and "here"
-  const zones = [...cities.map((c) => c.time_zone), home];
+  await expect(hands).toHaveCount(away.length + 1); // one per city away from home, and "here"
+  const zones = [...away.map((c) => c.time_zone), home];
   for (const [i, zone] of zones.entries()) {
     const hand = hands.nth(i);
     await expect(hand).toHaveAttribute('data-tz', zone);
     const angle = await hand.evaluate((el) => parseFloat(el.style.getPropertyValue('--a')));
     expect(angle).toBeCloseTo(dialAngle(zonedParts(moment, zone)), 1);
   }
-  for (const c of cities) await expect(phone.getByText(c.name, { exact: true })).not.toHaveCount(0);
+  // Every city is marked on the dial by its code (or name); the selected one is named in full.
+  for (const [i, c] of away.entries()) await expect(hands.nth(i)).toHaveText(mark(c));
+  if (here) await expect(hands.last()).toHaveText(mark(here));
+  await expect(phone.locator('.phone__city')).toHaveText(selected.name);
 }
 
 test.describe('the Clock Stamp phone', () => {

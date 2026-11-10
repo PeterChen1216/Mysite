@@ -236,6 +236,9 @@ describe('schemas reject mistakes an owner could make', () => {
     expect(() => copySchema.parse(withPhone({ cities: [city('Europe/Paris')] }))).not.toThrow();
     expect(() => copySchema.parse(withPhone({ cities: [city('Paris')] }))).toThrow(/IANA/);
     expect(() => copySchema.parse(withPhone({ cities: [] }))).toThrow();
+    const coded = (code: string) => ({ ...city('Asia/Shanghai'), code });
+    expect(() => copySchema.parse(withPhone({ cities: [coded('SHA')] }))).not.toThrow();
+    expect(() => copySchema.parse(withPhone({ cities: [coded('sha')] }))).toThrow(/3-letter/);
     expect(() =>
       copySchema.parse(withPhone({ cities: Array.from({ length: 5 }, () => city('UTC')) })),
     ).toThrow();

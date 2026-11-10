@@ -449,9 +449,24 @@ export const copySchema = z
           .object({
             /** The viewer's "here": the status-bar clock, the arrow hand, and what +16h counts from. */
             home_zone: timeZone,
-            /** The first city is the selected one (name, big clock, date); 1–4 cities. */
+            /**
+             * 1–4 cities, each a mark on the dial: its `code` (an airport-style code such as FRA)
+             * or, without one, its name. The first city that is not in the home zone is the
+             * selected one (name, big clock, date); a city in the home zone is the "here" hand.
+             */
             cities: z
-              .array(z.object({ name: text.max(12), time_zone: timeZone }).strict())
+              .array(
+                z
+                  .object({
+                    code: z
+                      .string()
+                      .regex(/^[A-Z]{3}$/, 'Use a 3-letter code, e.g. FRA')
+                      .optional(),
+                    name: text.max(12),
+                    time_zone: timeZone,
+                  })
+                  .strict(),
+              )
               .min(1)
               .max(4),
             /** Under the date, where the app names its weather source. */

@@ -94,16 +94,17 @@ projects:
   next_tags: [TBD]
   next_progress: generating chunk (-1, 3)…
   # The phone beside a project with `demo: world-clock` (Clock Stamp), drawn after the app's clock
-  # face and hidden from screen readers. It runs on the real time: `home_zone` is "here" (the
-  # status-bar clock, the arrow hand, and what "+16h" counts from); each city gets a hand on the
-  # 24-hour dial, and the first one is the selected city (name, big clock, date). 1–4 cities,
-  # IANA time zone names.
+  # face and hidden from screen readers. It runs on the real time. Each city is a mark on the
+  # 24-hour dial, labelled with its `code` (or its name when it has none). `home_zone` is "here":
+  # the status-bar clock and what "+9h" counts from; a city in that zone gets the arrow hand.
+  # The first city outside the home zone is the selected one (name, big clock, date).
+  # 1–4 cities, IANA time zone names.
   phone:
     home_zone: America/Los_Angeles
     cities:
-      - { name: Tokyo, time_zone: Asia/Tokyo }
-      - { name: Berlin, time_zone: Europe/Berlin }
-      - { name: Auckland, time_zone: Pacific/Auckland }
+      - { code: FRA, name: Frankfurt, time_zone: Europe/Berlin }
+      - { code: SEA, name: Seattle, time_zone: America/Los_Angeles }
+      - { code: SHA, name: Shanghai, time_zone: Asia/Shanghai }
     weather: Open-Meteo
     hours: 24h
     tab_list: List

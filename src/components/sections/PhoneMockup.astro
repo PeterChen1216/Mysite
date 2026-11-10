@@ -3,7 +3,8 @@
  * The Clock Stamp phone, beside a project with `demo: world-clock`: the app's clock face redrawn
  * in the site's pixel language (236×470, the size of Figma PhoneMockup 22:1158). The selected
  * city's name, how far it is from home, its time and date; under them a 24-hour dial over a night
- * map, with one hand per city and an arrow hand for "here"; then the 24h switch and the tabs.
+ * map with one hand per city, marked with its code (FRA, SHA), and an arrow hand for "here" (the
+ * city in the home zone, SEA); then the 24h switch and the tabs.
  *
  * It runs on the real time. The markup is built for a fixed sample moment, which is what shows
  * without JavaScript; src/scripts/clock.ts then sets every `data-clock` element to now and moves
@@ -33,7 +34,11 @@ const { phone, class: cls } = Astro.props;
 // Drawn for a fixed moment at build time; clock.ts takes over in the browser.
 const SAMPLE = SAMPLE_MOMENT;
 const home = phone.home_zone;
-const selected = phone.cities[0]!;
+// "Here" is the city in the home zone, if one is listed; the others get a coloured hand each, and
+// the first of them is the selected city.
+const here = phone.cities.find((c) => c.time_zone === home);
+const away = phone.cities.filter((c) => c !== here);
+const selected = away[0] ?? phone.cities[0]!;
 const at = (zone: string) => zonedParts(SAMPLE, zone);
 const angle = (zone: string) => `${dialAngle(at(zone)).toFixed(2)}deg`;
 
@@ -42,11 +47,12 @@ const TONES = ['redstone', 'gold', 'enchant', 'grass'] as const;
 // Tags sit at different distances from the centre so cities close in time don't hide each
 // other, and the selected city (the first) is drawn on top.
 const REACH = [52, 38, 45, 31] as const;
-const hands = phone.cities.map((c, i) => ({
+const hands = away.map((c, i) => ({
   ...c,
+  mark: c.code ?? c.name,
   tone: TONES[i % TONES.length]!,
   reach: REACH[i % REACH.length]!,
-  layer: phone.cities.length - i,
+  layer: away.length - i,
 }));
 
 // Dial geometry (px in the 180 px face): a tick per hour, a numeral every two hours.
@@ -146,15 +152,16 @@ const numerals = Array.from({ length: 12 }, (_, i) => ({ h: i * 2, ...polar(i * 
         style={`--a:${angle(c.time_zone)};--r:${c.reach}px;z-index:${c.layer}`}
       >
         <i class="hand__line" />
-        <b class="hand__tag">{c.name}</b>
+        <b class="hand__tag">{c.mark}</b>
       </span>
     ))}
     <span class="hand hand--here" data-clock="hand" data-tz={home} style={`--a:${angle(home)}`}>
       <i class="hand__line"></i>
-      <b class="hand__tag">
+      <b class:list={['hand__tag', { 'hand__tag--icon': !here }]}>
         <svg class="px" viewBox="0 0 8 8" width="8" height="8">
           <path d="M7 0h1v1H7zM5 1h2v1H5zM3 2h4v1H3zM1 3h5v1H1zM0 4h6v1H0zM4 5h1v3H4zM5 5h1v1H5z"></path>
         </svg>
+        {here && (here.code ?? here.name)}
       </b>
     </span>
     <span class="dial__hub"></span>
@@ -473,8 +480,12 @@ const numerals = Array.from({ length: 12 }, (_, i) => ({ h: i * 2, ...polar(i * 
   .hand--here .hand__line {
     height: 40px;
   }
+  /* "Here": the location arrow, then the code of the city in the home zone when one is listed. */
   .hand--here .hand__tag {
     bottom: 34px;
+    gap: 4px;
+  }
+  .hand--here .hand__tag--icon {
     width: 16px;
     height: 16px;
     padding: 0;
