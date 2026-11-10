@@ -132,12 +132,13 @@ test.describe('auto and the device', () => {
         .filter((el) => {
           if (el instanceof HTMLInputElement) return getComputedStyle(el).appearance === 'none';
           const cs = getComputedStyle(el);
-          const border = ['Top', 'Right', 'Bottom', 'Left'].some(
+          const border = ['top', 'right', 'bottom', 'left'].some(
             (s) =>
-              parseFloat(cs.getPropertyValue(`border-${s.toLowerCase()}-width`)) > 0 &&
-              cs.getPropertyValue(`border-${s.toLowerCase()}-style`) !== 'none',
+              parseFloat(cs.getPropertyValue(`border-${s}-width`)) > 0 &&
+              cs.getPropertyValue(`border-${s}-style`) !== 'none',
           );
-          return !border;
+          const outline = parseFloat(cs.outlineWidth) > 0 && cs.outlineStyle !== 'none';
+          return !border && !outline;
         })
         .map((el) => el.outerHTML.slice(0, 80)),
     );

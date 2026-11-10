@@ -1,5 +1,6 @@
 import { expect, test, type Page } from '@playwright/test';
 import { glyphParts } from '../../src/lib/derive';
+import { runningAnimations, runningLoops } from './animations';
 import { copy, escapeRe } from './copy';
 import { V2 } from './site';
 
@@ -115,41 +116,6 @@ test.describe('layout holds at every width', () => {
     await expect(page.locator('.sk__basic').first()).toHaveCSS('flex-wrap', 'wrap');
   });
 });
-
-/** CSS animations that are still running and never end (loops). */
-function runningLoops(page: Page) {
-  return page.evaluate(
-    () =>
-      document
-        .getAnimations()
-        .filter((a) => a.playState === 'running' && a.effect?.getTiming().iterations === Infinity)
-        .length,
-  );
-}
-
-/**
- * Every running animation, named with its element, so a failure says what is still moving.
- * Assertions poll it until it is empty: a stray loop (a revived globe spin) never stops, while a
- * transition or intro step that is just finishing does.
- */
-function runningAnimations(page: Page) {
-  return page.evaluate(() =>
-    document
-      .getAnimations()
-      .filter((a) => a.playState === 'running')
-      .map((a) => {
-        const target = (a.effect as KeyframeEffect | null)?.target as Element | null | undefined;
-        const name =
-          (a as CSSAnimation).animationName ||
-          (a as CSSTransition).transitionProperty ||
-          a.constructor.name;
-        const where = target
-          ? `${target.tagName.toLowerCase()}${target.classList[0] ? `.${target.classList[0]}` : ''}`
-          : '?';
-        return `${name} on ${where}`;
-      }),
-  );
-}
 
 test.describe('motion', () => {
   test('focus pauses the ticker; it is a named region', async ({ page }) => {
@@ -284,6 +250,56 @@ test.describe('globe drag and reduced motion', () => {
     await page.mouse.up();
     await expect.poll(() => runningAnimations(page), { timeout: 3000 }).toEqual([]);
   });
+});
+
+test.describe('the globe from the keyboard (WCAG 2.5.7: a drag has a keyboard twin)', () => {
+  /** Tab until the hero globe has focus (a real keyboard focus, so the spin holds). */
+  async function tabToGlobe(page: Page) {
+    const globe = page.getByRole('slider', { name: copy.hero.globe_label, exact: true });
+    for (let i = 0; i < 80 && !(await globe.evaluate((el) => el === document.activeElement)); i++)
+      await page.keyboard.press('Tab');
+    await expect(globe).toBeFocused();
+    return globe;
+  }
+  const value = (deg: number) => copy.hero.globe_value.replace(/\{\s*deg\s*\}/, String(deg));
+  // Where the map is: the spin's transform, or the still map's translate (px of the 648 px tile;
+  // −648 = 0°). Polled: under reduced motion a change runs a 0.01 ms transition.
+  const offset = (page: Page) =>
+    page.locator('.stage [data-globe-strip]').evaluate((el) => {
+      const cs = getComputedStyle(el);
+      const tx = cs.transform === 'none' ? 0 : new DOMMatrix(cs.transform).m41;
+      return Math.round(tx + (cs.translate === 'none' ? 0 : parseFloat(cs.translate)));
+    });
+  const at = (deg: number) => Math.round((deg / 360 - 1) * 648);
+
+  for (const motion of ['no-preference', 'reduce'] as const) {
+    test(`arrow keys, Page Up/Down and Home turn it (${motion} motion)`, async ({
+      page,
+      browserName,
+    }) => {
+      test.skip(browserName === 'webkit', 'Safari does not Tab to every element by default');
+      await page.emulateMedia({ reducedMotion: motion });
+      await page.goto(V2);
+      const globe = await tabToGlobe(page);
+      await page.keyboard.press('Home');
+      await expect(globe).toHaveAttribute('aria-valuenow', '0');
+      await expect(globe).toHaveAttribute('aria-valuetext', value(0));
+      await expect.poll(() => offset(page)).toBe(at(0));
+      await page.keyboard.press('ArrowRight');
+      await expect(globe).toHaveAttribute('aria-valuenow', '15');
+      await expect(globe).toHaveAttribute('aria-valuetext', value(15));
+      await expect.poll(() => offset(page)).toBe(at(15));
+      await page.keyboard.press('ArrowLeft');
+      await page.keyboard.press('ArrowLeft');
+      await expect(globe).toHaveAttribute('aria-valuenow', '345');
+      await expect.poll(() => offset(page)).toBe(at(345));
+      await page.keyboard.press('PageUp');
+      await expect(globe).toHaveAttribute('aria-valuenow', '75');
+      // While it has keyboard focus the spin holds, so the value stays true.
+      await page.waitForTimeout(300);
+      await expect.poll(() => offset(page)).toBe(at(75));
+    });
+  }
 });
 
 test.describe('keyboard and screen readers', () => {

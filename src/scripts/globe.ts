@@ -105,6 +105,7 @@ export function initGlobes(): void {
     globe.addEventListener('focus', () => {
       held = globe.matches(':focus-visible');
       sync();
+      report(); // where the spin has got to, so the value read out is true
     });
     globe.addEventListener('blur', () => {
       held = false;

@@ -5,7 +5,9 @@
  * spins with plain CSS — no canvas, no WebGL. One tile = one rotation = LOOP.globeTurnMs (12 s,
  * PLAN §5.2), read from the `--m-globe-*` custom properties (src/motion/params.ts).
  * The script in src/scripts/globe.ts adds hover slow-down, drag-to-spin and off-screen pause;
- * reduced motion keeps it still. Purely decorative (aria-hidden).
+ * reduced motion keeps it still. The ambient globes are decorative (aria-hidden); the
+ * interactive one is a slider for the keyboard (arrow keys turn it, WCAG 2.5.7), named by
+ * `label` and reporting how far it has turned through `valueText` ({deg}).
  *
  * No routes or pins are drawn: the design's SEA⇄PVG route was rejected (DECISIONS Q4); routes
  * from content/aviation.yaml `watching` arrive with the AvGeek console.
@@ -14,6 +16,7 @@ import land from '../../assets/voxel/globe/land.svg';
 import ice from '../../assets/voxel/globe/ice.svg';
 import mask from '../../assets/voxel/globe/ocean-mask.svg';
 import sheen from '../../assets/voxel/globe/sheen.svg';
+import type { HTMLAttributes } from 'astro/types';
 import { GLOBE_TILE_PX } from '../../motion/params';
 
 interface Props {
@@ -21,17 +24,42 @@ interface Props {
   size?: number;
   class?: string;
   style?: string;
-  /** Allow drag-to-spin (hero only). */
+  /** Allow drag-to-spin and the arrow keys (hero only); needs `label` and `valueText`. */
   interactive?: boolean;
+  /** The slider's accessible name (interactive only). */
+  label?: string;
+  /** Its value as words; {deg} = degrees turned (interactive only). */
+  valueText?: string;
 }
-const { size = 324, class: cls, style, interactive = false } = Astro.props;
+const {
+  size = 324,
+  class: cls,
+  style,
+  interactive = false,
+  label = '',
+  valueText = '{deg}',
+} = Astro.props;
+if (interactive && !label) throw new Error('An interactive PixelGlobe needs a label');
+const slider: HTMLAttributes<'div'> = interactive
+  ? {
+      role: 'slider',
+      tabindex: 0,
+      'aria-label': label,
+      'aria-orientation': 'horizontal',
+      'aria-valuemin': 0,
+      'aria-valuemax': 359,
+      'aria-valuenow': 0,
+      'aria-valuetext': valueText.replace(/\{\s*deg\s*\}/g, '0'),
+      'data-value-text': valueText,
+    }
+  : { 'aria-hidden': 'true' };
 const scale = size / 324;
 ---
 
 <div
   class:list={['globe', cls]}
   style={`--globe-size:${size}px;--globe-scale:${scale};--mask:url("${mask.src}");${style ?? ''}`}
-  aria-hidden="true"
+  {...slider}
   data-globe={interactive ? 'interactive' : 'ambient'}
 >
   <div class="globe__inner">
@@ -80,6 +108,13 @@ const scale = size / 324;
   }
   .globe[data-globe='interactive']:active {
     cursor: grabbing;
+  }
+  /* High Contrast: the slider keeps a visible boundary (outline: the art's box must not move). */
+  @media (forced-colors: active) {
+    .globe[role='slider'] {
+      outline: 1px solid CanvasText;
+      outline-offset: 2px;
+    }
   }
   .globe__inner {
     position: absolute;

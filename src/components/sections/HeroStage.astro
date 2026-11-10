@@ -48,7 +48,12 @@ const blocks: Array<{ name: BlockName; x: number; y: number; w: number; glow?: s
       data-loop="orbit-sway"
     />
     <div class="stage__globe" data-intro="globe">
-      <PixelGlobe size={324} interactive />
+      <PixelGlobe
+        size={324}
+        interactive
+        label={data.copy.hero.globe_label}
+        valueText={data.copy.hero.globe_value}
+      />
     </div>
     <img
       class="stage__satellite"
