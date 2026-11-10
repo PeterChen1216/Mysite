@@ -6,7 +6,10 @@
 - ⚠ `dd5aeb0` **没有 CI 运行**：它的提交说明正文里写了部署机器人提交用的那个跳过 CI 的标记（方括号 skip ci），GitHub 因此跳过了这次推送的所有工作流。下一次推送（第 3 步）的 CI 覆盖它的内容
 - ✅ 第 3 步：`docs/CONTENT-GUIDE.md`（中文，17 节：每个任务的文件、改前改后、命令与真实输出、结果截图；CI 报错表；预览；自动的东西；一次性准备；清单）与 10 张截图（`docs/content-guide/*.webp`，当前构建、2 倍像素、共约 330 KB）；`content/README.md` 缩成指向指南的入口（「翻译」一节的内容并入指南 §9）；`CLAUDE.md`；PLAN §13 ADR-021；页脚「updated」日期不再算 `content/README.md` 和 `content/artifacts/`（它们不上页面）；`pnpm resume` 对仓库外的文件显示完整路径。演练（全新克隆里照指南做 8 个任务，计时）发现并改了：指南说「`end: present` 的一行带 HEAD」是错的（HEAD 行是状态）；状态行不在 Contact；部署时间是约 11 分钟而不是「几分钟」；`pnpm dev` 在 4321 被占用时换端口；`pnpm resume` 显示 `../../Downloads/…` 这类路径。新单测 `guide.test.ts`（指南和 `CLAUDE.md` 里的每个 `pnpm` 命令都存在、每张图都在且 < 200 KB、目录与章节号一致）
 - ✅ 第 3 步本机 `pnpm verify`：单测 487 / 1 跳过，E2E 711 通过 / 221 跳过，8.6 分钟。像素对比（`/v2/`、`/v2/?tier=1`，1440 / 1024 / 390，对照 `e19a7dc`）：**0 个像素不同，页脚不遮也一样**。本文件的「M4 Owner experience 交付说明」
-- 下一步：等这次推送的 CI（它也是 `dd5aeb0` 内容的第一次 CI）；之后业主按交付说明里的清单自己计时一次
+- ✅ `aa02a4d` 的 CI（也是 `dd5aeb0` 内容的第一次 CI）：**主作业全绿**——1108 通过、0 不稳定（含 WebKit），E2E 19.8 分钟；新步骤都跑了：CHANGELOG 脚本（47 个提交）、组装后上传 `site-aa02a4d…`（作业开始后 63 秒）、Summary 页的预览链接。**我用 API 下载了这个 zip，解压，用 `pnpm preview:site <文件夹>` 打开：`/v2/` 200、`/v2/resume.pdf` 200、下载名 `Peter-Chen-Resume-2026-11-09.pdf`、页脚 `v0.1.0+20261110.f9fac4c`**；传 zip 本身时它说先解压。**上线配置作业失败 1 个**：[chromium]「the scene in every theme › cvd」世界占屏 4.7 % / 重试 4.4 % < 5 %（18:28 UTC）。这是 M2 起就有的测试：它按真实时间量，地球被照亮的部分随钟点和地球停下的朝向变；同一次 CI 的主作业 18:18 UTC 量到 night 5.3 %、cvd 5.2 %（刚过线）。M4 没有碰场景（静止画面逐像素不变）
+- ✅ 第 4 步：这个测试在 Chromium 里恢复 M2 `5d1a308` 的固定时钟（2026-11-10T20:00Z）和 Home 键（同一面地球、同一个昼夜），本机连跑 3 次每个主题都是同一个数：night 10.2、day 10.9、mono-dark 10.4、mono-light 10.9、cvd 10.1 %（门槛仍是 5 %）；WebKit 照旧用真实时间（那两步在 WebKit 里不行，`768e421`；WebKit 同一时刻量到 13.7 %）
+- ✅ 第 4 步本机 `pnpm verify`：单测 487 / 1 跳过，E2E 711 通过 / 221 跳过，8.8 分钟
+- 下一步：等第 4 步推送的 CI；之后业主按交付说明里的清单自己计时一次
 
 ## M3 进度（每次推送后更新；新会话从这里接着做）
 - ✅ 第 1 步：项目详情页与目录页（每种语言 `/projects/` 与 `/projects/<id>/`，静态、无 JS 可读、canonical / hreflang / noindex 按 X2 规则）、404「chunk not found」（一个根目录 `404.html`，按网址显示三种语言之一；`launched: false` 时 `/v2/` 外的地址「回家」指向旧站根目录）、首页项目标题变成链接、Projects 标题行的 `more ▸`；CJK 字体子集覆盖每种语言的全部页面；首屏 JS 检查跟随静态 import；Lighthouse 加入目录页、Clock Stamp 页与 404。新单测 `tests/unit/pages.test.ts`，新 E2E `tests/e2e/pages.spec.ts`。像素对比（`/v2/`、`/v2/?tier=1`，1440 / 1024 / 390，对照 `31e9882`）：只有 `more ▸`（64 × 24 px）不同
@@ -63,7 +66,7 @@
 ### 验证（2026-11-10，本容器）
 - `pnpm verify`（每次提交前）：第 1 步 `e237276` 单测 465 / 1 跳过，E2E 706 通过 / 221 跳过 / **1 失败**——旧测试 `windows.spec.ts`「from its title…」比较窗口与项目页时手机上的实时时钟跨了一分钟（09:28 / 09:29），与 M4 无关；改为整个浏览器上下文用同一个固定时间后单独重跑通过（2 / 2），并随第 1 步提交。第 2 步 `dd5aeb0`：单测 478 / 1 跳过，E2E **711 通过 / 221 跳过**，9.3 分钟。第 3 步：见顶部「M4 进度」
 - **新纯模块覆盖率**：`src/content/check.ts` 行 98.1 % / 分支 87.8 %；`src/lib/resume.ts` 行 93.3 % / 分支 100 %；`build-info.ts` 仍在门槛之上
-- **CI**：`e237276` **两个作业全绿**（主作业 E2E 含 WebKit；上线配置作业含 Lighthouse）。`dd5aeb0` **没有运行**：提交说明正文里引用了机器人提交用的跳过 CI 标记，GitHub 据此跳过了整次推送——它的内容由下一次推送的 CI 覆盖（见顶部）
+- **CI**：`e237276` **两个作业全绿**（主作业 E2E 含 WebKit；上线配置作业含 Lighthouse）。`dd5aeb0` **没有运行**：提交说明正文里引用了机器人提交用的跳过 CI 标记，GitHub 据此跳过了整次推送。`aa02a4d`：主作业全绿（1108 通过），上线配置作业 1 个旧场景测试按真实时间低于门槛（见顶部，第 4 步改为在 Chromium 里固定时间）；最后一次推送的结果见顶部「M4 进度」
 - **像素对比**（`/v2/` 与 `/v2/?tier=1`，Night，1440 / 1024 / 390，`reducedMotion: 'reduce'`，时钟固定 2026-10-24T16:45Z，等 `document.fonts.ready`；对照工作树里重新构建的 `e19a7dc`）：六张整页截图**逐像素相同（0 个像素不同），页脚版本号那一行不遮也相同**——内容的最后一次改动仍是 `f9fac4c`，版本号 `v0.1.0+20261110.f9fac4c` 不变。页面高度 6525 / 7129 / 10979 px 不变。下载按钮多出的 `download` 文件名、新的 `/resume/…pdf` 不产生像素
 - **演练**（照指南做，见下节）：8 个任务的每条命令都在一份全新克隆里运行过，指南里的输出就是那次的输出（路径换成 `/Users/you/…`）
 - **体积**：网站没有新的前端代码；首屏 JS、CSS、场景 chunk 与 M3 相同（`pnpm size` 通过）。新增的 `/resume/<版本>.pdf` 是简历的第二份拷贝（153 KB，只在被请求时下载）
@@ -85,7 +88,7 @@
 | 最后 | `git status` 干净，检查 ✔ | — |
 
 演练发现、已改：① 指南说「`end: present` 的那一行带 HEAD」——错，HEAD 行是状态（`profile.yaml → status`），现在写清并配了截图；② 指南说状态行在 Contact——不在，在英雄区终端和 git log 的 HEAD 行；③「几分钟后上线」——发布前要跑完 Chromium E2E，约 11 分钟（ADR-021 ⑦）；④ `pnpm dev` 在 4321 被占用时换端口——指南改为「打开它打印的 Local 地址」；⑤ `pnpm resume` 对 Downloads 里的文件显示 `../../Downloads/…`——改为完整路径；⑥ 第一次写的演练脚本把航线改 XYZ 那步没改成（脚本的问题，不是指南的），重跑后确认 warning 出现；⑦ 预览「4–5 分钟可下载」——按 CI 实际的步骤时间是约 1 分钟。没有发现让人看不懂的检查信息；`#1 (Annual Dean's List) › name` 这种写法（来自 `content:stale` 共用的格式）在指南里加了一句解释。
-**没有演练的**：GitHub 网页编辑（路 A）和 CI 注解在 GitHub 页面上的样子（这里没有登录的浏览器）；`corepack enable` 在 Mac 上是否要管理员权限（指南给了 `npm install -g pnpm@10` 的替代）；下载 CI 预览 zip 后的 `pnpm preview:site`（用本机的 `_site` 拷贝验证了命令和输出，CI 上传见顶部）
+**预览也演练了**：从 `aa02a4d` 的 CI 下载 `site-aa02a4d…zip`（12 MB）→ 解压 → `pnpm preview:site <文件夹>` → `/v2/` 打开（见顶部）。**没有演练的**：GitHub 网页编辑（路 A）、上传文件对话框、CI 注解与 Summary 页在 GitHub 页面上的样子（这里没有登录的浏览器）；`corepack enable` 在 Mac 上是否要管理员权限（指南给了 `npm install -g pnpm@10` 的替代）
 
 ### 业主自己计时一次的清单（PLAN §8 M4 验收：「Peter 独立完成一次更新 ≤ 5 分钟」）
 1. 选一件真实的小更新（例如 `now.md` 加一行，或一段新经历），**开始计时**
@@ -116,6 +119,7 @@
 - `tests/unit/scripts.test.ts`「flags an unclosed HTML comment」、`tests/unit/i18n-scripts.test.ts`「a draft is … an error in a live one」「copy keys must match…」：条件与以前完全相同，只是期望的报错文字变成新的（带「怎么改」，live 草稿按文件合并成一行）
 - `tests/e2e/windows.spec.ts`「from its title…」：比较窗口与项目页前给整个浏览器上下文设同一个固定时间（以前两次读之间实时时钟跨分钟就会失败）；比较本身仍是全文逐字相等
 - `tests/e2e/layout.spec.ts`：简历的地址列表多了版本地址（同样逐字节比较），新加下载文件名一条
+- `tests/e2e/scene.spec.ts`「the scene in every theme」：在 Chromium 里固定时钟并用 Home 键把地球转到同一面（M2 `5d1a308` 的做法，那时只因 WebKit 不行而整体撤掉），门槛仍是 5 %，实际 10.1–10.9 %；WebKit 不变。原因：按真实时间量时它在 CI 上 18:28 UTC 失败（cvd 4.4 %）——与 M4 无关，但它让 CI 随钟点变红
 - 新：`tests/unit/content-check.test.ts`（26）、`tests/unit/owner-tools.test.ts`（14）、`tests/unit/guide.test.ts`（8）
 
 ### 请你决定（都有默认值，已按默认实现）

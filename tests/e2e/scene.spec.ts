@@ -587,10 +587,24 @@ test.describe('the scene in every theme', () => {
   for (const theme of THEMES) {
     test(`${theme}: the world is there, on the theme's own sky, and follows a theme change`, async ({
       page,
+      browserName,
     }) => {
       await seed(page, { theme });
+      // In Chromium, the same day and night and the same face of the Earth on every run (the
+      // pinned clock and Home key of 5d1a308): with the real time, how much of the world is lit
+      // depends on the hour and on where the turning globe stopped — CI measured cvd at 4.4 % at
+      // 18:28 UTC (aa02a4d). WebKit keeps the real time: those two steps do not work there
+      // (768e421), and it draws the world larger (13.7 % at the same hour).
+      const pinned = browserName === 'chromium';
+      if (pinned) await page.clock.install({ time: new Date('2026-11-10T20:00:00Z') });
       await open(page, TIER3);
       await page.keyboard.press('p');
+      if (pinned) {
+        await page.getByRole('slider', { name: copy.hero.globe_label, exact: true }).focus();
+        await page.keyboard.press('Home');
+        await expect.poll(async () => Math.round((await status(page))!.earth)).toBe(0);
+        await page.locator('h1').click(); // focus away (its ring is not part of the world)
+      }
       await sceneAt(page, 0);
       // The content hidden: what is left is the canvas.
       await page.addStyleTag({ content: '.page, .scene-hud { visibility: hidden !important; }' });
