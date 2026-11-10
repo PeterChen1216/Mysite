@@ -10,8 +10,8 @@
   --gutter: max(64px, calc((100% - var(--content-max)) / 2));
 }
 
+/* color-scheme comes with the theme (tokens.css). */
 html {
-  color-scheme: dark;
   background: var(--color-bg-night);
   color: var(--color-text-hi);
   font: var(--type-code-body);
@@ -25,16 +25,17 @@ body {
 }
 
 a {
-  color: var(--color-accent-diamond);
+  color: var(--color-link);
   text-underline-offset: 3px;
 }
 
 a:hover {
-  color: var(--color-accent-gold);
+  color: var(--color-link-hover);
 }
 
+/* 2 px gold in Night; each theme's highest-contrast token elsewhere (PLAN-EXPERIENCE §3.3). */
 :focus-visible {
-  outline: 2px solid var(--color-accent-gold);
+  outline: 2px solid var(--color-focus);
   outline-offset: 2px;
 }
 

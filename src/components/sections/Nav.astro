@@ -1,6 +1,11 @@
 ---
-/** Top bar (Figma "Nav" 17:13): logo, section links, status, RESUME / SAY HI. */
+/**
+ * Top bar (Figma "Nav" 17:13): logo, section links, status, RESUME / SAY HI. Two keys before the
+ * buttons (PLAN-EXPERIENCE §2.1, §4.1): the gear opens the settings window, ⏸ pauses every loop.
+ * They need JavaScript, so they show only when it runs (html.js, set before first paint).
+ */
 import McButton from '../ui/McButton.astro';
+import PixelIcon from '../ui/PixelIcon.astro';
 import VoxelBlock from '../ui/VoxelBlock.astro';
 import type { PageData } from '../../lib/page-data';
 
@@ -31,6 +36,28 @@ const { copy, links } = data;
       <span class="nav__dot" aria-hidden="true"></span>
       {copy.nav.status}
     </p>
+    <div class="nav__keys">
+      <button
+        type="button"
+        class="nav__key"
+        data-prefs-open
+        aria-haspopup="dialog"
+        aria-controls="prefs"
+        aria-label={copy.prefs.open_label}
+      >
+        <PixelIcon name="gear" />
+      </button>
+      <button
+        type="button"
+        class="nav__key"
+        data-pause
+        aria-pressed="false"
+        aria-label={copy.prefs.pause_label}
+      >
+        <PixelIcon name="pause" class="nav__ico-pause" />
+        <PixelIcon name="play" class="nav__ico-play" />
+      </button>
+    </div>
     <McButton href={links.resume} external>
       {copy.nav.resume}
     </McButton>
@@ -105,6 +132,41 @@ const { copy, links } = data;
     color: var(--color-text-mid);
     white-space: nowrap;
   }
+  .nav__keys {
+    display: none;
+    gap: 8px;
+  }
+  :global(html.js) .nav__keys {
+    display: flex;
+  }
+  .nav__key {
+    display: grid;
+    place-items: center;
+    width: 36px;
+    height: 36px;
+    padding: 0;
+    border: 2px solid var(--color-border-edge);
+    background: var(--color-bg-panel);
+    color: var(--color-text-mid);
+    cursor: pointer;
+  }
+  .nav__key:hover,
+  .nav__key:focus-visible {
+    border-color: var(--color-nav-active-edge);
+    color: var(--color-accent-terminal-green);
+  }
+  /* Paused: the key shows ▶ (resume) and a gold edge — shape and colour both change. */
+  .nav__key[aria-pressed='true'] {
+    border-color: var(--color-accent-gold);
+    color: var(--color-accent-gold);
+  }
+  .nav__key :global(.nav__ico-play),
+  .nav__key[aria-pressed='true'] :global(.nav__ico-pause) {
+    display: none;
+  }
+  .nav__key[aria-pressed='true'] :global(.nav__ico-play) {
+    display: block;
+  }
   .nav__dot {
     width: 8px;
     height: 8px;
@@ -114,9 +176,19 @@ const { copy, links } = data;
   @media (max-width: 1279px) {
     .nav {
       padding: 14px 32px;
+      column-gap: 16px;
     }
     .nav__status {
       display: none;
+    }
+    /* Smaller keys from here down: 1024 px has to hold logo, links, keys and both buttons. */
+    .nav__keys {
+      gap: 4px;
+      margin-inline-end: -4px;
+    }
+    .nav__key {
+      width: 28px;
+      height: 28px;
     }
   }
   @media (max-width: 1023px) {
@@ -136,6 +208,13 @@ const { copy, links } = data;
   @media (max-width: 767px) {
     .nav {
       padding: 12px 16px;
+    }
+    /* Only SAY HI is left beside the keys; below ~385 px they wrap under the logo together. */
+    .nav__actions {
+      gap: 8px;
+    }
+    .nav__keys {
+      margin-inline-end: 0;
     }
     .nav__actions :global(.mc-btn) {
       padding: 10px 12px;

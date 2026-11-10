@@ -5,7 +5,8 @@
 ## X1 进度（每次推送后更新；新会话从这里接着做）
 - ✅ token 三层 + 颜色 lint（`6add29a`、`132a76f`）
 - ✅ WIP（`ccb78e1`）恢复为可构建：copy.yaml 两处未加引号的逗号；`initPrefs()` 接入 main.ts；地球 `spin()` 按名字找动画（原先会暂停 0.01 ms 的过渡，把 AvGeek 小地球冻住）
-- ⏳ 下一步：设置窗口（`~/.config`）与入口（导航齿轮 / 暂停键、页脚 `prefs`、`,` 键）→ 五套主题可选 + 暗色物件 + 冗余符号 → 动效级别 / 全部暂停测试 → 无障碍合同（目标尺寸、文字间距、lang、地球方向键、forced-colors、打印）→ 对比度单测 → `docs/A11Y-CHECK.md` → Night 像素对比 + Lighthouse
+- ✅ 设置窗口 `~/.config`（`PrefsWindow.astro` + 懒加载的 `src/scripts/settings.ts`）：主题 / 动效 / 字号 / 快捷键四组单选，立即生效、存一个 `zhic:prefs:v1`；入口：导航齿轮键、页脚 `prefs`、`,` 键；导航 ⏸ 键与 `p` 键 = 全部暂停；快捷键在输入框里不触发、可在窗口里关掉（2.1.4）。测试：`tests/unit/prefs.test.ts`、`tests/e2e/prefs.spec.ts`
+- ⏳ 下一步：五套主题的暗色物件（Day 里终端保持深色）+ 冗余符号（§3.3）+ 主题里的美术（§3.4）+ 对比度单测 + 每个主题跑 axe → 动效级别 / 全部暂停测试（含手机时钟）→ 无障碍合同（目标尺寸、文字间距、lang、地球方向键、悬停内容、forced-colors、打印）→ `docs/A11Y-CHECK.md` → Night 像素对比 + Lighthouse
 
 ## 当前状态
 | 里程碑 | 状态 |

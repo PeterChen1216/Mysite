@@ -1,5 +1,8 @@
 ---
-/** Footer (Figma "Footer"): copyright · domain, tagline, version · last updated, back to top. */
+/**
+ * Footer (Figma "Footer"): copyright · domain, tagline, version · last updated, `prefs` (opens the
+ * settings window; shown when JavaScript runs), back to top.
+ */
 import Glyphs from '../ui/Glyphs.astro';
 import type { PageData } from '../../lib/page-data';
 
@@ -21,6 +24,15 @@ const { footer, copy, site } = data;
       <time datetime={footer.updated}>{footer.updated}</time>
       {site.footer.update_note && <span class="foot__note"> · {site.footer.update_note}</span>}
     </p>
+    <button
+      type="button"
+      class="foot__prefs"
+      data-prefs-open
+      aria-haspopup="dialog"
+      aria-controls="prefs"
+    >
+      {copy.footer.prefs}
+    </button>
     <a class="foot__top" href="#top">
       <Glyphs text={copy.footer.back_to_top} />
     </a>
@@ -64,8 +76,22 @@ const { footer, copy, site } = data;
     white-space: nowrap;
   }
   .foot__top:hover,
-  .foot__top:focus-visible {
+  .foot__top:focus-visible,
+  .foot__prefs:hover,
+  .foot__prefs:focus-visible {
     text-decoration: underline;
+  }
+  .foot__prefs {
+    display: none;
+    padding: 0;
+    border: 0;
+    background: none;
+    font: inherit;
+    color: var(--color-accent-terminal-green);
+    cursor: pointer;
+  }
+  :global(html.js) .foot__prefs {
+    display: inline;
   }
   @media (max-width: 1023px) {
     .foot {

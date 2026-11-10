@@ -11,6 +11,7 @@ import Experience from '../components/sections/Experience.astro';
 import Footer from '../components/sections/Footer.astro';
 import Hero from '../components/sections/Hero.astro';
 import Nav from '../components/sections/Nav.astro';
+import PrefsWindow from '../components/sections/PrefsWindow.astro';
 import Projects from '../components/sections/Projects.astro';
 import Ticker from '../components/sections/Ticker.astro';
 import { getPageData } from '../lib/page-data';
@@ -32,6 +33,7 @@ const data = await getPageData();
     </main>
     <Footer data={data} />
   </div>
+  <PrefsWindow copy={data.copy} />
 </BaseLayout>
 
 <script>

@@ -18,6 +18,9 @@ export default defineConfig({
         'src/content/parsers.ts',
         'src/content/guards.ts',
         'src/content/schema.ts',
+        'src/prefs/model.ts',
+        'src/prefs/boot.ts',
+        'src/i18n/locales.ts',
       ],
       // PLAN §9.1: key utility functions ≥ 80 %, per file so one module can't hide behind others.
       thresholds: { lines: 80, functions: 80, branches: 80, statements: 80, perFile: true },
