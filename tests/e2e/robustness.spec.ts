@@ -171,7 +171,12 @@ test.describe('layout holds at every graphics tier', () => {
     for (const width of tier === 3 ? [1024, 1440] : [390, 1024, 1440]) {
       test(`no text is cut off or overlapping at ${width}px (graphics tier ${tier})`, async ({
         page,
+        browserName,
       }) => {
+        test.skip(
+          tier === 3 && browserName === 'webkit',
+          "CI's WebKit draws WebGL in software; its scene coverage is scene.spec.ts",
+        );
         await page.setViewportSize({ width, height: 900 });
         await open(page, path);
         await page.evaluate(() => document.fonts.ready);

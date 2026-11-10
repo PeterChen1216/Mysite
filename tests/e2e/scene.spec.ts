@@ -485,26 +485,31 @@ test.describe('the scene in every theme', () => {
 
   test('a theme change recolours the scene without a reload', async ({ page }) => {
     await open(page, TIER3);
-    await page.keyboard.press('p');
     await page.evaluate(() => ((window as unknown as { marker: number }).marker = 1));
     await page.keyboard.press(',');
     const before = (await status(page))!.frames;
     await page.locator('input[name="theme"][value="day"]').check();
     await page.keyboard.press('Escape');
-    // A frame drawn after the change (frames can be slow in software WebGL).
+    // A few frames drawn after the change: in software WebGL (WebKit on CI) a frame reaches the
+    // screen well after it is drawn.
     await expect
-      .poll(async () => (await status(page))!.frames, { timeout: 10_000 })
-      .toBeGreaterThan(before);
-    await sceneAt(page, 0);
+      .poll(async () => (await status(page))!.frames, { timeout: 15_000 })
+      .toBeGreaterThan(before + 3);
     await page.addStyleTag({ content: '.page { visibility: hidden !important; }' });
-    const { data, width } = await pixels(page);
-    const o = (300 * width + 300) * 4; // sky, left of the world
-    // Day's paper sky, not Night's navy.
     const bg = await page.evaluate(
       () => getComputedStyle(document.documentElement).backgroundColor,
     );
-    expect(`rgb(${data[o]}, ${data[o + 1]}, ${data[o + 2]})`).toBe(bg);
-    expect(bg).not.toBe('rgb(11, 15, 26)');
+    expect(bg).not.toBe('rgb(11, 15, 26)'); // Day's paper, not Night's navy
+    // The sky — the colour most of the canvas shows — is Day's page background.
+    const { data, width, height } = await pixels(page);
+    const counts = new Map<string, number>();
+    for (let y = 0; y < height; y += 7)
+      for (let x = 0; x < width; x += 7) {
+        const o = (y * width + x) * 4;
+        const k = `rgb(${data[o]}, ${data[o + 1]}, ${data[o + 2]})`;
+        counts.set(k, (counts.get(k) ?? 0) + 1);
+      }
+    expect([...counts].sort((p, q) => q[1] - p[1])[0]![0]).toBe(bg);
     expect(await page.evaluate(() => (window as unknown as { marker?: number }).marker)).toBe(1);
   });
 });
