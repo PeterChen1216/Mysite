@@ -76,10 +76,33 @@ function end(section: HTMLElement) {
   delete section.dataset.enter;
 }
 
+/** The element the address's #fragment names, if any (a malformed one names none). */
+function linkTarget(): HTMLElement | null {
+  try {
+    return location.hash
+      ? document.getElementById(decodeURIComponent(location.hash.slice(1)))
+      : null;
+  } catch {
+    return null;
+  }
+}
+
 export function initEntrances(): void {
   const sections = [...document.querySelectorAll<HTMLElement>(SECTIONS)];
   if (!sections.length || !('IntersectionObserver' in window)) return;
   const running = new Set<HTMLElement>();
+  // In view when the page opened (a tall screen, a deep link): simply there. Read now, not from the
+  // observer's first report: WebKit can deliver that only after a visitor's first scroll.
+  const opened = new Set(
+    sections.filter((s) => {
+      const r = s.getBoundingClientRect();
+      return r.top < innerHeight && r.bottom > 0;
+    }),
+  );
+  const linked = linkTarget()?.closest<HTMLElement>(SECTIONS);
+  if (linked) opened.add(linked);
+  let scrolled = false;
+  addEventListener('scroll', () => (scrolled = true), { once: true, passive: true });
   let first = true;
   const io = new IntersectionObserver(
     (entries) => {
@@ -87,8 +110,9 @@ export function initEntrances(): void {
         if (!e.isIntersecting) continue;
         const section = e.target as HTMLElement;
         io.unobserve(section);
-        // In view when the page opened (a deep link, a tall screen): it is simply there.
-        if (first && e.boundingClientRect.top < innerHeight) continue;
+        if (opened.has(section)) continue;
+        // Still where the page opened (the layout settled after the reading above).
+        if (first && !scrolled && e.boundingClientRect.top < innerHeight) continue;
         const ms = play(section);
         if (!ms) continue;
         running.add(section);

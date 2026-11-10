@@ -3,6 +3,7 @@
 // `?tier=2` (automated browsers get tier 1 by default).
 import { expect, test, type Page } from '@playwright/test';
 import { AMBIENT } from '../../src/motion/params';
+import { watchAttribute } from './animations';
 import { V2, open } from './site';
 
 const KEY = 'zhic:prefs:v1';
@@ -78,7 +79,6 @@ test.describe('the ambient layer (tier 2)', () => {
     await live(page);
     await expect.poll(async () => (await ambient(page))!.running).toBe(true);
     await page.locator('body').press('p');
-    await page.waitForTimeout(200);
     const held = (await ambient(page))!;
     expect(held.running).toBe(false);
     await page.waitForTimeout(400);
@@ -182,8 +182,10 @@ test.describe('chunk-load transitions (tier 2 and up, motion full)', () => {
 
   test('tier 1 types the header but loads no chunk', async ({ page }) => {
     await page.goto(`${V2}?tier=1`);
+    const entrances = await watchAttribute(page.locator('#about'), 'data-enter');
     await page.evaluate(() => document.getElementById('about')!.scrollIntoView({ block: 'start' }));
-    await expect(page.locator('#about')).toHaveAttribute('data-enter', 'header');
+    // Recorded as it happens (the header's entrance lasts about half a second).
+    await expect.poll(async () => (await entrances())[0]?.value).toBe('header');
   });
 
   test('reduced motion: nothing to wait for — the cards are simply there', async ({ browser }) => {

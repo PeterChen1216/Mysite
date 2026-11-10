@@ -7,7 +7,9 @@ import { expect, test, type Locator, type Page } from '@playwright/test';
 import { readFileSync } from 'node:fs';
 import { parse } from 'yaml';
 import { gpaRatio } from '../../src/lib/derive';
+import { HOVER } from '../../src/motion/params';
 import { domGlobeCenterLon } from '../../src/scene/geo';
+import { watchAttribute } from './animations';
 import { copy } from './copy';
 import { V2, open } from './site';
 
@@ -251,9 +253,11 @@ test.describe('3 · inventory slots: roving focus, glint, tooltip', () => {
     test.skip(isMobile, 'mouse');
     await page.goto(V2);
     const a = slots(page).nth(2);
+    const glint = await watchAttribute(a, 'data-glint');
     await a.hover();
     await expect(tip(page)).toBeVisible();
-    await expect(a).toHaveAttribute('data-glint', '');
+    // It glinted (for 560 ms: recorded as it happened, not polled for).
+    await expect.poll(async () => (await glint()).map((c) => c.value)).toContain('');
     const t = (await tip(page).boundingBox())!;
     const s = (await a.boundingBox())!;
     // It never covers the slot.
@@ -760,22 +764,28 @@ test.describe('13 · external link: the arrow hops, the status line names the ho
 test.describe('14 · section header: the command types once, then the heading resolves', () => {
   const projects = (page: Page) => page.locator('#projects');
 
+  /** The section's entrances as they happen (each lasts about half a second). */
+  const watch = (page: Page) => watchAttribute(projects(page), 'data-enter', '.sh__cmd');
+
   test('motion full: as it first comes into view; then it is at rest', async ({ page }) => {
     await page.goto(V2);
+    const entrances = await watch(page);
     await page.evaluate(() =>
       document.getElementById('projects')!.scrollIntoView({ block: 'start' }),
     );
-    await expect(projects(page)).toHaveAttribute('data-enter', /header/);
-    expect(
-      await projects(page)
-        .locator('.sh__cmd')
-        .evaluate((el) => el.getAnimations().map((a) => (a as CSSAnimation).animationName)),
-    ).toContain('enter-type');
-    await expect(projects(page)).not.toHaveAttribute('data-enter', { timeout: 3000 });
-    // Once per visit: back up and down again, nothing replays.
+    await expect
+      .poll(async () => (await entrances()).map((c) => c.value))
+      .toEqual([expect.stringMatching(/header/), null]);
+    const [start, end] = await entrances();
+    expect(start!.animations).toContain('enter-type');
+    // It ran its course: the typing, then the heading resolving.
+    expect(end!.at - start!.at).toBeGreaterThanOrEqual(HOVER.header.minMs);
+    await expect(projects(page)).not.toHaveAttribute('data-enter');
+    // Once per visit: back up and down again, nothing replays (not even for a moment).
     await page.evaluate(() => window.scrollTo(0, 0));
     await page.evaluate(() => document.getElementById('projects')!.scrollIntoView());
     await page.waitForTimeout(200);
+    expect(await entrances()).toHaveLength(2);
     await expect(projects(page)).not.toHaveAttribute('data-enter');
   });
 
@@ -796,10 +806,24 @@ test.describe('14 · section header: the command types once, then the heading re
 
   test('pausing during it ends it at once', async ({ page }) => {
     await page.goto(V2);
+    const entrances = await watch(page);
+    // The page's own pause key is pressed the moment the entrance starts: a key press sent from
+    // here could arrive after it has ended by itself in a slow browser.
+    await projects(page).evaluate((el) =>
+      new MutationObserver((_, mo) => {
+        if (!el.hasAttribute('data-enter')) return;
+        mo.disconnect();
+        document.querySelector<HTMLElement>('[data-pause]')!.click();
+      }).observe(el, { attributes: true, attributeFilter: ['data-enter'] }),
+    );
     await page.evaluate(() => document.getElementById('projects')!.scrollIntoView());
-    await expect(projects(page)).toHaveAttribute('data-enter', /header/);
-    await page.locator('body').press('p');
-    await expect(projects(page)).not.toHaveAttribute('data-enter');
+    await expect
+      .poll(async () => (await entrances()).map((c) => c.value))
+      .toEqual([expect.stringMatching(/header/), null]);
+    await expect(page.locator('html')).toHaveAttribute('data-paused', '');
+    const [start, end] = await entrances();
+    // At once: long before it would have ended by itself.
+    expect(end!.at - start!.at).toBeLessThan(HOVER.header.minMs / 2);
   });
 });
 

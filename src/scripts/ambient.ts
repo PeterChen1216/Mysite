@@ -130,7 +130,7 @@ export function startAmbient(): Ambient {
       // §8.5: at most 30 frames a second for the motes.
       const wait = Math.max(0, 1000 / AMBIENT.fps - (now - lastMote));
       lastMote = now + wait;
-      setTimeout(request, wait);
+      setTimeout(() => moving() && request(), wait);
     } else last = 0;
   }
   function request() {
@@ -156,7 +156,18 @@ export function startAmbient(): Ambient {
     },
     on,
   );
-  document.addEventListener(MOTION_EVENT, request, on);
+  // Paused (or the hero's loops held): draw the still frame now and ask for no more — not one
+  // frame later, which a busy browser can take its time over.
+  document.addEventListener(
+    MOTION_EVENT,
+    () => {
+      if (moving()) return request();
+      cancelAnimationFrame(raf);
+      raf = 0;
+      frame(performance.now());
+    },
+    on,
+  );
   document.addEventListener(
     'visibilitychange',
     () => {

@@ -5,6 +5,10 @@
 - ✅ `7fa2610` 推送；本机验证全部做完（像素对比、Lighthouse 三种语言、WebKitGTK 悬停开销、五个主题截图、粒子峰值），写进下面的「X3 Interactions 交付说明」（本提交）
 - ✅ `10b8c53`：交付说明（文档）
 - ✅ 推送前本机 `pnpm verify` 发现一个真问题：手机的城市键（第 11 行）只有 34 × 15 px，指针随真实时间转动，SHA 与 SEA 两个标签靠近时，1024 px 的「目标尺寸 24 px（WCAG 2.5.8）」测试失败（只在某些时刻）。现在每个城市键的框高 25 px，标签画在框里 5 px 处、同一中心——静止画面逐像素不变（1440 / 1024 / 390 对照 `7fa2610`）；新增测试「every city key is a 24 px target whatever the time」
+- ✅ `4ece4bc` 的 CI：上线配置作业全绿（Lighthouse + E2E）；主作业 925 通过、5 失败、2 不稳定，全在 [webkit]。原因两类：
+  ① **真问题**：WebKit 的 IntersectionObserver 有时要到访客第一次滚动后才交出第一次报告，`enter.ts` 把那时已在视野里的区块当成「打开页面时就在」，于是滚到的区块不播入场（本机 WebKitGTK 复现：载入后立刻滚到 Projects，没有入场）。现在「打开时在视野里」在初始化时直接量（加上 #链接指向的区块），第一次报告只在还没滚动过时才算——WebKitGTK 里复现的步骤现在会播入场，#projects 深链接仍然不播
+  ② **测试抓不住短状态**：附魔光 560 ms、区块标题入场约半秒；CI 的 WebKit 在旁边软件渲染场景测试时，一次轮询可能比状态还长（WebKitGTK 里附魔光确实出现又消失）。这几条测试改成在页面里用 MutationObserver 记下每次变化再断言（`tests/e2e/animations.ts` 的 `watchAttribute`），断言不放宽反而更严：入场要从开始到结束完整跑完 ≥ 280 ms、回滚后连一瞬间都不重播、暂停在入场开始的同一刻按下并在 < 140 ms 内结束；2 级环境层暂停后状态立刻变为「不动」（以前等 200 ms），并且暂停那一刻画好静止的一帧、不再要下一帧
+  不稳定的两条（通过于重试）：`motion.spec` 悬停粒子像素、`scene.spec` calm/full 帧率比——都是 X3 以前就有的测试，WebKit 软件渲染下抢 CPU；这次没有改
 - 下一步：看 CI（主作业含 WebKit）；然后业主审 X3（交付说明里的「请你看一眼 / 决定」）
 
 ## M2 进度（每次推送后更新；新会话从这里接着做）
@@ -72,6 +76,7 @@
 
 ### 改过的测试（没有放宽任何断言）
 - `tests/e2e/phone.spec.ts`「is hidden from assistive technology」：第 11 行让指针标签成为键盘可达的按钮，手机有 JavaScript 时就不能再整个 `aria-hidden`。这条断言原样移到「without JavaScript」组里（那里手机仍是纯装饰，并加断言「没有按钮」）；有 JavaScript 时换成更严格的一条：手机里除了按钮所在的指针外每个画面元素都 `aria-hidden`，按钮组有名字、按钮数等于城市数、每个按钮显示它的代码
+- `tests/e2e/interactions.spec.ts` 第 3 行「under the pointer」、第 14 行「motion full」「pausing during it」与 `tier2.spec.ts`「tier 1 types the header」「pause holds the motes」（都是本里程碑新写的）：CI 的 WebKit 轮询赶不上半秒的状态，改为在页面里记下每次变化（`watchAttribute`）后断言，且更严（见 X3 进度 `4ece4bc` 一条）；「pausing during it」改用页面上的暂停键（导航里的 ⏸，与按 p 走同一个 `setPaused`），在入场开始的同一刻按下
 - 其他已有测试一个没改。第一次全量运行时 `robustness.spec.ts` 的「no text is cut off」在 ≥ 1024 px 报 `commit__hash` 溢出——是我的 `git show` 覆盖层伸到了栏外；改的是实现（覆盖层不出哈希栏），不是测试
 
 ### 没做 / 只做了一部分（原因）
