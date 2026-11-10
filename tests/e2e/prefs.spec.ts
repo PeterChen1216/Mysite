@@ -48,7 +48,9 @@ test.describe('settings window', () => {
 
   test('a labelled form, operable by keyboard alone; each choice applies at once', async ({
     page,
+    browserName,
   }) => {
+    test.skip(browserName === 'webkit', 'Safari does not Tab to every element by default');
     await page.goto(V2);
     await page.getByRole('button', { name: p.open_label, exact: true }).focus();
     await page.keyboard.press('Enter');
