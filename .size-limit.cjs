@@ -2,9 +2,10 @@
 // scripts/check-js-budget.mjs; the lazy WebGL scene chunk (≤ 250 KB gz) is added in M2.
 module.exports = [
   {
+    // PLAN-EXPERIENCE §1.3: 45 KB with every theme included (was 30 KB before themes).
     name: 'CSS (gz)',
     path: 'dist/_astro/*.css',
-    limit: '30 KB',
+    limit: '45 KB',
     gzip: true,
   },
   {

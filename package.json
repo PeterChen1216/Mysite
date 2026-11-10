@@ -17,6 +17,7 @@
     "serve:site": "node scripts/serve.mjs _site",
     "check": "astro check",
     "lint": "eslint .",
+    "lint:colors": "node scripts/check-colors.mjs",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
     "test": "vitest run --coverage",
@@ -24,7 +25,7 @@
     "content:check": "node scripts/check-content.mjs",
     "size": "size-limit && node scripts/check-js-budget.mjs",
     "lhci": "lhci autorun",
-    "verify": "pnpm format:check && pnpm lint && pnpm check && pnpm content:check && pnpm test && pnpm build && pnpm size && pnpm assemble && pnpm test:e2e"
+    "verify": "pnpm format:check && pnpm lint && pnpm lint:colors && pnpm check && pnpm content:check && pnpm test && pnpm build && pnpm size && pnpm assemble && pnpm test:e2e"
   },
   "dependencies": {
     "@fontsource/jetbrains-mono": "^5.3.0",

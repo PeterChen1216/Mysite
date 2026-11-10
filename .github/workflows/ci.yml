@@ -41,6 +41,9 @@ jobs:
       - name: Lint
         run: pnpm lint
 
+      - name: Colour tokens (no colour outside src/styles/tokens.css)
+        run: pnpm lint:colors
+
       - name: Type check (astro check)
         run: pnpm check
 
