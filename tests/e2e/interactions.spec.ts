@@ -637,6 +637,23 @@ test.describe('11 · Clock Stamp phone: pick a city', () => {
     await expect(page.locator('.phone [data-clock="offset"]')).toHaveText('+0h');
   });
 
+  test('every city key is a 24 px target whatever the time (the hands turn; two tags can meet)', async ({
+    page,
+  }) => {
+    await page.emulateMedia({ reducedMotion: 'reduce' });
+    await page.goto(V2);
+    const sizes = await keys(page)
+      .getByRole('button')
+      .evaluateAll((els) =>
+        els.map((e) => [(e as HTMLElement).offsetWidth, (e as HTMLElement).offsetHeight]),
+      );
+    expect(sizes.length).toBe(cities.length);
+    for (const [w, h] of sizes) {
+      expect(w).toBeGreaterThanOrEqual(24);
+      expect(h).toBeGreaterThanOrEqual(24);
+    }
+  });
+
   test('a choice while paused shows that city at the held moment', async ({ page, isMobile }) => {
     const start = new Date('2027-03-01T07:59:30Z');
     await page.clock.install({ time: start });

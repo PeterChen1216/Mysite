@@ -538,14 +538,28 @@ const numerals = Array.from({ length: 12 }, (_, i) => ({ h: i * 2, ...polar(i * 
   .hand--here .hand__line {
     height: 40px;
   }
-  /* Row 11: with JavaScript the tags are buttons (src/scripts/clock.ts) that look as they did. */
+  /* Row 11: with JavaScript the tags are buttons (src/scripts/clock.ts) that look as they did.
+     A button is a pointer target, so its box grows to 25 px tall (WCAG 2.5.8: the hands turn with
+     the time and two tags can meet): the tag itself is drawn 5 px inside, on the same centre. */
   button.hand__tag {
+    isolation: isolate;
     margin: 0;
     border: 0;
+    padding-block: 9px 8px;
     appearance: none;
+    background: none;
+    box-shadow: none;
     letter-spacing: normal;
     text-align: center;
     cursor: pointer;
+  }
+  button.hand__tag::before {
+    content: '';
+    position: absolute;
+    z-index: -1;
+    inset: 5px 0;
+    background: var(--tone);
+    box-shadow: 2px 2px 0 var(--color-shadow);
   }
   /* Once a visitor has picked a city, the other hands dim (opacity: nothing moves). */
   .dial[data-picked] .hand:not([data-picked]) {
