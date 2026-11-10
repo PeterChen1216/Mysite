@@ -5,18 +5,23 @@
  * applied and saved at once by src/scripts/settings.ts; the `$ theme --set` lines are the visual
  * skin and hidden from screen readers, which hear each group's plain legend instead.
  *
+ * Between motion and text size, the language row (§5.2): plain links, one per language this page
+ * offers (src/i18n/routing.ts switchLocales: the live ones, or every one on a preview page), each
+ * named in its own language with its own `lang`; they need no script (src/scripts/lang.ts only
+ * keeps the section in view and saves the choice).
+ *
  * A modal <dialog>, closed until a visitor opens it (nav gear, footer `prefs`, the `,` key), so it
  * adds nothing to the page as first painted. A dark object: it stays a dark terminal in the light
- * themes (data-surface="dark"). Language is stored by the same preferences (X2 adds its row).
+ * themes (data-surface="dark").
  */
 import { MOTION_LEVELS, TEXT_SIZES, THEMES } from '../../prefs/model';
 import type { PageData } from '../../lib/page-data';
 
 interface Props {
-  copy: PageData['copy'];
+  data: PageData;
 }
-const { copy } = Astro.props;
-const p = copy.prefs;
+const { data } = Astro.props;
+const p = data.copy.prefs;
 
 const themes = [...THEMES, 'auto' as const].map((value) => ({ value, ...p.theme.options[value] }));
 const motions = (['auto', ...MOTION_LEVELS] as const).map((value) => ({
@@ -116,6 +121,40 @@ const keys = [
         {p.motion.reduced_note}
       </p>
     </fieldset>
+
+    <nav class="prefs__row" aria-labelledby="prefs-lang">
+      <p class="prefs__legend">
+        <span class="prefs__cmd" aria-hidden="true">
+          $ {p.lang.cmd}
+        </span>
+        <span class="prefs__name" id="prefs-lang">
+          {p.lang.legend}
+        </span>
+      </p>
+      <ul class="prefs__opts prefs__langs">
+        {data.languages.map((l) => (
+          <li>
+            <a
+              class="prefs__opt prefs__lang"
+              href={l.href}
+              hreflang={l.hreflang}
+              lang={l.lang}
+              data-lang-pick={l.locale}
+              aria-current={l.current ? 'page' : undefined}
+            >
+              <span class="prefs__box" aria-hidden="true" />
+              <span class="prefs__opt-name">{l.name}</span>
+              {l.preview && (
+                <span class="prefs__opt-note" lang={data.lang}>
+                  {p.lang.draft}
+                </span>
+              )}
+            </a>
+          </li>
+        ))}
+      </ul>
+      <p class="prefs__note">{p.lang.note}</p>
+    </nav>
 
     <fieldset class="prefs__row">
       <legend class="prefs__legend">
@@ -266,7 +305,7 @@ const keys = [
     align-items: baseline;
     gap: 4px 14px;
     padding: 0;
-    margin-bottom: 10px;
+    margin: 0 0 10px;
   }
   .prefs__cmd {
     font: var(--type-term-md);
@@ -349,6 +388,42 @@ const keys = [
   .prefs__opt-note {
     font: var(--type-code-sm);
     color: var(--color-text-mid);
+  }
+
+  /* The language row: links drawn like the choices, the current page's language as chosen. */
+  .prefs__langs {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+  .prefs__lang {
+    color: var(--color-text-hi);
+    text-decoration: none;
+  }
+  .prefs__lang:hover .prefs__opt-name {
+    text-decoration: underline;
+  }
+  .prefs__lang[aria-current='page'] {
+    border-color: var(--color-accent-terminal-green);
+    background: var(--color-nav-active-bg);
+  }
+  .prefs__box {
+    flex: none;
+    display: grid;
+    place-content: center;
+    width: 18px;
+    height: 18px;
+    border: 2px solid var(--color-text-mid);
+    background: var(--color-bg-terminal);
+  }
+  .prefs__lang[aria-current='page'] .prefs__box {
+    border-color: var(--color-accent-terminal-green);
+  }
+  .prefs__lang[aria-current='page'] .prefs__box::before {
+    content: '';
+    width: 8px;
+    height: 8px;
+    background: var(--color-accent-terminal-green);
   }
 
   /* A small picture of each theme: page, panel and three accents, in that theme's own tokens. */

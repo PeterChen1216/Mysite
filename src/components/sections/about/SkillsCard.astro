@@ -3,7 +3,8 @@
  * Skills inventory (#skills; not in Figma — drawn in the About cards' language): one row per
  * skills.yaml group, each skill in an inventory slot, "basic" skills in dashed slots.
  * The separators are real text (visually hidden), so each <dd> reads exactly
- * "A, B, C; basic D" — for screen readers, copy/paste and the content tests.
+ * "A, B, C; basic D" — for screen readers, copy/paste and the content tests (the list separator
+ * is copy.yaml `labels.list_separator`).
  */
 import Card from '../../ui/Card.astro';
 import CardTitle from '../../ui/CardTitle.astro';
@@ -14,6 +15,7 @@ interface Props {
 }
 const { data } = Astro.props;
 const { copy, skills } = data;
+const sep = copy.labels.list_separator;
 ---
 
 <Card class="about-card about-card--skills" id="skills" labelledby="about-skills">
@@ -26,7 +28,7 @@ const { copy, skills } = data;
           <dd class="sk__items">
             {g.items.map((item, i) => (
               <>
-                {i > 0 && <span class="visually-hidden">, </span>}
+                {i > 0 && <span class="visually-hidden">{sep}</span>}
                 <span class="sk__slot">{item}</span>
               </>
             ))}
@@ -37,7 +39,7 @@ const { copy, skills } = data;
                   <span class="sk__basic-label">{`${copy.about.skills_basic} `}</span>
                   {g.basic.map((item, i) => (
                     <>
-                      {i > 0 && <span class="visually-hidden">, </span>}
+                      {i > 0 && <span class="visually-hidden">{sep}</span>}
                       <span class="sk__slot sk__slot--basic">{item}</span>
                     </>
                   ))}

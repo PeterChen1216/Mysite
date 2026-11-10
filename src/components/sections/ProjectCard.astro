@@ -56,7 +56,7 @@ const block = BLOCK[p.platform[0] ?? ''] ?? 'gold';
       sizes="(max-width: 767px) 100vw, 560px"
     />
   )}
-  <div class="pc__body">
+  <div class="pc__body" lang={p.bodyLang}>
     <Body />
   </div>
   {p.stack.length > 0 && (
@@ -65,7 +65,7 @@ const block = BLOCK[p.platform[0] ?? ''] ?? 'gold';
       {p.stack.map((item, i) => (
         <Chip tone="diamond">
           {item}
-          {i < p.stack.length - 1 && <span class="visually-hidden">, </span>}
+          {i < p.stack.length - 1 && <span class="visually-hidden">{labels.list_separator}</span>}
         </Chip>
       ))}
     </p>

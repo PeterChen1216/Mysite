@@ -1,0 +1,68 @@
+---
+/**
+ * The notice on every page of a locale that is still a preview (content/site.yaml `locales`;
+ * PLAN-EXPERIENCE §5.4, ADR-017): the translation is a draft nobody has reviewed, with a link to
+ * the English page. In normal flow at the top of the page, so it never shifts the layout. Its
+ * words are the page's own (copy `i18n`).
+ */
+import type { PageData } from '../../lib/page-data';
+
+interface Props {
+  data: PageData;
+}
+const { data } = Astro.props;
+const { copy, english } = data;
+---
+
+<aside class="lang-notice" aria-label={copy.i18n.preview_notice} data-surface="dark">
+  <p class="lang-notice__text">
+    <span class="lang-notice__mark" aria-hidden="true">
+      !
+    </span>
+    {copy.i18n.preview_notice}
+    <a href={english.href} hreflang="en">
+      {copy.i18n.preview_link}
+    </a>
+  </p>
+</aside>
+
+<style>
+  .lang-notice {
+    position: relative;
+    z-index: 3;
+    padding: 10px var(--gutter);
+    background: var(--color-bg-terminal);
+    border-bottom: 2px solid var(--color-accent-gold);
+    color: var(--color-text-hi);
+    font: var(--type-code-sm);
+  }
+  .lang-notice__text {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: 4px 12px;
+    margin: 0;
+  }
+  .lang-notice__mark {
+    display: inline-grid;
+    place-items: center;
+    width: 18px;
+    height: 18px;
+    background: var(--color-accent-gold);
+    color: var(--color-bg-terminal);
+    font-weight: 700;
+  }
+  .lang-notice a {
+    color: var(--color-accent-gold);
+  }
+  @media (max-width: 1279px) {
+    .lang-notice {
+      padding-inline: 32px;
+    }
+  }
+  @media (max-width: 767px) {
+    .lang-notice {
+      padding-inline: 16px;
+    }
+  }
+</style>

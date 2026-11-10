@@ -22,3 +22,48 @@
     - Scientific Computing
     - GIS & Mapping
   source: Resume.pdf (2026-11-03); department, school/department links, start date, track and "UW iSchool" from legacy index.html / site tagline
+  # Translations (content/README.md "Translations"); school and department names stay in English.
+  zh-hans:
+    draft: true
+    degree: 信息学理学学士
+    major: 信息学
+    track: 数据科学
+    gpa_label: 累计 GPA
+    honors:
+      - 年度院长名单（2024–2025 和 2025–2026 学年）
+    coursework:
+      - 数据编程与挖掘
+      - 计算机编程 I
+      - 机器学习
+      - 推荐系统与搜索
+      - 科学计算
+      - GIS 与制图
+    from:
+      degree: b05840af
+      major: a9235105
+      track: 8da52e3e
+      gpa_label: 141fc0b2
+      honors: c0cf6583
+      coursework: 27a9fb68
+  zh-hant:
+    draft: true
+    degree: 信息學理學學士
+    major: 信息學
+    track: 數據科學
+    gpa_label: 累計 GPA
+    honors:
+      - 年度院長名單（2024–2025 和 2025–2026 學年）
+    coursework:
+      - 數據編程與挖掘
+      - 計算機編程 I
+      - 機器學習
+      - 推薦系統與搜索
+      - 科學計算
+      - GIS 與製圖
+    from:
+      degree: 19e6dd6f
+      major: "79070102"
+      track: 94883cdf
+      gpa_label: ca7f749f
+      honors: 0eb68834
+      coursework: 831fb618

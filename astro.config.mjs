@@ -1,6 +1,7 @@
 // @ts-check
 import { defineConfig, fontProviders } from 'astro/config';
 import { loadSiteConfig } from './site.config.mjs';
+import { DEFAULT_LOCALE, LOCALE_KEYS } from './src/i18n/locales.ts';
 
 const site = loadSiteConfig();
 /** @param {string} pkg @param {string} file */
@@ -16,6 +17,14 @@ export default defineConfig({
     format: 'directory',
   },
   devToolbar: { enabled: false },
+  // PLAN-EXPERIENCE §5.2: English at the base, the others under /zh-hans/ and /zh-hant/, each
+  // page generated per locale (src/pages/). No fallback routes and no redirects: an unknown path
+  // such as /zh/ is a 404. Components read the page's locale from Astro.currentLocale.
+  i18n: {
+    locales: LOCALE_KEYS,
+    defaultLocale: DEFAULT_LOCALE,
+    routing: { prefixDefaultLocale: false },
+  },
   // Self-hosted OFL fonts (PLAN §5.1, ADR-003). Astro generates metric-matched fallback faces
   // (size-adjust etc.) for the generic family listed last, so text doesn't reflow — and the page
   // doesn't shift (CLS) — when the web fonts finish loading. Those faces use Courier New and

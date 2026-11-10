@@ -16,6 +16,10 @@ const copy = {
 /** copy.yaml `labels` as shipped. */
 const labels: ProjectLabels = {
   present: 'Present',
+  months: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'],
+  year_month: '{month} {year}',
+  list_separator: ', ',
+  platform: { ios: 'iOS', web: 'Web', cli: 'CLI', research: 'Research' },
   status: {
     idea: 'idea',
     wip: 'in progress',
@@ -94,11 +98,29 @@ describe('projectView', () => {
   });
   it('takes its status words and "Present" from copy.yaml labels', () => {
     const v = projectView(project({ start: '2026-03', end: 'present' }), copy, {
+      ...labels,
       present: 'ongoing',
       status: { ...labels.status, shipped: 'live' },
     });
     expect(v.status).toBe('live');
     expect(v.stat).toBe('2026 · iOS · live');
     expect(v.when).toBe('Mar 2026 – ongoing');
+  });
+  it('takes month words, platform words and the list separator from the page’s copy', () => {
+    const v = projectView(
+      project({ start: '2026-03', end: 'present', platform: ['ios', 'web'], stack: ['A', 'B'] }),
+      { ...copy, stack_label: '技术栈：' },
+      {
+        ...labels,
+        present: '至今',
+        months: Array.from({ length: 12 }, (_, i) => `${i + 1}月`),
+        year_month: '{year}年{month}',
+        list_separator: '、',
+        platform: { ...labels.platform, web: '网页' },
+      },
+    );
+    expect(v.when).toBe('2026年3月 – 至今');
+    expect(v.stat).toBe('2026 · iOS、网页 · shipped');
+    expect(v.stack).toBe('技术栈： A、B');
   });
 });

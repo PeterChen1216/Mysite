@@ -1,8 +1,8 @@
 ---
-/** Screen-reader note for a link that opens in a new tab (copy.yaml `labels.new_tab`). */
-import { getCopy } from '../../lib/content';
+/** Screen-reader note for a link that opens in a new tab (copy `labels.new_tab`, in the page's language). */
+import { getNewTabLabel } from '../../lib/content';
 
-const { labels } = await getCopy();
+const label = await getNewTabLabel(Astro.currentLocale);
 ---
 
-<span class="visually-hidden"> {labels.new_tab}</span>
+<span class="visually-hidden"> {label}</span>

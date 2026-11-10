@@ -7,7 +7,7 @@
  * to meet WCAG AA (white on Figma's grass was 3.2:1, yellow on its hover blue 2.9:1); see
  * docs/M1-PLAN.md §4.
  */
-import { getCopy } from '../../lib/content';
+import { getNewTabLabel } from '../../lib/content';
 
 interface Props {
   href: string;
@@ -26,7 +26,7 @@ const {
   class: cls,
   ariaLabel,
 } = Astro.props;
-const newTab = external ? (await getCopy()).labels.new_tab : '';
+const newTab = external ? await getNewTabLabel(Astro.currentLocale) : '';
 ---
 
 <a

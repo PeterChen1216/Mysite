@@ -64,11 +64,17 @@ test.describe('settings window', () => {
     expect(await page.locator('meta[name="theme-color"]').getAttribute('content')).not.toBe(
       '#0b0f1a',
     );
-    // Tab moves group to group: motion, text size, shortcuts.
+    // Tab moves group to group: motion, the language links (X2: one per language offered, in
+    // the plan's order theme · motion · language · text), text size.
     await page.keyboard.press('Tab');
     await expect(
       choice(page, p.motion.legend, p.motion.options.auto.name, p.motion.options.auto.note),
     ).toBeFocused();
+    const languages = dialog(page).getByRole('navigation', { name: p.lang.legend });
+    for (const link of await languages.getByRole('link').all()) {
+      await page.keyboard.press('Tab');
+      await expect(link).toBeFocused();
+    }
     await page.keyboard.press('Tab');
     const size = (n: number) =>
       choice(page, p.text.legend, p.text.option.replace('{size}', `${n}`));

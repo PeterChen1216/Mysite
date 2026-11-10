@@ -3,24 +3,21 @@ import { Font } from 'astro:assets';
 import '../styles/tokens.css';
 import '../styles/global.css';
 import '../styles/motion.css';
-import { getCopy, getSite } from '../lib/content';
 import { withBase } from '../lib/paths';
+import type { PageData } from '../lib/page-data';
 import { motionCssVars } from '../motion/params';
 import tokensCss from '../styles/tokens.css?raw';
 import { parseTokenCss, resolveTokens } from '../lib/theme-tokens';
-import { DEFAULT_LOCALE, LOCALES } from '../i18n/locales';
 import { bootScript } from '../prefs/boot';
 import { THEMES, type Theme } from '../prefs/model';
 
 interface Props {
-  title?: string;
-  description?: string;
+  /** The page's data: its locale, head links (canonical, hreflang, robots) and copy. */
+  data: Pick<PageData, 'locale' | 'lang' | 'head' | 'copy'>;
 }
 
-const [site, copy] = await Promise.all([getSite(), getCopy()]);
-const title = Astro.props.title ?? site.meta.title;
-const description = Astro.props.description ?? site.meta.description;
-const canonical = new URL(Astro.url.pathname, Astro.site);
+const { data } = Astro.props;
+const { head } = data;
 // The browser UI colour is the page background of each theme, read from the tokens. Without
 // JavaScript it is Night's; the head script switches it with the theme.
 const tokenRules = parseTokenCss(tokensCss);
@@ -30,7 +27,7 @@ const boot = bootScript(Object.fromEntries(THEMES.map((t) => [t, bg(t)])) as Rec
 ---
 
 <!doctype html>
-<html lang={LOCALES[DEFAULT_LOCALE].lang} style={motionCssVars()}>
+<html lang={data.lang} data-locale={data.locale} style={motionCssVars()}>
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
@@ -44,23 +41,30 @@ const boot = bootScript(Object.fromEntries(THEMES.map((t) => [t, bg(t)])) as Rec
     <!-- The hero terminal is on the first screen: without a preload its lines first wrap in the
          wider fallback and then shrink, shifting the stage and buttons (CLS ≈ 0.03). -->
     <Font cssVariable="--font-term" preload />
-    <title>{title}</title>
-    <meta name="description" content={description} />
-    {site.meta.keywords.length > 0 && (
-      <meta name="keywords" content={site.meta.keywords.join(', ')} />
-    )}
-    <link rel="canonical" href={canonical} />
+    <slot name="head" />
+    <title>{head.title}</title>
+    <meta name="description" content={head.description} />
+    {head.keywords.length > 0 && <meta name="keywords" content={head.keywords.join(', ')} />}
+    {head.robots && <meta name="robots" content={head.robots} />}
+    <link rel="canonical" href={head.canonical} />
+    {head.hreflang.map((a) => (
+      <link rel="alternate" hreflang={a.hreflang} href={a.href} />
+    ))}
     <link rel="icon" href={withBase('favicon.svg')} type="image/svg+xml" />
     <meta property="og:type" content="website" />
-    <meta property="og:title" content={title} />
-    <meta property="og:description" content={description} />
-    <meta property="og:url" content={canonical} />
+    <meta property="og:title" content={head.title} />
+    <meta property="og:description" content={head.description} />
+    <meta property="og:url" content={head.canonical} />
+    <meta property="og:locale" content={head.ogLocale} />
+    {head.ogAlternates.map((o) => (
+      <meta property="og:locale:alternate" content={o} />
+    ))}
     <meta name="twitter:card" content="summary" />
     <meta name="generator" content={Astro.generator} />
   </head>
   <body>
     <a class="skip-link" href="#main">
-      {copy.labels.skip_link}
+      {data.copy.labels.skip_link}
     </a>
     <slot />
   </body>

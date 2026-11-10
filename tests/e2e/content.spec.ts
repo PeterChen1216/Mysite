@@ -22,16 +22,11 @@ const interests = yaml('interests.yaml');
 const aviation = yaml('aviation.yaml');
 const skills = yaml('skills.yaml');
 
-const PLATFORM: Record<string, string> = {
-  ios: 'iOS',
-  web: 'Web',
-  cli: 'CLI',
-  research: 'Research',
-};
+const PLATFORM: Record<string, string> = copy.labels.platform;
 const STATUS: Record<string, string> = copy.labels.status;
 /** A project's date range as its card shows it (copy.yaml labels.present for ongoing work). */
 const projectRange = (start: unknown, end: unknown) =>
-  formatRange(String(start), String(end), copy.labels.present);
+  formatRange(String(start), String(end), copy.labels.present, copy.labels);
 
 const straight = (s: string) =>
   s.replace(/[‘’]/g, "'").replace(/[“”]/g, '"').replace(/\s+/g, ' ').trim();
@@ -90,7 +85,9 @@ test.describe('content/ renders completely', () => {
     const expected: unknown[] = [];
     for (const e of education) {
       expected.push(e.school, e.degree, e.track, e.minor, e.department);
-      expected.push(`${formatYearMonth(String(e.start))} – ${formatYearMonth(String(e.end))}`);
+      expected.push(
+        `${formatYearMonth(String(e.start), copy.labels)} – ${formatYearMonth(String(e.end), copy.labels)}`,
+      );
       if (e.gpa) expected.push(`${e.gpa_label ?? copy.labels.gpa}: ${e.gpa}`);
       expected.push(...((e.honors as string[]) ?? []), ...((e.coursework as string[]) ?? []));
     }
@@ -108,7 +105,10 @@ test.describe('content/ renders completely', () => {
 
   test('every project, scoped to its own card', async ({ page }) => {
     await page.goto(V2);
-    for (const file of readdirSync('content/projects').filter((f) => f.endsWith('.md'))) {
+    // Project files, not their translations (projects/<id>.zh-hans.md).
+    for (const file of readdirSync('content/projects').filter(
+      (f) => f.endsWith('.md') && !/\.zh-han[st]\.md$/.test(f),
+    )) {
       const id = file.replace(/\.md$/, '');
       const raw = readFileSync(`content/projects/${file}`, 'utf8');
       const fm = parse(/^---\n([\s\S]*?)\n---/.exec(raw)![1]!);
@@ -253,7 +253,7 @@ test.describe('content/ renders completely', () => {
   test('the About grid holds exactly the cards content fills', async ({ page, isMobile }) => {
     test.skip(isMobile, 'desktop projects resize the viewport themselves');
     const projects = readdirSync('content/projects')
-      .filter((f) => f.endsWith('.md'))
+      .filter((f) => f.endsWith('.md') && !/\.zh-han[st]\.md$/.test(f))
       .map((f) =>
         parse(/^---\n([\s\S]*?)\n---/.exec(readFileSync(`content/projects/${f}`, 'utf8'))![1]!),
       );

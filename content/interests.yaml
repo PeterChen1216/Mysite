@@ -1,16 +1,27 @@
 # Shown as `cat ~/interests.txt`. `tag` is the short label used in the terminal and chips;
 # items with an `icon` also appear on the "off the clock" card.
+# zh-hans / zh-hant: translations (content/README.md "Translations"); tags stay as they are.
 items:
   - name: Generative AI with applications
     tag: gen-ai
+    zh-hans: { draft: true, name: 生成式 AI 及其应用, from: { name: 22a07281 } }
+    zh-hant: { draft: true, name: 生成式 AI 及其應用, from: { name: a650b8f4 } }
   - name: Aviation, everything about flight routes, seats, crafts, mileage plans
     tag: aviation
+    zh-hans: { draft: true, name: 航空，关于航线、座位、飞行器和里程计划的一切, from: { name: 200dcc41 } }
+    zh-hant: { draft: true, name: 航空，關於航線、座位、飛行器和里程計劃的一切, from: { name: f6906264 } }
   - name: Vibe Coder, released my first iOS app, Clock Stamp, on the App Store.
     tag: vibe-coding
     icon: 🛠️
+    zh-hans: { draft: true, name: Vibe Coder，已在 App Store 上发布了我的第一款 iOS 应用 Clock Stamp。, from: { name: ec83c60f } }
+    zh-hant: { draft: true, name: Vibe Coder，已在 App Store 上發佈了我的第一款 iOS 應用 Clock Stamp。, from: { name: 02e246ed } }
   - name: Table-Tennis
     tag: table-tennis
     icon: 🏓
+    zh-hans: { draft: true, name: 乒乓球, from: { name: c42c189e } }
+    zh-hant: { draft: true, name: 乒乓球, from: { name: b87a62bf } }
   - name: Choir
     tag: choir
     icon: 🎶
+    zh-hans: { draft: true, name: 合唱, from: { name: 9d480f87 } }
+    zh-hant: { draft: true, name: 合唱, from: { name: 7358c928 } }

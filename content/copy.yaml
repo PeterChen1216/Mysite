@@ -31,7 +31,10 @@ hero:
   cmd_interests: cat ~/interests.txt
   ok: '[OK]'
   summon: '/summon pixel_globe ~ ~ ~ {rotate:1b}'
-  summon_ok: 'Summoned PixelGlobe. Chunks loaded: 36/36.'
+  # The answer to /summon, ending with your status from profile.yaml ({status}).
+  summon_ok: 'Summoned PixelGlobe. Chunks loaded: 36/36. {status}.'
+  # The whoami line: {name} = full name, {programme} = major · track, {year} = ’27.
+  whoami_line: '{name} — {programme} @ {school}, class of {year}.'
   cta_projects: SEE PROJECTS
   cta_resume: DOWNLOAD RESUME
   eyebrow_prefix: '// player:' # "// player: Peter Chen · UW iSchool ’27 · Seattle, Washington"
@@ -190,14 +193,25 @@ prefs:
     on: 'On'
     off: 'Off'
     note: '“,” opens this window and “p” pauses animations, when you are not typing in a field.'
+  # The languages, each named in its own language (i18n.name in its copy file).
+  lang:
+    cmd: lang --set
+    legend: Language
+    note: Each language is its own page; the link keeps your place.
+    draft: draft # after a language that is still a preview (only listed on preview pages)
 
 # Small words used inside dates and lists.
 labels:
   now: now # end of an ongoing entry in the commit history
   present: Present # end of an ongoing project on its card ("Mar 2026 – Present")
   expected: (expected) # graduation date not reached yet
-  class_of: class of
   gpa: GPA # on the hero badge ("GPA 3.84 ★ …")
+  # Dates: month names, and how a month and year are written ({month} {year} → "Mar 2027").
+  months: [Jan, Feb, Mar, Apr, May, Jun, Jul, Aug, Sep, Oct, Nov, Dec]
+  year_month: '{month} {year}'
+  list_separator: ', ' # between the items of a list ("Python, R, SQL")
+  # Platform words (projects/*.md `platform`).
+  platform: { ios: iOS, web: Web, cli: CLI, research: Research }
   # Project status words (projects/*.md `status`), shown on the cards, badge and ticker.
   status:
     idea: idea
@@ -208,3 +222,16 @@ labels:
     archived: archived
   new_tab: (opens in a new tab) # read out by screen readers only
   skip_link: Skip to content # first thing a keyboard user reaches
+
+# Languages (PLAN-EXPERIENCE §5). Every copy file has this block, in its own language.
+i18n:
+  name: English # this language's own name, as the language switch lists it on every page
+  # The notice on every page of a language that is still a preview (site.yaml `locales`).
+  preview_notice: Draft translation, not yet reviewed.
+  preview_link: Read the English version
+  # The one-line suggestion on a first visit to a page in another language, when the browser
+  # prefers this one. Written in this language: it is meant for the reader who reads it.
+  suggest: This page is also in English.
+  suggest_go: Read it in English
+  suggest_dismiss: No thanks
+  suggest_label: Language suggestion # read out by screen readers only

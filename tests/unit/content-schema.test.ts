@@ -4,7 +4,7 @@ import { z } from 'astro/zod';
 import { parse } from 'yaml';
 import { describe, expect, it, vi } from 'vitest';
 import { assertCommentsClosed, stripComments } from '../../src/content/guards';
-import { list, parseYaml, singleton } from '../../src/content/parsers';
+import { list, parseYaml, singleton, translatedCopy } from '../../src/content/parsers';
 import { copyVars, fillCopy } from '../../src/lib/derive';
 import {
   aviationSchema,
@@ -15,8 +15,11 @@ import {
   interestsSchema,
   profileSchema,
   projectSchema,
+  projectTranslationSchema,
+  proseTranslationSchema,
   siteSchema,
   skillsSchema,
+  translatedCopySchema,
 } from '../../src/content/schema';
 
 const CONTENT = join(import.meta.dirname, '../../content');
@@ -70,9 +73,22 @@ describe('real content/ files validate against their schemas', () => {
     expect(() => copySchema.parse(singleton('copy')(read('copy.yaml'))[0])).not.toThrow();
   });
   it('projects/*.md', () => {
-    const files = readdirSync(join(CONTENT, 'projects')).filter((f) => f.endsWith('.md'));
+    const files = readdirSync(join(CONTENT, 'projects')).filter(
+      (f) => f.endsWith('.md') && !/\.zh-han[st]\.md$/.test(f),
+    );
     expect(files.length).toBeGreaterThan(0);
     for (const f of files) projectSchema(image).parse(frontmatter(read(`projects/${f}`)));
+  });
+  it('translations: copy.zh-hans.yaml, copy.zh-hant.yaml and the twin files', () => {
+    const english = () => parseYaml(read('copy.yaml'));
+    for (const l of ['zh-hans', 'zh-hant'])
+      translatedCopySchema.parse(
+        translatedCopy(`copy.${l}.yaml`, english)(read(`copy.${l}.yaml`))[0],
+      );
+    const twins = readdirSync(join(CONTENT, 'projects')).filter((f) => /\.zh-han[st]\.md$/.test(f));
+    for (const f of twins) projectTranslationSchema.parse(frontmatter(read(`projects/${f}`)));
+    for (const f of readdirSync(CONTENT).filter((f) => /^(about|now)\.zh-han[st]\.md$/.test(f)))
+      proseTranslationSchema.parse(frontmatter(read(f)));
   });
 });
 

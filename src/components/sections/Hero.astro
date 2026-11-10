@@ -25,7 +25,7 @@ const lines = [
   { kind: 'cmd', text: copy.hero.cmd_interests },
   { kind: 'tags', text: hero.tags.map((t) => `${t}/`).join('   ') },
   { kind: 'cmd', text: copy.hero.summon },
-  { kind: 'ok', text: `${copy.hero.summon_ok} ${profile.status}.` },
+  { kind: 'ok', text: hero.summonOk },
 ] as const;
 let at = INTRO.typing.startMs;
 const typed = lines.map((l) => {

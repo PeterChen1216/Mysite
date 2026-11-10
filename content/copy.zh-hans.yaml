@@ -1,0 +1,372 @@
+# 界面文字（简体中文）：copy.yaml 的每一个键都在这里，一个不少（少一个，构建就会失败）。
+# 说明见 copy.yaml 与 content/README.md「翻译」一节。{占位符} 的用法与 copy.yaml 相同。
+# 终端命令（whoami、git log …）、ping 的输出和 Clock Stamp 手机上的画面保持英文：
+# 它们是代码或 App 本身的样子。
+#
+# draft: true —— 这是 Claude 根据英文起草的译文，还没有经过你审阅。审阅、修改之后删掉这一行；
+# 在此之前 site.yaml 里的 zh-hans 只能是 preview。
+draft: true
+
+nav:
+  links:
+    - { label: '~/关于', href: '#about' }
+    - { label: '~/项目', href: '#projects' }
+    - { label: '~/经历', href: '#experience' }
+    - { label: '~/联系', href: '#contact' }
+  status: 在线 · {city}
+  resume: 简历
+  say_hi: 打个招呼
+  logo_label: '{domain}——回到顶部'
+  sections_label: 栏目
+
+hero:
+  headline:
+    - 把[数据]
+    - 打造成
+    - 人们喜爱的东西[_]
+  terminal_title: '{host}@{domain}: ~ — zsh'
+  cmd_whoami: whoami
+  cmd_interests: cat ~/interests.txt
+  ok: '[OK]'
+  summon: '/summon pixel_globe ~ ~ ~ {rotate:1b}'
+  summon_ok: '已召唤 PixelGlobe。区块已加载：36/36。{status}。'
+  whoami_line: '{name} — {programme} @ {school}，{year} 届。'
+  cta_projects: 查看项目
+  cta_resume: 下载简历
+  eyebrow_prefix: '// 玩家:'
+  globe_label: 地球
+  globe_value: '已转动 {deg}°'
+  avgeek_badge: AvGeek  ✈  航线 · 座位 · 里程
+  avgeek_route: AvGeek  ✈  {from} ⇄ {to}
+
+ticker:
+  label: 状态
+  tags: { xp: XP, now: 当前, work: 工作, ping: PING, edu: 教育 }
+
+about:
+  cmd: cat ~/about.md
+  title: [ '玩家属性与', '已加载区块' ]
+  blurb: 我是谁、在学什么，以及没在发布作品的时候都在忙些什么。所有属性均为自报，没有作弊。
+  whoami_title: 你好，我是 {first}，在 {department} 读{major}。
+  card_whoami: whoami
+  card_gpa: 绩点 --等级
+  card_now: 现在 --在做
+  card_education: 教育经历
+  card_off: 下班 --以后
+  card_avgeek: avgeek
+  card_skills: 物品栏 --技能
+  avgeek_title: 航线、座位、里程计划。
+  now_link: 在 App Store 中打开
+  skills_basic: 基础
+  gpa_out_of: 满分
+  track_suffix: 方向
+  minor_prefix: 辅修
+  coursework: 相关课程
+  avgeek_panels:
+    watching: 关注中
+    seat_rules: 选座规则
+    favorite_cabins: 喜欢的舱位
+    news: 航线新闻
+    fare_examples: 票价实验室
+    tools: 常用工具
+
+projects:
+  cmd: ls ~/projects --sort=shipping
+  title: [ '已发布与', '进行中的作品' ]
+  blurb: 我做过和正在做的东西。先看精选作品，然后是物品栏里的其余东西。
+  featured: ★ 精选
+  stack_label: '技术栈：'
+  status_title: '~/projects'
+  status_cmd: git status
+  link_appstore: App Store
+  link_repo: 源代码
+  link_live: 在线网站
+  next_label: 下一个 --区块
+  next_title: '???（加载中…）'
+  next_body: 区块尚未生成——再过几次提交后回来看看。
+  next_tags: [ 待定 ]
+  next_progress: 正在生成区块 (-1, 3)…
+  # 手机画的是 App 自己的英文界面，所以这里保持英文。
+  phone:
+    home_zone: America/Los_Angeles
+    cities:
+      - { code: FRA, name: Frankfurt, time_zone: Europe/Berlin }
+      - { code: SEA, name: Seattle, time_zone: America/Los_Angeles }
+      - { code: SHA, name: Shanghai, time_zone: Asia/Shanghai }
+    weather: Open-Meteo
+    hours: 24h
+    tab_list: List
+    tab_clock: Clock
+
+experience:
+  cmd: git log --oneline --graph ~/career
+  title: [ 提交历史 ]
+  blurb: 我走过的路，最新的在前。HEAD 指向接下来的事。
+  head_hint: 打个招呼 ↓
+  head_dates: 现在 →
+  community_cmd: git log --oneline ~/community
+  community_title: 社区
+
+contact:
+  cmd: ping {host} --count 1
+  title: [ '一起来', '做点什么吧。' ]
+  say_hi: 打个招呼 · 邮件
+  github: GITHUB
+  linkedin: LINKEDIN
+  resume: 简历 PDF
+  terminal_title: '~/contact — zsh'
+  ping:
+    request: 'PING {host} ({email}): 56 data bytes'
+    reply: '64 bytes from {email}: icmp_seq=0 ttl=64 time=0.27 ms'
+    summary: '--- 1 packet transmitted, 1 received, 0% packet loss ---'
+  open_cmd: 'open mailto:{email}'
+  emails_label: 或写信至
+
+footer:
+  tagline: 由体素、咖啡和太多航班搭建而成
+  prefs: 设置
+  back_to_top: ▲ 回到出生点
+  rights: 保留所有权利。
+  updated: 更新于
+
+prefs:
+  open_label: 设置
+  pause_label: 暂停动画
+  title: '~/.config — prefs'
+  heading: 设置
+  intro: 更改即时生效，并且只保存在此浏览器中。
+  close: 关闭
+  reset_cmd: reset
+  reset: 恢复默认设置
+  theme:
+    cmd: theme --set
+    legend: 主题
+    options:
+      night: { name: 夜间, note: 默认 }
+      day: { name: 白天, note: 主世界 }
+      mono-dark: { name: 黑白深色, note: 基岩 }
+      mono-light: { name: 黑白浅色, note: 纸张 }
+      cvd: { name: 色盲友好, note: 棱镜 }
+      auto: { name: 自动, note: '夜间或白天，跟随设备' }
+    contrast_note: 你的设备要求更高的对比度，所以每个主题都使用更醒目的线条和文字。
+  motion:
+    cmd: motion --set
+    legend: 动效
+    options:
+      auto: { name: 自动, note: 跟随设备 }
+      full: { name: 完整, note: 一切都会动 }
+      calm: { name: 平静, note: '没有开场和火花，循环放慢' }
+      off: { name: 关闭, note: 一切静止 }
+    reduced_note: 你的设备要求减少动态效果，所以无论选择什么，页面都保持静止。
+  text:
+    cmd: text --size
+    legend: 文字大小
+    option: '{size}%'
+  keys:
+    cmd: keys --shortcuts
+    legend: 键盘快捷键
+    on: 开
+    off: 关
+    note: '不在输入框里打字时，按“,”打开此窗口，按“p”暂停动画。'
+  lang:
+    cmd: lang --set
+    legend: 语言
+    note: 每种语言都是单独的页面；点击链接后仍停留在当前位置。
+    draft: 草稿
+
+labels:
+  now: 现在
+  present: 至今
+  expected: （预计）
+  gpa: GPA
+  months: [ 1月, 2月, 3月, 4月, 5月, 6月, 7月, 8月, 9月, 10月, 11月, 12月 ]
+  year_month: '{year}年{month}'
+  list_separator: 、
+  platform: { ios: iOS, web: 网页, cli: 命令行, research: 研究 }
+  status:
+    idea: 构想
+    wip: 进行中
+    testflight: TestFlight
+    shipped: 已发布
+    completed: 已完成
+    archived: 已归档
+  new_tab: （在新标签页中打开）
+  skip_link: 跳到正文
+
+i18n:
+  name: 简体中文
+  preview_notice: 草稿译文，尚未经过审阅。
+  preview_link: 阅读英文版
+  suggest: 本页也有简体中文版。
+  suggest_go: 阅读简体中文版
+  suggest_dismiss: 不用了
+  suggest_label: 语言建议
+from:
+  nav.links: eade50c1
+  nav.status: c4094d5f
+  nav.resume: 15eb8728
+  nav.say_hi: 19f531b8
+  nav.logo_label: 93caa5d8
+  nav.sections_label: c9f6ef4a
+  hero.headline: 518ca3c0
+  hero.terminal_title: 9247c7b0
+  hero.cmd_whoami: 6f75e753
+  hero.cmd_interests: "8464e218"
+  hero.ok: 6f70d01f
+  hero.summon: ce7e775a
+  hero.summon_ok: cc8cde13
+  hero.whoami_line: d0758866
+  hero.cta_projects: 4d5e2974
+  hero.cta_resume: cc588108
+  hero.eyebrow_prefix: b020ec78
+  hero.globe_label: 2d4223f8
+  hero.globe_value: eb72707a
+  hero.avgeek_badge: 1a850908
+  hero.avgeek_route: 200e4b82
+  ticker.label: 7eeef5d9
+  ticker.tags.xp: 3eabb4e8
+  ticker.tags.now: e09106ca
+  ticker.tags.work: 558cb999
+  ticker.tags.ping: 11d672b2
+  ticker.tags.edu: 69a0da13
+  about.cmd: 8eda90ca
+  about.title: 21f279c3
+  about.blurb: 5e8dcf24
+  about.whoami_title: "74935514"
+  about.card_whoami: 6f75e753
+  about.card_gpa: da2fc289
+  about.card_now: "22935143"
+  about.card_education: 1a03bd57
+  about.card_off: ef121dc3
+  about.card_avgeek: ffbd3d7c
+  about.card_skills: 6bed6150
+  about.avgeek_title: de58728d
+  about.now_link: 637c3a76
+  about.skills_basic: 09af1c7e
+  about.gpa_out_of: 6669dfe3
+  about.track_suffix: 07f8a99f
+  about.minor_prefix: 246101b8
+  about.coursework: d6558db9
+  about.avgeek_panels.watching: 2cb7c0f1
+  about.avgeek_panels.seat_rules: f409bd31
+  about.avgeek_panels.favorite_cabins: d8d302ea
+  about.avgeek_panels.news: 55f12603
+  about.avgeek_panels.fare_examples: 1d5f5179
+  about.avgeek_panels.tools: 11dace33
+  projects.cmd: d12e335b
+  projects.title: d350fedb
+  projects.blurb: fe3940a3
+  projects.featured: 3d1b1352
+  projects.stack_label: 6d8f33f6
+  projects.status_title: 8af51ce7
+  projects.status_cmd: 7d2a22d7
+  projects.link_appstore: 4a29c5da
+  projects.link_repo: db512e70
+  projects.link_live: e1d27119
+  projects.next_label: b3ac4e00
+  projects.next_title: 15fe8567
+  projects.next_body: 96b88b2c
+  projects.next_tags: 7337ee39
+  projects.next_progress: f3af4c0e
+  projects.phone.home_zone: a4b5e4e3
+  projects.phone.cities: 73bba408
+  projects.phone.weather: b8f96035
+  projects.phone.hours: 4188eb3f
+  projects.phone.tab_list: "22943611"
+  projects.phone.tab_clock: 899e905e
+  experience.cmd: af8d6ae8
+  experience.title: c9748ad3
+  experience.blurb: 17b55e59
+  experience.head_hint: 161a0bec
+  experience.head_dates: 484c1f73
+  experience.community_cmd: 5a149355
+  experience.community_title: fce9814c
+  contact.cmd: d7455acc
+  contact.title: 388f04a7
+  contact.say_hi: 5128cf29
+  contact.github: a9e2e3a8
+  contact.linkedin: "32262e00"
+  contact.resume: 107567a6
+  contact.terminal_title: 3520c851
+  contact.ping.request: eebe9de1
+  contact.ping.reply: eae1031a
+  contact.ping.summary: 03c1c788
+  contact.open_cmd: 9a93c06c
+  contact.emails_label: 7a88b85b
+  footer.tagline: "90470330"
+  footer.prefs: f81177b7
+  footer.back_to_top: 3a632d3d
+  footer.rights: d40c6165
+  footer.updated: 60f1d5bf
+  prefs.open_label: 83909f82
+  prefs.pause_label: f2351b89
+  prefs.title: 570db951
+  prefs.heading: 83909f82
+  prefs.intro: 7d133e30
+  prefs.close: "97959247"
+  prefs.reset_cmd: 1c7a1973
+  prefs.reset: baf8b3d6
+  prefs.theme.cmd: "20377e06"
+  prefs.theme.legend: 888560be
+  prefs.theme.options.night.name: b399942e
+  prefs.theme.options.night.note: e2747baf
+  prefs.theme.options.day.name: 245e9ce6
+  prefs.theme.options.day.note: dd645867
+  prefs.theme.options.mono-dark.name: de923d7c
+  prefs.theme.options.mono-dark.note: 0c17b703
+  prefs.theme.options.mono-light.name: 8d1da57b
+  prefs.theme.options.mono-light.note: 583542b3
+  prefs.theme.options.cvd.name: bd47c4e8
+  prefs.theme.options.cvd.note: ef06e50e
+  prefs.theme.options.auto.name: 05b65242
+  prefs.theme.options.auto.note: 827b1241
+  prefs.theme.contrast_note: dc18a43b
+  prefs.motion.cmd: 1bdcf225
+  prefs.motion.legend: c0ff16d7
+  prefs.motion.options.auto.name: 05b65242
+  prefs.motion.options.auto.note: 5924c9c4
+  prefs.motion.options.full.name: 77f8ce68
+  prefs.motion.options.full.note: bfca83b0
+  prefs.motion.options.calm.name: 44f49543
+  prefs.motion.options.calm.note: "62506548"
+  prefs.motion.options.off.name: 50accd74
+  prefs.motion.options.off.note: 3abf35c4
+  prefs.motion.reduced_note: 7ee891ca
+  prefs.text.cmd: 2d5cff8d
+  prefs.text.legend: 25a5a67c
+  prefs.text.option: e838dfbd
+  prefs.keys.cmd: e92c0f75
+  prefs.keys.legend: fc18926f
+  prefs.keys.on: 9cc01faa
+  prefs.keys.off: 50accd74
+  prefs.keys.note: c95ac088
+  prefs.lang.cmd: f1c4ac7e
+  prefs.lang.legend: 1fa24b49
+  prefs.lang.note: 26111d89
+  prefs.lang.draft: 6ae048f0
+  labels.now: 4fe80800
+  labels.present: 51032fe4
+  labels.expected: 7371f4dd
+  labels.gpa: "41474e63"
+  labels.months: 2d69eb59
+  labels.year_month: f74a1464
+  labels.list_separator: f240463d
+  labels.platform.ios: "94777e47"
+  labels.platform.web: 6350f0c2
+  labels.platform.cli: 071ed5e9
+  labels.platform.research: 5166271e
+  labels.status.idea: b6878fbe
+  labels.status.wip: 382d309f
+  labels.status.testflight: "5704e906"
+  labels.status.shipped: 5c256350
+  labels.status.completed: 7093fda8
+  labels.status.archived: 755fa0b1
+  labels.new_tab: 4321a8a0
+  labels.skip_link: e04644af
+  i18n.name: 32889a93
+  i18n.preview_notice: c232f3d0
+  i18n.preview_link: 9ad2585a
+  i18n.suggest: 9628c200
+  i18n.suggest_go: 051a9312
+  i18n.suggest_dismiss: f6ad0e81
+  i18n.suggest_label: d8923b60

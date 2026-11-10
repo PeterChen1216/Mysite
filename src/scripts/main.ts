@@ -2,6 +2,7 @@
 import { initClocks } from './clock';
 import { initDismissible } from './dismiss';
 import { initGlobes } from './globe';
+import { initLang } from './lang';
 import { initOffscreenPause } from './offscreen';
 import { initParticles } from './particles';
 import { initPrefs } from './prefs';
@@ -16,6 +17,7 @@ const start = () => {
   initClocks();
   initScrollSpy();
   initDismissible();
+  initLang();
 };
 
 if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', start);

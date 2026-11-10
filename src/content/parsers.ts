@@ -6,6 +6,7 @@
  * error is also printed to stderr with the file name — that is the message the owner needs.
  */
 import { isScalar, parseDocument, visit } from 'yaml';
+import { copyKeyDiff, copyLeaves } from '../i18n/translations';
 
 type Entry = Record<string, unknown>;
 
@@ -65,5 +66,31 @@ export function list(file: string) {
         if (!isRecord(item)) throw new Error(`item ${index + 1} must be key: value pairs`);
         return { ...item, id: String(item.id ?? index + 1) };
       });
+    });
+}
+
+/**
+ * A translated copy file (copy.zh-hans.yaml): one object with exactly the keys of copy.yaml —
+ * a missing key fails the build (no silent English), so does a key copy.yaml lacks — plus its
+ * `from:` and `draft:`, which may only name keys of copy.yaml. `english` gives copy.yaml parsed.
+ */
+export function translatedCopy(file: string, english: () => unknown) {
+  return (text: string): Entry[] =>
+    reported(file, () => {
+      const data = parseYaml(text);
+      if (!isRecord(data)) throw new Error('expected key: value pairs at the top level');
+      const en = english();
+      const { missing, extra } = copyKeyDiff(en, data);
+      if (missing.length > 0)
+        throw new Error(`missing keys (translate each one; nothing falls back to English): ${missing.join(', ')}`);
+      if (extra.length > 0) throw new Error(`keys that copy.yaml does not have: ${extra.join(', ')}`);
+      const keys = [...copyLeaves(en).keys()];
+      const known = (k: string) => keys.some((key) => key === k || key.startsWith(`${k}.`));
+      const from = isRecord(data.from) ? Object.keys(data.from) : [];
+      const draft = Array.isArray(data.draft) ? data.draft.map(String) : [];
+      const unknown = [...from.filter((k) => !keys.includes(k)), ...draft.filter((k) => !known(k))];
+      if (unknown.length > 0)
+        throw new Error(`\`from:\` / \`draft:\` name keys that copy.yaml does not have: ${unknown.join(', ')}`);
+      return [{ ...data, id: 'copy' }];
     });
 }

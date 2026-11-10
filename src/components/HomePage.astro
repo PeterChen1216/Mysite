@@ -1,0 +1,57 @@
+---
+/**
+ * zhic.me v2 — long-page voxel × terminal site (M1, Figma "Home — Voxel / 1440"), in one locale:
+ * src/pages/index.astro (English), zh-hans/ and zh-hant/ (PLAN-EXPERIENCE §5.2).
+ * Every fact comes from content/ via src/lib/page-data.ts; sections only lay it out.
+ */
+import BaseLayout from '../layouts/BaseLayout.astro';
+import About from './sections/About.astro';
+import Background from './sections/Background.astro';
+import Contact from './sections/Contact.astro';
+import Experience from './sections/Experience.astro';
+import Footer from './sections/Footer.astro';
+import Hero from './sections/Hero.astro';
+import LangNotice from './sections/LangNotice.astro';
+import LangSuggest from './sections/LangSuggest.astro';
+import Nav from './sections/Nav.astro';
+import PrefsWindow from './sections/PrefsWindow.astro';
+import Projects from './sections/Projects.astro';
+import Ticker from './sections/Ticker.astro';
+import type { Locale } from '../i18n/locales';
+import { getPageData } from '../lib/page-data';
+
+interface Props {
+  locale: Locale;
+}
+const data = await getPageData(Astro.props.locale);
+---
+
+<BaseLayout data={data}>
+  <LangSuggest data={data} />
+  {data.preview && <LangNotice data={data} />}
+  <div class="page">
+    <Background />
+    <Nav data={data} />
+    <main id="main">
+      <Hero data={data} />
+      <Ticker data={data} />
+      <About data={data} />
+      <Projects data={data} />
+      <Experience data={data} />
+      <Contact data={data} />
+    </main>
+    <Footer data={data} />
+  </div>
+  <PrefsWindow data={data} />
+</BaseLayout>
+
+<script>
+  import '../scripts/main';
+</script>
+
+<style>
+  .page {
+    position: relative;
+    overflow-x: clip;
+  }
+</style>

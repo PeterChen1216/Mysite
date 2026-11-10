@@ -151,6 +151,12 @@ describe('hero headline', () => {
 
 /** copy.yaml words as shipped; derive.ts has no defaults, so tests pass them like the page does. */
 const TAGS = { xp: 'XP', now: 'NOW', work: 'WORK', ping: 'PING', edu: 'EDU' };
+const PLATFORMS = { ios: 'iOS', web: 'Web', cli: 'CLI', research: 'Research' };
+const WHOAMI = '{name} — {programme} @ {school}, class of {year}.';
+const MONTHS = {
+  months: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'],
+  year_month: '{month} {year}',
+};
 const STATUS_WORDS = {
   idea: 'idea',
   wip: 'in progress',
@@ -167,11 +173,17 @@ describe('facts come only from content', () => {
     );
     // Prefix from copy.yaml; no short name falls back to the school.
     expect(heroEyebrow('A B', bareEdu, 'X', '>>')).toBe('>> A B  ·  Some College ’24  ·  X');
-    expect(whoamiLine('Zhicheng (Peter) Chen', edu, 'class of')).toBe(
+    expect(whoamiLine('Zhicheng (Peter) Chen', edu, WHOAMI)).toBe(
       'Zhicheng (Peter) Chen — Informatics · Data Science @ University of Washington, Seattle, class of ’27.',
     );
-    // No major or track: the degree stands in.
-    expect(whoamiLine('A B', bareEdu, 'Class of')).toBe('A B — BA @ Some College, Class of ’24.');
+    // No major or track: the degree stands in. The sentence is copy.yaml hero.whoami_line.
+    expect(whoamiLine('A B', bareEdu, WHOAMI.replace('class of', 'Class of'))).toBe(
+      'A B — BA @ Some College, Class of ’24.',
+    );
+    expect(whoamiLine('A B', bareEdu, '{name}——{programme} @ {school}，{year} 届。')).toBe(
+      'A B——BA @ Some College，’24 届。',
+    );
+    expect(() => whoamiLine('A B', bareEdu, '{name} {class}')).toThrow(/\{class\}/);
   });
   it('GPA badge uses the latest honor and real GPA', () => {
     expect(latestHonor(honors)?.year).toBe('2025-2026');
@@ -187,28 +199,33 @@ describe('facts come only from content', () => {
     expect(gpaRatio(undefined)).toBeUndefined();
   });
   it('project badge reflects status and App Store link', () => {
-    expect(projectBadge(project(), 'App Store', STATUS_WORDS)).toBe(
+    expect(projectBadge(project(), 'App Store', STATUS_WORDS, PLATFORMS)).toBe(
       'Clock Stamp · iOS  [SHIPPED → App Store]',
     );
     // The store label is copy.yaml's, used as written (here with a no-break space).
-    expect(projectBadge(project(), 'App\u00a0Store', STATUS_WORDS)).toBe(
+    expect(projectBadge(project(), 'App\u00a0Store', STATUS_WORDS, PLATFORMS)).toBe(
       'Clock Stamp · iOS  [SHIPPED → App\u00a0Store]',
     );
-    expect(projectBadge(project({ status: 'wip', links: {} }), 'App Store', STATUS_WORDS)).toBe(
-      'Clock Stamp · iOS  [IN PROGRESS]',
-    );
+    expect(
+      projectBadge(project({ status: 'wip', links: {} }), 'App Store', STATUS_WORDS, PLATFORMS),
+    ).toBe('Clock Stamp · iOS  [IN PROGRESS]');
     // A platform without a label is shown as written; no links at all is fine.
     expect(
       projectBadge(
         project({ platform: ['ios', 'watch'], links: undefined }),
         'App Store',
         STATUS_WORDS,
+        PLATFORMS,
       ),
     ).toBe('Clock Stamp · iOS/watch  [SHIPPED]');
     // Status words come from copy.yaml labels.status.
-    expect(projectBadge(project(), 'Store', { ...STATUS_WORDS, shipped: 'live' })).toBe(
+    expect(projectBadge(project(), 'Store', { ...STATUS_WORDS, shipped: 'live' }, PLATFORMS)).toBe(
       'Clock Stamp · iOS  [LIVE → Store]',
     );
+    // Platform words come from copy.yaml labels.platform.
+    expect(
+      projectBadge(project(), 'App Store', STATUS_WORDS, { ...PLATFORMS, ios: 'iPhone' }),
+    ).toBe('Clock Stamp · iPhone  [SHIPPED → App Store]');
   });
   it('now-building prefers ongoing featured projects', () => {
     const a = project({ id: 'a', featured: false, end: '2025-12' });
@@ -240,9 +257,15 @@ describe('facts come only from content', () => {
     ]);
   });
   it('education dates', () => {
-    expect(educationDates(edu, '(expected)')).toBe('Sep 2023 – Mar 2027 (expected)');
-    expect(educationDates(edu, '(est.)')).toBe('Sep 2023 – Mar 2027 (est.)');
-    expect(educationDates(bareEdu, '(expected)')).toBe('Sep 2020 – Jun 2024');
+    expect(educationDates(edu, '(expected)', MONTHS)).toBe('Sep 2023 – Mar 2027 (expected)');
+    expect(educationDates(edu, '(est.)', MONTHS)).toBe('Sep 2023 – Mar 2027 (est.)');
+    expect(educationDates(bareEdu, '(expected)', MONTHS)).toBe('Sep 2020 – Jun 2024');
+    expect(
+      educationDates(edu, '（预计）', {
+        months: Array.from({ length: 12 }, (_, i) => `${i + 1}月`),
+        year_month: '{year}年{month}',
+      }),
+    ).toBe('2023年9月 – 2027年3月 （预计）');
   });
 });
 
@@ -270,6 +293,7 @@ describe('ticker', () => {
       email: 'a@b.c',
       tags: TAGS,
       statusLabels: STATUS_WORDS,
+      platformLabels: PLATFORMS,
     });
     expect(items).toEqual([
       { tag: 'XP', text: "Cumulative GPA 3.84/4.00 · Annual Dean's List 2025–26", tone: 'green' },
@@ -291,6 +315,7 @@ describe('ticker', () => {
       now: [],
       tags: { xp: 'LVL', now: 'NOW', work: 'JOB', ping: 'MAIL', edu: 'SCHOOL' },
       statusLabels: STATUS_WORDS,
+      platformLabels: PLATFORMS,
     });
     // No GPA → no XP item; no short name → the EDU tag word; degree when there is no major;
     // an interest without a design colour is diamond; no email → no ping item.
@@ -308,6 +333,7 @@ describe('ticker', () => {
         now: [],
         tags: TAGS,
         statusLabels: STATUS_WORDS,
+        platformLabels: PLATFORMS,
       })[0],
     ).toEqual({ tag: 'XP', text: 'Cumulative GPA 3.84/4.00', tone: 'green' });
     // The featured project's status word comes from copy.yaml labels.status.
@@ -320,6 +346,7 @@ describe('ticker', () => {
       now: [],
       tags: TAGS,
       statusLabels: { ...STATUS_WORDS, shipped: 'live' },
+      platformLabels: PLATFORMS,
     });
     expect(featured[0]).toEqual({ tag: 'iOS', text: 'Clock Stamp · live', tone: 'gold' });
   });

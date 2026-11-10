@@ -6,6 +6,18 @@ version: 0.1.0 # bump only for structural changes; content changes are versioned
 # Flip to true when M1 is accepted (DECISIONS Q1); the old site then moves to /legacy/.
 launched: false
 
+# Each language of the site (PLAN-EXPERIENCE §5; content/README.md "Translations"):
+#   live    — listed (language switch, hreflang) and open to search engines.
+#   preview — built at its address (/zh-hans/, /zh-hant/) for you to read, but noindex, listed
+#             nowhere, and marked "draft translation, not yet reviewed" on every page.
+# English is always live. A language can only be live once nothing in it is `draft: true`
+# (the content check and the build fail otherwise). To publish one: read its drafts, remove each
+# `draft: true`, then change preview to live here.
+locales:
+  en: live
+  zh-hans: preview
+  zh-hant: preview
+
 features:
   scene: false # the WebGL camera scene arrives in M2
 
@@ -15,8 +27,29 @@ meta:
   keywords:
     - Zhicheng Chen
     - Peter Chen
+  # Translations (content/README.md "Translations"): drafts by Claude, not yet reviewed.
+  zh-hans:
+    draft: true
+    description: 这是一个个人/学术网站
+    from:
+      description: d18d430c
+  zh-hant:
+    draft: true
+    description: 這是一個個人/學術網站
+    from:
+      description: 7c7487b8
 
 footer:
   copyright_holder: Peter Chen
   copyright_start: 2025
   update_note: Expected to be updated every 2 weeks.
+  zh-hans:
+    draft: true
+    update_note: 预计每两周更新一次。
+    from:
+      update_note: 2d5227cd
+  zh-hant:
+    draft: true
+    update_note: 預計每兩週更新一次。
+    from:
+      update_note: 7b469257

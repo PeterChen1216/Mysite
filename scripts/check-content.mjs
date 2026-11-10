@@ -4,15 +4,26 @@
 //   --strict; otherwise warnings (DECISIONS Q3 allows TODO on non-main branches).
 //   Breakage (always errors): an unclosed `<!--` in Markdown hides the rest of the page; project
 //   file names must be lowercase-hyphen slugs because they become /projects/<slug> URLs.
-import { readdirSync, readFileSync, realpathSync, statSync } from 'node:fs';
+//   Translations (always errors; PLAN-EXPERIENCE §5.4, ADR-017): a locale that site.yaml marks
+//   `live` may hold no `draft`; a translated copy file has exactly copy.yaml's keys; a twin file
+//   (`about.zh-hans.md`) needs its English file; the two private-use characters the build uses
+//   to mark English fallbacks may not appear in content.
+import { existsSync, readdirSync, readFileSync, realpathSync, statSync } from 'node:fs';
 import { join, relative } from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
+import { parse } from 'yaml';
+import { collectUnits, orphanTwins } from '../src/i18n/content-files.ts';
+import { TRANSLATED_LOCALES } from '../src/i18n/locales.ts';
+import { copyKeyDiff, liveProblems } from '../src/i18n/translations.ts';
 
 export const PATTERNS = [/\bTODO\b/, /\blorem\b/i, /\bplaceholder\b/i];
 /** Owner-facing docs and the raw drop folder are exempt. */
 const IGNORE = [/^README\.md$/, /^artifacts\//];
 const TEXT = /\.(ya?ml|md|json|txt)$/i;
-const SLUG = /^[a-z0-9]+(?:-[a-z0-9]+)*\.md$/;
+/** A project file (`clock-stamp.md`), or one of its translations (`clock-stamp.zh-hans.md`). */
+const SLUG = new RegExp(
+  String.raw`^[a-z0-9]+(?:-[a-z0-9]+)*(?:\.(?:${TRANSLATED_LOCALES.join('|')}))?\.md$`,
+);
 
 /**
  * @param {string} root absolute path to content/
@@ -90,6 +101,36 @@ export function findBreakage(root) {
 }
 
 /**
+ * Translation problems (always errors).
+ * @param {string} root absolute path to content/
+ * @returns {string[]}
+ */
+export function findTranslationProblems(root) {
+  /** @type {string[]} */
+  const problems = [];
+  const read = (/** @type {string} */ file) => parse(readFileSync(join(root, file), 'utf8'));
+  /** @type {Record<string, unknown>} */
+  const states = existsSync(join(root, 'site.yaml')) ? (read('site.yaml')?.locales ?? {}) : {};
+  const live = TRANSLATED_LOCALES.filter((l) => states[l] === 'live');
+  problems.push(...liveProblems(collectUnits(root), live));
+  for (const locale of TRANSLATED_LOCALES) {
+    const file = `copy.${locale}.yaml`;
+    if (!existsSync(join(root, file)) || !existsSync(join(root, 'copy.yaml'))) continue;
+    const { missing, extra } = copyKeyDiff(read('copy.yaml'), read(file));
+    if (missing.length > 0) problems.push(`content/${file}: missing keys ${missing.join(', ')}`);
+    if (extra.length > 0)
+      problems.push(`content/${file}: keys copy.yaml lacks: ${extra.join(', ')}`);
+  }
+  for (const twin of orphanTwins(root))
+    problems.push(`content/${twin}: a translation of a file that does not exist`);
+  for (const rel of textFiles(root)) {
+    const at = readFileSync(join(root, rel), 'utf8').search(/[\uE000\uE001]/);
+    if (at >= 0) problems.push(`content/${rel}: contains U+E000 / U+E001 (reserved by the build)`);
+  }
+  return problems;
+}
+
+/**
  * @param {Record<string, string | undefined>} env
  * @param {string[]} argv
  */
@@ -106,7 +147,7 @@ if (invokedDirectly) {
   const root = fileURLToPath(new URL('../content', import.meta.url));
   let failed = false;
 
-  const broken = findBreakage(root);
+  const broken = [...findBreakage(root), ...findTranslationProblems(root)];
   for (const b of broken) console.log(`error: ${b}`);
   if (broken.length > 0) failed = true;
 

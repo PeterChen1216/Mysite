@@ -16,14 +16,10 @@ interface Props {
   others: PageData['interests']['items'];
 }
 const { data, others } = Astro.props;
-const { copy, profile, edu, hero, About } = data;
+const { copy, profile, hero, About } = data;
 
-const slug = (s: string) =>
-  s
-    .toLowerCase()
-    .replace(/[^a-z0-9]+/g, '-')
-    .replace(/^-|-$/g, '');
-const tags = [...new Set([...(edu.track ? [slug(edu.track)] : []), ...hero.tags])];
+// The track as a tag (`data-science`), from the English track on every page: a tag is a name.
+const tags = [...new Set([...(data.trackTag ? [data.trackTag] : []), ...hero.tags])];
 // Chip colours in turn, as in the design (data-science diamond, gen-ai enchant, aviation cyan,
 // ios/vibe-coding gold, table-tennis redstone, choir white).
 const TONES = ['diamond', 'enchant', 'cyan', 'gold', 'redstone', 'white'] as const;
@@ -44,7 +40,7 @@ const TONES = ['diamond', 'enchant', 'cyan', 'gold', 'redstone', 'white'] as con
         {profile.tagline}
       </p>
       {About && (
-        <div class="who__body">
+        <div class="who__body" lang={data.aboutLang}>
           <About />
         </div>
       )}
