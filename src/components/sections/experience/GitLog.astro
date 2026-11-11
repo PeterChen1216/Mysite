@@ -556,8 +556,11 @@ const commits = rows.map((row) => {
     .commit:has(> .commit__fold[open]) .commit__hash {
       font-size: 0;
     }
+    /* No end margin here (the closed row's ▸ has one, before the hash): after the last word it
+       only widened the column, and Firefox let it hang 8 px out of the box (M5). */
     .commit:has(> .commit__fold[open]) .commit__hash::before {
       content: '▾ ' attr(data-show);
+      margin-inline-end: 0;
       font: var(--type-code-bold);
     }
     /* The hover and focus overlay of the hash (X3 row 6) is the open state here. */

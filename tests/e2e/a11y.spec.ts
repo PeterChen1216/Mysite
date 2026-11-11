@@ -213,6 +213,10 @@ test.describe('keyboard (WCAG 2.1.1, 2.1.2, 2.4.3, 2.4.7)', () => {
       const handle = await page.evaluateHandle(() => document.activeElement);
       const el = handle.asElement();
       if (!el || (await el.evaluate((e) => e === document.body))) break;
+      // Past the last stop Chromium reports <body>; Firefox keeps the last stop as the active
+      // element while focus is in the browser's own controls. Either way the walk is over: a
+      // trap anywhere before the end fails the last assertion (the walk must end on the footer).
+      if (previous && (await el.evaluate((e, prev) => e === prev, previous))) break;
       const info = await el.evaluate((e, prev) => {
         const cs = getComputedStyle(e);
         const r = e.getBoundingClientRect();
