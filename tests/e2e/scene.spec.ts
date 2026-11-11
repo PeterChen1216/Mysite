@@ -543,12 +543,14 @@ test.describe('the scene at tier 3', () => {
       (window as unknown as { __scene: unknown }).__scene = c.sceneStatus;
     });
     const kept = () => page.evaluate(() => (window as unknown as { __scene: Status }).__scene);
-    // Three slow windows: the base resolution a step down (0.75), drawn from the next frame.
+    // Three slow windows: the base resolution a step down (0.75 of the device's pixel ratio,
+    // which is 2 in desktop Safari: 1.5), drawn from the next frame.
+    const full = await page.evaluate(() => Math.min(devicePixelRatio || 1, 2));
     await expect
       .poll(async () => (await kept()).watchdog.step, { timeout: 60_000 })
       .toBeGreaterThanOrEqual(1);
     expect((await kept()).watchdog.windows).toBeGreaterThanOrEqual(3);
-    await expect.poll(async () => (await kept()).dpr).toBeLessThan(1);
+    await expect.poll(async () => (await kept()).dpr).toBeLessThanOrEqual(full * 0.75 + 1e-9);
     // Three more at each step, then at the lowest it gives up: tier 2 for the session.
     await expect
       .poll(() => tierOf(page), { timeout: 60_000 })
