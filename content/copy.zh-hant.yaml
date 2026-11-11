@@ -91,7 +91,7 @@ about:
   cmd: cat ~/about.md
   title: [ '玩家屬性與', '已加載區塊' ]
   blurb: 我是誰、在學什麼，以及沒在發佈作品的時候都在忙些什麼。所有屬性均為自報，沒有作弊。
-  whoami_title: 你好，我是 {first}，在 {department} 讀{major}。
+  whoami_title: 你好，我是 {first}（Zhicheng），{major}理學學士在讀。
   card_whoami: whoami
   card_gpa: 績點 --等級
   card_now: 現在 --在做
@@ -320,7 +320,7 @@ from:
   about.cmd: 8eda90ca
   about.title: 69c66cda
   about.blurb: 35b78c3c
-  about.whoami_title: 572f83fc
+  about.whoami_title: 5fa75525
   about.card_whoami: 6f75e753
   about.card_gpa: ef01b867
   about.card_now: 286e0a34

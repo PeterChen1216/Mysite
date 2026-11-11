@@ -109,7 +109,7 @@ describe('the field check (src/content/check.ts)', () => {
         t.replace('status: shipped', 'status: done').replace('year: 2026', 'year: "this year"'),
       'profile.yaml': (t) =>
         t
-          .replace('status: Open to internships & collaborations', 'status:')
+          .replace(/^status: .+$/m, 'status:')
           .replace('address: zchen75@uw.edu', 'address: zchen75 at uw.edu')
           .replace('url: https://github.com/PeterChen1216', 'url: github.com/PeterChen1216'),
     });
@@ -176,7 +176,8 @@ describe('the field check (src/content/check.ts)', () => {
       /honors\.yaml:5: .*the same field is written twice here — keep one/,
     );
     const hash = contentWith({
-      'honors.yaml': (t) => t.replace('note: with 4 consecutive quarters', 'note: the #1 of 4'),
+      'honors.yaml': (t) =>
+        t.replace('  year: 2024-2025\n', '  year: 2024-2025\n  note: the #1 of 4\n'),
     });
     expect(lines(hash)).toEqual([
       expect.stringMatching(
@@ -269,7 +270,9 @@ describe('the field check (src/content/check.ts)', () => {
     // One of everything at once: whatever the schema, the owner never reads "Invalid input".
     const dir = contentWith({
       'site.yaml': (t) =>
-        t.replace('launched: false', 'launched: maybe').replace('version: 0.1.0', 'version: 1'),
+        t
+          .replace(/^launched: (?:true|false)/m, 'launched: maybe')
+          .replace('version: 0.1.0', 'version: 1'),
       'interests.yaml': (t) =>
         t.replace('tag: gen-ai', 'tag: Gen AI').replace('icon: 🏓', 'icon: [1]'),
       'skills.yaml': (t) => t.replace('items: [React, Agno Agent, SQLite]', 'items: []'),
@@ -398,7 +401,10 @@ describe('placeholders are stopped on main (PLAN §2.3, §7.5)', () => {
   const todo = () =>
     contentWith({
       'honors.yaml': (t) =>
-        t.replace('note: with 4 consecutive quarters', 'note: "TODO: check the quarter count"'),
+        t.replace(
+          '  year: 2024-2025\n',
+          '  year: 2024-2025\n  note: "TODO: check the quarter count"\n',
+        ),
     });
 
   it('say what to do, with the file and line', () => {
@@ -540,7 +546,10 @@ describe('the résumé, stray files and notes', () => {
       '✔ content: every file reads correctly; no placeholders',
     ]);
     const broken = run(
-      contentWith({ 'site.yaml': (t) => t.replace('launched: false', 'launched: no way') }),
+      // Whichever the flag is today: the fixture writes a value that is neither.
+      contentWith({
+        'site.yaml': (t) => t.replace(/^launched: (?:true|false)/m, 'launched: no way'),
+      }),
       {
         strict: false,
         github: true,
@@ -558,9 +567,13 @@ describe('the résumé, stray files and notes', () => {
     expect(r.code).toBe(1);
     const drafts = r.out.filter((l) => l.includes('still marked draft'));
     expect(drafts.length).toBeLessThan(15);
-    expect(drafts).toContain(
-      "error: content/honors.yaml: 3 zh-hans translation(s) still marked draft (#1 (Annual Dean's List) › name; #2 (Annual Dean's List) › name; #2 (Annual Dean's List) › note), but zh-hans is live in content/site.yaml — read them and delete their \"draft\", or set zh-hans back to preview",
+    // One line for the file, naming each field — whatever the owner's honors hold today.
+    expect(drafts).toContainEqual(
+      expect.stringMatching(
+        /^error: content\/honors\.yaml: \d+ zh-hans translation\(s\) still marked draft \(#1 \(.+?\) › name(?:; #\d+ \(.+?\) › \w+)*\), but zh-hans is live in content\/site\.yaml — read them and delete their "draft", or set zh-hans back to preview$/,
+      ),
     );
+    expect(drafts.filter((l) => l.includes('content/honors.yaml'))).toHaveLength(1);
   });
 
   it('annotations escape what GitHub would read as syntax', () => {

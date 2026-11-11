@@ -36,7 +36,7 @@
 | **C. 让 Claude 改** | 懒得找文件；要翻译 | 用中文说要改什么（§14） | Claude 跑检查，你看改动后合并 |
 
 **提交到哪里**：
-- 直接提交到 `main`：约 11 分钟后上线（发布前要先跑完浏览器测试）。现在是预览地址 `https://zhic.me/v2/`，上线后是 `https://zhic.me/`。如果内容有错，**部署会在检查那一步停下，线上网站保持原样**，GitHub 会发邮件告诉你哪里错（§11）。
+- 直接提交到 `main`：约 11 分钟后上线（发布前要先跑完浏览器测试）。网站在 `https://zhic.me/`（2026-11-11 起；之前的预览地址 `https://zhic.me/v2/…` 会跳到去掉 `/v2/` 的同一页）。如果内容有错，**部署会在检查那一步停下，线上网站保持原样**，GitHub 会发邮件告诉你哪里错（§11）。
 - 想先看效果再上线：网页上选 **Create a new branch for this commit and start a pull request**（本机就 `git switch -c 分支名`），CI 会为这个分支构建一份网站给你下载预览（§12），满意后在 pull request 页面 **Squash and merge**。
 
 **提交说明**（commit message）写成 `content: 一句话`，例如 `content: add a job at Your Company`。CHANGELOG 是从这些说明自动生成的（§13）。网页编辑器默认的 `Update experience.yaml` 也可以——只改了 `content/` 的提交会自动归到「Content」。
@@ -47,7 +47,7 @@
 
 | 页面上 | 文件 | 字段 |
 |---|---|---|
-| 名字、一句话定位、所在城市、状态（"Open to internships…"）、邮箱、GitHub / LinkedIn、头像 | `content/profile.yaml` | `name`、`tagline`、`location`、`status`、`emails`、`socials`、`avatar` |
+| 名字、一句话定位、所在城市、状态（"Open to New Grad full-time roles…"）、邮箱、GitHub / LinkedIn、头像 | `content/profile.yaml` | `name`、`tagline`、`location`、`status`、`emails`、`socials`、`avatar` |
 | About 段落 | `content/about.md` | 正文（Markdown） |
 | 滚动条里的 `[NOW]` 条目 | `content/now.md` | 每行一个 `- ` |
 | 教育、GPA、课程 | `content/education.yaml` | 每所学校一项 |
@@ -203,8 +203,8 @@ $ pnpm resume ~/Downloads/your-new-resume.pdf
 $ pnpm resume ~/Downloads/your-new-resume.pdf
 ✔ copied /Users/you/Downloads/your-new-resume.pdf → content/resume/Resume.pdf
   new résumé 2026-11-10-b39161e4 (153 KB, dated 2026-11-10: the day it last changed in Git, or today if it is not committed yet)
-    published at /v2/resume.pdf (the address that never changes)
-             and /v2/resume/2026-11-10-b39161e4.pdf (this version's own address)
+    published at /resume.pdf (the address that never changes)
+             and /resume/2026-11-10-b39161e4.pdf (this version's own address)
   the download buttons save it as <your name>-Resume-2026-11-10.pdf
 Everything in the PDF is public once it is on the site (phone number, addresses …).
 Next: pnpm content:check, then commit content/resume/Resume.pdf, e.g.:
@@ -219,8 +219,8 @@ $ pnpm resume ~/Downloads/your-resume.docx
 ```console
 $ pnpm resume
 résumé 2026-11-09-4975a202 (153 KB, dated 2026-11-09: the day it last changed in Git, or today if it is not committed yet)
-  published at /v2/resume.pdf (the address that never changes)
-           and /v2/resume/2026-11-09-4975a202.pdf (this version's own address)
+  published at /resume.pdf (the address that never changes)
+           and /resume/2026-11-09-4975a202.pdf (this version's own address)
 ```
 
 **路 A（网页）**：先在自己电脑上把新 PDF **改名为 `Resume.pdf`**（大小写一致）→ 在 GitHub 打开 `content/resume/` → **Add file → Upload files** → 拖进去 → Commit。名字不对时 GitHub 会多出一个文件，检查会拦下：
@@ -239,7 +239,7 @@ error: content/resume/resume-new.pdf: the site only publishes content/resume/Res
 
 **状态行**：`content/profile.yaml` 的 `status`，显示在英雄区终端（`/summon` 的回答，见 §5 的截图）和 Experience 顶上的 `HEAD → main` 那一行。
 ```diff
--status: Open to internships & collaborations
+-status: Open to New Grad full-time roles in IT, Data & SWE-related fields
 +status: Your new one-line status
 ```
 改了英文之后，两种中文的 `status` 译文就「过期」了（§9）——`pnpm content:stale` 会列出来；中文页面继续显示旧译文，直到你更新：
@@ -477,10 +477,10 @@ copy.yaml contact.ping.request: unknown or empty placeholder {emial} in "PING {h
 $ pnpm dev
 …
  astro  v7.4.7 ready in 1708 ms
-┃ Local    http://localhost:4321/v2/
+┃ Local    http://localhost:4321/
 ┃ Network  use --host to expose
 ```
-打开它打印的 **Local** 地址（上线后没有 `/v2/`；4321 被占用时它会换一个端口，并先打印 `Port 4321 is in use, trying another one...`）。保存文件后页面自动刷新（演练里不到 1 秒）；中文页面在 `/v2/zh-hans/`、`/v2/zh-hant/`，新项目的页面在 `/v2/projects/<名字>/`。`Ctrl+C` 停止。（开发模式不做中文字体子集化，字形与正式网站相同、只是加载慢一点。）
+打开它打印的 **Local** 地址（4321 被占用时它会换一个端口，并先打印 `Port 4321 is in use, trying another one...`）。保存文件后页面自动刷新（演练里不到 1 秒）；中文页面在 `/zh-hans/`、`/zh-hant/`，新项目的页面在 `/projects/<名字>/`。`Ctrl+C` 停止。（开发模式不做中文字体子集化，字形与正式网站相同、只是加载慢一点。）
 
 **b. 分支 / pull request 的预览（不用本机构建）**：GitHub Pages 一个仓库只有一个网站，所以分支没有自己的网址；CI 为每次推送构建整个网站，作为下载提供：
 1. 打开这次 CI 运行的页面（提交旁的 ✓ / ✗ → Details → 左上 **Summary**）；
@@ -490,11 +490,11 @@ $ pnpm dev
    ```console
    $ pnpm preview:site ~/Downloads/site-0123abc
    serving /Users/you/Downloads/site-0123abc on http://localhost:4322
-   open http://localhost:4322/v2/ — Ctrl+C stops it
+   open http://localhost:4322/ — Ctrl+C stops it
    ```
    预览在 CI 开始后一两分钟就能下载（它在漫长的浏览器测试之前上传；整个 CI 约 20 分钟）。
 
-**c. 什么时候是公开的**：`content/site.yaml` 的 `launched: false` 期间，`main` 发布到 `https://zhic.me/v2/`（不被搜索引擎收录，但知道地址的人能看到），旧站仍在 `https://zhic.me/`。改成 `true` 是上线决定，不是日常更新。两种中文在 preview 状态时同理（§9）。
+**c. 什么时候是公开的**：网站已上线（`content/site.yaml` 的 `launched: true`，2026-11-11）：`main` 发布到 `https://zhic.me/`，旧站在 `https://zhic.me/legacy/`（不被搜索引擎收录）。把它改回 `false` 是撤回上线（`docs/LAUNCH.md` §5），不是日常更新。两种中文在 preview 状态时同理（§9）。
 
 ---
 
@@ -504,7 +504,7 @@ $ pnpm dev
 |---|---|---|
 | 页脚「updated 日期」 | 最后一次改动 `content/` 的提交日期（`content/README.md` 和 `content/artifacts/` 不算：它们不上页面） | 页脚 |
 | 版本号 `v0.1.0+20261110.abc1234` | `site.yaml` 的 `version`（只在结构性变化时手动改）+ 那次提交的日期和编号 | 页脚 |
-| `CHANGELOG.md` | 每次部署后由 `pnpm changelog` 从提交说明生成并提交（机器人 `github-actions[bot]` 的提交，`chore(changelog): …`） | 仓库根目录 |
+| `CHANGELOG.md` | 每次部署后由 `pnpm changelog` 从提交说明生成并提交（机器人 `github-actions[bot]` 的提交，`chore(changelog): …`）。一个合并进来的 PR 是一条：squash 合并时用那个提交的说明，普通合并（Merge pull request）时用 PR 的标题——所以 PR 标题也照提交说明的写法写 | 仓库根目录 |
 | 简历的版本地址与下载文件名 | `Resume.pdf` 的内容与它最后一次被提交的日期 | `/resume/<日期>-<编号>.pdf`；下载名 `Peter-Chen-Resume-<日期>.pdf` |
 | 分享图（OG 图） | 每页的标题与内容，构建时生成 | 在社交媒体贴链接时 |
 | 繁体草稿、译文来源记录 | `pnpm content:hant`、`pnpm content:stale --accept` | 内容文件里 |
@@ -547,6 +547,6 @@ $ pnpm install
 - [ ] `git pull`（本机）或在 GitHub 打开文件（网页）
 - [ ] 按 §1 找到文件，按对应小节改
 - [ ] `pnpm content:check` 结尾是 `✔`（网页路：提交后看 CI 的 ✓）
-- [ ] 想先看：`pnpm dev` → http://localhost:4321/v2/（或 §12 的预览下载）
+- [ ] 想先看：`pnpm dev` → http://localhost:4321/（或 §12 的预览下载）
 - [ ] 提交说明 `content: …`；推送 / 合并
 - [ ] 几分钟后在网站上看到改动（Deploy 的 ✓）

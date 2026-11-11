@@ -161,18 +161,37 @@ describe('pnpm resume', () => {
 });
 
 describe('pnpm changelog', () => {
-  const log = (rows: Array<[string, string, string, string, string[]]>) =>
+  /** Records as `git log --name-only --format=LOG_FORMAT` prints them; `body` is the commit's. */
+  const log = (rows: Array<[string, string, string, string, string[], string?]>) =>
     rows
-      .map(([h, d, p, s, files]) => `\x1e${h}\x1f${d}\x1f${p}\x1f${s}\n\n${files.join('\n')}\n`)
+      .map(
+        ([h, d, p, s, files, body = '']) =>
+          `\x1e${h}\x1f${d}\x1f${p}\x1f${s}\x1f${body}\x1d\n\n${files.join('\n')}\n`,
+      )
       .join('');
 
   it('reads git log records with the files each touched', () => {
-    expect(LOG_FORMAT).toBe('\x1e%h\x1f%cs\x1f%P\x1f%s');
+    expect(LOG_FORMAT).toBe('\x1e%h\x1f%cs\x1f%P\x1f%s\x1f%b\x1d');
     expect(
       parseLog(
         log([
-          ['abc1234', '2027-01-15', 'p1', 'content: a job', ['content/experience.yaml']],
-          ['def5678', '2027-01-14', 'p1 p2', 'Merge x', []],
+          [
+            'abc1234',
+            '2027-01-15',
+            'p1',
+            'content: a job',
+            ['content/experience.yaml'],
+            'Why this job.\n\nCo-Authored-By: Someone <someone@example.com>\n',
+          ],
+          [
+            'def5678',
+            '2027-01-14',
+            'p1 p2',
+            'Merge pull request #7 from owner/branch',
+            ['src/a.ts', 'src/b.ts'],
+            '\nfeat: a page\n\nMore words.\n',
+          ],
+          ['0123abc', '2027-01-13', 'p1 p2', 'Merge x', []],
         ]),
       ),
     ).toEqual([
@@ -181,15 +200,31 @@ describe('pnpm changelog', () => {
         date: '2027-01-15',
         merge: false,
         subject: 'content: a job',
+        title: 'Why this job.',
         files: ['content/experience.yaml'],
       },
-      { hash: 'def5678', date: '2027-01-14', merge: true, subject: 'Merge x', files: [] },
+      {
+        hash: 'def5678',
+        date: '2027-01-14',
+        merge: true,
+        subject: 'Merge pull request #7 from owner/branch',
+        title: 'feat: a page',
+        files: ['src/a.ts', 'src/b.ts'],
+      },
+      {
+        hash: '0123abc',
+        date: '2027-01-13',
+        merge: true,
+        subject: 'Merge x',
+        title: '',
+        files: [],
+      },
     ]);
   });
 
   it('sorts commits by their conventional type; a web-editor commit to content/ is content', () => {
-    const c = (subject: string, files: string[] = ['src/x.ts'], merge = false) =>
-      classify({ hash: 'h', date: 'd', merge, subject, files });
+    const c = (subject: string, files: string[] = ['src/x.ts'], merge = false, title = '') =>
+      classify({ hash: 'h', date: 'd', merge, subject, title, files });
     expect(c('content: a new job at Your Company')).toEqual({
       section: 'content',
       text: 'a new job at Your Company',
@@ -212,7 +247,42 @@ describe('pnpm changelog', () => {
     );
     expect(c('Add files', [])).toEqual({ section: 'other', text: 'Add files' });
     expect(c('chore(changelog): update CHANGELOG.md [skip ci]')).toBeNull();
-    expect(c('Merge pull request #1', [], true)).toBeNull();
+    // A body is never read for a commit that is not a pull request's merge.
+    expect(c('fix: thing', ['src/x.ts'], false, 'feat: something else')).toEqual({
+      section: 'fix',
+      text: 'thing',
+    });
+  });
+
+  it('a pull request merged with a merge commit is one entry, under its title', () => {
+    const pr = (title: string, files: string[] = ['src/x.ts'], subject?: string) =>
+      classify({
+        hash: 'h',
+        date: 'd',
+        merge: true,
+        subject: subject ?? 'Merge pull request #5 from owner/some-branch',
+        title,
+        files,
+      });
+    expect(pr('X1–M5: themes, languages, the scene')).toEqual({
+      section: 'other',
+      text: 'X1–M5: themes, languages, the scene (#5)',
+    });
+    // Its title sorts it as a subject would.
+    expect(pr('feat(m3): windows')).toEqual({ section: 'feat', text: 'm3: windows (#5)' });
+    expect(pr('content: a new job at Your Company', ['content/experience.yaml'])).toEqual({
+      section: 'content',
+      text: 'a new job at Your Company (#5)',
+    });
+    expect(pr('Update experience.yaml', ['content/experience.yaml'])).toEqual({
+      section: 'content',
+      text: 'Update experience.yaml (#5)',
+    });
+    // No title in the body: still one entry.
+    expect(pr('')).toEqual({ section: 'other', text: 'pull request (#5)' });
+    // Any other merge commit is left out.
+    expect(pr('whatever', [], "Merge branch 'main' into feature")).toBeNull();
+    expect(pr('whatever', [], 'Merge remote-tracking branch origin/main')).toBeNull();
   });
 
   it('starts where v2 began, or keeps everything when that commit is not on the line', () => {
@@ -221,6 +291,7 @@ describe('pnpm changelog', () => {
       date: 'x',
       merge: false,
       subject: hash,
+      title: '',
       files: [],
     }));
     expect(since(commits, 'c').map((c) => c.hash)).toEqual(['a', 'b', 'c']);
@@ -231,6 +302,14 @@ describe('pnpm changelog', () => {
     const text = render(
       parseLog(
         log([
+          [
+            'c4',
+            '2027-01-16',
+            'p q',
+            'Merge pull request #9 from owner/branch',
+            ['src/c.ts'],
+            'A milestone: many things\n\nCo-Authored-By: Someone <someone@example.com>\n',
+          ],
           ['c3', '2027-01-16', 'p', 'fix: a typo', ['src/a.ts']],
           ['c2', '2027-01-15', 'p', 'Update now.md', ['content/now.md']],
           ['c1', '2027-01-15', 'p', 'feat: a page', ['src/b.ts']],
@@ -259,6 +338,10 @@ describe('pnpm changelog', () => {
         '',
         '- a typo (c3)',
         '',
+        '### Other changes',
+        '',
+        '- A milestone: many things (#9) (c4)',
+        '',
         '## 2027-01-15',
         '',
         '### Content',
@@ -282,6 +365,9 @@ describe('pnpm changelog', () => {
     expect(out).toMatch(/^## \d{4}-\d{2}-\d{2}$/m);
     expect(out).toMatch(/^- .+ \([0-9a-f]{7,}\)$/m);
     expect(out).not.toMatch(/Co-Authored-By|Claude-Session|Signed-off-by/i);
+    // The pull requests merged into main with a merge commit are there, each under its title.
+    expect(out).toMatch(/^- .+ \(#5\) \([0-9a-f]{7,}\)$/m);
+    expect(out).not.toMatch(/Merge pull request/);
     const file = join(mkdtempSync(join(tmpdir(), 'changelog-')), 'CHANGELOG.md');
     execFileSync(process.execPath, ['scripts/changelog.mjs', '--out', file], {
       cwd: ROOT,

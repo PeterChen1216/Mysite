@@ -25,7 +25,7 @@
 ## 1. 现在的状态（仓库里看得到的）
 | 项目 | 现在 | 在哪里 |
 |---|---|---|
-| 是否上线 | `launched: false`：`https://zhic.me/` 是旧站，新站在 `https://zhic.me/v2/`（robots 禁止收录） | `content/site.yaml` |
+| 是否上线 | **`launched: true`（2026-11-11，业主决定）**：`https://zhic.me/` 是新站，旧站在 `https://zhic.me/legacy/`（robots 禁止收录），`https://zhic.me/v2/…` 跳到去掉 `/v2/` 的同一页。上线前是 `false`：旧站在根目录、新站在 `/v2/` | `content/site.yaml` |
 | 域名 | 仓库根目录 `CNAME` 写 `zhic.me`；部署产物里的 `CNAME` 由 `content/site.yaml → domain` 生成 | `CNAME`、`scripts/assemble-pages.mjs` |
 | 部署 | 推到 `main` → `.github/workflows/deploy.yml`：内容检查（严格）→ 单测 → 构建 → 组装 → Chromium E2E → 发布到 GitHub Pages → 写 CHANGELOG（约 11 分钟） | `deploy.yml` |
 | DNS | **仓库里没有**。PLAN §14 Q9 还没答。审计时记下：`www.zhic.me` 没有证书 | 你的域名服务商 |
@@ -131,7 +131,7 @@ DECISIONS Q5 你同意过 Cloudflare Web Analytics 与 Cloudflare Pages 预览�
 | # | 决定 | 默认 | 在哪里 / 出处 |
 |---|---|---|---|
 | A1 | 上线，什么时候 | **不上线**，等你说 | `content/site.yaml → launched`；§3；DECISIONS Q1、审计 1、STATUS A |
-| A2 | 首页的 meta description 是「This is a personal/academic website」（搜索结果里显示的那句，也是分享卡片的说明） | **保留原文**（我不替你写关于你的话） | `content/site.yaml → meta.description`（中文在同一处的 `zh-hans:` / `zh-hant:`）；M5 |
+| A2 | ~~首页的 meta description~~ **已定（2026-11-11，业主选的）**：「Zhicheng (Peter) Chen — Informatics senior at the University of Washington (’27). Projects, experience and résumé; open to new-grad roles in IT, data and software engineering.」；中文是草稿 | — | `content/site.yaml → meta.description`（中文在同一处的 `zh-hans:` / `zh-hant:`） |
 | A3 | DNS 与 Pages 设置是否如 §1 所写（尤其要不要 `www.zhic.me`） | **不改**；`www` 没有证书 | 域名服务商、GitHub Settings → Pages；PLAN §14 Q9、STATUS E4 |
 | A4 | `/legacy/` 保留多久（旧站上仍是 GPA 3.81、Junior、163 邮箱） | **保留**，robots 禁止 | §8；DECISIONS Q1、PLAN §8 M5、STATUS E2 |
 | A5 | `legacy/work/njzposts.pdf`（5 MB，公开、无链接、含社交账号）删不删 | **保留** | `legacy/work/`；审计 2、STATUS E3 |

@@ -715,6 +715,22 @@ test.describe('11 · Clock Stamp phone: pick a city', () => {
   });
 });
 
+/**
+ * The same box, to the engine's own precision. Browsers lay out in 1/64 px (Firefox 1/60 px), so
+ * anything that really moves moves by at least 0.015 px; `top + scrollY` in floating point can
+ * differ in the fifth decimal for the very same layout (Firefox, CI: 880.33331 against 880.33333).
+ */
+function expectSamePlace(
+  now: { x: number; y: number; w: number; h: number },
+  before: { x: number; y: number; w: number; h: number },
+) {
+  for (const side of ['x', 'y', 'w', 'h'] as const)
+    expect(
+      Math.abs(now[side] - before[side]),
+      `${side}: ${before[side]} → ${now[side]}`,
+    ).toBeLessThan(0.01);
+}
+
 test.describe('12 · terminal prompt (an easter egg with a real form control)', () => {
   test('the keyboard: open it, run commands, close it; nothing on the page moves', async ({
     page,
@@ -757,10 +773,39 @@ test.describe('12 · terminal prompt (an easter egg with a real form control)', 
     expect(await page.evaluate(() => document.documentElement.hasAttribute('data-paused'))).toBe(
       false,
     );
-    expect(await onPage()).toEqual(before);
+    expectSamePlace(await onPage(), before);
     await page.keyboard.press('Escape');
     await expect(key).toBeFocused();
     await expect(field).toHaveCount(0);
+  });
+
+  test('opening it moves nothing, also when the terminal is a fraction of a pixel tall', async ({
+    page,
+    isMobile,
+  }) => {
+    await page.goto(V2);
+    if (await page.locator('[data-fold]').isVisible()) await page.locator('[data-fold]').tap();
+    // Whatever the fonts and the wording make of its lines, the terminal here ends on half a
+    // pixel: the case in which a rounded height pushed the page down (CI, PR #7).
+    const body = page.locator('.term__body').first();
+    const whole = await body.evaluate((el) => el.getBoundingClientRect().height);
+    await body.evaluate((el, h) => {
+      el.style.boxSizing = 'border-box';
+      el.style.minHeight = `${Math.floor(h) + 1.5}px`;
+    }, whole);
+    expect((await body.evaluate((el) => el.getBoundingClientRect().height)) % 1).toBe(0.5);
+    const ctas = page.locator('.hero__ctas:visible');
+    const onPage = () =>
+      ctas.evaluate((el) => {
+        const r = el.getBoundingClientRect();
+        return { x: r.left + scrollX, y: r.top + scrollY, w: r.width, h: r.height };
+      });
+    const before = await onPage();
+    const key = page.getByRole('button', { name: copy.hero.prompt.open, exact: true });
+    if (isMobile) await key.tap();
+    else await key.click();
+    await expect(page.getByRole('textbox', { name: copy.hero.prompt.label })).toBeFocused();
+    expectSamePlace(await onPage(), before);
   });
 
   test('a tap opens it; axe is clean with it open', async ({ page, isMobile }) => {
