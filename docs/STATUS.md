@@ -10,7 +10,7 @@
 - ⚠ 第 8 步是在容器重启之后由主会话收尾的：重启打断了 M5 的代理，这一步的修改留在工作区里没有提交；主会话读过改动、重跑了上面这次 `pnpm verify`，再提交推送。**M5 前 6 个提交（`e53f22c`…`ec0d8bd`）的署名行写成了 Claude Opus 5.5**，与 X2 的 6 个提交一样；分支不能强推，改不了
 - ✅ `692d5fb` 的 CI：五个作业里四个通过（主作业两半、iPhone、上线配置——字体晚到的跳动和 WebKit 黑画布都没有再出现）；**Firefox 作业 413 通过、4 失败**：① 「a tab walk」：走到页脚最后一个链接后再按 Tab，Firefox 仍把它报告为 `document.activeElement`（Chromium 报告 `<body>`），测试把同一个元素第二次出现当成「顺序错了」；② 「text-spacing override 390 px」en / zh-hans / zh-hant：`<p class="commit__hash">` 170 px 在 162 px 的盒子里
 - ✅ 第 9 步（主会话；本机 `pnpm verify`：单测 546 / 1 跳过，E2E 769 通过 / 237 跳过，9.7 分钟）：① 巡游测试在焦点不再移动时结束（断言不变：最后一站必须是页脚的 back to spawn，中途被困住仍然失败）；② 手机上展开的提交行 `▾ git show <hash>` 的 `::before` 继承了折叠状态 ▸ 的 `margin-inline-end: 0.5em`（7.5 px），排在最后一个词后面只把列撑宽——Chromium 把它算进列宽（169.5 px），Firefox 的列只有文字宽（162 px），外边距伸出盒子 8 px。去掉它。像素对比（对照 `692d5fb`）：390 px 只有展开行那一处（61 × 31 px：日期左移 7.5 px），320 / 768 / 1440 逐像素相同。**本机没有 Firefox（系统源只有 snap 版），这两处是按 Chromium 里的测量推出来的，以 CI 为准**
-- ⏳ 这次推送的 CI：待看
+- ✅ `03f4375` 的 CI（第 87 次运行）：**五个作业全绿**——主作业两半（Chromium、手机 Chromium、WebKit）、iPhone（WebKit）、Firefox 桌面、上线配置（Lighthouse + E2E）。第 9 步的两处 Firefox 修复由 CI 证实。M5（上线前）到此做完；之后的事在 `docs/LAUNCH.md`，都要业主决定或动手
 - ✅ 7. 交付说明「M5（上线前）交付说明」（下面）
 
 ## 🚀 M5（上线前）交付说明（PLAN §8 M5、§1.3、§10；PLAN-EXPERIENCE §1.3、§7.5；PLAN §13 ADR-023）
