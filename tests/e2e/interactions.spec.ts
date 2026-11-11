@@ -763,6 +763,35 @@ test.describe('12 · terminal prompt (an easter egg with a real form control)', 
     await expect(field).toHaveCount(0);
   });
 
+  test('opening it moves nothing, also when the terminal is a fraction of a pixel tall', async ({
+    page,
+    isMobile,
+  }) => {
+    await page.goto(V2);
+    if (await page.locator('[data-fold]').isVisible()) await page.locator('[data-fold]').tap();
+    // Whatever the fonts and the wording make of its lines, the terminal here ends on half a
+    // pixel: the case in which a rounded height pushed the page down (CI, PR #7).
+    const body = page.locator('.term__body').first();
+    const whole = await body.evaluate((el) => el.getBoundingClientRect().height);
+    await body.evaluate((el, h) => {
+      el.style.boxSizing = 'border-box';
+      el.style.minHeight = `${Math.floor(h) + 1.5}px`;
+    }, whole);
+    expect((await body.evaluate((el) => el.getBoundingClientRect().height)) % 1).toBe(0.5);
+    const ctas = page.locator('.hero__ctas:visible');
+    const onPage = () =>
+      ctas.evaluate((el) => {
+        const r = el.getBoundingClientRect();
+        return { x: r.left + scrollX, y: r.top + scrollY, w: r.width, h: r.height };
+      });
+    const before = await onPage();
+    const key = page.getByRole('button', { name: copy.hero.prompt.open, exact: true });
+    if (isMobile) await key.tap();
+    else await key.click();
+    await expect(page.getByRole('textbox', { name: copy.hero.prompt.label })).toBeFocused();
+    expect(await onPage()).toEqual(before);
+  });
+
   test('a tap opens it; axe is clean with it open', async ({ page, isMobile }) => {
     await page.goto(V2);
     // X4: on a phone the prompt is in the folded part of the terminal: unfold it first.

@@ -26,8 +26,10 @@ export function openPrompt(line: HTMLElement, key: HTMLButtonElement): void {
   const body = line.parentElement;
   if (!body) return;
   open = true;
-  // The terminal keeps its height from now on; new lines scroll inside it.
-  body.style.height = `${body.offsetHeight}px`;
+  // The terminal keeps its height from now on; new lines scroll inside it. The height as laid
+  // out, fractions included: offsetHeight rounds, and half a pixel more pushed the page under the
+  // terminal down whenever its lines added up to x.5 px.
+  body.style.height = getComputedStyle(body).height;
   body.classList.add('term__body--prompt');
 
   const id = 'term-prompt';
