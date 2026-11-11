@@ -43,7 +43,9 @@ commands stay as they are. How content is updated, task by task: `docs/CONTENT-G
   (`docs/DECISIONS.md` R2-4). Do not merge or force-push.
 - Conventional commit subjects: `content: …` for content, `feat:`, `fix:`, `design:`, `docs:`,
   `test:`, `chore:`. `CHANGELOG.md` is written from the subjects after each deploy
-  (`pnpm changelog`): never edit it by hand. Subjects end up in it, bodies never do.
+  (`pnpm changelog`): never edit it by hand. Subjects end up in it, bodies never do. A pull
+  request is one entry however it is merged: its squash commit's subject, or its title when
+  merged with a merge commit — so a pull request's title is written like a subject.
 - The footer's version and "updated" date come from Git (`src/lib/build-info.ts`); never write
   dates or versions by hand. `content/site.yaml → version` changes only for structural changes.
 

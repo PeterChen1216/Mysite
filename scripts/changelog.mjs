@@ -7,8 +7,14 @@
 // pull request or direct commit) since v2 began (the commit that created content/site.yaml),
 // newest day first, grouped by kind. A commit's kind comes from its subject's conventional prefix
 // (`content:`, `feat:`, `fix:`, `design:`); a commit without one that only touched content/ (the
-// GitHub web editor's "Update experience.yaml") counts as content. Only subjects are used — never
-// commit bodies. Its own commits (`chore(changelog)`) and merge commits are left out.
+// GitHub web editor's "Update experience.yaml") counts as content. Its own commits
+// (`chore(changelog)`) are left out.
+//
+// A pull request merged with a merge commit ("Merge pull request #5 from …") is one entry under
+// its title, which GitHub writes as the first line of that commit's body: `<title> (#5)`, sorted
+// like any subject. Squash-merged, the same pull request is one commit whose subject is already
+// that. Other merge commits are left out. Nothing else of a commit's body is ever used — no
+// later line, no trailer.
 //
 // Options: --out <file> (default CHANGELOG.md at the repository root), --stdout.
 import { execFileSync } from 'node:child_process';
@@ -28,11 +34,16 @@ export const SECTIONS = /** @type {const} */ ([
 
 const RS = '\x1e';
 const US = '\x1f';
-/** `git log` format: one record per commit, then the files it touched (--name-only). */
-export const LOG_FORMAT = `${RS}%h${US}%cs${US}%P${US}%s`;
+const GS = '\x1d';
+/**
+ * `git log` format: one record per commit — hash, date, parents, subject and body, closed by GS —
+ * then the files it touched (--name-only; for a merge on the main line, against its first parent).
+ */
+export const LOG_FORMAT = `${RS}%h${US}%cs${US}%P${US}%s${US}%b${GS}`;
 
 /**
- * @typedef {{ hash: string, date: string, merge: boolean, subject: string, files: string[] }} Commit
+ * `title` is the first line of the body: only a pull request's merge commit uses it.
+ * @typedef {{ hash: string, date: string, merge: boolean, subject: string, title: string, files: string[] }} Commit
  */
 
 /**
@@ -45,19 +56,29 @@ export function parseLog(text) {
     .split(RS)
     .filter((r) => r.trim())
     .map((record) => {
-      const [head = '', ...rest] = record.split('\n');
-      const [hash = '', date = '', parents = '', subject = ''] = head.split(US);
+      const [head = '', files = ''] = record.split(GS);
+      const [hash = '', date = '', parents = '', subject = '', body = ''] = head.split(US);
       return {
         hash,
         date,
         merge: parents.trim().split(/\s+/).length > 1,
         subject: subject.trim(),
-        files: rest.map((f) => f.trim()).filter(Boolean),
+        title:
+          body
+            .split('\n')
+            .map((l) => l.trim())
+            .find(Boolean) ?? '',
+        files: files
+          .split('\n')
+          .map((f) => f.trim())
+          .filter(Boolean),
       };
     });
 }
 
 const CONVENTIONAL = /^([a-z]+)(?:\(([^)]*)\))?(!)?:\s*(.+)$/i;
+/** The subject GitHub gives the merge commit of a pull request. */
+const PULL_REQUEST = /^Merge pull request #(\d+) from \S+/;
 
 /**
  * The section a commit belongs in and the line it shows, or null to leave it out.
@@ -65,8 +86,14 @@ const CONVENTIONAL = /^([a-z]+)(?:\(([^)]*)\))?(!)?:\s*(.+)$/i;
  * @returns {{ section: string, text: string } | null}
  */
 export function classify(c) {
-  if (c.merge) return null;
-  const m = CONVENTIONAL.exec(c.subject);
+  let subject = c.subject;
+  if (c.merge) {
+    // A merged pull request reads as its title, as a squash merge would have written it.
+    const pr = PULL_REQUEST.exec(c.subject);
+    if (!pr) return null;
+    subject = `${c.title || 'pull request'} (#${pr[1]})`;
+  }
+  const m = CONVENTIONAL.exec(subject);
   const type = m?.[1]?.toLowerCase();
   if (type === 'chore' && m?.[2] === 'changelog') return null;
   // In its own section a commit drops its type (`feat(m3): windows` → `m3: windows`); elsewhere
@@ -74,7 +101,7 @@ export function classify(c) {
   if (m && type && ['content', 'feat', 'fix', 'design'].includes(type))
     return { section: type, text: `${m[2] ? `${m[2]}: ` : ''}${m[4]}` };
   const onlyContent = c.files.length > 0 && c.files.every((f) => f.startsWith('content/'));
-  return { section: onlyContent ? 'content' : 'other', text: c.subject };
+  return { section: onlyContent ? 'content' : 'other', text: subject };
 }
 
 /**

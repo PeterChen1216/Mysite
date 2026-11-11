@@ -504,7 +504,7 @@ $ pnpm dev
 |---|---|---|
 | 页脚「updated 日期」 | 最后一次改动 `content/` 的提交日期（`content/README.md` 和 `content/artifacts/` 不算：它们不上页面） | 页脚 |
 | 版本号 `v0.1.0+20261110.abc1234` | `site.yaml` 的 `version`（只在结构性变化时手动改）+ 那次提交的日期和编号 | 页脚 |
-| `CHANGELOG.md` | 每次部署后由 `pnpm changelog` 从提交说明生成并提交（机器人 `github-actions[bot]` 的提交，`chore(changelog): …`） | 仓库根目录 |
+| `CHANGELOG.md` | 每次部署后由 `pnpm changelog` 从提交说明生成并提交（机器人 `github-actions[bot]` 的提交，`chore(changelog): …`）。一个合并进来的 PR 是一条：squash 合并时用那个提交的说明，普通合并（Merge pull request）时用 PR 的标题——所以 PR 标题也照提交说明的写法写 | 仓库根目录 |
 | 简历的版本地址与下载文件名 | `Resume.pdf` 的内容与它最后一次被提交的日期 | `/resume/<日期>-<编号>.pdf`；下载名 `Peter-Chen-Resume-<日期>.pdf` |
 | 分享图（OG 图） | 每页的标题与内容，构建时生成 | 在社交媒体贴链接时 |
 | 繁体草稿、译文来源记录 | `pnpm content:hant`、`pnpm content:stale --accept` | 内容文件里 |
