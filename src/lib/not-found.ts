@@ -28,6 +28,8 @@ export function notFoundBoot(
   langs: Record<string, string>,
   path: string = location.pathname,
   html: HTMLElement = document.documentElement,
+  titles?: Record<string, string>,
+  doc?: { title: string },
 ): NotFoundPlace {
   const prefix = base.endsWith('/') ? base : `${base}/`;
   const inside = `${path}/`.startsWith(prefix);
@@ -39,16 +41,21 @@ export function notFoundBoot(
   html.setAttribute('lang', langs[locale] || 'en');
   html.setAttribute('data-locale', locale);
   if (!inside) html.setAttribute('data-nf-outside', '');
+  // M5 (the launch rehearsal): the tab's title in the same language as the page.
+  if (titles && titles[locale]) (doc || document).title = titles[locale];
   return { locale, inside };
 }
 
-/** The inline <script> that runs notFoundBoot with this build's base and locales. */
+/** The inline <script> that runs notFoundBoot with this build's base, locales and page titles. */
 export function notFoundScript(
   base: string,
   dirs: Record<string, string>,
   langs: Record<string, string>,
+  titles?: Record<string, string>,
 ): string {
-  return `(${notFoundBoot.toString()})(${JSON.stringify(base)},${JSON.stringify(dirs)},${JSON.stringify(langs)});`;
+  const args = [base, dirs, langs].map((a) => JSON.stringify(a)).join(',');
+  const rest = titles ? `,undefined,undefined,${JSON.stringify(titles)}` : '';
+  return `(${notFoundBoot.toString()})(${args}${rest});`;
 }
 
 /**

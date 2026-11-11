@@ -142,6 +142,21 @@ describe('the 404 speaks the language of the address', () => {
     run({ pathname: '/v2/zh-hant/x' }, { documentElement: h.el });
     expect(h.attrs.get('data-locale')).toBe('zh-hant');
   });
+  it("the tab's title follows the page's language", () => {
+    const titles = { en: 'Chunk not found — x', 'zh-hant': '找不到區塊 — x' };
+    const doc = { title: 'before' };
+    notFoundBoot('/', dirs, langs, '/zh-hant/nope/', html().el, titles, doc);
+    expect(doc.title).toBe('找不到區塊 — x');
+    notFoundBoot('/', dirs, langs, '/zh-hans/nope/', html().el, titles, doc);
+    expect(doc.title).toBe('找不到區塊 — x'); // no title for that locale: left as it was
+    notFoundBoot('/', dirs, langs, '/nope', html().el, titles, doc);
+    expect(doc.title).toBe('Chunk not found — x');
+    const script = notFoundScript('/', dirs, langs, titles);
+    const h = html();
+    const d = { title: '', documentElement: h.el };
+    new Function('location', 'document', script)({ pathname: '/zh-hant/x' }, d);
+    expect(d.title).toBe('找不到區塊 — x');
+  });
   it('shows the address it was asked for: decoded, without control characters, its end kept', () => {
     expect(shownPath('/v2/%E4%B8%AD/x')).toBe('/v2/中/x');
     expect(shownPath('/v2/%E4%B8')).toBe('/v2/%E4%B8');

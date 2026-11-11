@@ -223,6 +223,10 @@ test.describe('404: chunk not found', () => {
       const res = await page.goto(`${path}no/such/chunk/`);
       expect(res?.status()).toBe(404);
       await expect(page.locator('html')).toHaveAttribute('lang', lang);
+      // M5: the tab's title in that language too.
+      await expect(page).toHaveTitle(
+        copy.not_found.page_title.replace(/\{\s*domain\s*\}/, loadSiteConfig().domain),
+      );
       await expect(page.locator('meta[name="robots"]')).toHaveAttribute('content', 'noindex');
       await expect(page.locator('link[rel="canonical"]')).toHaveCount(0);
       const h1 = page.locator('h1:visible');

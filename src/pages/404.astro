@@ -20,6 +20,7 @@ const en = pages[0]!;
 const base = import.meta.env.BASE_URL;
 const dirs = Object.fromEntries(LOCALE_KEYS.map((l) => [l, LOCALES[l].dir]));
 const langs = Object.fromEntries(LOCALE_KEYS.map((l) => [l, LOCALES[l].lang]));
+const titles = Object.fromEntries(pages.map((p) => [p.locale, p.copy.not_found.page_title]));
 const data = {
   ...en,
   head: {
@@ -28,6 +29,7 @@ const data = {
     canonical: '',
     robots: 'noindex',
     image: undefined,
+    jsonLd: undefined,
     hreflang: [],
     ogAlternates: [],
   },
@@ -35,7 +37,7 @@ const data = {
 ---
 
 <BaseLayout data={data} allCjk>
-  <script is:inline slot="head" set:html={notFoundScript(base, dirs, langs)} />
+  <script is:inline slot="head" set:html={notFoundScript(base, dirs, langs, titles)} />
   <div class="page nf" data-not-found>
     <Background />
     <main id="main" class="nf__main">

@@ -67,6 +67,7 @@ import {
 } from './derive';
 import { copyrightYears } from './format';
 import { withBase } from './paths';
+import { personJsonLd } from './seo';
 
 /**
  * `page` is the page being built (M3: the home page, the projects directory or a project's page):
@@ -205,6 +206,27 @@ export async function getPageData(
       description: meta.description,
       keywords: meta.keywords,
       ...headLinks(locale, site.locales, `https://${site.domain}`, import.meta.env.BASE_URL, page),
+      /**
+       * M5: the `Person` JSON-LD, on each locale's home page — from content/ only (src/lib/seo.ts):
+       * the English facts (names, school names stay as written: Q-L2), the English home as `url`.
+       */
+      jsonLd:
+        page.kind === 'home'
+          ? personJsonLd({
+              name: profileEn.name.display,
+              fullName: profileEn.name.full,
+              url: new URL(
+                pagePath(DEFAULT_LOCALE, { kind: 'home' }, import.meta.env.BASE_URL),
+                `https://${site.domain}`,
+              ).href,
+              sameAs: profileEn.socials.map((s) => s.url),
+              schools: educationEn.map((e) => ({
+                name: e.school,
+                url: e.url,
+                current: !!e.expected,
+              })),
+            })
+          : undefined,
       /** The page's share card (src/pages/og/), in the default theme (none on the 404). */
       image: new URL(ogImagePath(locale, page, import.meta.env.BASE_URL), `https://${site.domain}`)
         .href as string | undefined,

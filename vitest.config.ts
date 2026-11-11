@@ -48,6 +48,9 @@ export default defineConfig({
         'src/lib/hotbar.ts',
         'src/lib/carousel.ts',
         'src/lib/lite.ts',
+        // M5: the Person JSON-LD, its local schema.org check, the sitemap and robots.txt.
+        'src/lib/seo.ts',
+        'src/lib/schema-org.ts',
         // The WebGL scene's pure parts (the renderer and GL plumbing are covered by E2E).
         'src/scene/tier.ts',
         'src/scene/math.ts',
