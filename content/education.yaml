@@ -6,7 +6,6 @@
   department_url: https://ischool.uw.edu/
   degree: Bachelor of Science in Informatics
   major: Informatics
-  track: Data Science
   start: 2023-09
   end: 2027-03
   expected: true
@@ -21,13 +20,12 @@
     - Recommendation Systems & Search
     - Scientific Computing
     - GIS & Mapping
-  source: Resume.pdf (2026-11-03); department, school/department links, start date, track and "UW iSchool" from legacy index.html / site tagline
+  source: Resume.pdf (2026-11-03); department, school/department links, start date and "UW iSchool" from legacy index.html / site tagline; the Data Science track was removed on 2026-11-11 (the owner says the major is Informatics only)
   # Translations (content/README.md "Translations"); school and department names stay in English.
   zh-hans:
     draft: true
     degree: 信息学理学学士
     major: 信息学
-    track: 数据科学
     gpa_label: 累计 GPA
     honors:
       - 年度院长名单（2024–2025 和 2025–2026 学年）
@@ -41,7 +39,6 @@
     from:
       degree: b05840af
       major: a9235105
-      track: 8da52e3e
       gpa_label: 141fc0b2
       honors: c0cf6583
       coursework: 27a9fb68
@@ -49,7 +46,6 @@
     draft: true
     degree: 信息學理學學士
     major: 信息學
-    track: 數據科學
     gpa_label: 累計 GPA
     honors:
       - 年度院長名單（2024–2025 和 2025–2026 學年）
@@ -63,7 +59,6 @@
     from:
       degree: 19e6dd6f
       major: "79070102"
-      track: 94883cdf
       gpa_label: ca7f749f
       honors: 0eb68834
       coursework: 831fb618

@@ -2,9 +2,9 @@
 name:
   display: Peter Chen
   full: Zhicheng (Peter) Chen
-tagline: "Informatics: Data Science, UW ’27"
+tagline: "Informatics, UW ’27"
 location: Seattle, Washington
-status: Open to internships & collaborations
+status: Open to New Grad full-time roles in IT, Data & SWE-related fields
 
 emails:
   # DECISIONS 2026-11-09 (round 2): Outlook is the main address (as on the résumé); uw.edu also shown.
@@ -32,23 +32,23 @@ avatar_alt: Photo of Peter Chen
 # Drafts by Claude from your English, not yet reviewed: read, fix, then delete `draft: true`.
 zh-hans:
   draft: true
-  tagline: 信息学：数据科学，UW ’27
+  tagline: 信息学，UW ’27
   location: 华盛顿州西雅图
-  status: 期待实习与合作机会
+  status: 期待应届全职机会：IT、数据与软件工程相关方向
   avatar_alt: Peter Chen 的照片
   from:
-    tagline: f8b82300
+    tagline: 555c75f4
     location: 2ec1ab2a
-    status: 05de88af
+    status: "09337846"
     avatar_alt: b8d2bc0d
 zh-hant:
   draft: true
-  tagline: 信息學：數據科學，UW ’27
+  tagline: 信息學，UW ’27
   location: 華盛頓州西雅圖
-  status: 期待實習與合作機會
+  status: 期待應屆全職機會：IT、數據與軟件工程相關方向
   avatar_alt: Peter Chen 的照片
   from:
-    tagline: 0c9b29b4
+    tagline: b18b876d
     location: cf135ec6
-    status: fe3366a6
+    status: 24bfac46
     avatar_alt: "71e83731"

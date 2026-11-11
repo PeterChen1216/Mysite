@@ -5,7 +5,7 @@
 
 draft: true
 from:
-  body: "346e0549"
+  body: "f36aaeaa"
 ---
 
-我是 [University of Washington](https://www.washington.edu/) [Information School](https://ischool.uw.edu/) 信息學專業的大四本科生，專業方向為數據科學，計劃於 2027 年 3 月畢業。我是一個超級科技迷，對探索最新技術的實際用途有着無限熱情，也樂於和朋友們分享。我一直在尋找相關的合作機會。如果你有興趣和我聊聊，歡迎給我發[郵件](mailto:peterchenzc@outlook.com)。
+我是 [University of Washington](https://www.washington.edu/) [Information School](https://ischool.uw.edu/) 信息學專業的大四本科生，計劃於 2027 年 3 月畢業。我是一個超級科技迷，對探索最新技術的實際用途有着無限熱情，也樂於和朋友們分享。我一直在尋找相關的合作機會。如果你有興趣和我聊聊，歡迎給我發[郵件](mailto:peterchenzc@outlook.com)。

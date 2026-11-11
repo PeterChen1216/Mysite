@@ -106,7 +106,7 @@ about:
   cmd: cat ~/about.md
   title: ['Player stats &', 'loaded chunks']
   blurb: Who I am, what I’m studying, and what I get up to when I’m not shipping something. All stats self-reported, no cheats.
-  whoami_title: Hi, I’m {first} — {major} at the {department}.
+  whoami_title: Hi, I’m {first} (Zhicheng) — BS in {major}.
   card_whoami: whoami
   card_gpa: gpa --level
   card_now: now --building

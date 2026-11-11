@@ -47,7 +47,7 @@
 
 | 页面上 | 文件 | 字段 |
 |---|---|---|
-| 名字、一句话定位、所在城市、状态（"Open to internships…"）、邮箱、GitHub / LinkedIn、头像 | `content/profile.yaml` | `name`、`tagline`、`location`、`status`、`emails`、`socials`、`avatar` |
+| 名字、一句话定位、所在城市、状态（"Open to New Grad full-time roles…"）、邮箱、GitHub / LinkedIn、头像 | `content/profile.yaml` | `name`、`tagline`、`location`、`status`、`emails`、`socials`、`avatar` |
 | About 段落 | `content/about.md` | 正文（Markdown） |
 | 滚动条里的 `[NOW]` 条目 | `content/now.md` | 每行一个 `- ` |
 | 教育、GPA、课程 | `content/education.yaml` | 每所学校一项 |
@@ -239,7 +239,7 @@ error: content/resume/resume-new.pdf: the site only publishes content/resume/Res
 
 **状态行**：`content/profile.yaml` 的 `status`，显示在英雄区终端（`/summon` 的回答，见 §5 的截图）和 Experience 顶上的 `HEAD → main` 那一行。
 ```diff
--status: Open to internships & collaborations
+-status: Open to New Grad full-time roles in IT, Data & SWE-related fields
 +status: Your new one-line status
 ```
 改了英文之后，两种中文的 `status` 译文就「过期」了（§9）——`pnpm content:stale` 会列出来；中文页面继续显示旧译文，直到你更新：
