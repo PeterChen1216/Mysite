@@ -15,6 +15,8 @@
 - ✅ 第 10 步（主会话；本机 `pnpm verify`：单测 546 / 1 跳过，E2E 769 通过 / 237 跳过，9.9 分钟）：① 那条单元测试的时限改为 60 秒（与它做的事相称）；② 巡游测试在 Tab 之后等两帧再量，断言不变；③ `src/scripts/windows.ts` 的 `sync()`：队列里某一步失败时，失败报告给调用方，但不再让队列永远停在 rejected（原来那样的话，之后每个链接和 Back 都什么也不做）；④ `windows.spec.ts` 每条测试断言页面没有未捕获的错误，失败时打印地址、`history.state`、各窗口状态和焦点——第③④两项是为了让下一轮 CI 说出 Firefox 那条的原因；**本机没有 Firefox，第③项是否就是原因并不知道**
 - ✅ `a516509` 的 CI（第 91 次运行，push）：**五个作业全绿**，Firefox 的窗口测试也过了（一次运行；原因仍未证实，诊断输出留在测试里）
 - ⚠ **PR #5 在 2026-11-11 05:41 UTC 已由业主合并**（合并提交 `66c5a4b`，合并的是 `6978d9c`）——早于第 10 步的推送，所以 **`a516509` 不在 `main` 上**。`main` 上的 CI 通过，但 **Deploy 失败**：部署前的单元测试里，同一条 `content-check.test.ts` 超时（5019 ms，上限 5000），网站没有发布。主会话重跑了这次失败的部署作业（同一个提交、不改代码）；重跑里单元测试通过，结果记在下一条
+- ✅ 重跑的部署（第 2 次尝试，07:00 UTC）：`build` 与 `deploy` 通过，**新站已发布到 `zhic.me/v2/`**（主会话实际访问过：`/v2/`、`/v2/zh-hans/`、`/v2/projects/clock-stamp/` 都是 200，`/` 仍是旧站）。**`changelog` 作业失败**：`actions/setup-node@v5` 在 `package.json` 写了包管理器时默认打开它的缓存并去找 `pnpm`，而这个作业没有装 pnpm（「Unable to locate executable file: pnpm」）——这个作业在合并进 `main` 之前从没被执行过。所以 `CHANGELOG.md` 这次没有写
+- ✅ 第 11 步（主会话）：`deploy.yml` 的 `changelog` 作业给 setup-node 加 `package-manager-cache: false`（它只跑一个脚本、不装依赖）；`owner-tools.test.ts` 新增一组测试：两个工作流里每个用 setup-node 的作业，要么之前装了 pnpm，要么关了缓存（去掉修复后这条测试失败）。本机：格式、lint、类型、单测 552 / 1 跳过通过；E2E 没有重跑（没有动页面和 E2E）
 - 本分支已把 `main` 合并进来（`a516509` 之上的一个合并提交，树不变），后续修复要再开一个新的 PR 才能进 `main`——**开不开由业主决定**
 - ✅ 7. 交付说明「M5（上线前）交付说明」（下面）
 

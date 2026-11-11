@@ -84,9 +84,13 @@ jobs:
         with:
           fetch-depth: 0
 
+      # This job runs one script and installs nothing. setup-node v5 turns its package-manager
+      # cache on when package.json names one, then looks for pnpm, which this job never installs:
+      # the first real deploy failed here ("Unable to locate executable file: pnpm").
       - uses: actions/setup-node@v5
         with:
           node-version-file: .nvmrc
+          package-manager-cache: false
 
       - name: Write CHANGELOG.md from the history
         run: node scripts/changelog.mjs
