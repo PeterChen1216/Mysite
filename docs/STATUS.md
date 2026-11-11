@@ -27,6 +27,9 @@
 - ✅ 第 16 步（业主 2026-11-11 选定的首页搜索描述，LAUNCH A2）：`content/site.yaml → meta.description` 改为「Zhicheng (Peter) Chen — Informatics senior at the University of Washington (’27). Projects, experience and résumé; open to new-grad roles in IT, data and software engineering.」；两种中文是草稿，`from` 已更新
 - ⚠ PR #7 的第二轮 CI（`1a19052`，push 与 pull_request 两轮共 10 个作业）：9 个通过——上一轮失败的 Chromium 测试所在的两个作业都通过，第 15 步的修复在 CI 的字体下得到证实；**1 个失败**：pull_request 那一轮的 Firefox，失败的是第 15 步新加的测试「opening it moves nothing, also when the terminal is a fraction of a pixel tall」——按钮的 y 是 880.3333129882812 对 880.3333282470703，差 0.000015 px（同一份代码 push 那一轮的 Firefox 通过）。页面没有动：这是 `top + scrollY` 的浮点误差，测试用了完全相等
 - ✅ 第 17 步（主会话；本机 `pnpm verify` 上线状态：单测 553 / 1 跳过，E2E 771 通过 / 237 跳过，10.5 分钟）：两条命令行测试的位置比较改为「差小于 0.01 px」（`expectSamePlace`）——浏览器按 1/64 px（Firefox 1/60 px）排版，真正的移动至少 0.015 px，所以这个界限放不过任何真实的移动；去掉第 15 步的修复后新测试仍然失败（报 880.328125 → 880.828125）
+- ✅ PR #7 的第三轮 CI（`267b7ef`）：两轮共 10 个作业全绿。**业主在 2026-11-11 10:41 UTC squash 合并了 #7**（`f935412`）——提交标题是 GitHub 合并提交的那种写法「Merge pull request #7 from …」，正文第一行是 PR 标题
+- ❌ **这次合并的部署失败，上线没有生效**（线上仍是 #6 那次部署：旧站在 `/`、新站在 `/v2/`）。`main` 上 Deploy 的 `build` 和 CI 主作业两半都在单元测试失败：`owner-tools.test.ts`「runs on this repository…」里第 12 步加的断言 `not.toMatch(/Merge pull request/)`——这条断言依赖仓库的真实历史；#7 被 squash 成一个单亲提交、标题却是「Merge pull request #7 …」，脚本按普通提交列出了这个标题，断言就失败了。**是主会话第 12 步写的测试的错**
+- ✅ 第 18 步（主会话）：`scripts/changelog.mjs` 认「Merge pull request #N from …」这个标题而不看它有几个父提交——合并提交或沿用该标题的 squash 都列为 `<PR 标题> (#N)`（用合并后的 `main` 实测：#7 列在 Content：`launch — the new site at zhic.me; … (#7)`）；`owner-tools.test.ts` 加一条单亲提交的夹具测试，并删掉对真实历史的两条断言（PR 怎样列出只在虚构的提交上测）。在 `main` 的工作树里复现：合并时的代码 1 条失败（与 CI 相同），加上修复 553 条全过。本机：格式、lint、类型、严格内容检查、单测通过；E2E 没有重跑（没有动页面）。分支已把 `main` 合并进来（树相同）
 - 本分支已把 `main` 合并进来（`a516509` 之上的一个合并提交，树不变），后续修复要再开一个新的 PR 才能进 `main`——**开不开由业主决定**
 - ✅ 7. 交付说明「M5（上线前）交付说明」（下面）
 
