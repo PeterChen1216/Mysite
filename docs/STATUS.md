@@ -13,7 +13,9 @@
 - ✅ `03f4375` 的 CI（第 87 次运行）：**五个作业全绿**——主作业两半（Chromium、手机 Chromium、WebKit）、iPhone（WebKit）、Firefox 桌面、上线配置（Lighthouse + E2E）。第 9 步的两处 Firefox 修复由 CI 证实。M5（上线前）到此做完；之后的事在 `docs/LAUNCH.md`，都要业主决定或动手
 - ⚠ PR [#5](https://github.com/PeterChen1216/Mysite/pull/5)（本分支 → `main`，业主要求开的；合并由业主点）的第一轮 CI（`pull_request` 事件，合并提交 `bfc2b40`，代码与 `6978d9c` 相同）：iPhone 通过；**主作业 2/2 失败**——单元测试 `content-check.test.ts`「the script fails a push to main…」超过默认 5 秒（一条测试里连续启动 7 个 Node 进程，本机约 2–3 秒）；**Firefox 1 失败 + 1 不稳定**——失败：`windows.spec`「from the directory, then its neighbour」两次都在点了窗口里的「next →」之后等不到第二个项目的窗口，现场是第一个窗口原样留着、没有进入加载状态（**原因未查明**）；不稳定：「a tab walk」第一次量到跳转链接不在屏幕内（减少动态下每个属性变化都是 0.01 ms 的过渡，量早了一帧）
 - ✅ 第 10 步（主会话；本机 `pnpm verify`：单测 546 / 1 跳过，E2E 769 通过 / 237 跳过，9.9 分钟）：① 那条单元测试的时限改为 60 秒（与它做的事相称）；② 巡游测试在 Tab 之后等两帧再量，断言不变；③ `src/scripts/windows.ts` 的 `sync()`：队列里某一步失败时，失败报告给调用方，但不再让队列永远停在 rejected（原来那样的话，之后每个链接和 Back 都什么也不做）；④ `windows.spec.ts` 每条测试断言页面没有未捕获的错误，失败时打印地址、`history.state`、各窗口状态和焦点——第③④两项是为了让下一轮 CI 说出 Firefox 那条的原因；**本机没有 Firefox，第③项是否就是原因并不知道**
-- ⏳ 这次推送的 CI（PR #5）：待看
+- ✅ `a516509` 的 CI（第 91 次运行，push）：**五个作业全绿**，Firefox 的窗口测试也过了（一次运行；原因仍未证实，诊断输出留在测试里）
+- ⚠ **PR #5 在 2026-11-11 05:41 UTC 已由业主合并**（合并提交 `66c5a4b`，合并的是 `6978d9c`）——早于第 10 步的推送，所以 **`a516509` 不在 `main` 上**。`main` 上的 CI 通过，但 **Deploy 失败**：部署前的单元测试里，同一条 `content-check.test.ts` 超时（5019 ms，上限 5000），网站没有发布。主会话重跑了这次失败的部署作业（同一个提交、不改代码）；重跑里单元测试通过，结果记在下一条
+- 本分支已把 `main` 合并进来（`a516509` 之上的一个合并提交，树不变），后续修复要再开一个新的 PR 才能进 `main`——**开不开由业主决定**
 - ✅ 7. 交付说明「M5（上线前）交付说明」（下面）
 
 ## 🚀 M5（上线前）交付说明（PLAN §8 M5、§1.3、§10；PLAN-EXPERIENCE §1.3、§7.5；PLAN §13 ADR-023）
