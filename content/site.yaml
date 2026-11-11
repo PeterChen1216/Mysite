@@ -23,21 +23,21 @@ features:
 
 meta:
   title: Zhicheng (Peter) Chen
-  description: This is a personal/academic website
+  description: Zhicheng (Peter) Chen — Informatics senior at the University of Washington (’27). Projects, experience and résumé; open to new-grad roles in IT, data and software engineering.
   keywords:
     - Zhicheng Chen
     - Peter Chen
   # Translations (content/README.md "Translations"): drafts by Claude, not yet reviewed.
   zh-hans:
     draft: true
-    description: 这是一个个人/学术网站
+    description: Zhicheng (Peter) Chen——University of Washington 信息学专业大四学生（’27 届）。项目、经历与简历；期待 IT、数据与软件工程方向的应届全职机会。
     from:
-      description: d18d430c
+      description: 61c072ae
   zh-hant:
     draft: true
-    description: 這是一個個人/學術網站
+    description: Zhicheng (Peter) Chen——University of Washington 信息學專業大四學生（’27 屆）。項目、經歷與簡歷；期待 IT、數據與軟件工程方向的應屆全職機會。
     from:
-      description: 7c7487b8
+      description: c58d2cae
 
 footer:
   copyright_holder: Peter Chen

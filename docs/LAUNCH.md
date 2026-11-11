@@ -131,7 +131,7 @@ DECISIONS Q5 你同意过 Cloudflare Web Analytics 与 Cloudflare Pages 预览�
 | # | 决定 | 默认 | 在哪里 / 出处 |
 |---|---|---|---|
 | A1 | 上线，什么时候 | **不上线**，等你说 | `content/site.yaml → launched`；§3；DECISIONS Q1、审计 1、STATUS A |
-| A2 | 首页的 meta description 是「This is a personal/academic website」（搜索结果里显示的那句，也是分享卡片的说明） | **保留原文**（我不替你写关于你的话） | `content/site.yaml → meta.description`（中文在同一处的 `zh-hans:` / `zh-hant:`）；M5 |
+| A2 | ~~首页的 meta description~~ **已定（2026-11-11，业主选的）**：「Zhicheng (Peter) Chen — Informatics senior at the University of Washington (’27). Projects, experience and résumé; open to new-grad roles in IT, data and software engineering.」；中文是草稿 | — | `content/site.yaml → meta.description`（中文在同一处的 `zh-hans:` / `zh-hant:`） |
 | A3 | DNS 与 Pages 设置是否如 §1 所写（尤其要不要 `www.zhic.me`） | **不改**；`www` 没有证书 | 域名服务商、GitHub Settings → Pages；PLAN §14 Q9、STATUS E4 |
 | A4 | `/legacy/` 保留多久（旧站上仍是 GPA 3.81、Junior、163 邮箱） | **保留**，robots 禁止 | §8；DECISIONS Q1、PLAN §8 M5、STATUS E2 |
 | A5 | `legacy/work/njzposts.pdf`（5 MB，公开、无链接、含社交账号）删不删 | **保留** | `legacy/work/`；审计 2、STATUS E3 |
