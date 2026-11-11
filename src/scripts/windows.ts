@@ -302,9 +302,13 @@ async function openProject(id: string, opener: HTMLElement | null) {
 
 let syncing: Promise<void> = Promise.resolve();
 
-/** Bring the windows in line with the current history entry. */
+/**
+ * Bring the windows in line with the current history entry. Steps run one after another; a step
+ * that fails is reported to its caller and never holds up the next one (a queue that stayed
+ * rejected would leave every later link and Back doing nothing).
+ */
 export function sync(): Promise<void> {
-  syncing = syncing.then(async () => {
+  const run = syncing.then(async () => {
     const want = wantedState(history.state, location.pathname, BASE);
     const now = openNow();
     // Another project in the same window (the directory unchanged): its body is swapped in place.
@@ -318,7 +322,8 @@ export function sync(): Promise<void> {
       else await openProject(step.id, null);
     }
   });
-  return syncing;
+  syncing = run.catch(() => undefined);
+  return run;
 }
 
 function push(state: WindowState, href: string) {

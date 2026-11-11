@@ -432,25 +432,33 @@ describe('placeholders are stopped on main (PLAN §2.3, §7.5)', () => {
       env: { PATH: process.env.PATH ?? '', ...env },
     });
 
-  it('the script fails a push to main, a pull request into main and --strict; passes a branch', () => {
-    const dir = todo();
-    const main = script(dir, { GITHUB_REF: 'refs/heads/main' });
-    expect(main.status).toBe(1);
-    expect(main.stdout).toMatch(/error: content\/honors\.yaml:\d+: "TODO"/);
-    expect(script(dir, { GITHUB_REF: 'refs/pull/7/merge', GITHUB_BASE_REF: 'main' }).status).toBe(
-      1,
-    );
-    expect(script(dir, {}, ['--strict']).status).toBe(1);
-    const branch = script(dir, { GITHUB_REF: 'refs/heads/feat/x' });
-    expect(branch.status).toBe(0);
-    expect(branch.stdout).toMatch(/warning: content\/honors\.yaml:\d+: "TODO"/);
-    for (const word of ['lorem ipsum', 'placeholder text']) {
-      const other = contentWith({ 'now.md': `- ${word}\n` });
-      expect(script(other, { GITHUB_REF: 'refs/heads/main' }).status).toBe(1);
-    }
-    // …and the real content passes on main.
-    expect(script(CONTENT, { GITHUB_REF: 'refs/heads/main' }).status).toBe(0);
-  });
+  // Seven runs of the script, each a Node process of its own: about 2 s here, and past the
+  // default 5 s on a busy CI runner (PR #5's first run). The time allowed matches the work.
+  it(
+    'the script fails a push to main, a pull request into main and --strict; passes a branch',
+    {
+      timeout: 60_000,
+    },
+    () => {
+      const dir = todo();
+      const main = script(dir, { GITHUB_REF: 'refs/heads/main' });
+      expect(main.status).toBe(1);
+      expect(main.stdout).toMatch(/error: content\/honors\.yaml:\d+: "TODO"/);
+      expect(script(dir, { GITHUB_REF: 'refs/pull/7/merge', GITHUB_BASE_REF: 'main' }).status).toBe(
+        1,
+      );
+      expect(script(dir, {}, ['--strict']).status).toBe(1);
+      const branch = script(dir, { GITHUB_REF: 'refs/heads/feat/x' });
+      expect(branch.status).toBe(0);
+      expect(branch.stdout).toMatch(/warning: content\/honors\.yaml:\d+: "TODO"/);
+      for (const word of ['lorem ipsum', 'placeholder text']) {
+        const other = contentWith({ 'now.md': `- ${word}\n` });
+        expect(script(other, { GITHUB_REF: 'refs/heads/main' }).status).toBe(1);
+      }
+      // …and the real content passes on main.
+      expect(script(CONTENT, { GITHUB_REF: 'refs/heads/main' }).status).toBe(0);
+    },
+  );
 
   it('in GitHub Actions each problem is also an annotation on the file and line', () => {
     const r = script(todo(), { GITHUB_REF: 'refs/heads/main', GITHUB_ACTIONS: 'true' });

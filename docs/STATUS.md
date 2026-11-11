@@ -11,6 +11,9 @@
 - ✅ `692d5fb` 的 CI：五个作业里四个通过（主作业两半、iPhone、上线配置——字体晚到的跳动和 WebKit 黑画布都没有再出现）；**Firefox 作业 413 通过、4 失败**：① 「a tab walk」：走到页脚最后一个链接后再按 Tab，Firefox 仍把它报告为 `document.activeElement`（Chromium 报告 `<body>`），测试把同一个元素第二次出现当成「顺序错了」；② 「text-spacing override 390 px」en / zh-hans / zh-hant：`<p class="commit__hash">` 170 px 在 162 px 的盒子里
 - ✅ 第 9 步（主会话；本机 `pnpm verify`：单测 546 / 1 跳过，E2E 769 通过 / 237 跳过，9.7 分钟）：① 巡游测试在焦点不再移动时结束（断言不变：最后一站必须是页脚的 back to spawn，中途被困住仍然失败）；② 手机上展开的提交行 `▾ git show <hash>` 的 `::before` 继承了折叠状态 ▸ 的 `margin-inline-end: 0.5em`（7.5 px），排在最后一个词后面只把列撑宽——Chromium 把它算进列宽（169.5 px），Firefox 的列只有文字宽（162 px），外边距伸出盒子 8 px。去掉它。像素对比（对照 `692d5fb`）：390 px 只有展开行那一处（61 × 31 px：日期左移 7.5 px），320 / 768 / 1440 逐像素相同。**本机没有 Firefox（系统源只有 snap 版），这两处是按 Chromium 里的测量推出来的，以 CI 为准**
 - ✅ `03f4375` 的 CI（第 87 次运行）：**五个作业全绿**——主作业两半（Chromium、手机 Chromium、WebKit）、iPhone（WebKit）、Firefox 桌面、上线配置（Lighthouse + E2E）。第 9 步的两处 Firefox 修复由 CI 证实。M5（上线前）到此做完；之后的事在 `docs/LAUNCH.md`，都要业主决定或动手
+- ⚠ PR [#5](https://github.com/PeterChen1216/Mysite/pull/5)（本分支 → `main`，业主要求开的；合并由业主点）的第一轮 CI（`pull_request` 事件，合并提交 `bfc2b40`，代码与 `6978d9c` 相同）：iPhone 通过；**主作业 2/2 失败**——单元测试 `content-check.test.ts`「the script fails a push to main…」超过默认 5 秒（一条测试里连续启动 7 个 Node 进程，本机约 2–3 秒）；**Firefox 1 失败 + 1 不稳定**——失败：`windows.spec`「from the directory, then its neighbour」两次都在点了窗口里的「next →」之后等不到第二个项目的窗口，现场是第一个窗口原样留着、没有进入加载状态（**原因未查明**）；不稳定：「a tab walk」第一次量到跳转链接不在屏幕内（减少动态下每个属性变化都是 0.01 ms 的过渡，量早了一帧）
+- ✅ 第 10 步（主会话；本机 `pnpm verify`：单测 546 / 1 跳过，E2E 769 通过 / 237 跳过，9.9 分钟）：① 那条单元测试的时限改为 60 秒（与它做的事相称）；② 巡游测试在 Tab 之后等两帧再量，断言不变；③ `src/scripts/windows.ts` 的 `sync()`：队列里某一步失败时，失败报告给调用方，但不再让队列永远停在 rejected（原来那样的话，之后每个链接和 Back 都什么也不做）；④ `windows.spec.ts` 每条测试断言页面没有未捕获的错误，失败时打印地址、`history.state`、各窗口状态和焦点——第③④两项是为了让下一轮 CI 说出 Firefox 那条的原因；**本机没有 Firefox，第③项是否就是原因并不知道**
+- ⏳ 这次推送的 CI（PR #5）：待看
 - ✅ 7. 交付说明「M5（上线前）交付说明」（下面）
 
 ## 🚀 M5（上线前）交付说明（PLAN §8 M5、§1.3、§10；PLAN-EXPERIENCE §1.3、§7.5；PLAN §13 ADR-023）

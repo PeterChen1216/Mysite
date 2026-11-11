@@ -217,7 +217,11 @@ test.describe('keyboard (WCAG 2.1.1, 2.1.2, 2.4.3, 2.4.7)', () => {
       // element while focus is in the browser's own controls. Either way the walk is over: a
       // trap anywhere before the end fails the last assertion (the walk must end on the footer).
       if (previous && (await el.evaluate((e, prev) => e === prev, previous))) break;
-      const info = await el.evaluate((e, prev) => {
+      // Measured two frames after the Tab: under reduced motion every property change is a
+      // 0.01 ms transition (global.css), so a stop that moves on focus (the skip link) still has
+      // its old box until the next frame.
+      const info = await el.evaluate(async (e, prev) => {
+        await new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r)));
         const cs = getComputedStyle(e);
         const r = e.getBoundingClientRect();
         return {
