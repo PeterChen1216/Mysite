@@ -25,7 +25,7 @@
 ## 1. 现在的状态（仓库里看得到的）
 | 项目 | 现在 | 在哪里 |
 |---|---|---|
-| 是否上线 | `launched: false`：`https://zhic.me/` 是旧站，新站在 `https://zhic.me/v2/`（robots 禁止收录） | `content/site.yaml` |
+| 是否上线 | **`launched: true`（2026-11-11，业主决定）**：`https://zhic.me/` 是新站，旧站在 `https://zhic.me/legacy/`（robots 禁止收录），`https://zhic.me/v2/…` 跳到去掉 `/v2/` 的同一页。上线前是 `false`：旧站在根目录、新站在 `/v2/` | `content/site.yaml` |
 | 域名 | 仓库根目录 `CNAME` 写 `zhic.me`；部署产物里的 `CNAME` 由 `content/site.yaml → domain` 生成 | `CNAME`、`scripts/assemble-pages.mjs` |
 | 部署 | 推到 `main` → `.github/workflows/deploy.yml`：内容检查（严格）→ 单测 → 构建 → 组装 → Chromium E2E → 发布到 GitHub Pages → 写 CHANGELOG（约 11 分钟） | `deploy.yml` |
 | DNS | **仓库里没有**。PLAN §14 Q9 还没答。审计时记下：`www.zhic.me` 没有证书 | 你的域名服务商 |

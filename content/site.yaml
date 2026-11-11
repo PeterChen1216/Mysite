@@ -4,7 +4,7 @@ version: 0.1.0 # bump only for structural changes; content changes are versioned
 
 # false → the old site stays at https://zhic.me/ and v2 is previewed at https://zhic.me/v2/
 # Flip to true when M1 is accepted (DECISIONS Q1); the old site then moves to /legacy/.
-launched: false
+launched: true
 
 # Each language of the site (PLAN-EXPERIENCE §5; content/README.md "Translations"):
 #   live    — listed (language switch, hreflang) and open to search engines.

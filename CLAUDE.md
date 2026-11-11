@@ -30,7 +30,8 @@ commands stay as they are. How content is updated, task by task: `docs/CONTENT-G
 
 - After any content edit: `pnpm content:check` (under a second; must end with `✔`). Its messages
   name file:line, the field and what to write; `docs/CONTENT-GUIDE.md` §11 explains each kind.
-- To see it: `pnpm dev`, then open http://localhost:4321/v2/ (before launch; `/` after).
+- To see it: `pnpm dev`, then open http://localhost:4321/ (the site is launched; `/v2/…` only
+  redirects).
 - Before pushing a content change: `pnpm content:check && pnpm build`. Before pushing anything in
   `src/`, `scripts/`, `tests/` or workflows: `pnpm verify` (format, lint, colours, types, content,
   unit tests, build, size budgets, E2E; about 10 minutes).

@@ -269,7 +269,9 @@ describe('the field check (src/content/check.ts)', () => {
     // One of everything at once: whatever the schema, the owner never reads "Invalid input".
     const dir = contentWith({
       'site.yaml': (t) =>
-        t.replace('launched: false', 'launched: maybe').replace('version: 0.1.0', 'version: 1'),
+        t
+          .replace(/^launched: (?:true|false)/m, 'launched: maybe')
+          .replace('version: 0.1.0', 'version: 1'),
       'interests.yaml': (t) =>
         t.replace('tag: gen-ai', 'tag: Gen AI').replace('icon: 🏓', 'icon: [1]'),
       'skills.yaml': (t) => t.replace('items: [React, Agno Agent, SQLite]', 'items: []'),
@@ -540,7 +542,10 @@ describe('the résumé, stray files and notes', () => {
       '✔ content: every file reads correctly; no placeholders',
     ]);
     const broken = run(
-      contentWith({ 'site.yaml': (t) => t.replace('launched: false', 'launched: no way') }),
+      // Whichever the flag is today: the fixture writes a value that is neither.
+      contentWith({
+        'site.yaml': (t) => t.replace(/^launched: (?:true|false)/m, 'launched: no way'),
+      }),
       {
         strict: false,
         github: true,
