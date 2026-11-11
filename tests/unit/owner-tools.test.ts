@@ -254,7 +254,7 @@ describe('pnpm changelog', () => {
     });
   });
 
-  it('a pull request merged with a merge commit is one entry, under its title', () => {
+  it('a pull request under GitHub’s merge subject is one entry, under its title', () => {
     const pr = (title: string, files: string[] = ['src/x.ts'], subject?: string) =>
       classify({
         hash: 'h',
@@ -280,6 +280,17 @@ describe('pnpm changelog', () => {
     });
     // No title in the body: still one entry.
     expect(pr('')).toEqual({ section: 'other', text: 'pull request (#5)' });
+    // Squashed under the same subject (one parent), as PR #7 was: the same entry.
+    expect(
+      classify({
+        hash: 'h',
+        date: 'd',
+        merge: false,
+        subject: 'Merge pull request #7 from owner/some-branch',
+        title: 'content: launch — the new site',
+        files: ['content/site.yaml', 'src/x.ts'],
+      }),
+    ).toEqual({ section: 'content', text: 'launch — the new site (#7)' });
     // Any other merge commit is left out.
     expect(pr('whatever', [], "Merge branch 'main' into feature")).toBeNull();
     expect(pr('whatever', [], 'Merge remote-tracking branch origin/main')).toBeNull();
@@ -365,9 +376,9 @@ describe('pnpm changelog', () => {
     expect(out).toMatch(/^## \d{4}-\d{2}-\d{2}$/m);
     expect(out).toMatch(/^- .+ \([0-9a-f]{7,}\)$/m);
     expect(out).not.toMatch(/Co-Authored-By|Claude-Session|Signed-off-by/i);
-    // The pull requests merged into main with a merge commit are there, each under its title.
-    expect(out).toMatch(/^- .+ \(#5\) \([0-9a-f]{7,}\)$/m);
-    expect(out).not.toMatch(/Merge pull request/);
+    // Nothing here depends on what this repository's history holds: how a pull request is
+    // listed is tested above on made-up commits. (An assertion about the real history stopped
+    // the deploy of PR #7, squashed under a "Merge pull request" subject.)
     const file = join(mkdtempSync(join(tmpdir(), 'changelog-')), 'CHANGELOG.md');
     execFileSync(process.execPath, ['scripts/changelog.mjs', '--out', file], {
       cwd: ROOT,

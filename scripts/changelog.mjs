@@ -10,11 +10,12 @@
 // GitHub web editor's "Update experience.yaml") counts as content. Its own commits
 // (`chore(changelog)`) are left out.
 //
-// A pull request merged with a merge commit ("Merge pull request #5 from …") is one entry under
-// its title, which GitHub writes as the first line of that commit's body: `<title> (#5)`, sorted
-// like any subject. Squash-merged, the same pull request is one commit whose subject is already
-// that. Other merge commits are left out. Nothing else of a commit's body is ever used — no
-// later line, no trailer.
+// A pull request that lands under GitHub's merge subject ("Merge pull request #5 from …") is one
+// entry under its title, which GitHub writes as the first line of that commit's body:
+// `<title> (#5)`, sorted like any subject. That holds for a merge commit and for a squash that
+// kept the merge subject. Squashed under its own title, the pull request is one commit whose
+// subject is already that. Other merge commits are left out. Nothing else of a commit's body is
+// ever used — no later line, no trailer.
 //
 // Options: --out <file> (default CHANGELOG.md at the repository root), --stdout.
 import { execFileSync } from 'node:child_process';
@@ -42,7 +43,7 @@ const GS = '\x1d';
 export const LOG_FORMAT = `${RS}%h${US}%cs${US}%P${US}%s${US}%b${GS}`;
 
 /**
- * `title` is the first line of the body: only a pull request's merge commit uses it.
+ * `title` is the first line of the body: only a commit under a pull request's merge subject uses it.
  * @typedef {{ hash: string, date: string, merge: boolean, subject: string, title: string, files: string[] }} Commit
  */
 
@@ -87,12 +88,11 @@ const PULL_REQUEST = /^Merge pull request #(\d+) from \S+/;
  */
 export function classify(c) {
   let subject = c.subject;
-  if (c.merge) {
-    // A merged pull request reads as its title, as a squash merge would have written it.
-    const pr = PULL_REQUEST.exec(c.subject);
-    if (!pr) return null;
-    subject = `${c.title || 'pull request'} (#${pr[1]})`;
-  }
+  // A pull request under GitHub's merge subject reads as its title — whether it came in as a
+  // merge commit or was squashed under that subject (one parent; PR #7 was).
+  const pr = PULL_REQUEST.exec(c.subject);
+  if (pr) subject = `${c.title || 'pull request'} (#${pr[1]})`;
+  else if (c.merge) return null;
   const m = CONVENTIONAL.exec(subject);
   const type = m?.[1]?.toLowerCase();
   if (type === 'chore' && m?.[2] === 'changelog') return null;
