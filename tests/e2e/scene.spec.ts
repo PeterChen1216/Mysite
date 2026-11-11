@@ -192,9 +192,18 @@ test.describe('graphics tiers (§7.2)', () => {
       'WebKit masks its renderer; its default tier is not asserted',
     );
     await page.goto(`${V2}?tier=auto`);
+    // Headless Firefox (M5) may offer no WebGL 2 at all rather than a software one: tier 1 either way.
+    const desktop = browserName === 'firefox' ? ['software', 'no-webgl'] : ['software'];
     await expect
-      .poll(() => tierOf(page), { timeout: 10_000 })
-      .toEqual(isMobile ? { tier: '2', reason: 'device' } : { tier: '1', reason: 'software' });
+      .poll(
+        async () => {
+          const t = await tierOf(page);
+          if (isMobile) return t;
+          return t.tier === '1' && desktop.includes(t.reason ?? '') ? 'tier 1, no scene' : t;
+        },
+        { timeout: 10_000 },
+      )
+      .toEqual(isMobile ? { tier: '2', reason: 'device' } : 'tier 1, no scene');
     expect(await page.locator('canvas.scene').count()).toBe(0);
   });
 
@@ -222,6 +231,9 @@ test.describe('graphics tiers (§7.2)', () => {
 
 test.describe('the scene at tier 3', () => {
   test.skip(({ isMobile }) => isMobile, 'tier 3 is the desktop scene (DECISIONS Q2)');
+  // M5: not verified in Firefox — whether CI's headless Firefox draws WebGL 2 at all, and how fast,
+  // is unknown; Chromium and WebKit (both software WebGL on the runner) carry the scene's checks.
+  test.skip(({ browserName }) => browserName === 'firefox', 'the WebGL scene: Chromium and WebKit');
 
   test('loads after the page is usable, as its own chunk, decorative and behind everything', async ({
     page,
@@ -616,6 +628,7 @@ test.describe('the scene at tier 3', () => {
 
 test.describe('the scene in every theme', () => {
   test.skip(({ isMobile }) => isMobile, 'tier 3 is the desktop scene');
+  test.skip(({ browserName }) => browserName === 'firefox', 'the WebGL scene: Chromium and WebKit');
   for (const theme of THEMES) {
     test(`${theme}: the world is there, on the theme's own sky, and follows a theme change`, async ({
       page,

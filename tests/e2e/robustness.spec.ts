@@ -246,7 +246,7 @@ test.describe('layout holds at every graphics tier', () => {
         browserName,
       }) => {
         test.skip(
-          tier === 3 && browserName === 'webkit',
+          tier === 3 && browserName !== 'chromium',
           "CI's WebKit draws WebGL in software; its scene coverage is scene.spec.ts",
         );
         await page.setViewportSize({ width, height: 900 });

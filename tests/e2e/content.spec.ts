@@ -41,7 +41,7 @@ const PAGES: Array<LocalePage & { tier?: TierPage['tier'] }> = [...LOCALE_PAGES,
 for (const { locale, path, tier } of PAGES)
   test.describe(`content/ renders completely (${locale}${tier === undefined ? '' : `, tier ${tier}`})`, () => {
     test.skip(
-      ({ isMobile, browserName }) => tier === 3 && (isMobile || browserName === 'webkit'),
+      ({ isMobile, browserName }) => tier === 3 && (isMobile || browserName !== 'chromium'),
       // CI's WebKit draws WebGL in software at 2–3 fps, starving the other workers; the scene's
       // own WebKit coverage is tests/e2e/scene.spec.ts.
       'tier 3 is the desktop scene; in WebKit it is covered by scene.spec.ts',

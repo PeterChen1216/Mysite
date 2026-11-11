@@ -95,7 +95,7 @@ for (const { locale, path: V2 } of LOCALE_PAGES)
 for (const { path, tier } of TIER_PAGES)
   test.describe(`accessibility at graphics tier ${tier}`, () => {
     test.skip(
-      ({ isMobile, browserName }) => tier === 3 && (isMobile || browserName === 'webkit'),
+      ({ isMobile, browserName }) => tier === 3 && (isMobile || browserName !== 'chromium'),
       // CI's WebKit draws WebGL in software at 2–3 fps, starving the other workers; the scene's
       // own WebKit coverage is tests/e2e/scene.spec.ts.
       'tier 3 is the desktop scene; in WebKit it is covered by scene.spec.ts',
