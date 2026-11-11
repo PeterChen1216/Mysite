@@ -320,6 +320,34 @@ for (const { locale, path } of LOCALE_PAGES)
             .map((f) => `${f.family.replace(/"/g, '')} ${f.weight}: ${f.status}`)
             .join('; '),
         );
-        expect(await layoutShift(page), `stand-ins: ${standIns}`).toBeLessThanOrEqual(0.05);
+        // What moved, for the message: each shift's elements and how far.
+        const moved = await page.evaluate(() =>
+          (
+            performance.getEntriesByType('layout-shift') as Array<
+              PerformanceEntry & {
+                value: number;
+                sources?: Array<{ node?: Node; previousRect: DOMRect; currentRect: DOMRect }>;
+              }
+            >
+          )
+            .filter((e) => e.value > 0.001)
+            .map(
+              (e) =>
+                `${e.value.toFixed(3)}: ` +
+                (e.sources ?? [])
+                  .map(
+                    (x) =>
+                      `${(x.node as Element | undefined)?.className || x.node?.nodeName} ` +
+                      `${Math.round(x.previousRect.y)}→${Math.round(x.currentRect.y)} ` +
+                      `h ${Math.round(x.previousRect.height)}→${Math.round(x.currentRect.height)}`,
+                  )
+                  .join(', '),
+            )
+            .join(' | '),
+        );
+        expect(
+          await layoutShift(page),
+          `moved: ${moved || 'nothing'}; stand-ins: ${standIns}`,
+        ).toBeLessThanOrEqual(0.05);
       });
   });

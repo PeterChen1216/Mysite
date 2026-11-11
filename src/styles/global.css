@@ -365,7 +365,9 @@ html[data-ambient] .bg__stars {
 }
 
 .skip-link {
-  position: absolute;
+  /* Fixed (M5): on screen when focused, wherever the page is (Firefox's tab walk found it off
+     screen as an absolute box). Off screen and unchanged otherwise. */
+  position: fixed;
   left: var(--space-4);
   top: -100px;
   padding: var(--space-2) var(--space-4);

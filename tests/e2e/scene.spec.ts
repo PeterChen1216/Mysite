@@ -653,6 +653,14 @@ test.describe('the scene in every theme', () => {
       await sceneAt(page, 0);
       // The content hidden: what is left is the canvas.
       await page.addStyleTag({ content: '.page, .scene-hud { visibility: hidden !important; }' });
+      // Still the scene (a lost context would have put the page back at another tier), and one
+      // frame drawn after everything above: CI's WebKit can show a canvas whose buffer was just
+      // resized or replaced (black: the context has no alpha) until it draws again.
+      expect(await tierOf(page)).toMatchObject({ tier: '3' });
+      const drawn = (await status(page))!.frames;
+      await sceneAt(page, 1);
+      await sceneAt(page, 0);
+      await expect.poll(async () => (await status(page))!.frames).toBeGreaterThan(drawn);
       const bg = await page.evaluate(
         () => getComputedStyle(document.documentElement).backgroundColor,
       );

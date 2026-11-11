@@ -273,6 +273,13 @@ const href = (anchor: string) =>
       height: 28px;
     }
   }
+  /* 1024–1279 px: one row with 6.5 px to spare at 1024 in the web fonts; on CI's fonts a late
+     font wrapped it (CLS 0.58, M5). As above 1280, the gap is only the least it may shrink to. */
+  @media (min-width: 1024px) and (max-width: 1279px) {
+    .nav {
+      column-gap: 8px;
+    }
+  }
   @media (max-width: 1023px) {
     .nav {
       row-gap: 12px;

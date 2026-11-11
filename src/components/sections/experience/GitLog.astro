@@ -497,6 +497,7 @@ const commits = rows.map((row) => {
     }
     :global(:root:lang(zh)) .commit__hash {
       white-space: normal;
+      overflow-wrap: break-word;
     }
     .commit__block :global(.voxel) {
       width: 33px;
@@ -535,6 +536,9 @@ const commits = rows.map((row) => {
     }
     .commit__hash {
       white-space: normal;
+      /* M5, Firefox with the text-spacing override (zh, 390 px): a token wider than the column
+         breaks instead of spilling; where it fits nothing changes (break-word, not anywhere). */
+      overflow-wrap: break-word;
     }
     .commit__sum::-webkit-details-marker {
       display: none;

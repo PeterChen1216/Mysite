@@ -51,7 +51,9 @@ const block: BlockName = projectBlock(p);
       {p.title}
     </a>
   </h3>
-  <p class="meta pc__stat">{v.stat}</p>
+  <p class="meta pc__stat">
+    <span>{v.stat}</span>
+  </p>
   {p.tagline && <p class="pc__tagline">{p.tagline}</p>}
   {v.when && <p class="meta pc__when">{v.when}</p>}
   {p.cover && (
@@ -133,6 +135,12 @@ const block: BlockName = projectBlock(p);
     letter-spacing: var(--type-code-label-tracking);
     text-transform: var(--type-label-case);
     color: var(--color-text-mid);
+  }
+  /* M5: the text beside "##" may shrink below its longest word and break (Firefox measured it
+     spilling 7 px at 320 px with 130 % text); where it fits nothing changes. */
+  .pc__stat > span {
+    min-width: 0;
+    overflow-wrap: break-word;
   }
   .pc__stat::before {
     content: '##';

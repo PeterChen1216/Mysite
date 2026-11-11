@@ -103,7 +103,13 @@ test.describe('auto and the device', () => {
     expect(await page.evaluate(() => document.documentElement.dataset.theme)).toBe('night');
   });
 
-  test('more contrast is honoured in every theme: stronger mid text, cues on', async ({ page }) => {
+  test('more contrast is honoured in every theme: stronger mid text, cues on', async ({
+    page,
+    browserName,
+  }) => {
+    // M5: Playwright's prefers-contrast emulation does not reach Firefox (CI on ec0d8bd: nothing
+    // changed). Chromium and WebKit run it; Firefox's own setting is on the device list.
+    test.skip(browserName === 'firefox', 'prefers-contrast cannot be emulated in Firefox');
     await page.goto(V2);
     const mid = () =>
       page.evaluate(() =>

@@ -5,7 +5,10 @@
 - 基线：`af58aa9`（CI 绿），像素对比的基线在 `scratchpad/m5/base`（worktree，预览配置已构建）；对比脚本 `scratchpad/x4/static.cjs` + `cmp.py`
 - ✅ 1. 看门狗盲区 + 不稳定的测试（`e53f22c`；本机 `pnpm verify`：单测 520 / 1 跳过，E2E 757 通过 / 227 跳过，9.2 分钟）：`src/scene/watchdog.ts` 不再用 250 ms 间隔猜「没在画」，由渲染器告诉它哪些帧是连续的（`FrameChain`）；提示框按格子停下的位置放；粒子从第一次画出时开始计时；测试的改法见提交说明。**`e53f22c` 的 CI**：主作业第 1 半 662 通过 / 0 不稳定、`phones` 通过、上线作业 461 通过 / 0 不稳定；第 2 半 1 个失败两次——[webkit] 看门狗测试：档位按时降了，但我写的断言等「像素比 < 1」，桌面 Safari 的像素比是 2（降一档是 1.5）。旧测试在 WebKit 里通过只是因为画布没了之后读到 0。改为按设备像素比的 0.75（下一个提交）
 - ✅ 2–6（一批推送，本机 `pnpm verify`：单测 546 / 1 跳过，E2E 769 通过 / 237 跳过，8.9 分钟；上线配置另跑 `layout` / `pages` / `i18n` 82 通过）：`test(scene)` 看门狗断言按设备像素比；`feat(seo)` JSON-LD、sitemap、robots、上线后 `/v2/` 跳转页、中文 404 标题；`perf` 导航间距（1280 px 字体晚到 CLS 0.47 → 0.0036）；`ci` Firefox 作业；`docs` `docs/LAUNCH.md`、ADR-023、本文件的交付说明。Lighthouse 前后、像素对比（1440 / 1280 / 1024 / 768 / 390 全部 0 差异）、演练都在交付说明里
-- ⏳ 这批推送的 CI：待看（Firefox 第一次跑）
+- ✅ `ec0d8bd`（这批的最后一个提交）的 CI：`phones` 通过；**其余四个作业失败**——① [chromium]（主作业第 1 半与上线作业，各两次）「全部网页字体晚到 1024 px」0.577（本机 0.003）：运行器**有**替身字体（测试的报错列出全部已加载——X2 当年「缺字体」的猜测是错的），只是把它们排得比这里宽几个像素；1024 px 时导航一行只剩 6.5 px，和 1280 px 只剩 2 px 是同一回事（1280 那次已修，这次 CI 上 1280 通过）；② Firefox 第一次运行 5 个失败（中文 390 px 文字间距下装饰哈希溢出 8 px；英文 320 px 130 % 文字下项目卡统计行溢出 7 px；Tab 巡游时跳转链接在屏幕外；「更高对比度」——Playwright 在 Firefox 里模拟不了 `prefers-contrast`）；③ [webkit]（第 2 半）「每个主题的场景」day（重试通过）与 cvd（两次）：截图里天空是黑的。上线作业 Lighthouse 通过、E2E 471 通过 / 1 失败（①）。改法见下一个提交与交付说明
+- ✅ 第 8 步（本机 `pnpm verify`：单测 546 / 1 跳过，E2E 769 通过 / 237 跳过，9.8 分钟）：导航在 1024–1279 px 的列间距下限 8 px；哈希与统计行可以断行（只在放不下时）；跳转链接 `position: fixed`；Firefox 跳过对比度模拟那一条；WebKit 场景测试截图前确认仍是 3 级并等新画的一帧；CLS 测试的报错写出谁移动了多少。像素对比 1440 / 1280 / 1279 / 1200 / 1100 / 1024 / 768 / 390 全部 0 差异
+- ⚠ 第 8 步是在容器重启之后由主会话收尾的：重启打断了 M5 的代理，这一步的修改留在工作区里没有提交；主会话读过改动、重跑了上面这次 `pnpm verify`，再提交推送。**M5 前 6 个提交（`e53f22c`…`ec0d8bd`）的署名行写成了 Claude Opus 5.5**，与 X2 的 6 个提交一样；分支不能强推，改不了
+- ⏳ 这次推送的 CI：待看
 - ✅ 7. 交付说明「M5（上线前）交付说明」（下面）
 
 ## 🚀 M5（上线前）交付说明（PLAN §8 M5、§1.3、§10；PLAN-EXPERIENCE §1.3、§7.5；PLAN §13 ADR-023）
@@ -18,7 +21,7 @@
 |---|---|---|
 | 1 | SEO | `src/lib/seo.ts`（纯函数，单测）：每种语言首页一个 `Person` JSON-LD，只取 `content/`——`name`（Peter Chen）、`alternateName`（Zhicheng (Peter) Chen）、`url`（英文首页）、`sameAs`（GitHub、LinkedIn）、`affiliation`（正在读的 University of Washington, Seattle，`education.yaml` 的 `expected: true`；读完的学校会是 `alumniOf`）；不写职位、邮箱、照片。本地 schema.org 检查 `src/lib/schema-org.ts`（类型树、属性的 domain / range 从 schema.org 抄来；未知类型或属性、放错类型、值的类型不对都报错），单测和 E2E 都用它校验页面上真实的 JSON-LD，没有用任何在线校验器。`sitemap.xml` 只在上线配置里由 `scripts/assemble-pages.mjs` 从构建出的页面生成：有 canonical、没有 `noindex` 的页——今天是英文的 `/`、`/projects/`、三个项目页（两种中文是 preview、`noindex`，所以不在里面，和不在 hreflang 里一样）。上线前没有 sitemap，robots.txt 仍是 `Disallow: /v2/`；上线后是 `Disallow: /legacy/` + `Sitemap:`。**标题与描述逐页类型、逐语言看过**：`og:title` 处处等于 `<title>`；项目页的描述是项目自己的 tagline 或正文第一句；首页的描述是 `site.yaml → meta.description`「This is a personal/academic website」——是你的原话，我没改，列在 LAUNCH §11 A2 |
 | 1b | 上线后的旧预览地址 | 演练发现：上线后 `/v2/…`（预览期分享出去的链接）全部 404。现在上线配置的组装为每个页面写一个 `noindex`、canonical 指新地址、0 秒跳转的小页面（`movedPage`，没有脚本、没有自己的文字），`/v2/resume.pdf` 仍是简历 |
-| 2 | 性能 | 先量（下面「验证」）。Lighthouse 每页 1.00，Lighthouse 本身没有任何体积 / 阻塞 / 图片建议；量出来的真问题只有一个：**网页字体全部晚到 1 秒时 1280 px 的 CLS 0.47**（X2 在 CI 上看到 0.46、以为是缺 Liberation 等替身字体，于是把测试收窄到中文字体）。真正的原因：1280 px 时导航一行在网页字体下只剩 2 px，缺 Liberation Mono 时 JetBrains Mono 退到 DejaVu Sans Mono（每个字 0.602 em，对 0.600），链接宽 1 px，导航折成两行（79 → 147 px），字体到了以后整页下移 68 px；1280 正是 Playwright 桌面的视口宽度。修法：导航的列间距下限 24 → 16 px（≥ 1280；更窄处本来就是 16）——`space-between` 下，排得下时组与组之间的距离由剩余空间决定，这个值只决定何时折行，所以没有一个像素变化。测试恢复为全部网页字体晚到：英文 1440 / 1280 / 1024 / 768 / 390 / 320，每种语言 1280。**(a) WebKit 的 `drop-shadow`**：没有做，原因见 ADR-023 ⑥（一半是模糊光晕，烘进图片就是某一个引擎的像素；硬阴影随主题变色；真 Safari 用 GPU 合成，要先在 iPhone 上量）。**(b)** 见上。**(c)** 桌面 Lighthouse 在 1 / 2 级：没有退化（见「验证」）。拉丁字体再子集化：不值（ADR-023 ⑥） |
+| 2 | 性能 | 先量（下面「验证」）。Lighthouse 每页 1.00，Lighthouse 本身没有任何体积 / 阻塞 / 图片建议；量出来的真问题只有一个：**网页字体全部晚到 1 秒时 1280 px 的 CLS 0.47**（X2 在 CI 上看到 0.46、以为是缺 Liberation 等替身字体，于是把测试收窄到中文字体）。真正的原因：1280 px 时导航一行在网页字体下只剩 2 px，缺 Liberation Mono 时 JetBrains Mono 退到 DejaVu Sans Mono（每个字 0.602 em，对 0.600），链接宽 1 px，导航折成两行（79 → 147 px），字体到了以后整页下移 68 px；1280 正是 Playwright 桌面的视口宽度。修法：导航的列间距下限 24 → 16 px（≥ 1280；更窄处本来就是 16）——`space-between` 下，排得下时组与组之间的距离由剩余空间决定，这个值只决定何时折行，所以没有一个像素变化。测试恢复为全部网页字体晚到：英文 1440 / 1280 / 1024 / 768 / 390 / 320，每种语言 1280。**CI 上的第二个**：恢复的测试在 CI 的 1024 px 量到 0.577（本机 0.003）——运行器其实**有**替身字体，只是排得宽几个像素，而 1024 px 时导航一行只剩 6.5 px；1024–1279 px 的列间距下限也改为 8 px（同样一个像素不动）。**(a) WebKit 的 `drop-shadow`**：没有做，原因见 ADR-023 ⑥（一半是模糊光晕，烘进图片就是某一个引擎的像素；硬阴影随主题变色；真 Safari 用 GPU 合成，要先在 iPhone 上量）。**(b)** 见上。**(c)** 桌面 Lighthouse 在 1 / 2 级：没有退化（见「验证」）。拉丁字体再子集化：不值（ADR-023 ⑥） |
 | 3 | 看门狗盲区 | `src/scene/watchdog.ts`：不再把 250 ms 以上的帧间隔当成「没在画」。渲染器用 `FrameChain` 告诉它哪些帧是连续的——上一帧要的（不是滚动、换主题这类事件在循环停了之后要的）、上一帧被判过、中间标签页一直可见；连续的帧不管多慢都算。隐藏的标签页、暂停、窗口打开、场景没东西可画都让链条断开，下一帧开新窗口——等待永远不是慢帧；一次长卡顿（睡眠、调试器）最多算一个坏窗口，从不单独降一档。单测：3 fps、1 fps、每 2.5 秒一帧的设备都会被降两档再放弃；隐藏 / 暂停 10 秒后不算任何坏窗口；任意多次断开不降；时钟倒退开新窗口；链条的规则逐条。**本机复现**（CDP 把 CPU 限到约 2 fps）：改前分辨率在 0.75 停了 45 秒；改后 0.75 → 0.5 → 2 级，7 秒内 |
 | 4 | 不稳定的测试 | 见下「不稳定的测试：原因、改法、跑了几次」 |
 | 5 | 跨浏览器 | CI 新作业 `firefox`（桌面 Firefox，Playwright 在运行器上安装，25 分钟上限）：跑桌面 Chromium 跑的全部，手机套件除外；WebGL 场景的测试在 Firefox 跳过（ADR-023 ⑦）。代码里超出支持矩阵的特性：见「跨浏览器：特性检查」 |
@@ -60,7 +63,7 @@
 CI 上观察到的：见顶部「M5 进度」每次推送一条（`e53f22c`：除我自己写错的 WebKit 看门狗断言外全部一次通过，0 个不稳定）。
 
 ### 像素对比
-`scratchpad/x4/static.cjs`（减少动态、Night、时钟固定 2026-10-24T16:45:00Z、`document.fonts.ready`、页脚版本行遮住）+ `cmp.py`，对照 `af58aa9`（独立 worktree `scratchpad/m5/base` 里构建的预览配置）：`/v2/` 与 `/v2/?tier=1`，**1440、1280、1024、768、390：0 个像素不同**（尺寸 1440 × 6525、1280 × 6760、1024 × 7129、768 × 9260、390 × 8684，与之前相同）。多量了 1280，因为导航的间距改在那里。其他四个主题没有量：M5 没有动美术、阴影或颜色（导航的间距对每个主题都一样，排得下时不移动）。提示框的位置、粒子只在悬停时出现，不在静止画面里
+`scratchpad/x4/static.cjs`（减少动态、Night、时钟固定 2026-10-24T16:45:00Z、`document.fonts.ready`、页脚版本行遮住）+ `cmp.py`，对照 `af58aa9`（独立 worktree `scratchpad/m5/base` 里构建的预览配置）：`/v2/` 与 `/v2/?tier=1`，**1440、1280、1279、1200、1100、1024、768、390：0 个像素不同**（尺寸 1440 × 6525、1280 × 6760、1279 × 6765、1200 × 6850、1100 × 6960、1024 × 7129、768 × 9260、390 × 8684，与之前相同）。多量了 1100–1280，因为导航的间距改在那里；这一步也抓到了我自己的一个错（一次编辑把 1279 px 以下的导航规则移进了只管 1024–1279 的块，768 与 390 的导航因此不同——在提交前改正）。其他四个主题没有量：M5 没有动美术、阴影或颜色（导航的间距对每个主题都一样，排得下时不移动）。提示框的位置、粒子只在悬停时出现，不在静止画面里
 
 ### 演练（上线配置，本机）
 `SITE_STAGE=launched pnpm build && SITE_STAGE=launched pnpm assemble`，本地服务器，脚本 `scratchpad/m5/rehearse.cjs` 照 `docs/LAUNCH.md` §4 逐条检查（另跑上线配置的 Lighthouse，见上）：
@@ -79,6 +82,7 @@ CI 上观察到的：见顶部「M5 进度」每次推送一条（`e53f22c`：�
 代码里用到的、可能超出「最新两版 Chrome / Edge / Safari / Firefox + iOS Safari 16+」的特性（按我所知的支持情况；没有一台设备验证过）：
 - **有退路，没问题**：`color-mix()` 做手机外框的渐变（前一行是纯色）；`text-wrap: balance / pretty`（不支持就是普通换行）；`requestIdleCallback`（没有就用定时器）；`scrollend`（2 秒定时器兜底）；`tan(atan2(…cqw…))` 缩放手机舞台（不支持按台阶）；`prefers-reduced-data`（没有浏览器默认支持，只是多一个条件）
 - **在矩阵内**：`:has()`、容器查询与 `cqw`、三角函数、`round()`、`lvh` / `svh`、`inert`、`<dialog>`、单独的 `translate` / `rotate` / `scale`、`overflow: clip`、`.at()`、`Object.hasOwn`（都在 Safari 16 / Firefox 121 / Chrome 125 之前就有）；JS 由 Vite 编译到它默认的「广泛可用」基线（Safari 16）
+- **Firefox 第一次运行发现的、已修**：中文 390 px 文字间距下装饰哈希溢出 8 px、英文 320 px 130 % 文字下项目卡统计行溢出 7 px（改为放不下时断行，放得下时一个像素不动）；Tab 巡游时跳转链接在屏幕外（改为 `position: fixed`）
 - **已知的缺口，没修**：① `::backdrop` 里的 `var()`（窗口与设置窗口背后的变暗）：据我所知 Safari 17.4、Chrome 122、Firefox 120 之前 `::backdrop` 看不到页面的自定义属性，所以 iOS 16.0–17.3 上窗口背后**不变暗**（窗口本身不透明、仍是模态，功能不受影响）。要修只能在 `::backdrop` 里写字面颜色，这违反「颜色只在 `tokens.css`」的规则，所以列给你（LAUNCH §11 D19）；② 字体回退的度量覆盖（`size-adjust`、`ascent-override`）在 Safari 里支持得晚 / 不全，所以 Safari 上网页字体晚到时的位移可能比 Chromium 大——CI 只在 Chromium 里量 CLS
 
 ### 没做 / 只做了一部分（原因）
@@ -106,6 +110,9 @@ CI 上观察到的：见顶部「M5 进度」每次推送一条（`e53f22c`：�
 - `robustness.spec.ts`「各等级的版面」：开场按动画自己的结束时间等（`introPlayed`），到时还没结束的动画会被结束并记在测试的注解里
 - `i18n.spec.ts`：恢复「全部网页字体晚到」的 CLS 测试（英文六个宽度 + 每种语言 1280），报错信息列出这台机器有哪些回退字体
 - `content.spec.ts`、`quality.spec.ts`、`robustness.spec.ts` 的 3 级变体：条件从「不是 WebKit」改为「只在 Chromium」（对已有浏览器不变，Firefox 跳过）；`scene.spec.ts`「?tier=auto」在 Firefox 接受「软件渲染」或「没有 WebGL 2」（都是 1 级、没有场景）
+- `themes.spec.ts`「more contrast is honoured」：Firefox 跳过（Playwright 在 Firefox 里模拟不了 `prefers-contrast`，CI 上什么都没变）；Chromium、WebKit 照旧
+- `scene.spec.ts`「the scene in every theme」：截图前确认页面仍是 3 级、并等隐藏内容之后新画的一帧（断言不变；CI 的 WebKit 在 `ec0d8bd` 截到黑色画布）
+- `i18n.spec.ts` 字体晚到的 CLS：报错里写出每次位移的元素与距离
 - 新：`tests/unit/seo.test.ts`（25）、`scene.test.ts` 看门狗 9 条、`pages.test.ts` 404 标题 1 条、`layout.spec.ts`「search engines…」三条（两种配置）、`pages.spec.ts` 404 的标题
 
 ### 在 `docs/LAUNCH.md` 里
