@@ -95,7 +95,12 @@ const href = (anchor: string) =>
     flex-wrap: wrap;
     align-items: center;
     justify-content: space-between;
-    gap: 24px;
+    /* Between the groups the row's free space decides (space-between); the column gap is only the
+       least it may shrink to before the groups wrap. At 1280 px the row has 2 px to spare with
+       the web fonts, so a 24 px minimum wrapped it whenever a fallback font was a pixel wider —
+       the nav grew by a line and the page below moved 68 px when the fonts came (CLS 0.47; M5).
+       16 px, as below 1280, leaves room for that and changes no pixel where the row fits. */
+    gap: 24px 16px;
     padding: 16px var(--gutter);
     background: var(--color-bg-nav);
     border-bottom: 2px solid var(--color-border-line);

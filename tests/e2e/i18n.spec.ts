@@ -297,4 +297,29 @@ for (const { locale, path } of LOCALE_PAGES)
       await page.waitForTimeout(200);
       expect(await layoutShift(page)).toBeLessThanOrEqual(0.05);
     });
+    // M5: every web font held back a second — the page first paints in the fallback faces
+    // (src/styles/global.css, astro.config.mjs). X2 measured 0.46 for English on CI's runner and
+    // narrowed this test to the CJK face. The cause: at 1280 px (CI's viewport) the nav row had
+    // 2 px to spare, so a fallback a pixel wider (DejaVu Sans Mono, where Liberation Mono is
+    // missing) wrapped it and the page below moved 68 px when the fonts came. Reproduced here
+    // without the Liberation fonts: 0.47 at 1280 only; 0.0036 since the nav's gap may shrink
+    // (Nav.astro). The message names the stand-ins this machine had.
+    for (const width of locale === 'en' ? [1440, 1280, 1024, 768, 390, 320] : [1280])
+      test(`CLS ≤ 0.05 when every web font arrives late (${width}px)`, async ({ page }) => {
+        await page.setViewportSize({ width, height: 800 });
+        await page.route(/\.woff2$/, async (route) => {
+          await new Promise((r) => setTimeout(r, 1000));
+          await route.continue();
+        });
+        await page.goto(path);
+        await page.evaluate(() => document.fonts.ready);
+        await page.waitForTimeout(300);
+        const standIns = await page.evaluate(() =>
+          [...document.fonts]
+            .filter((f) => /Fallback/i.test(f.family))
+            .map((f) => `${f.family.replace(/"/g, '')} ${f.weight}: ${f.status}`)
+            .join('; '),
+        );
+        expect(await layoutShift(page), `stand-ins: ${standIns}`).toBeLessThanOrEqual(0.05);
+      });
   });
