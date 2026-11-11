@@ -71,6 +71,11 @@ import {
 import {
   WATCHDOG,
   adaptiveFrame,
+  chainBreak,
+  chainFrame,
+  chainJudged,
+  chainRequest,
+  initialChain,
   initialWatchdog,
   resolutionScale,
   watchdogFrame,
@@ -619,45 +624,118 @@ describe('airports', () => {
 });
 
 describe('the frame-time watchdog', () => {
-  /** Feed frames at a steady `ms` for `seconds`. */
+  /** Feed continuous frames at a steady `ms` for `seconds`. */
   const run = (s: WatchdogState, start: number, ms: number, seconds: number) => {
     const actions: string[] = [];
     let state = s;
     let t = start;
-    for (let i = 0; i < (seconds * 1000) / ms; i++) {
+    for (let i = 0; i < Math.round((seconds * 1000) / ms); i++) {
       t += ms;
-      const r = watchdogFrame(state, t);
+      const r = watchdogFrame(state, t, true);
       state = r.state;
       if (r.action !== 'none') actions.push(r.action);
     }
     return { state, actions, t };
   };
+  /** A first frame (a new window), then continuous ones. */
+  const from = (t: number) => watchdogFrame(initialWatchdog(), t, false).state;
   it('leaves a fast scene alone', () => {
-    const r = run(initialWatchdog(), 0, 16.7, 10);
+    const r = run(from(0), 0, 16.7, 10);
     expect(r.actions).toEqual([]);
     expect(r.state.step).toBe(0);
     expect(r.state.fps).toBeGreaterThan(55);
+    expect(r.state.windows).toBe(9);
   });
   it('three slow seconds lower the resolution; at the lowest step it gives up', () => {
-    const slow = 1000 / 30; // 30 fps, frames close enough not to count as a gap
-    const a = run(initialWatchdog(), 0, slow, 3.6);
+    const slow = 1000 / 30;
+    const a = run(from(0), 0, slow, 3.1);
     expect(a.actions).toEqual(['lower']);
     expect(a.state.step).toBe(1);
-    const b = run(a.state, a.t, slow, 6.6);
+    const b = run(a.state, a.t, slow, 6.1);
     expect(b.actions).toEqual(['lower', 'drop']);
     expect(b.state.dropped).toBe(true);
     // Given up: nothing more.
-    expect(watchdogFrame(b.state, b.t + 16).action).toBe('none');
+    expect(watchdogFrame(b.state, b.t + 16, true).action).toBe('none');
   });
-  it('a recovery resets the count; a pause in rendering is not a slow frame', () => {
-    const slow = run(initialWatchdog(), 0, 1000 / 30, 2.5);
+  // M5: a gap over 250 ms used to be taken for "not drawing", so this device was never judged.
+  it.each([
+    ['3 fps', 1000 / 3],
+    ['1 fps', 1000],
+    ['a frame every 2.5 s', 2500],
+  ])('a device drawing at %s, without a break, is slow: lowered, then dropped', (_, ms) => {
+    // Nine windows of at least a second (or of one frame each, when a frame takes longer), and
+    // as long again: after giving up it does nothing more.
+    const r = run(from(0), 0, ms, (18 * Math.max(1000, ms) * 1.4) / 1000);
+    expect(r.actions).toEqual(['lower', 'lower', 'drop']);
+    expect(r.state.dropped).toBe(true);
+    expect(r.state.fps).toBeLessThan(WATCHDOG.minFps);
+  });
+  it('a recovery resets the count', () => {
+    const slow = run(from(0), 0, 1000 / 30, 2.1);
+    expect(slow.state.bad).toBe(2);
     const fast = run(slow.state, slow.t, 16.7, 1.2);
     expect(fast.state.bad).toBe(0);
-    // A 5 s gap (tab hidden) starts a new window.
-    const after = watchdogFrame(fast.state, fast.t + 5000);
-    expect(after.state.windowStart).toBe(fast.t + 5000);
+  });
+  it('a hidden tab or a pause is a break, not a slow frame', () => {
+    const fast = run(from(0), 0, 16.7, 2.5);
+    // Ten seconds without frames (hidden, or paused with nothing to draw), then a frame after the
+    // break: a new window starts there; nothing was counted against the device.
+    const after = watchdogFrame(fast.state, fast.t + 10_000, false);
     expect(after.action).toBe('none');
-    expect(WATCHDOG.gapMs).toBeGreaterThan(1000 / WATCHDOG.minFps);
+    expect(after.state.windowStart).toBe(fast.t + 10_000);
+    expect(after.state.bad).toBe(0);
+    const on = run(after.state, fast.t + 10_000, 16.7, 5);
+    expect(on.actions).toEqual([]);
+    expect(on.state.bad).toBe(0);
+    // However many breaks come, frames after a break alone never lower anything.
+    let s = initialWatchdog();
+    for (let t = 0; t < 60_000; t += 700) {
+      const r = watchdogFrame(s, t, false);
+      expect(r.action).toBe('none');
+      s = r.state;
+    }
+    expect(s.windows).toBe(0);
+  });
+  it('one long stall in a fast run (a sleep, a debugger) costs one window, never a step', () => {
+    const a = run(from(0), 0, 16.7, 2);
+    const stall = watchdogFrame(a.state, a.t + 8000, true);
+    expect(stall.action).toBe('none');
+    const b = run(stall.state, a.t + 8000, 16.7, 5);
+    expect(b.actions).toEqual([]);
+    expect(b.state.step).toBe(0);
+    expect(b.state.bad).toBe(0);
+  });
+  it('a clock that goes back (a new timeline) starts a new window', () => {
+    const a = run(from(1000), 1000, 16.7, 0.5);
+    expect(watchdogFrame(a.state, 10, true).state.windowStart).toBe(10);
+  });
+  it("the renderer's chain: only a frame the loop asked for, after a judged frame, continues", () => {
+    let c = initialChain();
+    // The first frame (asked by an event): not continuous.
+    c = chainRequest(c, false);
+    let f = chainFrame(c);
+    expect(f.continuous).toBe(false);
+    c = chainJudged(f.chain);
+    // The loop asks for the next: continuous.
+    c = chainRequest(c, true);
+    f = chainFrame(c);
+    expect(f.continuous).toBe(true);
+    c = chainJudged(f.chain);
+    // An event asks while the loop also does: still continuous.
+    c = chainRequest(chainRequest(c, false), true);
+    f = chainFrame(c);
+    expect(f.continuous).toBe(true);
+    // That frame was not judged (paused, settled): the loop's next frame starts over.
+    c = chainRequest(f.chain, true);
+    expect(chainFrame(c).continuous).toBe(false);
+    // The loop stopped; a scroll asks for a frame later: not continuous.
+    c = chainRequest(chainJudged(chainFrame(c).chain), false);
+    expect(chainFrame(c).continuous).toBe(false);
+    // The tab was hidden between two frames of a running loop: not continuous.
+    c = chainRequest(chainJudged(initialChain()), true);
+    expect(chainFrame(c).continuous).toBe(true);
+    c = chainRequest(chainBreak(), false);
+    expect(chainFrame(c).continuous).toBe(false);
   });
   it('adaptive resolution: a slow frame while moving drops a step; a second at rest restores it', () => {
     let s = adaptiveFrame({ extra: 0, movedAt: 0 }, 100, 25, true);

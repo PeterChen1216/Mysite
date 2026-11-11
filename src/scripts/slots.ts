@@ -15,6 +15,23 @@ import { HOVER } from '../motion/params';
 import { burstsAllowed } from './prefs';
 
 const TIP_ID = 'slot-tip';
+const canHover = matchMedia('(hover: hover)');
+
+/**
+ * How far a slot's card has still to move: a card lifts while hovered or focused within (row 2),
+ * over 120 ms, so the slot is still on its way up when its tooltip is placed. The tooltip goes
+ * where the slot comes to rest — the gap above it stays HOVER.tooltip.gapPx, and the tooltip never
+ * covers the slot on the way. (Placed from where the slot was, the rising tooltip and the lifting
+ * card could cross by 2 px for a frame, and at rest the gap was 2 px, not 6.)
+ */
+function liftLeft(slot: HTMLElement): number {
+  const card = slot.closest<HTMLElement>('.card');
+  if (!card) return 0;
+  const moved = parseFloat(getComputedStyle(card).translate.split(' ')[1] ?? '') || 0;
+  const lifted =
+    card.matches(':focus-within, [data-press]') || (canHover.matches && card.matches(':hover'));
+  return (lifted ? -HOVER.card.liftPx : 0) - moved;
+}
 
 export function initSlots(): void {
   const lists = [...document.querySelectorAll<HTMLElement>('[data-slots]')];
@@ -64,7 +81,7 @@ export function initSlots(): void {
     if (!tip || !shown) return;
     const a = shown.getBoundingClientRect();
     const p = placeTooltip(
-      { left: a.left, top: a.top, width: a.width, height: a.height },
+      { left: a.left, top: a.top + liftLeft(shown), width: a.width, height: a.height },
       { width: tip.offsetWidth, height: tip.offsetHeight },
       { width: document.documentElement.clientWidth, height: innerHeight },
       HOVER.tooltip.gapPx,

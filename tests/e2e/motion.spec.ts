@@ -29,6 +29,30 @@ const tickerMs = (page: Page) =>
     .locator('.ticker__track')
     .first()
     .evaluate((el) => Number(el.getAnimations()[0]?.effect?.getComputedTiming().duration ?? 0));
+/**
+ * From now on, the most pixels the hover-burst canvas has shown in any frame, read every frame (a
+ * burst lives 300–400 ms: CI's WebKit beside the software-WebGL tests can answer a poll after it
+ * is over). Returns the reader.
+ */
+async function watchBurstPixels(page: Page) {
+  await page.evaluate(() => {
+    const w = window as unknown as { __burstMax: number };
+    w.__burstMax = 0;
+    const until = performance.now() + 20_000;
+    const read = () => {
+      const canvas = document.querySelector<HTMLCanvasElement>('.particles-layer');
+      if (canvas && canvas.width > 1) {
+        const data = canvas.getContext('2d')!.getImageData(0, 0, canvas.width, canvas.height).data;
+        let n = 0;
+        for (let i = 3; i < data.length; i += 4) if (data[i]) n++;
+        w.__burstMax = Math.max(w.__burstMax, n);
+      }
+      if (performance.now() < until) requestAnimationFrame(read);
+    };
+    requestAnimationFrame(read);
+  });
+  return () => page.evaluate(() => (window as unknown as { __burstMax: number }).__burstMax);
+}
 /** Pixels drawn on the hover-burst canvas (0 when there is none). */
 const burstPixels = (page: Page) =>
   page.evaluate(() => {
@@ -50,8 +74,9 @@ test.describe('motion levels', () => {
     expect(await introAnimations(page)).toBeGreaterThan(0);
     await expect.poll(() => runningLoops(page)).toBeGreaterThan(0);
     if (!isMobile) {
+      const drawn = await watchBurstPixels(page);
       await page.locator('.hero .mc-btn').first().hover();
-      await expect.poll(() => burstPixels(page)).toBeGreaterThan(0);
+      await expect.poll(drawn).toBeGreaterThan(0);
     }
   });
 
@@ -70,8 +95,10 @@ test.describe('motion levels', () => {
     await expect.poll(() => runningLoops(page)).toBeGreaterThan(0);
     expect(await tickerMs(page)).toBeCloseTo(full * 3, 0);
     if (!isMobile) {
+      const drawn = await watchBurstPixels(page);
       await page.locator('.hero .mc-btn').first().hover();
-      await page.waitForTimeout(150);
+      await page.waitForTimeout(400);
+      expect(await drawn()).toBe(0);
       expect(await burstPixels(page)).toBe(0);
     }
   });

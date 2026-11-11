@@ -1,5 +1,16 @@
 # STATUS（会话交接 · PLAN §15.6）
 
+## M5 进度（上线前的部分；每次推送后更新；新会话从这里接着做）
+- 范围：委托列出的 7 项（SEO、性能、看门狗盲区、不稳定的测试、跨浏览器、`docs/LAUNCH.md`、上线配置演练）。**不上线**：`launched`、域名、语言状态、旧站、分析都不动，是业主的事
+- 基线：`af58aa9`（CI 绿），像素对比的基线在 `scratchpad/m5/base`（worktree，预览配置已构建）；对比脚本 `scratchpad/x4/static.cjs` + `cmp.py`
+- ⏳ 1. 看门狗盲区 + 不稳定的测试（`fix(scene)`）：`src/scene/watchdog.ts` 不再用 250 ms 间隔猜「没在画」，由渲染器告诉它哪些帧是连续的（`FrameChain`：上一帧要的、上一帧被判过、标签页一直可见）；E2E 看门狗测试按看门狗自己的进度等；calm/full 比较场景时钟对它自己的步长（`status.paced`）；提示框按格子停下的位置放（卡片抬起 4 px）；粒子从第一次画出时开始计时；提交行脉动、悬停粒子用页面里的记录；「各等级的版面」按动画自己的结束时间等开场
+- ☐ 2. SEO：`Person` JSON-LD（`src/lib/seo.ts`、本地 schema.org 检查 `src/lib/schema-org.ts`）、`sitemap.xml`（只在上线配置、只列可收录页）、robots.txt，两种配置都有测试
+- ☐ 3. 性能：先量（体积、Lighthouse、字体晚到的 CLS），再改；DejaVu / FreeSans 替身字体（CI 上英文字体晚到 CLS 0.46 的原因）
+- ☐ 4. Firefox：CI 新作业（修剪过的矩阵）
+- ☐ 5. `docs/LAUNCH.md`（上线 / 回滚步骤、待决定汇总、KPI、风险 owner）
+- ☐ 6. 上线配置演练
+- ☐ 7. 交付说明「M5（上线前）交付说明」
+
 ## X4 进度（每次推送后更新；新会话从这里接着做）
 - 设计：Figma `cA9xh6uSZZvmFCUzrAhxjk` 页面「📱 Mobile — 390」（节点 `51:8918`），业主还没审。手机版式只在 **< 768 px**（`@media (max-width: 767px)`）；768 起是原来的平板 / 桌面版式，横放的手机（如 844 × 390）也是平板版式（§8.6）。桌面 1440 / 1024（以及 768）对照 `870306c` 必须逐像素不变：`scratchpad/x4/static.cjs` + `cmp.py`，基线是 `scratchpad/x4/base870`（worktree）的构建
 - ✅ 第 1 步（`14f9ce9`；本机 `pnpm verify`：单测 513 / 1 跳过，E2E 757 通过 / 227 跳过，9.3 分钟——X4 前 711 / 221、8.6–9.3 分钟）：热键栏 `Hotbar.astro`、手机顶栏（`Nav.astro`）、`src/lib/hotbar.ts` + `src/scripts/hotbar.ts`（取代 `scrollspy.ts`）、设置窗口停靠、英雄区、About、Projects（城市键、轮播 `src/lib/carousel.ts`）、经历行 `<details>`、Contact（复制 + 提示）、页脚两行、项目窗口底栏、轻量模式 `src/lib/lite.ts`、触屏粒子 24、环境层 `100lvh`、滚动条 30 px/s、7 个新界面文字（中文草稿）、ADR-022、`A11Y-CHECK.md` §10（真机清单，**没跑**）、`CONTENT-GUIDE.md` §8。测试：`tests/e2e/mobile.spec.ts`（Pixel 7；CI 新作业 `phones` 跑 iPhone 13 WebKit），单测 `hotbar` / `carousel` / `lite`；主作业 E2E 分两半（`--shard`）。改过的旧测试见提交说明。桌面 1440 / 1024 / 768 逐像素相同

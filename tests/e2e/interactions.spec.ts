@@ -254,14 +254,36 @@ test.describe('3 · inventory slots: roving focus, glint, tooltip', () => {
     await page.goto(V2);
     const a = slots(page).nth(2);
     const glint = await watchAttribute(a, 'data-glint');
+    // From now on, every frame: how far the tooltip's bottom is above the slot's top.
+    await a.evaluate((slot) => {
+      const log: number[] = [];
+      (slot as unknown as { __gaps: number[] }).__gaps = log;
+      const read = () => {
+        const t = document.getElementById('slot-tip');
+        if (t?.dataset.on === 'true')
+          log.push(slot.getBoundingClientRect().top - t.getBoundingClientRect().bottom);
+        if (log.length < 600) requestAnimationFrame(read);
+      };
+      requestAnimationFrame(read);
+    });
     await a.hover();
     await expect(tip(page)).toBeVisible();
     // It glinted (for 560 ms: recorded as it happened, not polled for).
     await expect.poll(async () => (await glint()).map((c) => c.value)).toContain('');
+    // It never covers the slot: not while it rises and the card lifts (both 120 ms, in two steps;
+    // each frame since the pointer arrived was read in one go — two reads apart could straddle a
+    // step), and at rest it is the gap above the slot.
+    await page.waitForTimeout(400);
+    const gaps = await a.evaluate((slot) => (slot as unknown as { __gaps: number[] }).__gaps);
+    expect(gaps.length).toBeGreaterThan(0);
+    expect(Math.min(...gaps)).toBeGreaterThanOrEqual(0);
+    const rest = await a.evaluate(
+      (slot) =>
+        slot.getBoundingClientRect().top -
+        document.getElementById('slot-tip')!.getBoundingClientRect().bottom,
+    );
+    expect(rest).toBeCloseTo(HOVER.tooltip.gapPx, 0);
     const t = (await tip(page).boundingBox())!;
-    const s = (await a.boundingBox())!;
-    // It never covers the slot.
-    expect(t.y + t.height).toBeLessThanOrEqual(s.y);
     // Hoverable: moving onto it keeps it.
     await page.mouse.move(t.x + t.width / 2, t.y + t.height / 2, { steps: 4 });
     await page.waitForTimeout(400);
@@ -417,13 +439,24 @@ test.describe('6 · commit row: node, rail, git show', () => {
     test.skip(isMobile, 'mouse');
     await page.goto(V2);
     const row = page.locator('#experience .commit').nth(1);
+    // The pulse lasts 2 × 300 ms: record it as it starts and ends, not by asking afterwards (CI's
+    // WebKit beside the software-WebGL tests can answer a poll after it is over).
+    const node = row.locator('.commit__node');
+    await node.evaluate((el) => {
+      const log: string[] = [];
+      (el as unknown as { __pulse: string[] }).__pulse = log;
+      el.addEventListener('animationstart', (e) =>
+        log.push(`start ${(e as AnimationEvent).animationName}`),
+      );
+      el.addEventListener('animationend', (e) =>
+        log.push(`end ${(e as AnimationEvent).animationName}`),
+      );
+    });
     await row.hover();
     await expect.poll(() => pseudo(row, '::before', 'scale')).toBe('1');
-    expect(
-      await row
-        .locator('.commit__node')
-        .evaluate((el) => el.getAnimations().map((a) => (a as CSSAnimation).animationName)),
-    ).toContain('node-pulse');
+    await expect
+      .poll(() => node.evaluate((el) => (el as unknown as { __pulse: string[] }).__pulse))
+      .toEqual(['start node-pulse', 'end node-pulse']);
   });
 
   test('a tap lights a row until a tap elsewhere', async ({ page, isMobile }) => {

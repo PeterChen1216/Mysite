@@ -1,6 +1,6 @@
 import { expect, test, type Page } from '@playwright/test';
 import { glyphParts } from '../../src/lib/derive';
-import { runningAnimations, runningLoops } from './animations';
+import { introPlayed, runningAnimations, runningLoops } from './animations';
 import { copy, escapeRe } from './copy';
 import { directoryKey, LOCALE_PAGES, open, TIER_PAGES, V2 } from './site';
 
@@ -253,14 +253,9 @@ test.describe('layout holds at every graphics tier', () => {
         await open(page, path);
         await page.evaluate(() => document.fonts.ready);
         // The intro has played (words rise into place as it runs).
-        await page.evaluate(() =>
-          Promise.all(
-            document
-              .getAnimations()
-              .filter((a) => ((a as CSSAnimation).animationName ?? '').startsWith('intro-'))
-              .map((a) => a.finished.catch(() => undefined)),
-          ),
-        );
+        const late = await introPlayed(page);
+        if (late.length)
+          test.info().annotations.push({ type: 'intro late', description: late.join(', ') });
         expect(await textProblems(page)).toEqual([]);
       });
     }

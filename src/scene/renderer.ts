@@ -59,6 +59,11 @@ import { readTheme, type SceneTheme } from './palette';
 import { CUBE_FS, CUBE_VS, GRID_FS, GRID_VS, SPRITE_FS, SPRITE_VS } from './shaders';
 import {
   adaptiveFrame,
+  chainBreak,
+  chainFrame,
+  chainJudged,
+  chainRequest,
+  initialChain,
   initialWatchdog,
   resolutionScale,
   watchdogFrame,
@@ -189,7 +194,15 @@ export interface SceneStatus {
   running: boolean;
   /** The scene clock (ms; stands still while loops are held) and the Earth's turn (degrees). */
   time: number;
+  /**
+   * The frame time the scene clock was stepped by while loops ran (ms; each frame's step capped at
+   * 100 ms, so a slow frame does not jump the world): `time` advances by exactly this at full
+   * motion and by a third of it in calm, however fast the frames come.
+   */
+  paced: number;
   earth: number;
+  /** The watchdog's resolution step, consecutive slow windows, and windows judged so far. */
+  watchdog: { step: number; bad: number; windows: number };
   /** Main-thread time per drawn frame, ms (smoothed): §1.3's "≤ 8 ms desktop". */
   workMs: number;
   /** The sky colour the scene draws with now, 0–255 per channel (from the theme tokens). */
@@ -232,7 +245,9 @@ export function startScene(canvas: HTMLCanvasElement, gl: GL, opts: SceneOptions
     dpr: 1,
     running: false,
     time: 0,
+    paced: 0,
     earth: 0,
+    watchdog: { step: 0, bad: 0, windows: 0 },
     workMs: 0,
     sky: [],
     punched: 0,
@@ -722,6 +737,8 @@ export function startScene(canvas: HTMLCanvasElement, gl: GL, opts: SceneOptions
   let lidTarget = 0;
   let pointer: [number, number] | null = null;
   let wd = initialWatchdog();
+  // Which frames the watchdog may judge as one run (src/scene/watchdog.ts FrameChain).
+  let chain = initialChain();
   let adaptive: AdaptiveState = { extra: 0, movedAt: 0 };
   const baseDpr = Math.min(devicePixelRatio || 1, 2);
   let warm: { good: number; since: number } | null = { good: 0, since: performance.now() };
@@ -741,12 +758,21 @@ export function startScene(canvas: HTMLCanvasElement, gl: GL, opts: SceneOptions
   const sceneOn = () => html.dataset.tier === '3';
 
   /* ── frame ─────────────────────────────────────────────────────────────── */
+  /** Ask for a frame: `fromLoop` when the frame being drawn asks for the next one. */
+  function ask(fromLoop: boolean) {
+    if (disposed) return;
+    chain = chainRequest(chain, fromLoop);
+    if (!raf) raf = requestAnimationFrame(frame);
+  }
+  /** Ask for a frame from an event (scroll, resize, a theme, a punch…). Also an event listener. */
   function request() {
-    if (!raf && !disposed) raf = requestAnimationFrame(frame);
+    ask(false);
   }
 
   function frame(now: number) {
     raf = 0;
+    const link = chainFrame(chain);
+    chain = link.chain;
     if (disposed || !sceneOn() || !visible) return;
     const dt = last ? Math.min(100, now - last) : 16;
     last = now;
@@ -757,7 +783,10 @@ export function startScene(canvas: HTMLCanvasElement, gl: GL, opts: SceneOptions
     status.windowOpen = windowOpen;
     const running = loopsAllowed() && !windowOpen;
     const calm = motion === 'calm';
-    if (running) time += dt / (calm ? CALM.loopSlowdown : 1);
+    if (running) {
+      time += dt / (calm ? CALM.loopSlowdown : 1);
+      status.paced += dt;
+    }
     status.running = running;
     status.time = time;
 
@@ -809,8 +838,10 @@ export function startScene(canvas: HTMLCanvasElement, gl: GL, opts: SceneOptions
 
     // Watchdog and adaptive resolution, judged only while drawing continuously.
     if (running || !settled) {
-      const r = watchdogFrame(wd, now);
+      const r = watchdogFrame(wd, now, link.continuous);
       wd = r.state;
+      chain = chainJudged(chain);
+      status.watchdog = { step: wd.step, bad: wd.bad, windows: wd.windows };
       if (r.action === 'lower') resize();
       if (r.action === 'drop' && (!opts.forced || opts.mayDrop)) {
         opts.onDrop('watchdog');
@@ -836,7 +867,7 @@ export function startScene(canvas: HTMLCanvasElement, gl: GL, opts: SceneOptions
       stats.since = now;
     }
 
-    if (running || !settled || warm || punches.size || moving) request();
+    if (running || !settled || warm || punches.size || moving) ask(true);
   }
 
   /**
@@ -1352,6 +1383,7 @@ export function startScene(canvas: HTMLCanvasElement, gl: GL, opts: SceneOptions
     () => {
       visible = document.visibilityState === 'visible';
       last = 0;
+      chain = chainBreak();
       if (visible) request();
     },
     on,

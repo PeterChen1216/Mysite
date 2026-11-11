@@ -85,3 +85,46 @@ export async function watchAttribute(target: Locator, name: string, probe = '') 
       name,
     );
 }
+
+/**
+ * Wait until the intro (the load sequence: words rise, the terminal types, blocks drop) has run
+ * to its own end, by the clock: the latest end of its animations, read from their timing. Returns
+ * the names of any intro animations the browser had still not finished by then — they are
+ * finished here, so the test goes on against the page as the intro leaves it, and the caller
+ * records them.
+ *
+ * Until M5 the tests awaited each animation's `finished` promise. Once, in CI's WebKit beside
+ * the software-WebGL tests, that await outlived the test (the page was closed under it at 29 s,
+ * for an intro of under 5 s); a promise that never settles gives a test no way to say why.
+ */
+export async function introPlayed(page: Page): Promise<string[]> {
+  const end = await page.evaluate(() => {
+    const now = performance.now();
+    return Math.max(
+      now,
+      ...document
+        .getAnimations()
+        .filter((a) => ((a as CSSAnimation).animationName ?? '').startsWith('intro-'))
+        .map((a) => {
+          const timing = a.effect?.getComputedTiming();
+          const start = typeof a.startTime === 'number' ? a.startTime : now;
+          return start + (typeof timing?.endTime === 'number' ? timing.endTime : 0);
+        }),
+    );
+  });
+  await page.waitForFunction((at) => performance.now() >= at, end, { polling: 100 });
+  return page.evaluate(() =>
+    document
+      .getAnimations()
+      .filter(
+        (a) =>
+          ((a as CSSAnimation).animationName ?? '').startsWith('intro-') &&
+          a.playState !== 'finished',
+      )
+      .map((a) => {
+        const name = (a as CSSAnimation).animationName;
+        a.finish();
+        return name;
+      }),
+  );
+}

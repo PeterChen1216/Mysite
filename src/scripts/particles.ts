@@ -23,7 +23,13 @@ interface Particle {
   dy: number;
   size: number;
   color: string;
-  born: number;
+  /**
+   * The timestamp of the first frame that drew it: a particle's life runs from its first frame,
+   * so every particle is drawn at least once — on a device drawing three frames a second the next
+   * frame after a burst used to come after the particles' whole 300–400 ms life, and the burst
+   * showed nothing (and a frame stamped before the pointer event made the first step negative).
+   */
+  born: number | null;
   life: number;
 }
 
@@ -67,6 +73,7 @@ function frame(now: number) {
   ctx.clearRect(0, 0, innerWidth, innerHeight);
   for (let i = live.length - 1; i >= 0; i--) {
     const p = live[i]!;
+    p.born ??= now;
     const t = Math.min(1, (now - p.born) / p.life);
     if (t >= 1) {
       live.splice(i, 1);
@@ -113,7 +120,6 @@ export function burst(
   );
   const { retire, add } = admitParticles(live.length, count, cap);
   live.splice(0, retire);
-  const now = performance.now();
   for (let i = 0; i < add; i++) {
     const angle = (i / add) * Math.PI * 2 + rand(-0.2, 0.2);
     const dist = rand(PARTICLES.distance[0], PARTICLES.distance[1]);
@@ -125,7 +131,7 @@ export function burst(
       dy: Math.sin(angle) * dist,
       size: s,
       color: colours[i % colours.length]!,
-      born: now,
+      born: null,
       life: rand(PARTICLES.minMs, PARTICLES.maxMs),
     });
   }

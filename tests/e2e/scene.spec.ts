@@ -4,6 +4,7 @@
 import AxeBuilder from '@axe-core/playwright';
 import { expect, test, type Page } from '@playwright/test';
 import sharp from 'sharp';
+import { CALM } from '../../src/motion/params';
 import { THEMES } from '../../src/prefs/model';
 import { changedFraction, samplePositions, webglShare } from '../../src/scene/share';
 import { runningLoops } from './animations';
@@ -31,6 +32,8 @@ interface Status {
   dpr: number;
   running: boolean;
   time: number;
+  paced: number;
+  watchdog: { step: number; bad: number; windows: number };
   earth: number;
   sky: number[];
   stop: number;
@@ -466,24 +469,32 @@ test.describe('the scene at tier 3', () => {
   }) => {
     await open(page, TIER3);
     const now = async () => (await status(page))!;
-    /** The scene clock's rate against the wall clock over `ms` (frames may be slow: in software
-     * WebGL a frame can take longer than the clock's 100 ms step, so only ratios are compared). */
-    const rate = async (ms: number) => {
+    /**
+     * The scene clock's pace over `ms`: how far it moved against the frame time it was stepped
+     * by (`paced`: each frame's step is capped at 100 ms, so a slow frame does not jump the world).
+     * Measured against the wall clock instead, the ratio of calm to full depended on how fast the
+     * frames came in each half of the test — in CI's software WebGL (2–10 fps, varying) it read
+     * 0.61 and 0.77 for a third.
+     */
+    const pace = async (ms: number) => {
       const a = await now();
-      const t = Date.now();
       await page.waitForTimeout(ms);
       const b = await now();
-      return { rate: (b.time - a.time) / (Date.now() - t), frames: b.frames - a.frames };
+      return {
+        pace: b.paced > a.paced ? (b.time - a.time) / (b.paced - a.paced) : 0,
+        frames: b.frames - a.frames,
+        moved: b.time - a.time,
+      };
     };
-    // Full motion: the scene clock runs.
-    const full = await rate(1200);
+    // Full motion: the scene clock runs at the pace of the frames.
+    const full = await pace(1200);
     expect(full.frames).toBeGreaterThan(0);
-    expect(full.rate).toBeGreaterThan(0);
+    expect(full.pace).toBeCloseTo(1, 6);
     // Pause: nothing moves, no frames are drawn.
     await page.keyboard.press('p');
     await page.waitForTimeout(600);
-    const held = await rate(600);
-    expect(held).toEqual({ rate: 0, frames: 0 });
+    const held = await pace(600);
+    expect(held).toEqual({ pace: 0, frames: 0, moved: 0 });
     await page.keyboard.press('p');
     // Calm: a third of full motion's pace.
     await page.evaluate((k) => {
@@ -493,10 +504,10 @@ test.describe('the scene at tier 3', () => {
     await expect
       .poll(() => page.evaluate(() => document.documentElement.dataset.motion))
       .toBe('calm');
-    const calm = await rate(1200);
+    await expect.poll(async () => (await now()).running).toBe(true);
+    const calm = await pace(1200);
     expect(calm.frames).toBeGreaterThan(0);
-    expect(calm.rate / full.rate).toBeGreaterThan(0.15);
-    expect(calm.rate / full.rate).toBeLessThan(0.6);
+    expect(calm.pace).toBeCloseTo(1 / CALM.loopSlowdown, 6);
     // Off: tier 0 — the scene goes, the DOM art is back.
     await page.evaluate((k) => {
       localStorage.setItem(k, JSON.stringify({ motion: 'off' }));
@@ -520,15 +531,34 @@ test.describe('the scene at tier 3', () => {
   }) => {
     test.slow();
     await open(page, `${TIER3}&debug=slow`);
+    // `?debug=slow` makes every frame 60 ms longer on purpose, so every window the watchdog judges
+    // is under 40 fps however busy the runner is: at 3 fps (a CI runner beside the software-WebGL
+    // tests) as at 15. Keep the scene's status object: it outlives the canvas the drop removes.
+    // (Until M5 a gap over 250 ms between two frames restarted the watchdog's window, so on a
+    // runner that slow it never stepped down and this test failed: src/scene/watchdog.ts.)
+    await page.evaluate(() => {
+      const c = document.querySelector('canvas.scene') as HTMLCanvasElement & {
+        sceneStatus?: unknown;
+      };
+      (window as unknown as { __scene: unknown }).__scene = c.sceneStatus;
+    });
+    const kept = () => page.evaluate(() => (window as unknown as { __scene: Status }).__scene);
+    // Three slow windows: the base resolution a step down (0.75), drawn from the next frame.
     await expect
-      .poll(async () => (await status(page))?.dpr ?? 0, { timeout: 15_000 })
-      .toBeLessThan(1);
+      .poll(async () => (await kept()).watchdog.step, { timeout: 60_000 })
+      .toBeGreaterThanOrEqual(1);
+    expect((await kept()).watchdog.windows).toBeGreaterThanOrEqual(3);
+    await expect.poll(async () => (await kept()).dpr).toBeLessThan(1);
+    // Three more at each step, then at the lowest it gives up: tier 2 for the session.
     await expect
-      .poll(() => tierOf(page), { timeout: 30_000 })
+      .poll(() => tierOf(page), { timeout: 60_000 })
       .toEqual({
         tier: '2',
         reason: 'watchdog',
       });
+    const end = (await kept()).watchdog;
+    expect(end.step).toBe(2);
+    expect(end.windows).toBeGreaterThanOrEqual(9);
     expect(await page.locator('canvas.scene').count()).toBe(0);
     expect(await page.evaluate(() => document.documentElement.dataset.scene)).toBeUndefined();
     await expect(page.locator('.stage__block').first()).toBeVisible();
