@@ -3,13 +3,113 @@
 ## M5 进度（上线前的部分；每次推送后更新；新会话从这里接着做）
 - 范围：委托列出的 7 项（SEO、性能、看门狗盲区、不稳定的测试、跨浏览器、`docs/LAUNCH.md`、上线配置演练）。**不上线**：`launched`、域名、语言状态、旧站、分析都不动，是业主的事
 - 基线：`af58aa9`（CI 绿），像素对比的基线在 `scratchpad/m5/base`（worktree，预览配置已构建）；对比脚本 `scratchpad/x4/static.cjs` + `cmp.py`
-- ⏳ 1. 看门狗盲区 + 不稳定的测试（`fix(scene)`）：`src/scene/watchdog.ts` 不再用 250 ms 间隔猜「没在画」，由渲染器告诉它哪些帧是连续的（`FrameChain`：上一帧要的、上一帧被判过、标签页一直可见）；E2E 看门狗测试按看门狗自己的进度等；calm/full 比较场景时钟对它自己的步长（`status.paced`）；提示框按格子停下的位置放（卡片抬起 4 px）；粒子从第一次画出时开始计时；提交行脉动、悬停粒子用页面里的记录；「各等级的版面」按动画自己的结束时间等开场
-- ☐ 2. SEO：`Person` JSON-LD（`src/lib/seo.ts`、本地 schema.org 检查 `src/lib/schema-org.ts`）、`sitemap.xml`（只在上线配置、只列可收录页）、robots.txt，两种配置都有测试
-- ☐ 3. 性能：先量（体积、Lighthouse、字体晚到的 CLS），再改；DejaVu / FreeSans 替身字体（CI 上英文字体晚到 CLS 0.46 的原因）
-- ☐ 4. Firefox：CI 新作业（修剪过的矩阵）
-- ☐ 5. `docs/LAUNCH.md`（上线 / 回滚步骤、待决定汇总、KPI、风险 owner）
-- ☐ 6. 上线配置演练
-- ☐ 7. 交付说明「M5（上线前）交付说明」
+- ✅ 1. 看门狗盲区 + 不稳定的测试（`e53f22c`；本机 `pnpm verify`：单测 520 / 1 跳过，E2E 757 通过 / 227 跳过，9.2 分钟）：`src/scene/watchdog.ts` 不再用 250 ms 间隔猜「没在画」，由渲染器告诉它哪些帧是连续的（`FrameChain`）；提示框按格子停下的位置放；粒子从第一次画出时开始计时；测试的改法见提交说明。**`e53f22c` 的 CI**：主作业第 1 半 662 通过 / 0 不稳定、`phones` 通过、上线作业 461 通过 / 0 不稳定；第 2 半 1 个失败两次——[webkit] 看门狗测试：档位按时降了，但我写的断言等「像素比 < 1」，桌面 Safari 的像素比是 2（降一档是 1.5）。旧测试在 WebKit 里通过只是因为画布没了之后读到 0。改为按设备像素比的 0.75（下一个提交）
+- ✅ 2–6（一批推送，本机 `pnpm verify`：单测 546 / 1 跳过，E2E 769 通过 / 237 跳过，8.9 分钟；上线配置另跑 `layout` / `pages` / `i18n` 82 通过）：`test(scene)` 看门狗断言按设备像素比；`feat(seo)` JSON-LD、sitemap、robots、上线后 `/v2/` 跳转页、中文 404 标题；`perf` 导航间距（1280 px 字体晚到 CLS 0.47 → 0.0036）；`ci` Firefox 作业；`docs` `docs/LAUNCH.md`、ADR-023、本文件的交付说明。Lighthouse 前后、像素对比（1440 / 1280 / 1024 / 768 / 390 全部 0 差异）、演练都在交付说明里
+- ⏳ 这批推送的 CI：待看（Firefox 第一次跑）
+- ✅ 7. 交付说明「M5（上线前）交付说明」（下面）
+
+## 🚀 M5（上线前）交付说明（PLAN §8 M5、§1.3、§10；PLAN-EXPERIENCE §1.3、§7.5；PLAN §13 ADR-023）
+
+### 一句话
+网站可以上线了，但没有上线：上线、域名、语言状态、旧站、分析都是你的事，`docs/LAUNCH.md` 写清每一步、每一步之后看什么、怎样退回，以及**所有在等你的决定（去重、按是否阻塞上线排好）**、KPI 和每个风险的 owner。M5 本身做了：搜索引擎看到的东西（`Person` JSON-LD、上线后的 sitemap、两种配置的 robots.txt、上线后 `/v2/…` 旧地址的跳转页）；量了性能，修了量出来的唯一问题（1280 px 网页字体晚到时整页下移，CLS 0.47 → 0.0036）；看门狗的盲区（每秒不到 4 帧的设备从不降级）；六个在 CI 里要重试才过的测试，各按原因改；Firefox 第一次进 CI；在本机按上线配置把手册的检查走了一遍。英文 `/v2/`、`/v2/?tier=1` 在 1440 / 1280 / 1024 / 768 / 390 与 `af58aa9` 逐像素相同（见「像素对比」）。
+
+### 已交付（逐项对委托）
+| # | 项目 | 做了什么 |
+|---|---|---|
+| 1 | SEO | `src/lib/seo.ts`（纯函数，单测）：每种语言首页一个 `Person` JSON-LD，只取 `content/`——`name`（Peter Chen）、`alternateName`（Zhicheng (Peter) Chen）、`url`（英文首页）、`sameAs`（GitHub、LinkedIn）、`affiliation`（正在读的 University of Washington, Seattle，`education.yaml` 的 `expected: true`；读完的学校会是 `alumniOf`）；不写职位、邮箱、照片。本地 schema.org 检查 `src/lib/schema-org.ts`（类型树、属性的 domain / range 从 schema.org 抄来；未知类型或属性、放错类型、值的类型不对都报错），单测和 E2E 都用它校验页面上真实的 JSON-LD，没有用任何在线校验器。`sitemap.xml` 只在上线配置里由 `scripts/assemble-pages.mjs` 从构建出的页面生成：有 canonical、没有 `noindex` 的页——今天是英文的 `/`、`/projects/`、三个项目页（两种中文是 preview、`noindex`，所以不在里面，和不在 hreflang 里一样）。上线前没有 sitemap，robots.txt 仍是 `Disallow: /v2/`；上线后是 `Disallow: /legacy/` + `Sitemap:`。**标题与描述逐页类型、逐语言看过**：`og:title` 处处等于 `<title>`；项目页的描述是项目自己的 tagline 或正文第一句；首页的描述是 `site.yaml → meta.description`「This is a personal/academic website」——是你的原话，我没改，列在 LAUNCH §11 A2 |
+| 1b | 上线后的旧预览地址 | 演练发现：上线后 `/v2/…`（预览期分享出去的链接）全部 404。现在上线配置的组装为每个页面写一个 `noindex`、canonical 指新地址、0 秒跳转的小页面（`movedPage`，没有脚本、没有自己的文字），`/v2/resume.pdf` 仍是简历 |
+| 2 | 性能 | 先量（下面「验证」）。Lighthouse 每页 1.00，Lighthouse 本身没有任何体积 / 阻塞 / 图片建议；量出来的真问题只有一个：**网页字体全部晚到 1 秒时 1280 px 的 CLS 0.47**（X2 在 CI 上看到 0.46、以为是缺 Liberation 等替身字体，于是把测试收窄到中文字体）。真正的原因：1280 px 时导航一行在网页字体下只剩 2 px，缺 Liberation Mono 时 JetBrains Mono 退到 DejaVu Sans Mono（每个字 0.602 em，对 0.600），链接宽 1 px，导航折成两行（79 → 147 px），字体到了以后整页下移 68 px；1280 正是 Playwright 桌面的视口宽度。修法：导航的列间距下限 24 → 16 px（≥ 1280；更窄处本来就是 16）——`space-between` 下，排得下时组与组之间的距离由剩余空间决定，这个值只决定何时折行，所以没有一个像素变化。测试恢复为全部网页字体晚到：英文 1440 / 1280 / 1024 / 768 / 390 / 320，每种语言 1280。**(a) WebKit 的 `drop-shadow`**：没有做，原因见 ADR-023 ⑥（一半是模糊光晕，烘进图片就是某一个引擎的像素；硬阴影随主题变色；真 Safari 用 GPU 合成，要先在 iPhone 上量）。**(b)** 见上。**(c)** 桌面 Lighthouse 在 1 / 2 级：没有退化（见「验证」）。拉丁字体再子集化：不值（ADR-023 ⑥） |
+| 3 | 看门狗盲区 | `src/scene/watchdog.ts`：不再把 250 ms 以上的帧间隔当成「没在画」。渲染器用 `FrameChain` 告诉它哪些帧是连续的——上一帧要的（不是滚动、换主题这类事件在循环停了之后要的）、上一帧被判过、中间标签页一直可见；连续的帧不管多慢都算。隐藏的标签页、暂停、窗口打开、场景没东西可画都让链条断开，下一帧开新窗口——等待永远不是慢帧；一次长卡顿（睡眠、调试器）最多算一个坏窗口，从不单独降一档。单测：3 fps、1 fps、每 2.5 秒一帧的设备都会被降两档再放弃；隐藏 / 暂停 10 秒后不算任何坏窗口；任意多次断开不降；时钟倒退开新窗口；链条的规则逐条。**本机复现**（CDP 把 CPU 限到约 2 fps）：改前分辨率在 0.75 停了 45 秒；改后 0.75 → 0.5 → 2 级，7 秒内 |
+| 4 | 不稳定的测试 | 见下「不稳定的测试：原因、改法、跑了几次」 |
+| 5 | 跨浏览器 | CI 新作业 `firefox`（桌面 Firefox，Playwright 在运行器上安装，25 分钟上限）：跑桌面 Chromium 跑的全部，手机套件除外；WebGL 场景的测试在 Firefox 跳过（ADR-023 ⑦）。代码里超出支持矩阵的特性：见「跨浏览器：特性检查」 |
+| 6 | 上线手册 | `docs/LAUNCH.md`（中文）：现状（仓库里看得到的、你要自己看的 DNS 与 Pages 设置）；上线六步与每步之后看什么；`launched: true` 改变的每一件事（路由、robots、sitemap、canonical、OG、404、旧站地址、简历、`/v2/` 的跳转）；上线后十一条检查；回滚；让一种中文上线；Cloudflare Web Analytics 与 Pages 预览怎样接（代码、`CLAUDE.md`、测试要跟着改的地方，只写不做；网站没有 CSP）；`/legacy/`；公告素材（27 张 OG 图的地址）；真机检查；**全部待决定的事**（A 阻塞上线 6 条，B 服务与流程 8 条，C 内容 11 条，D 设计 19 条，E 翻译 7 条，各带默认值与出处）；KPI 表；风险 R1–R9、X-R1–X-R9 的 owner 与现状 |
+| 7 | 演练 | 见下「演练」 |
+
+### 验证（2026-11-11，本容器）
+- **本机 `pnpm verify`**（这批改动的最后一次，`e53f22c` 之后的整棵树）：格式、lint、颜色、类型、内容检查通过；单测 **546 通过 / 1 跳过**（M5 前 513 / 1；新模块 `src/lib/seo.ts` 语句 100 % / 分支 93 %、`src/lib/schema-org.ts` 98 % / 98 %，`watchdog.ts` 仍在门槛之上）；构建、体积、组装通过；**E2E 769 通过 / 237 跳过，8.9 分钟**（M5 前 757 / 227）。上线配置另跑了 `layout` / `pages` / `i18n` 三套：82 通过 / 2 跳过（只在预览期的两条）
+- **Lighthouse**（本机，上线配置，Lighthouse 13.6 默认手机模拟 + 模拟慢 4G，每页 5 次中位数；**机器空闲时**，改前改后各量一次）：
+
+  | 页面 | `af58aa9`（M5 前）性能 · LCP · CLS · TBT | **M5 之后** |
+  |---|---|---|
+  | `/` | 1.00 · 1.21 s · 0 · 14 ms | 1.00 · 1.21 s · 0 · 10 ms |
+  | `/projects/` | 1.00 · 0.91 s · 0 · 1 ms | 1.00 · 0.91 s · 0 · 0 ms |
+  | `/projects/clock-stamp/` | 1.00 · 0.91 s · 0 · 0 ms | 1.00 · 0.91 s · 0 · 0 ms |
+  | `/zh-hans/` | 1.00 · 1.21 s · 0 · 16 ms | 1.00 · 1.21 s · 0 · 8 ms |
+  | `/zh-hans/projects/` | 1.00 · 0.91 s · 0 · 0 ms | 1.00 · 0.91 s · 0 · 0 ms |
+  | `/zh-hans/projects/clock-stamp/` | 1.00 · 0.91 s · 0 · 8 ms | 1.00 · 0.91 s · 0 · 22 ms |
+  | `/zh-hant/` | 1.00 · 1.21 s · 0 · 15 ms | 1.00 · 1.21 s · 0 · 18 ms |
+  | `/zh-hant/projects/` | 1.00 · 0.91 s · 0 · 9 ms | 1.00 · 0.91 s · 0 · 8 ms |
+  | `/zh-hant/projects/clock-stamp/` | 1.00 · 0.91 s · 0 · 13 ms | 1.00 · 0.91 s · 0 · 0 ms |
+  | `/404.html` | 1.00 · 0.76 s · 0 · 0 ms | 1.00 · 0.76 s · 0 · 0 ms |
+
+  无障碍、最佳实践每页 1.00；SEO：英文 1.00，两种中文 0.66、404 0.63（`noindex`，故意的）。首页 TTI 2.26 s → 2.59 s（模拟节流下的波动，门槛 3.5 s）。X4 的数字（性能 0.99–1.00、首页 LCP 1.21 s、CLS 0、TBT 15–61 ms）在这台机器空闲时量出来是上表左列。`/zh-hans/projects/` 这次 5 次都是 0.91 s（X4 记下的 1.81 s 波动没有再出现）
+- **桌面 Lighthouse**（`--preset=desktop`，`/v2/`，各 3 次中位数）：`?tier=1` 改前 0.99 · LCP 0.96 s · TBT 0 / 改后 1.00 · 0.82 s · 0；`?tier=2` 改前 1.00 · 0.82 s · 2 ms / 改后 1.00 · 0.82 s · 0。真实访客的 1–2 级没有退化（M2 的 3 级 0.64 是软件合成，不是目标）
+- **页面重量**（首页 1440，加载时）：HTML 20.8 KB gz；CSS 4 个文件 27.7 KB gz（首页 11.9、共用 9.0、设置 3.7、项目详情 3.0）；JS 1 个模块 14.9 KB gz（加载时约 60 % 的代码没有执行——都是交互的处理函数）；字体 7 个 109 KB（预加载 4 个 59.5 KB）；图片 25 个 151 KB（SVG 方块每个 7 KB、gzip 后 1.2 KB）。Lighthouse 没有给出任何未用 CSS / JS、阻塞渲染、图片格式的建议
+- **体积**（`pnpm size`，gzip）：首屏 JS 15.9 → **16.0 KB**；CSS **28.07 KB**（不变）；场景 22.52 → **22.67 KB**（看门狗的链条）；拉丁字体 111.48 KB；CJK 23.88 / 25.71 KB；图片 183.94 KB；OG 图 506 KB
+- **字体晚到的 CLS**（全部网页字体晚 1 秒；本机用一个拒绝 Liberation / Croscore / Roboto 的 fontconfig 模拟 CI 的运行器）：改前 1280 px **0.4704**，其余 320–1920 的 14 个宽度 ≤ 0.012；改后 1280 px **0.0036**，1279–1300 px 全部 ≤ 0.004。有 Liberation 时改前改后都 ≤ 0.004
+
+### 不稳定的测试：原因、改法、跑了几次
+| 测试 | 原因 | 改法 | 本机连续通过 |
+|---|---|---|---|
+| [chromium] 看门狗「slow frames lower the resolution, then the tier」（M4 / X4 两次） | **页面**：看门狗把 > 250 ms 的帧间隔当成「没在画」并重开窗口，CI 机器忙到每秒 3 帧时永远不判慢（HUD `fps 3 · dpr 1.00`） | 看门狗改了（上表 3）；测试按看门狗自己的进度等，断言整条梯子 | 5 次（另：CPU 限到约 2 fps 时 7 秒内降到 2 级，改前 45 秒不动） |
+| [chromium] 物品格提示框「低了 1.8 px」（X4） | **页面**：提示框按卡片抬起 4 px **之前**的格子位置放，抬起（120 ms、两步）与提示框升起（120 ms、两步）的时间对不齐时，两者在一帧里交叉约 2 px；停下后的间距是 2 px，不是设计的 6 px（CI 量到的 344.80 / 342.95 正是「提示框还在 +6、格子已抬起一半」） | 提示框放在格子停下的位置（`src/scripts/slots.ts`）；测试从悬停前每帧记间距（≥ 0）并断言停下后 6 px——用新测试量旧页面：2.16 px，失败 | 5 次 |
+| [webkit] 悬停粒子「画布上有像素」（X3） | **页面**：粒子的寿命从指针事件那一刻算，WebKit 软件渲染旁边很慢时下一帧来得比 300–400 ms 的寿命还晚，一个粒子都没画出来；另外 rAF 的时间戳可能早于事件，第一步是负的 | 粒子从第一次被画出的那一帧开始计时（`src/scripts/particles.ts`）；测试从悬停前每帧读画布，记下最多的像素 | 5 次 |
+| [webkit] 提交行节点脉动（M3） | **测试**：脉动 2 × 300 ms，WebKit 回答一次轮询可能比它还慢，问的时候已经结束 | 记下 `animationstart` / `animationend`，断言开始并结束 | 5 次 |
+| [webkit] calm / full 帧率比（M2 起多次：0.61、0.77，门槛 < 0.6） | **测试**：场景时钟每帧最多走 100 ms，所以对墙上时钟的速率取决于那一半测试里帧来得多快 | 对时钟自己的步长比（`status.paced`）：全动效正好 1、calm 正好 1/3 | 5 次 |
+| [webkit] 「各等级的版面 1024 px（1 级）」页面已关闭（M3） | **没有找到**：日志里测试在等开场动画的 `finished` 时被关掉（29.4 s，开场不到 5 s），没有「超时」一行，失败的作业没有上传结果；这里没有 WebKit | 改为按动画自己的结束时间等（不会再无限等），到时没结束的动画会被结束并写进测试注解（下次再出现就知道是哪一个） | 5 次（Chromium） |
+CI 上观察到的：见顶部「M5 进度」每次推送一条（`e53f22c`：除我自己写错的 WebKit 看门狗断言外全部一次通过，0 个不稳定）。
+
+### 像素对比
+`scratchpad/x4/static.cjs`（减少动态、Night、时钟固定 2026-10-24T16:45:00Z、`document.fonts.ready`、页脚版本行遮住）+ `cmp.py`，对照 `af58aa9`（独立 worktree `scratchpad/m5/base` 里构建的预览配置）：`/v2/` 与 `/v2/?tier=1`，**1440、1280、1024、768、390：0 个像素不同**（尺寸 1440 × 6525、1280 × 6760、1024 × 7129、768 × 9260、390 × 8684，与之前相同）。多量了 1280，因为导航的间距改在那里。其他四个主题没有量：M5 没有动美术、阴影或颜色（导航的间距对每个主题都一样，排得下时不移动）。提示框的位置、粒子只在悬停时出现，不在静止画面里
+
+### 演练（上线配置，本机）
+`SITE_STAGE=launched pnpm build && SITE_STAGE=launched pnpm assemble`，本地服务器，脚本 `scratchpad/m5/rehearse.cjs` 照 `docs/LAUNCH.md` §4 逐条检查（另跑上线配置的 Lighthouse，见上）：
+- ✅ 15 个页面（三种语言 × 首页、目录、三个项目页）：200；canonical 是 `https://zhic.me/…` 自己的地址；`og:url` 相同；英文可收录、两种中文 `noindex`；每页的 `og:image` 指 `https://zhic.me/og/…` 且那张图存在（200、PNG）
+- ✅ 首页三种语言的 JSON-LD `url` 是 `https://zhic.me/`
+- ✅ `robots.txt` 两行 + `Sitemap:`；`sitemap.xml` 正好 5 个地址
+- ✅ 页面上链接或加载的 56 个站内地址全部 200
+- ✅ `/resume.pdf`、`/work/Resume.pdf`、`/legacy/work/Resume.pdf`、`/v2/resume.pdf` 都与 `content/resume/Resume.pdf` 逐字节相同；版本地址 `/resume/2026-11-09-4975a202.pdf` 存在（页面不链接它，按设计）；下载按钮存成 `Peter-Chen-Resume-2026-11-09.pdf`
+- ✅ `/legacy/` 是旧站
+- ✅ 404：`/no-such-page` → 404、英文、「回家」`/`；`/zh-hant/nope/` → 繁体、回 `/zh-hant/`；`/v2/nope` → 英文 404
+- **发现并修了**：① 上线后预览期的 `/v2/…` 地址全是 404（预览期分享出去的链接会断）→ 跳转页（上表 1b），`/v2/` → `/`、`/v2/projects/…` → `/projects/…`，测试在上线配置里跑；② 中文 404 的标签页标题是英文（「Chunk not found — zhic.me」）→ 头部脚本按地址的语言换标题（`src/lib/not-found.ts`，单测 + E2E），繁体现在是「找不到區塊 — zhic.me」
+- 脚本自己的一处错：它要求页面链接版本地址的简历，页面本来就只链接 `/resume.pdf`——不是网站的问题
+- 没有演练的：真的 DNS、GitHub Pages 的部署与 HTTPS、CDN 缓存、社交网站抓取分享卡片——都要真的上线才有
+
+### 跨浏览器：特性检查
+代码里用到的、可能超出「最新两版 Chrome / Edge / Safari / Firefox + iOS Safari 16+」的特性（按我所知的支持情况；没有一台设备验证过）：
+- **有退路，没问题**：`color-mix()` 做手机外框的渐变（前一行是纯色）；`text-wrap: balance / pretty`（不支持就是普通换行）；`requestIdleCallback`（没有就用定时器）；`scrollend`（2 秒定时器兜底）；`tan(atan2(…cqw…))` 缩放手机舞台（不支持按台阶）；`prefers-reduced-data`（没有浏览器默认支持，只是多一个条件）
+- **在矩阵内**：`:has()`、容器查询与 `cqw`、三角函数、`round()`、`lvh` / `svh`、`inert`、`<dialog>`、单独的 `translate` / `rotate` / `scale`、`overflow: clip`、`.at()`、`Object.hasOwn`（都在 Safari 16 / Firefox 121 / Chrome 125 之前就有）；JS 由 Vite 编译到它默认的「广泛可用」基线（Safari 16）
+- **已知的缺口，没修**：① `::backdrop` 里的 `var()`（窗口与设置窗口背后的变暗）：据我所知 Safari 17.4、Chrome 122、Firefox 120 之前 `::backdrop` 看不到页面的自定义属性，所以 iOS 16.0–17.3 上窗口背后**不变暗**（窗口本身不透明、仍是模态，功能不受影响）。要修只能在 `::backdrop` 里写字面颜色，这违反「颜色只在 `tokens.css`」的规则，所以列给你（LAUNCH §11 D19）；② 字体回退的度量覆盖（`size-adjust`、`ascent-override`）在 Safari 里支持得晚 / 不全，所以 Safari 上网页字体晚到时的位移可能比 Chromium 大——CI 只在 Chromium 里量 CLS
+
+### 没做 / 只做了一部分（原因）
+1. **上线本身**：委托明确不做（`launched`、域名、语言状态、旧站、分析、发帖）
+2. **分析**（PLAN §8 M5 列了）：要你的 Cloudflare 账号；LAUNCH §7 写了怎么接、要改哪里
+3. **真机矩阵、读屏**（PLAN §8 M5「跨浏览器真机测试矩阵」）：这里没有任何真机；`docs/A11Y-CHECK.md` §10 仍没跑过
+4. **KPI「桌面场景 ≥ 55 fps」「简历下载计量」「业主更新 ≤ 5 分钟」**：上线前或没有你的设备 / 账号量不了（LAUNCH §12）
+5. **WebKit 的 `drop-shadow` 烘焙、拉丁字体再子集化**：量过、判断不值或做不到逐像素（ADR-023 ⑥）
+6. **Firefox 里的 WebGL 场景**：没有验证（ADR-023 ⑦）；WebGL 场景在 Chromium（SwiftShader）和 WebKit（软件）里测
+7. 「各等级的版面 1024 px（1 级）」在 CI 的 WebKit 里「页面已关闭」的**根本原因没有找到**（这里没有 WebKit；见上表）
+8. `/zh-hans/projects/` 的 LCP 波动（X4 记下的）：这次 5 次中位数 0.91 s，没有再追
+
+### 与计划的偏离（详见 ADR-023）
+- 上线、域名切换、分析不在 M5 里做（业主的事 / 业主的账号）
+- JSON-LD 只有 `Person`、只在首页；sitemap 只在上线后；上线后 `/v2/…` 有跳转页（计划没有）
+- 字体晚到的修法是导航的间距，不是更多替身字体（先加了 DejaVu / FreeSans 替身，量过没有作用，撤掉了）
+- Firefox 不跑 WebGL 场景的测试
+
+### 改过的测试（没有放宽任何断言）
+- `scene.spec.ts`「the watchdog…」：按看门狗自己的进度等（`status.watchdog`），断言整条梯子：三个慢窗口后降一档、像素比是设备的 0.75（桌面 Safari 的像素比是 2，`e53f22c` 写成「< 1」在 WebKit 失败——那是我的错，下一个提交改了）、九个后放弃并降到 2 级
+- `scene.spec.ts`「pause holds it, calm slows it…」：场景时钟对它自己的步长（`status.paced`）比较：全动效**正好 1**、calm **正好 1/3**（以前是对墙上时钟比、只要求 < 0.6）
+- `interactions.spec.ts`「3 · … under the pointer」：从悬停前开始每帧记下提示框底边到格子顶边的距离（最小 ≥ 0），并断言停下后的间距是 6 px（新的、更严；旧页面量到 2.16）
+- `interactions.spec.ts`「6 · … the node pulses」：记下 `animationstart` / `animationend`，断言脉动开始并结束
+- `motion.spec.ts`「full…hover bursts」「calm…no bursts」：每帧读粒子画布，断言出现过像素（calm：一帧也没有）
+- `robustness.spec.ts`「各等级的版面」：开场按动画自己的结束时间等（`introPlayed`），到时还没结束的动画会被结束并记在测试的注解里
+- `i18n.spec.ts`：恢复「全部网页字体晚到」的 CLS 测试（英文六个宽度 + 每种语言 1280），报错信息列出这台机器有哪些回退字体
+- `content.spec.ts`、`quality.spec.ts`、`robustness.spec.ts` 的 3 级变体：条件从「不是 WebKit」改为「只在 Chromium」（对已有浏览器不变，Firefox 跳过）；`scene.spec.ts`「?tier=auto」在 Firefox 接受「软件渲染」或「没有 WebGL 2」（都是 1 级、没有场景）
+- 新：`tests/unit/seo.test.ts`（25）、`scene.test.ts` 看门狗 9 条、`pages.test.ts` 404 标题 1 条、`layout.spec.ts`「search engines…」三条（两种配置）、`pages.spec.ts` 404 的标题
+
+### 在 `docs/LAUNCH.md` 里
+上线 / 回滚步骤、上线后检查、全部待决定的事（§11）、KPI（§12）、风险（§13）。
 
 ## X4 进度（每次推送后更新；新会话从这里接着做）
 - 设计：Figma `cA9xh6uSZZvmFCUzrAhxjk` 页面「📱 Mobile — 390」（节点 `51:8918`），业主还没审。手机版式只在 **< 768 px**（`@media (max-width: 767px)`）；768 起是原来的平板 / 桌面版式，横放的手机（如 844 × 390）也是平板版式（§8.6）。桌面 1440 / 1024（以及 768）对照 `870306c` 必须逐像素不变：`scratchpad/x4/static.cjs` + `cmp.py`，基线是 `scratchpad/x4/base870`（worktree）的构建
