@@ -58,6 +58,36 @@ async function openDirectory(page: Page) {
   return more;
 }
 
+// Nothing in a window flow may throw (an uncaught error or a rejected promise that nobody
+// handles): the windows' queue reports a failed step to its caller. When a test fails, where the
+// page was is printed with it — what the address, the history entry and the windows said.
+const pageErrors = new WeakMap<Page, string[]>();
+test.beforeEach(({ page }) => {
+  const errors: string[] = [];
+  pageErrors.set(page, errors);
+  page.on('pageerror', (e) => errors.push(e.message));
+});
+test.afterEach(async ({ page }, testInfo) => {
+  const errors = pageErrors.get(page) ?? [];
+  if (testInfo.status !== testInfo.expectedStatus) {
+    const state = await page
+      .evaluate(() => ({
+        url: location.pathname,
+        history: history.state as unknown,
+        windows: [...document.querySelectorAll<HTMLDialogElement>('dialog[data-window-kind]')].map(
+          (d) =>
+            `${d.dataset.windowKind}${d.open ? ' open' : ''} "${d.querySelector('h2')?.textContent?.trim() ?? ''}" animations ${d.getAnimations({ subtree: true }).length}`,
+        ),
+        focus: `${document.activeElement?.tagName.toLowerCase()}.${document.activeElement?.className} ${document.activeElement?.textContent?.trim().slice(0, 40)}`,
+      }))
+      .catch((e: Error) => `page gone: ${e.message}`);
+    console.log(
+      `[windows.spec] ${testInfo.title}\n  state: ${JSON.stringify(state)}\n  page errors: ${JSON.stringify(errors)}`,
+    );
+  }
+  expect(errors, 'uncaught errors in the page').toEqual([]);
+});
+
 test.describe('the directory: `more ▸` grows Projects into it', () => {
   test('opens with a real address; focus goes in; Esc closes it and focus comes back', async ({
     page,

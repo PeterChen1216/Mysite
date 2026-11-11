@@ -7,6 +7,7 @@ import { cpSync, existsSync, mkdirSync, mkdtempSync, readFileSync, writeFileSync
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
+import { parse } from 'yaml';
 import { LOG_FORMAT, classify, parseLog, render, since } from '../../scripts/changelog.mjs';
 import { describe as describeResume, pdfProblem, run } from '../../scripts/resume.mjs';
 import { contentStamp, gitStamp } from '../../src/lib/build-info';
@@ -288,4 +289,28 @@ describe('pnpm changelog', () => {
     });
     expect(readFileSync(file, 'utf8')).toBe(out);
   });
+});
+
+describe('the workflows set Node up in a way that can run', () => {
+  // setup-node v5 turns its package-manager cache on when package.json names a package manager
+  // and then runs it; a job that has not installed pnpm fails there. The first real deploy's
+  // changelog job did (PR #5): nothing ran it before a merge into main.
+  type Step = { uses?: string; with?: Record<string, unknown> };
+  for (const file of ['ci.yml', 'deploy.yml']) {
+    const jobs = parse(readFileSync(join(ROOT, '.github/workflows', file), 'utf8')).jobs as Record<
+      string,
+      { steps: Step[] }
+    >;
+    for (const [name, job] of Object.entries(jobs)) {
+      const at = job.steps.findIndex((s) => s.uses?.startsWith('actions/setup-node@'));
+      if (at < 0) continue;
+      it(`${file} › ${name}: pnpm is installed before setup-node, or its cache is off`, () => {
+        const pnpmFirst = job.steps
+          .slice(0, at)
+          .some((s) => s.uses?.startsWith('pnpm/action-setup@'));
+        const cacheOff = job.steps[at]!.with?.['package-manager-cache'] === false;
+        expect(pnpmFirst || cacheOff).toBe(true);
+      });
+    }
+  }
 });
