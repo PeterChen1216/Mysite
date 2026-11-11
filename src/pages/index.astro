@@ -1,46 +1,6 @@
 ---
-/**
- * zhic.me v2 — long-page voxel × terminal site (M1, Figma "Home — Voxel / 1440").
- * Every fact comes from content/ via src/lib/page-data.ts; sections only lay it out.
- */
-import BaseLayout from '../layouts/BaseLayout.astro';
-import About from '../components/sections/About.astro';
-import Background from '../components/sections/Background.astro';
-import Contact from '../components/sections/Contact.astro';
-import Experience from '../components/sections/Experience.astro';
-import Footer from '../components/sections/Footer.astro';
-import Hero from '../components/sections/Hero.astro';
-import Nav from '../components/sections/Nav.astro';
-import Projects from '../components/sections/Projects.astro';
-import Ticker from '../components/sections/Ticker.astro';
-import { getPageData } from '../lib/page-data';
-
-const data = await getPageData();
+/** The home page in English, at the site's base (PLAN-EXPERIENCE §5.2). */
+import HomePage from '../components/HomePage.astro';
 ---
 
-<BaseLayout>
-  <div class="page">
-    <Background />
-    <Nav data={data} />
-    <main id="main">
-      <Hero data={data} />
-      <Ticker data={data} />
-      <About data={data} />
-      <Projects data={data} />
-      <Experience data={data} />
-      <Contact data={data} />
-    </main>
-    <Footer data={data} />
-  </div>
-</BaseLayout>
-
-<script>
-  import '../scripts/main';
-</script>
-
-<style>
-  .page {
-    position: relative;
-    overflow-x: clip;
-  }
-</style>
+<HomePage locale="en" />

@@ -18,9 +18,15 @@ concurrency:
 
 jobs:
   verify:
-    name: lint · types · content · unit · build · size · e2e · a11y
+    # X4 added the phone layout's suite: the E2E (about 1100 tests on three browsers, 17–20 min
+    # before X4) is split in two halves that run side by side, each well inside the limit.
+    name: lint · types · content · unit · build · size · e2e (${{ matrix.shard }}/2) · a11y
     runs-on: ubuntu-latest
     timeout-minutes: 25
+    strategy:
+      fail-fast: false
+      matrix:
+        shard: [1, 2]
     steps:
       - uses: actions/checkout@v5
         with:
@@ -41,14 +47,29 @@ jobs:
       - name: Lint
         run: pnpm lint
 
+      - name: Colour tokens (no colour outside src/styles/tokens.css)
+        run: pnpm lint:colors
+
       - name: Type check (astro check)
         run: pnpm check
 
       - name: Content guard
         run: pnpm content:check
 
+      # PLAN-EXPERIENCE §5.4: translations whose English (or Simplified) source changed since they
+      # were made. A report for the owner; it never fails the run.
+      - name: Translation staleness report
+        run: pnpm content:stale
+
       - name: Unit tests (+ coverage ≥ 80 %)
         run: pnpm test
+
+      # PLAN §7.4: CHANGELOG.md is written from the history after each deploy of main
+      # (deploy.yml); here it is only written to a scratch file, to prove the script still works.
+      - name: CHANGELOG from the history (written for real after each deploy)
+        run: |
+          node scripts/changelog.mjs --out "$RUNNER_TEMP/CHANGELOG.md"
+          head -n 30 "$RUNNER_TEMP/CHANGELOG.md"
 
       - name: Build (fails on any warning)
         run: pnpm build
@@ -59,14 +80,12 @@ jobs:
       - name: Assemble Pages artifact
         run: pnpm assemble
 
-      - name: Install Playwright browsers
-        run: pnpm exec playwright install --with-deps chromium webkit
-
-      - name: E2E + axe (Chromium, mobile Chromium, WebKit)
-        run: pnpm test:e2e
-
+      # PLAN §7.2 path 2, "see it before it is public": GitHub Pages hosts one site per repository,
+      # so a branch or pull request gets its built site as a download, not an address of its own
+      # (docs/PLAN.md §13 ADR-021). Uploaded before the long E2E step: ready a few minutes in.
       - name: Upload site preview
-        if: always()
+        id: preview
+        if: matrix.shard == 1
         uses: actions/upload-artifact@v4
         with:
           name: site-${{ github.sha }}
@@ -74,11 +93,141 @@ jobs:
           retention-days: 7
           if-no-files-found: ignore
 
+      - name: Preview link (shown on this run's summary page)
+        if: steps.preview.outputs.artifact-url != ''
+        env:
+          URL: ${{ steps.preview.outputs.artifact-url }}
+          SHA: ${{ github.sha }}
+        run: |
+          {
+            echo "### Preview this commit's site"
+            echo ""
+            echo "1. Download **[site-${SHA}](${URL})** — a zip, kept 7 days (you need to be signed in to GitHub)."
+            echo "2. Unzip it (on a Mac: double-click it in Downloads)."
+            echo "3. In your clone of the repository run \`pnpm preview:site ~/Downloads/site-${SHA}\`, then open the address it prints."
+            echo ""
+            echo "Step by step, with what you will see: docs/CONTENT-GUIDE.md, section 12."
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      # The browsers are cached by the lockfile (Playwright's version): a slow download once took
+      # most of the job's time (M2, M3); the system packages still come from apt each run.
+      - name: Cache Playwright browsers
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/ms-playwright
+          key: playwright-all-${{ runner.os }}-${{ hashFiles('pnpm-lock.yaml') }}
+
+      - name: Install Playwright browsers
+        run: pnpm exec playwright install --with-deps chromium webkit
+
+      # The iPhone (WebKit) run of the phone suite is the `phones` job below: this job was close
+      # to its 25-minute limit before X4 added the phone layout.
+      - name: E2E + axe (Chromium, mobile Chromium, WebKit)
+        run: >-
+          pnpm test:e2e --project=chromium --project=mobile-chromium --project=webkit
+          --shard=${{ matrix.shard }}/2
+
       - name: Upload Playwright results
         if: failure()
         uses: actions/upload-artifact@v4
         with:
-          name: playwright-results-${{ github.sha }}
+          name: playwright-results-${{ github.sha }}-${{ matrix.shard }}
+          path: test-results
+          retention-days: 7
+          if-no-files-found: ignore
+
+  # X4 (PLAN-EXPERIENCE §8.8): the phone layout's suite (tests/e2e/mobile.spec.ts) on an iPhone in
+  # WebKit — 320 / 360 / 390 / 412 / 430, a landscape phone, every locale and theme at 390 — in a
+  # job of its own, beside the main one (which runs the same suite on Pixel 7 in Chromium).
+  phones:
+    name: phones · WebKit (iPhone) · the phone layout
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+
+      - uses: pnpm/action-setup@v4
+
+      - uses: actions/setup-node@v5
+        with:
+          node-version-file: .nvmrc
+          cache: pnpm
+
+      - run: pnpm install --frozen-lockfile
+
+      - name: Build
+        run: pnpm build
+
+      - name: Assemble Pages artifact
+        run: pnpm assemble
+
+      - name: Cache Playwright browsers
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/ms-playwright
+          key: playwright-webkit-${{ runner.os }}-${{ hashFiles('pnpm-lock.yaml') }}
+
+      - name: Install Playwright WebKit
+        run: pnpm exec playwright install --with-deps webkit
+
+      - name: E2E (the phone layout, iPhone WebKit)
+        run: pnpm test:e2e --project=mobile-webkit
+
+      - name: Upload Playwright results
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-phones-${{ github.sha }}
+          path: test-results
+          retention-days: 7
+          if-no-files-found: ignore
+
+  # M5 (PLAN §1.3, browsers: the latest two of Chrome / Edge / Safari / Firefox): desktop Firefox,
+  # never run before M5. What desktop Chromium runs but the phone suite; the WebGL scene's tests
+  # skip themselves in Firefox (tests/e2e/scene.spec.ts). A job of its own, beside the others.
+  firefox:
+    name: firefox · desktop · E2E + axe
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+
+      - uses: pnpm/action-setup@v4
+
+      - uses: actions/setup-node@v5
+        with:
+          node-version-file: .nvmrc
+          cache: pnpm
+
+      - run: pnpm install --frozen-lockfile
+
+      - name: Build
+        run: pnpm build
+
+      - name: Assemble Pages artifact
+        run: pnpm assemble
+
+      - name: Cache Playwright browsers
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/ms-playwright
+          key: playwright-firefox-${{ runner.os }}-${{ hashFiles('pnpm-lock.yaml') }}
+
+      - name: Install Playwright Firefox
+        run: pnpm exec playwright install --with-deps firefox
+
+      - name: E2E (desktop Firefox)
+        run: pnpm test:e2e --project=firefox
+
+      - name: Upload Playwright results
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-firefox-${{ github.sha }}
           path: test-results
           retention-days: 7
           if-no-files-found: ignore
@@ -86,7 +235,9 @@ jobs:
   launch:
     name: launch configuration · Lighthouse + E2E
     runs-on: ubuntu-latest
-    timeout-minutes: 20
+    # M3 added the directory, a project page and the 404 to Lighthouse in every locale (10 pages ×
+    # 5 runs, about 10 minutes): 20 minutes left no room for a slow runner.
+    timeout-minutes: 30
     env:
       # Build, assemble and test exactly what flipping `launched: true` would deploy.
       SITE_STAGE: launched
@@ -112,6 +263,12 @@ jobs:
 
       - name: Assemble Pages artifact (launched)
         run: pnpm assemble
+
+      - name: Cache Playwright browsers
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/ms-playwright
+          key: playwright-chromium-${{ runner.os }}-${{ hashFiles('pnpm-lock.yaml') }}
 
       - name: Install Playwright Chromium
         run: pnpm exec playwright install --with-deps chromium

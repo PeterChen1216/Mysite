@@ -6,6 +6,7 @@
  * reduced motion, also when turned on while the page is open) it stands still and scrolls
  * sideways by hand or with the arrow keys.
  */
+import { cueFor } from '../../lib/cues';
 import type { PageData } from '../../lib/page-data';
 import { LOOP } from '../../motion/params';
 
@@ -30,7 +31,10 @@ const seconds = Math.round(widthPx / LOOP.tickerPxPerSecond);
   <ul class="ticker__track">
     {items.map((it) => (
       <li class="ticker__item">
-        <span class={`ticker__tag ticker__tag--${it.tone}`}>[{it.tag}]</span> {it.text}
+        <span class={`ticker__tag ticker__tag--${it.tone}`} data-cue={cueFor(it.tone)}>
+          [{it.tag}]
+        </span>{' '}
+        {it.text}
         <span class="ticker__star" aria-hidden="true">
           ✦
         </span>
@@ -40,7 +44,10 @@ const seconds = Math.round(widthPx / LOOP.tickerPxPerSecond);
   <ul class="ticker__track ticker__track--dup" aria-hidden="true">
     {items.map((it) => (
       <li class="ticker__item">
-        <span class={`ticker__tag ticker__tag--${it.tone}`}>[{it.tag}]</span> {it.text}
+        <span class={`ticker__tag ticker__tag--${it.tone}`} data-cue={cueFor(it.tone)}>
+          [{it.tag}]
+        </span>{' '}
+        {it.text}
         <span class="ticker__star">✦</span>
       </li>
     ))}
@@ -54,7 +61,7 @@ const seconds = Math.round(widthPx / LOOP.tickerPxPerSecond);
     display: flex;
     overflow: hidden;
     padding: 14px 0;
-    background: rgb(10 14 20 / 0.9);
+    background: var(--color-bg-bar);
     border-block: 2px solid var(--color-border-line);
     font: var(--type-code-sm);
     color: var(--color-text-mid);
@@ -75,9 +82,9 @@ const seconds = Math.round(widthPx / LOOP.tickerPxPerSecond);
   .ticker__tag {
     color: var(--color-accent-terminal-green);
   }
-  /* Tag colours follow the design's ticker; purple uses the AA-safe variant (#b866f5). */
+  /* Tag colours follow the design's ticker; purple uses the AA-safe variant. */
   .ticker__tag--enchant {
-    color: #b866f5;
+    color: var(--color-accent-enchant-text);
   }
   .ticker__tag--gold {
     color: var(--color-accent-gold);
@@ -99,11 +106,24 @@ const seconds = Math.round(widthPx / LOOP.tickerPxPerSecond);
     display: flex;
   }
   :global(html.motion) .ticker__track {
-    animation: ticker var(--ticker-s, 60s) linear infinite;
+    animation: ticker calc(var(--ticker-s, 60s) * var(--loop-slow, 1)) linear infinite;
+  }
+  /* Phones (§8.3, X4): slower — 30 px/s instead of 40 (the same distance, a longer loop). A tap
+     focuses the band and holds it, as on any screen (WCAG 2.2.2). */
+  @media (max-width: 767px) {
+    :global(html.motion) .ticker__track {
+      animation-duration: calc(var(--ticker-s, 60s) * var(--loop-slow, 1) * var(--m-ticker-phone));
+    }
   }
   .ticker:hover .ticker__track,
   .ticker:focus-within .ticker__track {
     animation-play-state: paused;
+  }
+  /* Row 7 (PLAN-EXPERIENCE §6): the item under the pointer brightens (its tag keeps its colour). */
+  @media (hover: hover) {
+    .ticker__item:hover {
+      color: var(--color-text-hi);
+    }
   }
   @keyframes ticker {
     to {

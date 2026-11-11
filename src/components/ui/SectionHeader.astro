@@ -1,19 +1,39 @@
 ---
-/** Section header (Figma "SectionHeader"): `$ command` eyebrow, pixel H2, blurb on the right. */
+/**
+ * Section header (Figma "SectionHeader"): `$ command` eyebrow, pixel H2, blurb on the right.
+ *
+ * `more` (M3; Figma: the window's `more ▸` key): a link at the end of the command line to the
+ * section's directory — its own page without JavaScript; with it, the section's window grows into
+ * that directory over the page (src/scripts/windows.ts). It keeps to the command line's height, so
+ * the header is laid out exactly as without it.
+ */
 interface Props {
   id: string;
   cmd: string;
   title: string[];
   blurb?: string;
+  more?: { href: string; text: string; label: string; window: string };
 }
-const { id, cmd, title, blurb } = Astro.props;
+const { id, cmd, title, blurb, more } = Astro.props;
 ---
 
 <header class="sh">
   <div class="sh__title">
-    <p class="sh__cmd" aria-hidden="true">
-      <span class="sh__dollar">$</span> {cmd}
-    </p>
+    <div class="sh__cmdrow">
+      <p class="sh__cmd" aria-hidden="true">
+        <span class="sh__dollar">$</span> {cmd}
+      </p>
+      {more && (
+        <a
+          class="sh__more"
+          href={more.href}
+          data-window-open={more.window}
+          aria-label={`${more.text.replace(/\s*▸$/, '')} — ${more.label}`}
+        >
+          {more.text}
+        </a>
+      )}
+    </div>
     <h2 id={id} class="sh__h">
       {title.map((line, i) => (
         <>
@@ -45,22 +65,54 @@ const { id, cmd, title, blurb } = Astro.props;
     gap: 16px;
     min-width: 0;
   }
+  .sh__cmdrow {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 4px 16px;
+  }
   .sh__cmd {
     margin: 0;
     font: var(--type-code-label);
     letter-spacing: var(--type-code-label-tracking);
-    text-transform: uppercase;
+    text-transform: var(--type-label-case);
     color: var(--color-accent-diamond);
   }
   .sh__dollar {
     color: var(--color-accent-terminal-green);
+  }
+  /* Figma's `more ▸` key: a green-edged chip, 24 px tall over the 12 px command line (its margins
+     give the extra height back, so the line keeps its place). */
+  .sh__more {
+    display: inline-flex;
+    align-items: center;
+    height: 24px;
+    margin-block: -6px;
+    padding: 0 8px;
+    font: var(--type-code-label);
+    letter-spacing: var(--type-code-label-tracking);
+    text-transform: var(--type-label-case);
+    color: var(--color-accent-terminal-green);
+    text-decoration: none;
+    white-space: nowrap;
+    border: 1px solid var(--color-accent-terminal-green);
+  }
+  .sh__more:focus-visible {
+    color: var(--color-accent-gold);
+    border-color: var(--color-accent-gold);
+  }
+  @media (hover: hover) {
+    .sh__more:hover {
+      color: var(--color-accent-gold);
+      border-color: var(--color-accent-gold);
+    }
   }
   .sh__h {
     margin: 0;
     font: var(--type-pixel-h2);
     letter-spacing: var(--type-pixel-h2-tracking);
     color: var(--color-text-hi);
-    text-shadow: 4px 4px 0 rgb(0 0 0 / 0.85);
+    text-shadow: 4px 4px 0 var(--color-heading-shadow);
   }
   .sh__blurb {
     margin: 0;
@@ -81,8 +133,12 @@ const { id, cmd, title, blurb } = Astro.props;
   @media (max-width: 767px) {
     .sh__h {
       font: var(--type-pixel-h3);
-      font-size: 36px;
+      font-size: calc(36px * var(--ts));
       line-height: 1.05;
+    }
+    /* Chinese: two-line headings need room between the lines (PLAN-EXPERIENCE §5.5). */
+    :global(:root:lang(zh)) .sh__h {
+      line-height: 1.2;
     }
   }
 </style>

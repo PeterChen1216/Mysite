@@ -8,12 +8,22 @@
  * DOM order is title → sub → dates → hash → slot so a screen reader hears the role before its
  * dates; the grid puts them back in the design's visual order. Hashes are decoration (pseudo
  * hashes, `HEAD -> main`, `init`) and are hidden from assistive tech.
+ *
+ * Hover & interaction (PLAN-EXPERIENCE §6 row 6): under the pointer, with focus inside (its link)
+ * or tapped, a commit's node pulses (motion full), the rail lights from it to the next commit
+ * (src/scripts/interact.ts measures how far), and — where the hash column has the room, from
+ * 1024 px — the hash becomes `git show <hash>` (copy.yaml experience.show_cmd).
+ *
+ * The highlights are a real <details> (X4, §8.3): open in the markup, so the page is whole without
+ * JavaScript and on every larger screen; on phones a commit row is folded to its title, dates and
+ * company · place (src/scripts/mobile.ts folds them, the first one left open), and its summary is
+ * a 44 px key over the hash line — `▸ 4a484db`, and `▾ git show 4a484db` once open.
  */
 import { Image } from 'astro:assets';
 import type { ImageMetadata } from 'astro';
 import Glyphs from '../../ui/Glyphs.astro';
 import VoxelBlock from '../../ui/VoxelBlock.astro';
-import type { LogRow } from '../../../lib/derive';
+import { fillTemplate, type LogRow } from '../../../lib/derive';
 import type { PageData } from '../../../lib/page-data';
 
 type Entry = PageData['experience'][number];
@@ -26,8 +36,18 @@ interface Props {
   tone?: 'career' | 'community';
   /** Where HEAD's hint line points (the contact section). */
   headHref?: string;
+  /** copy.yaml `experience.show_cmd`: what a hash becomes under the pointer ({hash}). */
+  showCmd: string;
 }
-const { rows, entries, tone = 'career', headHref } = Astro.props;
+const { rows, entries, tone = 'career', headHref, showCmd } = Astro.props;
+/** `git show 4f2a9c1`; HEAD is shown by its name alone. */
+const show = (row: LogRow) =>
+  fillTemplate(
+    showCmd,
+    { hash: row.head ? 'HEAD' : row.hash },
+    [],
+    'copy.yaml experience.show_cmd',
+  );
 
 // Figma: HEAD green, then gold / diamond commits, `init` enchant.
 const CYCLE = ['gold', 'diamond'] as const;
@@ -53,7 +73,7 @@ const commits = rows.map((row) => {
 });
 ---
 
-<div class="log">
+<div class="log" data-surface="dark">
   <span class="log__rail" aria-hidden="true"></span>
   <ol class="log__list">
     {commits.map(({ row, entry, color, logo, block }) => (
@@ -63,7 +83,7 @@ const commits = rows.map((row) => {
           <h3 class="commit__title">{row.title}</h3>
           <p class="commit__sub">
             {row.head && headHref ? (
-              <a href={headHref}>
+              <a class="hit-44" href={headHref}>
                 <Glyphs text={row.sub} />
               </a>
             ) : entry ? (
@@ -87,7 +107,7 @@ const commits = rows.map((row) => {
           </span>
           {row.note && <span class="commit__note"> {row.note}</span>}
         </p>
-        <p class="commit__hash" aria-hidden="true">
+        <p class="commit__hash" aria-hidden="true" data-show={show(row)}>
           {row.hash}
         </p>
         <div class="commit__slot" data-particles>
@@ -107,11 +127,16 @@ const commits = rows.map((row) => {
           )}
         </div>
         {entry && entry.highlights.length > 0 && (
-          <ul class="commit__body">
-            {entry.highlights.map((h) => (
-              <li>{h}</li>
-            ))}
-          </ul>
+          <details class="commit__fold" open data-commit-fold>
+            <summary class="commit__sum">
+              <span class="visually-hidden">{show(row)}</span>
+            </summary>
+            <ul class="commit__body">
+              {entry.highlights.map((h) => (
+                <li>{h}</li>
+              ))}
+            </ul>
+          </details>
         )}
       </li>
     ))}
@@ -128,7 +153,7 @@ const commits = rows.map((row) => {
     padding: 8px var(--pad);
     background: var(--color-bg-terminal);
     border: 2px solid var(--color-border-edge);
-    box-shadow: 6px 6px 0 0 rgb(0 0 0 / 0.6);
+    box-shadow: 6px 6px 0 0 var(--color-shadow);
   }
   .log__list {
     margin: 0;
@@ -163,16 +188,60 @@ const commits = rows.map((row) => {
   .commit + .commit {
     border-top: 2px solid var(--color-border-line);
   }
+  /* Row 6: the rail from this commit's node to the next one's, lit (scaled in from the node). */
+  .commit::before {
+    content: '';
+    position: absolute;
+    left: calc(var(--node) + 3px);
+    top: var(--rail-from, 50%);
+    width: 2px;
+    height: var(--rail-len, 0px);
+    background: var(--c-node);
+    transform-origin: 0 0;
+    scale: 1 0;
+    transition: scale var(--m-rail) steps(4);
+    pointer-events: none;
+  }
+  @media (hover: hover) {
+    .commit:hover::before {
+      scale: 1 1;
+    }
+  }
+  .commit:focus-within::before,
+  .commit[data-active]::before {
+    scale: 1 1;
+  }
+  /* The node pulses twice (motion full: a calm or still page keeps the lit rail only). */
+  @media (hover: hover) {
+    :global(html.motion[data-motion='full']) .commit:hover .commit__node {
+      animation: node-pulse var(--m-pulse) steps(2) var(--m-pulses);
+    }
+  }
+  :global(html.motion[data-motion='full']) .commit:focus-within .commit__node,
+  :global(html.motion[data-motion='full']) .commit[data-active] .commit__node {
+    animation: node-pulse var(--m-pulse) steps(2) var(--m-pulses);
+  }
+  @keyframes node-pulse {
+    50% {
+      transform: scale(1.45);
+    }
+  }
+  @media (forced-colors: active) {
+    .commit::before {
+      forced-color-adjust: none;
+      background: Highlight;
+    }
+  }
   .commit--head {
     --c: var(--color-accent-terminal-green);
   }
   .commit--diamond {
     --c: var(--color-accent-diamond);
   }
-  /* Figma's enchant #a335ee is 4.0:1 on the terminal background; the text uses the lightened
+  /* Figma's enchant purple is 4.0:1 on the terminal background; the text uses the lightened
      purple of ui/Chip (AA), the node keeps the design colour. */
   .commit--init {
-    --c: #b866f5;
+    --c: var(--color-accent-enchant-text);
     --c-node: var(--color-accent-enchant);
   }
   .commit--grass {
@@ -190,25 +259,78 @@ const commits = rows.map((row) => {
   .commit--head .commit__node {
     box-shadow:
       0 0 0 3px var(--color-bg-terminal),
-      0 0 10px 2px rgb(57 255 20 / 0.8);
+      0 0 10px 2px var(--color-glow-green);
+  }
+  /* Shape as well as hue (PLAN-EXPERIENCE §3.3) wherever the cues show (--cue-on: 1; not in
+     Night): diamond commits are diamonds, `init` is a ring, the rest stay squares. */
+  .commit--diamond .commit__node {
+    rotate: calc(45deg * var(--cue-on, 0));
+    scale: calc(1 - 0.25 * var(--cue-on, 0));
+  }
+  .commit--init .commit__node {
+    display: grid;
+    place-items: center;
+  }
+  .commit--init .commit__node::after {
+    content: '';
+    display: var(--cue-display, none);
+    width: 6px;
+    height: 6px;
+    background: var(--color-bg-terminal);
+  }
+  /* Forced colours paint every background as Canvas: draw the rail and nodes in the text
+     colour so the history still reads, with the shapes above telling the kinds apart. */
+  @media (forced-colors: active) {
+    .log__rail,
+    .commit__node {
+      forced-color-adjust: none;
+      background: CanvasText;
+    }
+    .commit--init .commit__node::after {
+      forced-color-adjust: none;
+      background: Canvas;
+    }
   }
   .commit__hash {
+    position: relative;
     grid-area: hash;
     margin: 0;
     font: var(--type-code-bold);
     color: var(--c);
     white-space: nowrap;
   }
-  /* Figma: text/lo (3.0:1) → text/mid for AA. The range stays on one line; a note such as
-     "(expected)" wraps below it when the column is narrow. */
+  /* `git show <hash>` over the hash, on the panel's colour (no layout moves); clipped at the end of
+     the hash column, which its 16 characters fit at the design's type size (with larger text it is
+     cut short: it is decoration). */
+  .commit__hash::after {
+    content: attr(data-show);
+    position: absolute;
+    left: 0;
+    top: 0;
+    right: 0;
+    overflow: hidden;
+    background: var(--color-bg-terminal);
+    opacity: 0;
+    pointer-events: none;
+  }
+  @media (hover: hover) {
+    .commit:hover .commit__hash::after {
+      opacity: 1;
+    }
+  }
+  .commit:focus-within .commit__hash::after,
+  .commit[data-active] .commit__hash::after {
+    opacity: 1;
+  }
+  /* Figma: text/lo (3.0:1) → text/mid for AA. The range fits on one line at the design's type
+     size; a note such as "(expected)" wraps below it. With larger text or a text-spacing
+     override the range itself may wrap, and a date breaks rather than spill (WCAG 1.4.12). */
   .commit__dates {
     grid-area: dates;
     margin: 0;
     font: var(--type-code-sm);
     color: var(--color-text-mid);
-  }
-  .commit__range {
-    white-space: nowrap;
+    overflow-wrap: break-word;
   }
   /* The self-hosted JetBrains Mono subset has no U+2192, so the fallback font drew a small, low
      arrow. The character stays in the text (copy, screen readers); the mask paints JetBrains
@@ -221,6 +343,9 @@ const commits = rows.map((row) => {
     overflow: hidden;
     vertical-align: 0.06em;
     color: transparent;
+    /* The hidden character must stay inside its one-cell box under text-spacing overrides. */
+    letter-spacing: 0 !important;
+    word-spacing: 0 !important;
     background: var(--color-text-mid);
     -webkit-mask: var(--glyph) center / 0.6em no-repeat;
     mask: var(--glyph) center / 0.6em no-repeat;
@@ -251,7 +376,7 @@ const commits = rows.map((row) => {
   .commit__sub a {
     color: inherit;
     text-decoration: underline;
-    text-decoration-color: rgb(139 148 158 / 0.55);
+    text-decoration-color: var(--color-link-underline-muted);
     text-underline-offset: 3px;
   }
   .commit__sub a:hover,
@@ -273,7 +398,10 @@ const commits = rows.map((row) => {
     display: block;
   }
   .commit--head .commit__block {
-    filter: drop-shadow(0 0 4px rgb(74 237 217 / 0.35));
+    filter: drop-shadow(0 0 4px var(--color-glow-diamond));
+  }
+  .commit__logo {
+    filter: var(--art-filter);
   }
   .commit__logo {
     display: block;
@@ -283,8 +411,15 @@ const commits = rows.map((row) => {
     /* The logo file has a wide dark margin around the wordmark: zoom into it. */
     transform: scale(1.35);
   }
-  .commit__body {
+  /* The details only wraps the highlights: everywhere but on phones it is open and its summary
+     unseen, so the list sits where it always did. */
+  .commit__fold {
     grid-area: body;
+  }
+  .commit__sum {
+    display: none;
+  }
+  .commit__body {
     display: flex;
     flex-direction: column;
     gap: 6px;
@@ -344,11 +479,25 @@ const commits = rows.map((row) => {
     .commit__dates {
       align-self: center;
     }
+    /* The hash column is only as wide as the hash here: `git show` would run over the dates. */
+    .commit__hash::after {
+      display: none;
+    }
     .commit__text {
       margin-top: 12px;
     }
     .commit__body {
       margin-top: 12px;
+    }
+    /* Chinese: a CJK character cannot break like a date's digits, so the dates column keeps at
+       least its widest character, and the decorative hash ("HEAD -> main") wraps first when the
+       row is tight (320 px at 130 % text). */
+    :global(:root:lang(zh)) .commit {
+      grid-template-columns: var(--node) auto minmax(min-content, 1fr) var(--slot);
+    }
+    :global(:root:lang(zh)) .commit__hash {
+      white-space: normal;
+      overflow-wrap: break-word;
     }
     .commit__block :global(.voxel) {
       width: 33px;
@@ -365,12 +514,65 @@ const commits = rows.map((row) => {
       --slot: 44px;
       --gap: 12px;
     }
-    .commit__title {
-      font-size: 20px;
+    /* X4: a folded row. Its summary is an unseen 44 px key over the hash line (its name is the
+       show command); the hash under it shows the state: `▸ 4a484db`, open `▾ git show 4a484db`
+       (the dates then wrap beside it, as in the frame). */
+    .commit__sum {
+      position: absolute;
+      top: 18px;
+      left: calc(var(--node) + var(--gap) - 4px);
+      right: calc(var(--slot) + var(--gap));
+      display: block;
+      height: 44px;
+      list-style: none;
+      cursor: pointer;
+      touch-action: manipulation;
+      -webkit-tap-highlight-color: transparent;
     }
-    /* Very narrow screens (< 360 px) may wrap the dates rather than overflow. */
-    .commit__range {
+    /* Open, the hash line reads `▾ git show 4a484db`: the dates keep at least their widest part
+       beside it, and `git show` wraps first when the row is tight (large text). */
+    .commit {
+      grid-template-columns: var(--node) auto minmax(min-content, 1fr) var(--slot);
+    }
+    .commit__hash {
       white-space: normal;
+      /* M5, Firefox with the text-spacing override (zh, 390 px): a token wider than the column
+         breaks instead of spilling; where it fits nothing changes (break-word, not anywhere). */
+      overflow-wrap: break-word;
+    }
+    .commit__sum::-webkit-details-marker {
+      display: none;
+    }
+    .commit__sum:focus-visible {
+      outline-offset: 0;
+    }
+    .commit:has(> .commit__fold) .commit__hash::before {
+      content: '▸';
+      content: '▸' / '';
+      margin-inline-end: 0.5em;
+      font-family: var(--font-symbol);
+      font-size: 0.8em;
+    }
+    .commit:has(> .commit__fold[open]) .commit__hash {
+      font-size: 0;
+    }
+    /* No end margin here (the closed row's ▸ has one, before the hash): after the last word it
+       only widened the column, and Firefox let it hang 8 px out of the box (M5). */
+    .commit:has(> .commit__fold[open]) .commit__hash::before {
+      content: '▾ ' attr(data-show);
+      margin-inline-end: 0;
+      font: var(--type-code-bold);
+    }
+    /* The hover and focus overlay of the hash (X3 row 6) is the open state here. */
+    .commit:has(> .commit__fold) .commit__hash::after {
+      display: none;
+    }
+    .commit__title {
+      font-size: calc(20px * var(--ts));
+    }
+    /* Chinese: 12 px multiples for the pixel CJK face (PLAN-EXPERIENCE §5.5). */
+    :global(:root:lang(zh)) .commit__title {
+      font-size: calc(24px * var(--ts));
     }
     .commit__block :global(.voxel) {
       width: 30px;

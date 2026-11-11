@@ -1,0 +1,237 @@
+---
+/**
+ * The hotbar (PLAN-EXPERIENCE §8.2; Figma "Mobile/Hotbar" 53:11772): on phones the sections are
+ * five inventory slots along the foot of the screen — About, Projects, Experience, Contact and
+ * the settings (⚙). One <nav> of five links for screen readers; the current section's slot is
+ * selected (aria-current, the same scroll-spy as the desktop nav: src/scripts/hotbar.ts), and the
+ * settings slot while the settings window is open. It slides away as the page scrolls down and
+ * comes back on the way up, at the top and at the foot of the page, and whenever focus moves into
+ * it — only moved off screen, never hidden from the keyboard or screen readers. It clears the
+ * home indicator (env(safe-area-inset-bottom)) and is opaque (WebKit repaints a translucent or
+ * filtered bar over a scrolling page slowly). Shown below 768 px only; landscape phones and
+ * tablets keep the top nav (§8.6).
+ *
+ * The settings slot is a link to the settings window (#prefs) that opens it over the page, as a
+ * project's title opens its window (M3); it needs JavaScript, so without it the bar has the four
+ * section links. Icons are the site's own voxel blocks and pixel gear (decorative).
+ */
+import PixelIcon from '../ui/PixelIcon.astro';
+import VoxelBlock, { type BlockName } from '../ui/VoxelBlock.astro';
+import type { PageData } from '../../lib/page-data';
+
+interface Props {
+  data: PageData;
+  /** The section links' targets, as the top nav has them (home anchors, or the home page's). */
+  href: (anchor: string) => string;
+}
+const { data, href } = Astro.props;
+const { copy } = data;
+/** Each section's block (Figma: bookshelf, command block, diamond ore, glowstone). */
+const ICONS: Record<string, BlockName> = {
+  '#about': 'bookshelf',
+  '#projects': 'command',
+  '#experience': 'diamond',
+  '#contact': 'glow',
+};
+const slots = copy.nav.links.map((l, i) => ({
+  href: href(l.href),
+  spy: l.href.startsWith('#') ? l.href.slice(1) : undefined,
+  icon: ICONS[l.href] ?? 'grass',
+  label: copy.nav.hotbar[i] ?? l.label,
+  /** The name that floats over the bar where only the icons fit (Figma 320: "~/about"). */
+  float: l.label,
+}));
+---
+
+<nav class="hotbar" aria-label={copy.nav.sections_label} data-hotbar>
+  <ul class="hotbar__slots">
+    {slots.map((s, i) => (
+      <li class="hotbar__item" style={`--i:${i}`}>
+        <a class="hotbar__slot" href={s.href} data-spy={s.spy}>
+          <span class="hotbar__icon">
+            <VoxelBlock name={s.icon} size={24} shadow={false} eager />
+          </span>
+          <span class="hotbar__label">{s.label}</span>
+          <span class="hotbar__float" aria-hidden="true">
+            {s.float}
+          </span>
+        </a>
+      </li>
+    ))}
+    <li class="hotbar__item hotbar__item--prefs" style={`--i:${slots.length}`}>
+      <a
+        class="hotbar__slot hotbar__slot--prefs"
+        href="#prefs"
+        data-prefs-open
+        aria-haspopup="dialog"
+        aria-controls="prefs"
+      >
+        <span class="hotbar__icon">
+          <PixelIcon name="gear-lg" size={28} />
+        </span>
+        <span class="hotbar__label">{copy.nav.hotbar_prefs}</span>
+        <span class="hotbar__float" aria-hidden="true">
+          {copy.nav.hotbar_prefs}
+        </span>
+      </a>
+    </li>
+  </ul>
+</nav>
+
+<style>
+  .hotbar {
+    display: none;
+  }
+  @media (max-width: 767px) {
+    /* Figma: 64 px tall plus the home indicator's inset; five 54 px slots. They stand 8 px apart
+       (§8.4: touch targets ≥ 44 px, ≥ 8 px apart; Figma draws 2 px) and 10 px from the sides
+       (Figma 16), so the names still fit side by side from 375 px. */
+    .hotbar {
+      position: fixed;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      z-index: 50;
+      display: block;
+      height: var(--hotbar-h);
+      padding: 4px max(10px, env(safe-area-inset-right)) env(safe-area-inset-bottom)
+        max(10px, env(safe-area-inset-left));
+      background: var(--color-bg-night);
+      border-top: 2px solid var(--color-border-edge);
+      transition: translate var(--m-bars);
+    }
+    /* Hidden: down by its height, and the floating name above it with it. */
+    :global(html[data-bars='hidden']) .hotbar {
+      translate: 0 calc(100% + 40px);
+    }
+    :global(html:not([data-motion='full'])) .hotbar {
+      transition: none;
+    }
+    .hotbar__slots {
+      display: flex;
+      gap: 8px;
+      margin: 0;
+      padding: 0;
+      list-style: none;
+    }
+    .hotbar__item {
+      flex: 1 1 0;
+      min-width: 0;
+    }
+    /* Settings need JavaScript: without it the four section slots share the bar. */
+    .hotbar__item--prefs {
+      display: none;
+    }
+    :global(html.js) .hotbar__item--prefs {
+      display: block;
+    }
+    .hotbar__slot {
+      position: relative;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 4px;
+      height: 54px;
+      border: 2px solid var(--color-border-edge);
+      background: var(--color-bg-slot);
+      box-shadow: inset 2px 2px 0 0 var(--color-shadow-inset);
+      color: var(--color-text-mid);
+      text-decoration: none;
+      touch-action: manipulation;
+      -webkit-tap-highlight-color: transparent;
+    }
+    .hotbar__icon {
+      display: grid;
+      place-items: center;
+      height: 28px;
+      color: var(--color-text-hi);
+    }
+    .hotbar__label {
+      font: 500 calc(10px * var(--ts)) / 1.2 var(--font-code);
+      white-space: nowrap;
+    }
+    /* Selected: the current section, or the settings while their window is open. */
+    /* Figma's 3 px edge, drawn as the 2 px border and a 1 px inner ring: the name keeps its room. */
+    .hotbar__slot[aria-current='true'],
+    :global(html:has(#prefs[open])) .hotbar__slot--prefs {
+      border-color: var(--color-accent-terminal-green);
+      background: var(--color-nav-active-bg);
+      box-shadow: inset 0 0 0 1px var(--color-accent-terminal-green);
+      color: var(--color-accent-terminal-green);
+    }
+    :global(html:has(#prefs[open])) .hotbar__slot[aria-current='true'] {
+      border-color: var(--color-border-edge);
+      background: var(--color-bg-slot);
+      box-shadow: inset 2px 2px 0 0 var(--color-shadow-inset);
+      color: var(--color-text-mid);
+    }
+    :global(html:has(#prefs[open])) .hotbar__slot--prefs .hotbar__icon {
+      color: var(--color-accent-terminal-green);
+    }
+    .hotbar__slot:focus-visible {
+      outline-offset: -6px;
+    }
+    @media (hover: hover) {
+      .hotbar__slot:hover {
+        border-color: var(--color-nav-active-edge);
+        color: var(--color-accent-terminal-green);
+      }
+    }
+    /* The narrowest phones (and large text): icons only, and the current slot's name floats over
+       the bar like an item's name in a game (Figma 320). The links keep their names. */
+    .hotbar__float {
+      display: none;
+    }
+    .hotbar[data-compact] .hotbar__label {
+      position: absolute;
+      width: 1px;
+      height: 1px;
+      overflow: hidden;
+      clip-path: inset(50%);
+      white-space: nowrap;
+    }
+    .hotbar[data-compact] .hotbar__slot[aria-current='true'] .hotbar__float {
+      position: absolute;
+      bottom: calc(100% + 10px);
+      display: block;
+      padding: 4px 8px;
+      border: 2px solid var(--color-tooltip-edge);
+      background: var(--color-bg-terminal);
+      font: var(--type-pixel-tiny);
+      letter-spacing: var(--type-pixel-tiny-tracking);
+      color: var(--color-paper);
+      white-space: nowrap;
+      pointer-events: none;
+    }
+    .hotbar__item:nth-child(-n + 2) .hotbar__float {
+      left: -2px;
+    }
+    .hotbar__item:nth-child(n + 4) .hotbar__float {
+      right: -2px;
+    }
+    @media (forced-colors: active) {
+      .hotbar__slot[aria-current='true'] {
+        border-color: Highlight;
+      }
+    }
+  }
+  /* Without JavaScript the bar cannot know where the reader is; below 375 px the names would
+     not fit beside each other either, so the icons carry the slots and each name stays its link's
+     (src/scripts/hotbar.ts sets data-compact wherever a name does not fit). */
+  @media (max-width: 374px) {
+    .hotbar__label {
+      position: absolute;
+      width: 1px;
+      height: 1px;
+      overflow: hidden;
+      clip-path: inset(50%);
+      white-space: nowrap;
+    }
+  }
+  @media print {
+    .hotbar {
+      display: none !important;
+    }
+  }
+</style>

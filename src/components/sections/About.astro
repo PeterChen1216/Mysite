@@ -62,6 +62,8 @@ const { areas } = cards;
 
 <style>
   .about {
+    /* A lifted card's edge takes the section's accent (ui/Card.astro). */
+    --card-accent: var(--color-accent-diamond);
     position: relative;
     z-index: 1;
     display: flex;
@@ -81,6 +83,14 @@ const { areas } = cards;
   .about__block--obsidian {
     top: 640px;
     left: -10px;
+  }
+  /* Graphics tier 3: the WebGL world's floating blocks take their place (src/scene/). */
+  :global(html[data-scene='live']) .about__block {
+    opacity: 0;
+    visibility: hidden;
+    transition:
+      opacity var(--m-scene-fade),
+      visibility 0s linear var(--m-scene-fade);
   }
 
   /* ---- Inventory grid: three 424 px columns at 1440 (Figma Row1 / Row2), gap 20. ---- */
@@ -117,11 +127,8 @@ const { areas } = cards;
   .inv > :global(.about-card--skills) {
     grid-area: skills;
   }
-  /* Figma Card/* values: 28 px padding, 0.6 shadow, contents clipped (the whoami bookshelf
-     pokes out of the top edge). Card.astro uses 28/30 px and 0.35 — see integration notes. */
+  /* Contents are clipped to the card: the whoami bookshelf pokes out of the top edge. */
   .inv :global(.card) {
-    padding: 28px;
-    box-shadow: 6px 6px 0 0 rgb(0 0 0 / 0.6);
     overflow: clip;
   }
 
@@ -160,12 +167,20 @@ const { areas } = cards;
     .inv {
       grid-template-columns: minmax(0, 1fr);
       grid-template-areas: var(--areas-sm);
+      gap: 22px;
     }
+    /* X4: XP and Now side by side, the same height (§8.3) — while each column is at least 10.4em
+       (156 px at the default text size: from 358 px wide, so 360 and up). Narrower, or with
+       larger text, one above the other: their labels and the GPA do not wrap. */
     .inv__stack {
+      grid-template-columns: repeat(auto-fit, minmax(min(100%, 10.4em), 1fr));
+      gap: 14px;
+    }
+    .inv__stack--one {
       grid-template-columns: minmax(0, 1fr);
     }
-    .inv :global(.card) {
-      padding: 22px 20px;
+    .inv__stack > :global(.card) {
+      padding: 18px;
     }
   }
 </style>

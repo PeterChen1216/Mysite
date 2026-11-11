@@ -2,18 +2,22 @@
 /**
  * Card/Education (Figma 20:1008, #education): every school in education.yaml — name (linked),
  * degree and track, minor, department (linked), dates, GPA, honors and coursework.
+ *
+ * Phones (X4): the bookshelf stands beside the school's name; the honors.yaml entries of that
+ * school are listed here, one line each (the XP card is half the width there), in place of the
+ * school's own one-line summary of them; the coursework is one row of 44 px slots to swipe.
  */
 import Card from '../../ui/Card.astro';
 import CardTitle from '../../ui/CardTitle.astro';
 import VoxelBlock from '../../ui/VoxelBlock.astro';
-import { educationDates } from '../../../lib/derive';
+import { educationDates, fillTemplate, schoolHonors } from '../../../lib/derive';
 import type { PageData } from '../../../lib/page-data';
 
 interface Props {
   data: PageData;
 }
 const { data } = Astro.props;
-const { copy, education } = data;
+const { copy, education, honors } = data;
 
 /** `Bachelor of Science in Informatics · Data Science track` (major only when the degree lacks it). */
 const programme = (e: PageData['edu']) =>
@@ -24,6 +28,14 @@ const programme = (e: PageData['edu']) =>
   ]
     .filter(Boolean)
     .join(' · ');
+/** A course's tooltip (PLAN-EXPERIENCE §6 row 3; src/scripts/slots.ts): "… · 2 of 6". */
+const tip = (n: number, count: number) =>
+  fillTemplate(
+    copy.about.slot_tip,
+    { group: copy.about.coursework, n: String(n), count: String(count) },
+    [],
+    'copy.yaml about.slot_tip',
+  );
 ---
 
 <Card class="about-card about-card--edu" id="education" labelledby="about-education">
@@ -42,10 +54,16 @@ const programme = (e: PageData['edu']) =>
           )}
           {e.department && (
             <p class="edu__line">
-              {e.department_url ? <a href={e.department_url}>{e.department}</a> : e.department}
+              {e.department_url ? (
+                <a class="hit-44" href={e.department_url}>
+                  {e.department}
+                </a>
+              ) : (
+                e.department
+              )}
             </p>
           )}
-          <p class="edu__line">{educationDates(e, data.copy.labels.expected)}</p>
+          <p class="edu__line">{educationDates(e, copy.labels.expected, copy.labels)}</p>
           {e.gpa && (
             <p class="edu__line">
               {e.gpa_label}: <span class="edu__gpa">{e.gpa}</span>
@@ -53,18 +71,33 @@ const programme = (e: PageData['edu']) =>
           )}
         </div>
         {e.honors.length > 0 && (
-          <ul class="edu__honors">
+          <ul
+            class:list={[
+              'edu__honors',
+              { 'edu__honors--wide': schoolHonors(e.school, honors).length > 0 },
+            ]}
+          >
             {e.honors.map((h) => (
               <li>{h}</li>
+            ))}
+          </ul>
+        )}
+        {schoolHonors(e.school, honors).length > 0 && (
+          <ul class="edu__honors edu__honors--phone">
+            {schoolHonors(e.school, honors).map((h) => (
+              <li>
+                {h.name}, {h.year}
+                {h.note && ` — ${h.note}`}
+              </li>
             ))}
           </ul>
         )}
         {e.coursework.length > 0 && (
           <div class="edu__courses">
             <h4 class="edu__label">{copy.about.coursework}</h4>
-            <ul class="edu__course-list">
-              {e.coursework.map((c) => (
-                <li>{c}</li>
+            <ul class="edu__course-list" data-slots data-snap-row>
+              {e.coursework.map((c, i) => (
+                <li data-tip={tip(i + 1, e.coursework.length)}>{c}</li>
               ))}
             </ul>
           </div>
@@ -111,7 +144,7 @@ const programme = (e: PageData['edu']) =>
   }
   .edu__school a:hover,
   .edu__school a:focus-visible {
-    color: var(--color-accent-diamond);
+    color: var(--color-link);
     text-decoration-color: currentColor;
   }
   .edu__line {
@@ -120,13 +153,13 @@ const programme = (e: PageData['edu']) =>
     color: var(--color-text-mid);
   }
   .edu__line a {
-    color: var(--color-accent-diamond);
+    color: var(--color-link);
     text-decoration: underline;
     text-decoration-thickness: 1px;
   }
   .edu__line a:hover,
   .edu__line a:focus-visible {
-    color: var(--color-accent-gold);
+    color: var(--color-link-hover);
   }
   .edu__gpa {
     color: var(--color-accent-terminal-green);
@@ -153,7 +186,10 @@ const programme = (e: PageData['edu']) =>
     width: 8px;
     height: 8px;
     background: var(--color-accent-gold);
-    box-shadow: 2px 2px 0 rgb(0 0 0 / 0.6);
+    box-shadow: 2px 2px 0 var(--color-shadow);
+  }
+  .edu__honors--phone {
+    display: none;
   }
   .edu__courses {
     display: flex;
@@ -164,7 +200,7 @@ const programme = (e: PageData['edu']) =>
     margin: 0;
     font: var(--type-code-label);
     letter-spacing: var(--type-code-label-tracking);
-    text-transform: uppercase;
+    text-transform: var(--type-label-case);
     color: var(--color-text-mid);
   }
   .edu__course-list {
@@ -178,9 +214,54 @@ const programme = (e: PageData['edu']) =>
   /* Inventory slots, like the off-the-clock icons. */
   .edu__course-list li {
     padding: 3px 8px;
-    background: var(--color-bg-terminal);
+    background: var(--color-bg-slot);
     border: 2px solid var(--color-border-edge);
     font: var(--type-code-sm);
     color: var(--color-text-hi);
+  }
+  @media (max-width: 767px) {
+    /* The bookshelf beside the (first) school's name: both in the grid's second row. */
+    .edu {
+      display: grid;
+      grid-template-columns: 44px minmax(0, 1fr);
+      align-items: start;
+      row-gap: 14px;
+    }
+    .edu > :global(*) {
+      grid-column: 1 / -1;
+    }
+    .edu > :global(.voxel) {
+      grid-column: 1;
+      grid-row: 2;
+      width: 44px;
+      height: auto;
+      z-index: 1;
+    }
+    .edu__entry:first-of-type {
+      grid-row: 2;
+    }
+    .edu__entry:first-of-type .edu__school {
+      min-height: 52px;
+      padding-left: 56px;
+    }
+    /* Beside the bookshelf a long word may not fit at 320 px with the largest text: it breaks. */
+    .edu__school {
+      overflow-wrap: break-word;
+    }
+    .edu__honors--wide {
+      display: none;
+    }
+    .edu__honors--phone {
+      display: flex;
+    }
+    .edu__course-list li {
+      display: flex;
+      align-items: center;
+      min-height: 44px;
+      padding: 0 14px;
+    }
+    .edu__course-list {
+      gap: 8px;
+    }
   }
 </style>

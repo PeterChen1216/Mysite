@@ -1,4 +1,4 @@
-/* Base styles for the M0 plain page. Real section design lands in M1 (Figma "Home — Voxel / 1440"). */
+/* Base styles shared by every page: reset, links, focus ring, helpers and font stand-ins. */
 *,
 *::before,
 *::after {
@@ -6,12 +6,31 @@
 }
 
 :root {
-  /* Page side gutter: 64 px (Figma) until the content reaches 1312 px, then centred. */
-  --gutter: max(64px, calc((100% - 1312px) / 2));
+  /* Page side gutter: 64 px (Figma) until the content reaches --content-max, then centred. */
+  --gutter: max(64px, calc((100% - var(--content-max)) / 2));
+  /* What the phone's hotbar takes at the foot of the screen (X4; 0 where there is none). */
+  --hotbar-h: 0px;
+}
+@media (max-width: 767px) {
+  :root {
+    --hotbar-h: calc(64px + env(safe-area-inset-bottom));
+  }
+  /* What scrolls into view (a focused element, an anchor) clears the top bar and the hotbar
+     (WCAG 2.4.11: focus is never hidden under them). */
+  html {
+    scroll-padding: 48px 0 var(--hotbar-h);
+  }
+  /* No wait for a double-tap on a control (§8.6; the globe keeps its own pan-y). */
+  a,
+  button,
+  summary,
+  label {
+    touch-action: manipulation;
+  }
 }
 
+/* color-scheme comes with the theme (tokens.css). */
 html {
-  color-scheme: dark;
   background: var(--color-bg-night);
   color: var(--color-text-hi);
   font: var(--type-code-body);
@@ -22,19 +41,22 @@ html {
 body {
   margin: 0;
   min-height: 100svh;
+  /* A phone on its side: nothing under the notch (the page covers the whole screen, viewport-fit). */
+  padding-inline: env(safe-area-inset-left) env(safe-area-inset-right);
 }
 
 a {
-  color: var(--color-accent-diamond);
+  color: var(--color-link);
   text-underline-offset: 3px;
 }
 
 a:hover {
-  color: var(--color-accent-gold);
+  color: var(--color-link-hover);
 }
 
+/* 2 px gold in Night; each theme's highest-contrast token elsewhere (PLAN-EXPERIENCE §3.3). */
 :focus-visible {
-  outline: 2px solid var(--color-accent-gold);
+  outline: 2px solid var(--color-focus);
   outline-offset: 2px;
 }
 
@@ -52,6 +74,63 @@ img {
   image-rendering: auto;
 }
 
+/* The WebGL scene (src/scene/, graphics tier 3): one canvas fixed behind all content, decorative
+   (aria-hidden, never focused, no pointer events). It fades in once warm; its sky is the page
+   background. Rendered below device resolution when the watchdog asks, in square pixels. */
+.scene {
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  display: block;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity var(--m-scene-fade) ease-out;
+  image-rendering: pixelated;
+}
+html[data-scene] .scene {
+  opacity: 1;
+}
+/* Graphics tier 2's ambient layer (src/scripts/ambient.ts): parallax stars and motes on one 2D
+   canvas behind the page, in place of the page's still star pictures (Background.astro). */
+.ambient {
+  position: fixed;
+  top: 0;
+  left: 0;
+  z-index: -1;
+  display: block;
+  width: 100%;
+  height: 100%;
+  /* As tall as the tallest view: an address bar sliding away never resizes it (§8.6). */
+  height: 100lvh;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity var(--m-scene-fade) ease-out;
+}
+.ambient.ambient--on {
+  opacity: 1;
+}
+html[data-ambient] .bg__stars {
+  opacity: 0;
+  visibility: hidden;
+  transition:
+    opacity var(--m-scene-fade),
+    visibility 0s linear var(--m-scene-fade);
+}
+/* `?debug=1` (src/scripts/scene-hud.ts). */
+.scene-hud {
+  position: fixed;
+  left: 8px;
+  bottom: 8px;
+  z-index: 70;
+  padding: 4px 8px;
+  background: var(--color-bg-terminal);
+  color: var(--color-accent-terminal-green);
+  font: var(--type-code-label);
+  pointer-events: none;
+}
+
 .particles-layer {
   position: fixed;
   inset: 0;
@@ -59,6 +138,218 @@ img {
   height: 100vh;
   pointer-events: none;
   z-index: 60;
+}
+
+/* Row 15 (PLAN-EXPERIENCE §6): on a desktop, a pixel crosshair over the voxel blocks and the hero
+   stage's art and — at graphics tier 3 — over the bare page where the WebGL world shows through;
+   the system's own cursor over text and controls. The cursor is inherited, so the containers that
+   take it hand `auto` back to every child that is not itself one of them (links keep their hand,
+   the globe its grab). Black and white, so it reads on every theme. */
+@media (hover: hover) and (pointer: fine) {
+  img.voxel:not(a *, button *),
+  .stage,
+  html[data-scene='live']
+    :is(main, .hero, .hero__copy, .about, .inv, .inv__stack, .projects, .projects__grid, .exp) {
+    cursor:
+      url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='17' height='17' shape-rendering='crispEdges'%3E%3Cpath d='M7 0h3v7h7v3h-7v7H7v-7H0V7h7z' fill='%23000'/%3E%3Cpath d='M8 1h1v7h7v1H9v7H8V9H1V8h7z' fill='%23fff'/%3E%3C/svg%3E")
+        8 8,
+      crosshair;
+  }
+  .stage > :is(.stage__card, .stage__tip, .stage__tag),
+  html[data-scene='live']
+    :is(main, .hero, .hero__copy, .about, .inv, .inv__stack, .projects, .projects__grid, .exp)
+    > :not(main, section, .hero__copy, .stage-wrap, .inv, .inv__stack, .projects__grid) {
+    cursor: auto;
+  }
+}
+
+/* Row 3 (PLAN-EXPERIENCE §6; src/scripts/slots.ts): an inventory slot's enchant glint — a band of
+   light that sweeps across it once (transform only, inside the slot) — and the one tooltip. */
+[data-slots] [data-tip] {
+  position: relative;
+  overflow: clip;
+}
+[data-slots] [data-tip][data-glint]::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(105deg, transparent 30%, var(--color-glint) 50%, transparent 70%);
+  translate: -100% 0;
+  pointer-events: none;
+  animation: glint var(--m-glint) steps(8) forwards;
+}
+@keyframes glint {
+  to {
+    translate: 100% 0;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  [data-slots] [data-tip][data-glint]::after {
+    animation: none;
+    display: none;
+  }
+}
+.tip {
+  position: fixed;
+  left: 0;
+  top: 0;
+  z-index: 66;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  max-width: min(320px, calc(100vw - 16px));
+  padding: 8px 10px;
+  border: 2px solid var(--color-tooltip-edge);
+  background: var(--color-bg-terminal);
+  box-shadow: 4px 4px 0 0 var(--color-shadow);
+  font: var(--type-code-sm);
+  opacity: 0;
+  visibility: hidden;
+  translate: 0 var(--m-tip-rise);
+  pointer-events: none;
+  transition:
+    opacity var(--m-tip) steps(2),
+    translate var(--m-tip) steps(2),
+    visibility 0s linear var(--m-tip);
+}
+.tip[data-side='below'] {
+  translate: 0 calc(-1 * var(--m-tip-rise));
+}
+.tip[data-on='true'] {
+  opacity: 1;
+  visibility: visible;
+  translate: 0 0;
+  pointer-events: auto;
+  transition-delay: 0s;
+}
+.tip__name {
+  color: var(--color-text-hi);
+  font: var(--type-code-bold);
+}
+.tip__line {
+  color: var(--color-accent-enchant-text);
+}
+
+/* Phones (X4, §8.3–8.4): a row of slots or cards swiped sideways — native scroll-snap, no script
+   drags it. Only with JavaScript, which makes its items reachable from the keyboard (a roving Tab
+   stop, or the carousel's keys); without it the row wraps and everything shows. */
+@media (max-width: 767px) {
+  /* Proximity, not mandatory: a row can rest where focus scrolls it (a Tab into its third slot)
+     instead of snapping back over the focused item. */
+  html.js [data-snap-row] {
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    overscroll-behavior-x: contain;
+    scroll-snap-type: x proximity;
+    scrollbar-width: none;
+  }
+  html.js [data-snap-row]::-webkit-scrollbar {
+    display: none;
+  }
+  html.js [data-snap-row] > * {
+    flex: none;
+    scroll-snap-align: start;
+  }
+}
+
+/* Phones (X4, §8.4): a link that is a line of its own gets a 44 px tall hit area without moving
+   anything — an invisible box over and under its words (links inside sentences are left as they
+   are, as WCAG 2.5.5 allows). */
+@media (max-width: 767px) {
+  .hit-44 {
+    position: relative;
+  }
+  /* ::before: some of these links draw their ↗ with ::after. */
+  .hit-44::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: 50%;
+    height: 44px;
+    translate: 0 -50%;
+  }
+}
+
+/* The tap-to-copy toast (X4, Contact on phones; src/scripts/mobile.ts): above the hotbar, a dark
+   object with an enchanted edge; a role="status" region that is there, empty, from the start. */
+.toast {
+  position: fixed;
+  left: 16px;
+  right: 16px;
+  bottom: calc(var(--hotbar-h) + 12px);
+  z-index: 52;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin: 0;
+  padding: 10px 14px;
+  border: 2px solid var(--color-tooltip-edge);
+  background: var(--color-bg-terminal);
+  box-shadow: 4px 4px 0 0 var(--color-shadow);
+  font: var(--type-pixel-tiny);
+  letter-spacing: var(--type-pixel-tiny-tracking);
+  color: var(--color-paper);
+  opacity: 0;
+  translate: 0 8px;
+  pointer-events: none;
+  transition:
+    opacity var(--m-tip) steps(2),
+    translate var(--m-tip) steps(2);
+}
+.toast[data-on] {
+  opacity: 1;
+  translate: 0 0;
+}
+.toast:empty {
+  padding: 0;
+  border: 0;
+}
+.toast .px-icon {
+  flex: none;
+  color: var(--color-accent-terminal-green);
+}
+.toast__ok {
+  color: var(--color-accent-terminal-green);
+}
+.toast__what {
+  overflow-wrap: anywhere;
+}
+
+/* Redundant cues (src/lib/cues.ts): the glyph of a colour-coded label, drawn before it where the
+   theme shows cues (--cue-display; not Night). Generated content, so the label's text — and
+   what screen readers and copy-paste get — is unchanged. */
+[data-cue]::before {
+  content: attr(data-cue);
+  content: attr(data-cue) / '';
+  display: var(--cue-display, none);
+  flex: none;
+  align-self: center;
+  margin-inline-end: 0.5em;
+  font-family: var(--font-symbol);
+  font-size: 0.9em;
+  line-height: 1;
+}
+
+/* A project's title linking to its own page (M3): the title as designed until it is pointed at or
+   focused; then it underlines in the focus gold. With JavaScript it opens over the page. */
+.project-link {
+  color: inherit;
+  text-decoration: none;
+}
+.project-link:focus-visible {
+  color: var(--color-accent-gold);
+  text-decoration: underline;
+  text-decoration-thickness: 2px;
+  text-underline-offset: 4px;
+}
+@media (hover: hover) {
+  .project-link:hover {
+    color: var(--color-accent-gold);
+    text-decoration: underline;
+    text-decoration-thickness: 2px;
+    text-underline-offset: 4px;
+  }
 }
 
 .visually-hidden {
@@ -74,7 +365,9 @@ img {
 }
 
 .skip-link {
-  position: absolute;
+  /* Fixed (M5): on screen when focused, wherever the page is (Firefox's tab walk found it off
+     screen as an absolute box). Off screen and unchanged otherwise. */
+  position: fixed;
   left: var(--space-4);
   top: -100px;
   padding: var(--space-2) var(--space-4);
@@ -163,4 +456,98 @@ img {
   ascent-override: 86.2465%;
   descent-override: 26.2489%;
   line-gap-override: 0%;
+}
+
+/*
+ * Print (PLAN-EXPERIENCE §4.5): Mono light whatever the theme (tokens.css), no backgrounds or
+ * shadows, the moving and decorative parts left out (nav, ticker, hero art, phone, sky, voxel
+ * blocks, the settings window), links followed by where they go, and cards, commits and
+ * terminals kept whole on a page.
+ */
+@media print {
+  @page {
+    margin: 14mm 12mm;
+  }
+  html,
+  body {
+    background: none;
+  }
+  *,
+  *::before,
+  *::after {
+    box-shadow: none !important;
+    text-shadow: none !important;
+    /* The intro's start states must never reach paper. */
+    animation: none !important;
+    transition: none !important;
+  }
+  .skip-link,
+  .nav,
+  .ticker,
+  .bg,
+  .stage-wrap,
+  .phone,
+  .voxel,
+  .globe,
+  .particles-layer,
+  .hotbar,
+  .toast,
+  .scene,
+  .ambient,
+  .linkline,
+  .tip,
+  .scene-hud,
+  dialog,
+  [data-prefs-open],
+  [data-pause],
+  .foot__top {
+    display: none !important;
+  }
+  .page {
+    overflow: visible;
+  }
+  /* Paper is not a screen: smaller type, tight sections, no on-page jumps or decoration. */
+  html {
+    --text-scale: 0.8 !important;
+  }
+  main > section,
+  main > section > section,
+  .foot {
+    padding-top: 12px !important;
+    padding-bottom: 12px !important;
+    padding-inline: 0 !important;
+    margin: 0 !important;
+  }
+  .card--dashed,
+  .contact .term,
+  .mc-btn[href^='#'],
+  .sh__cmd,
+  .sh__blurb {
+    display: none !important;
+  }
+  .sh,
+  .sh__title {
+    break-after: avoid;
+    break-inside: avoid;
+  }
+  /* Important: some links draw a ↗ in this spot on screen. */
+  a[href^='http']::after {
+    content: ' (' attr(href) ')' !important;
+    font-family: var(--font-code) !important;
+    font-size: 0.85em !important;
+    overflow-wrap: anywhere;
+  }
+  .card,
+  .commit,
+  .term,
+  .chip,
+  li {
+    break-inside: avoid;
+  }
+  h1,
+  h2,
+  h3,
+  h4 {
+    break-after: avoid;
+  }
 }

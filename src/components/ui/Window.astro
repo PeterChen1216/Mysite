@@ -1,0 +1,223 @@
+---
+/**
+ * A floating window (PLAN §5.2, M3; Figma "Directory — projects/"): an opaque terminal panel with
+ * a hard pixel shadow and a title bar. The title is decoration (aria-hidden): the window is named
+ * by a heading inside it (`labelledby`).
+ *
+ * Two kinds:
+ * - `dialog`: a window over the page (the projects directory, a project). Its bar carries a move
+ *   key (arrow keys move the window, Enter or Home puts it back; a pointer drags the bar) and a
+ *   close key; Esc or a click on the bar also closes it (src/scripts/windows.ts). Closed until
+ *   opened, so it adds nothing to the page as first painted.
+ * - anything else: the same window as the main content of a page of its own (the directory and
+ *   project pages, the 404), where there is nothing to move or close.
+ */
+import PixelIcon from './PixelIcon.astro';
+
+interface Props {
+  title: string;
+  as?: 'article' | 'section' | 'div' | 'dialog';
+  id?: string;
+  labelledby?: string;
+  class?: string;
+  /** The window's own words for its keys (copy.yaml `windows`); a dialog needs them. */
+  keys?: { move: string; hint: string; close: string };
+  /** data-* attributes for the scripts. */
+  data?: Record<string, string>;
+}
+const { title, as: Tag = 'section', id, labelledby, class: cls, keys, data = {} } = Astro.props;
+const float = Tag === 'dialog';
+if (float && !keys) throw new Error('Window: a dialog window needs its keys');
+const hintId = id ? `${id}-move-hint` : undefined;
+const dataAttrs = Object.fromEntries(Object.entries(data).map(([k, v]) => [`data-${k}`, v]));
+---
+
+<Tag
+  class:list={['win', { 'win--float': float }, cls]}
+  id={id}
+  aria-labelledby={labelledby}
+  data-surface="dark"
+  data-window={float ? '' : undefined}
+  {...dataAttrs}
+>
+  <div class="win__bar" data-win-bar>
+    <span class="win__dots" aria-hidden="true">
+      <i></i>
+      <i></i>
+      <i></i>
+    </span>
+    <span class="win__title" aria-hidden="true" data-win-title title={title || undefined}>
+      {title}
+    </span>
+    {keys && (
+      <span class="win__keys">
+        <button
+          type="button"
+          class="win__key win__move"
+          data-win-move
+          aria-label={keys.move}
+          aria-describedby={hintId}
+        >
+          <PixelIcon name="move" size={18} />
+        </button>
+        <button type="button" class="win__key win__close" data-win-close>
+          <span aria-hidden="true">[x]</span> {keys.close}
+        </button>
+        <span class="visually-hidden" id={hintId}>
+          {keys.hint}
+        </span>
+      </span>
+    )}
+  </div>
+  <div class="win__body" data-win-body>
+    <slot />
+  </div>
+</Tag>
+
+<style>
+  .win {
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+    max-width: 100%;
+    padding: 0;
+    color: var(--color-text-hi);
+    background: var(--color-bg-terminal);
+    border: 2px solid var(--color-border-edge);
+    box-shadow: 8px 8px 0 0 var(--color-shadow-term);
+  }
+  .win__bar {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    min-height: 44px;
+    padding: 6px 8px 6px 14px;
+    background: var(--color-bg-panel);
+    border-bottom: 2px solid var(--color-border-line);
+  }
+  .win__dots {
+    display: flex;
+    flex: none;
+    gap: 8px;
+  }
+  .win__dots i {
+    width: 10px;
+    height: 10px;
+    background: var(--term-dot-red);
+  }
+  .win__dots i:nth-child(2) {
+    background: var(--term-dot-yellow);
+  }
+  .win__dots i:nth-child(3) {
+    background: var(--term-dot-green);
+  }
+  .win__title {
+    flex: 1;
+    min-width: 0;
+    overflow: hidden;
+    font: var(--type-pixel-h4);
+    font-size: calc(16px * var(--ts));
+    color: var(--color-text-hi);
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    text-shadow: 2px 2px 0 var(--color-text-shadow);
+  }
+  .win__keys {
+    display: flex;
+    flex: none;
+    gap: 6px;
+  }
+  .win__key {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.4em;
+    min-width: 32px;
+    min-height: 32px;
+    padding: 4px 8px;
+    font: var(--type-code-sm);
+    color: var(--color-text-hi);
+    background: transparent;
+    border: 1px solid var(--color-border-edge);
+    cursor: pointer;
+  }
+  .win__key:focus-visible {
+    color: var(--color-accent-gold);
+  }
+  @media (hover: hover) {
+    .win__key:hover {
+      color: var(--color-accent-gold);
+      border-color: var(--color-accent-gold);
+    }
+  }
+  .win__body {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    min-width: 0;
+    padding: 20px 20px 24px;
+  }
+
+  /* ── over the page ─────────────────────────────────────────────────────────
+     Placed by src/scripts/windows.ts (--win-x / --win-y; docked: centred under the nav). The bar
+     drags it with a fine pointer; the body scrolls when the window is taller than the desk. */
+  .win--float {
+    display: none;
+    position: fixed;
+    /* Placed by script, never in between: no transition (reduced motion's global 0.01 ms one
+       would show the window at its fallback place for a frame). */
+    transition-property: none;
+    inset: auto;
+    left: var(--win-x, 50%);
+    top: var(--win-y, 48px);
+    width: var(--win-w, min(1312px, calc(100vw - 32px)));
+    max-width: none;
+    max-height: var(--win-h, calc(100dvh - 64px));
+    margin: 0;
+    overflow: hidden;
+    overscroll-behavior: contain;
+  }
+  .win--float[open] {
+    display: flex;
+  }
+  .win--float .win__body {
+    overflow: auto;
+    overscroll-behavior: contain;
+  }
+  .win--float::backdrop {
+    /* The scene and page dim to about an eighth behind a window: opaque enough to read the window
+       alone, no blur (PLAN-EXPERIENCE §1.3; WebKit repaints filters slowly). */
+    background: var(--color-backdrop-window);
+  }
+  @media (hover: hover) and (pointer: fine) {
+    .win--float .win__bar {
+      cursor: grab;
+      touch-action: none;
+    }
+    .win--float[data-dragging] .win__bar {
+      cursor: grabbing;
+    }
+  }
+  /* In hand: the harder shadow of a lifted card. */
+  .win--float[data-dragging] {
+    box-shadow: 12px 12px 0 0 var(--color-shadow-lift);
+  }
+  @media (forced-colors: active) {
+    .win--float::backdrop {
+      background: Canvas;
+    }
+  }
+  @media (max-width: 767px) {
+    .win__body {
+      padding: 16px 16px 20px;
+    }
+    .win__key {
+      min-width: 44px;
+      min-height: 44px;
+    }
+    /* Docked across the whole width, a window has nowhere to move on a phone (Figma: no key). */
+    .win__move {
+      display: none;
+    }
+  }
+</style>

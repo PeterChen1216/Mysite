@@ -1,0 +1,46 @@
+---
+/**
+ * The projects directory as a page (M3): where `more ▸` leads without JavaScript, and what a link
+ * to /projects/ shows. With JavaScript the same directory grows out of the Projects section as a
+ * window over the home page (HomePage.astro).
+ */
+import SubPage from './SubPage.astro';
+import Directory from './sections/Directory.astro';
+import Window from './ui/Window.astro';
+import type { Locale } from '../i18n/locales';
+import { getPageData } from '../lib/page-data';
+
+interface Props {
+  locale: Locale;
+}
+const data = await getPageData(Astro.props.locale, { kind: 'projects' });
+const w = data.copy.windows;
+---
+
+<SubPage data={data} title={w.directory_page_title} description={data.copy.projects.blurb}>
+  <Window
+    as="section"
+    title={w.directory_title}
+    labelledby="directory-heading"
+    class="sub__win"
+    data={{ 'page-window': 'directory' }}
+  >
+    <Directory data={data} level="h1" headingId="directory-heading" />
+    <p class="dir-back">
+      <a href={data.home}>{w.back_home}</a>
+    </p>
+  </Window>
+</SubPage>
+
+<style>
+  .dir-back {
+    margin: 0;
+    font: var(--type-code-sm);
+  }
+  .dir-back a {
+    display: inline-flex;
+    align-items: center;
+    min-height: 24px;
+    color: var(--color-accent-diamond);
+  }
+</style>

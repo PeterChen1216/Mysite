@@ -54,14 +54,26 @@ export const LOOP = {
   /** The tilted second ring sways back and forth (Figma 17:127: −30° per 6 s). */
   orbitSwayMs: 6000,
   orbitSwayDeg: -30,
-  /** Ticker scroll speed in px/s. */
+  /** Ticker scroll speed in px/s; slower on a phone (PLAN-EXPERIENCE §8.3, X4). */
   tickerPxPerSecond: 40,
+  tickerPhonePxPerSecond: 30,
 } as const;
+
+/**
+ * Motion level "calm" (PLAN-EXPERIENCE §4.1): no intro, no particles, and the loops that remain
+ * run this many times slower (cursor blink, orbit rings, globe, ticker).
+ */
+export const CALM = { loopSlowdown: 3 } as const;
 
 /** Width of one globe map tile in px; one tile scrolling past = one rotation. */
 export const GLOBE_TILE_PX = 648;
 
 export const PARTICLES = {
+  /** No more than this many alive at once, whatever triggers them (PLAN-EXPERIENCE §6, E). */
+  cap: 60,
+  /** …on a touch screen (§8.5: phones and tablets), and in lite mode (src/lib/lite.ts). */
+  capTouch: 24,
+  capLite: 8,
   /** Hover burst: 16 pixel particles of 4 or 6 px, 300–400 ms (PLAN §5.2). */
   count: 16,
   sizes: [4, 6],
@@ -69,7 +81,150 @@ export const PARTICLES = {
   maxMs: 400,
   /** Travel distance range in px. */
   distance: [18, 46],
-  colors: ['#39ff14', '#4aedd9', '#fcdb05', '#a335ee', '#ff5555', '#7cbd4f'],
+  /** Design tokens (src/styles/tokens.css), read when a burst starts so themes recolour them. */
+  colors: [
+    '--color-accent-terminal-green',
+    '--color-accent-diamond',
+    '--color-accent-gold',
+    '--color-accent-enchant',
+    '--color-accent-redstone',
+    '--color-block-grass',
+  ],
+} as const;
+
+/**
+ * The WebGL scene (PLAN-EXPERIENCE §7; src/scene/). Its loops follow the motion level like the
+ * CSS ones: calm runs them CALM.loopSlowdown times slower, off and pause hold them.
+ */
+export const SCENE = {
+  /** Camera damping time constant: PLAN §5.2's lerp 0.08–0.12 per frame at 60 fps. */
+  dampMs: 160,
+  /** The canvas fades in, and the DOM art it replaces fades out. */
+  fadeMs: 400,
+  /** Warm-up before showing it (PLAN §5.2: "连续 3 帧 < 25 ms 才淡入"), and how long to try. */
+  warmFrames: 3,
+  warmFrameMs: 25,
+  warmTimeoutMs: 3000,
+  /** Radar sweep and the satellite on the radar ring, radians per second. */
+  sweepRadPerS: 1.1,
+  satelliteRadPerS: 0.22,
+  /** XP orbs drift towards the pointer: how far they reach (world units) and how hard. */
+  orbReach: 14,
+  orbPull: 0.45,
+  orbSpringPerS: 3,
+  /** The chest lid opens while Skills is in view. */
+  lidMs: 500,
+  /** One crossing of a watched route by its plane. */
+  planeMs: 9000,
+} as const;
+
+/**
+ * Floating windows (M3; PLAN §5.2, Figma "Note — how the scene works"): `more ▸` grows a section's
+ * window into its directory — the frame scales out of the key, then its contents fade in — and a
+ * project's window grows out of its title. Esc or the bar shrinks it back. Calm and off open and
+ * close at once (the state changes, nothing moves); so does reduced motion and pause.
+ */
+export const WINDOW = {
+  /** The frame grows from the key to its place, in pixel steps; then its contents fade in. */
+  growMs: 280,
+  growSteps: 7,
+  fadeMs: 160,
+  /** Shrinking back is quicker. */
+  shrinkMs: 180,
+  /** Arrow keys move a window by this much (with Shift, by `far`). */
+  keyStepPx: 16,
+  keyFarPx: 64,
+  /** A window let go this close to its place or to an edge of the desk docks there. */
+  snapPx: 24,
+  /** Kept between a window and the edges of the desk. */
+  marginPx: 8,
+  /** A press on the bar that moved no further than this is a click (it closes the window). */
+  tapSlopPx: 4,
+  /** The widest a docked window gets (the page's content column). */
+  maxWidthPx: 1312,
+} as const;
+
+/**
+ * The hover & interaction catalogue (PLAN-EXPERIENCE §6). Row numbers are the table's. Every
+ * timing here reaches the page: scripts import these, CSS reads the `--m-*` properties below.
+ * `calm` drops the motion and keeps the state change; `off` keeps only the state change.
+ */
+export const HOVER = {
+  /** 1 · voxel block: a two-frame squash, a burst in its own colours, then it bobs back. */
+  punch: { ms: 350, particles: 16, squash: [1.12, 0.86], stretch: [0.92, 1.1], bobPx: 6 },
+  /** 2 · card: lifts 4 px on a harder shadow in two steps; a grid spotlight follows the pointer. */
+  card: { liftPx: 4, ms: 120, steps: 2, spotPx: 220 },
+  /** 3 · inventory slot: the glint sweeps once; the tooltip rises 6 px. */
+  glintMs: 560,
+  tooltip: { risePx: 6, ms: 120, gapPx: 6 },
+  /** 4 · globe: the crosshair's readout follows the pointer, at most once per frame. */
+  crosshairPx: 9,
+  /** 6 · commit row: the node pulses twice; the rail segment lights in one sweep. */
+  commit: { pulseMs: 300, pulses: 2, railMs: 240 },
+  /** 8 · nav link: the pixel underline slides from where it was. */
+  navSlide: { ms: 160, steps: 4 },
+  /** 13 · external link: the ↗ hops one pixel up-right. */
+  hopPx: 1,
+  /** 14 · section header: the `$ command` types, then the heading resolves. */
+  header: { msPerChar: 22, minMs: 280, maxMs: 700, resolveMs: 260, resolveSteps: 4 },
+  /** 16 · back to spawn: a block falls while the page scrolls up behind it. */
+  spawn: { fallMs: 900, fallVh: 70, spinDeg: 200 },
+} as const;
+
+/**
+ * Chunk-load transitions (PLAN-EXPERIENCE §7.4; graphics tier 2 and up, motion full): as a
+ * section first comes into view its cards rise in turn and their borders resolve from dashed to
+ * solid; the data bars (XP, status) fill to their real value. Once per section per visit.
+ */
+export const ENTER = {
+  risePx: 24,
+  ms: 420,
+  staggerMs: 70,
+  /** The border stays dashed until this share of the rise, then turns solid. */
+  dashUntil: 0.7,
+  /** Each cell of a data bar lights this long after the one before it. */
+  cellMs: 28,
+  /** How far below the viewport a section is noticed, so it starts before it shows. */
+  marginPct: 12,
+} as const;
+
+/**
+ * The tier 2 ambient layer (PLAN-EXPERIENCE §7.4, §8.5): a three-layer parallax star field and
+ * rising motes on one 2D canvas behind the page.
+ */
+export const AMBIENT = {
+  /** Scroll factors of the far, middle and near layers. */
+  factors: [0.2, 0.5, 1],
+  /** Stars per layer, per 1000 × 1000 css px of sky. */
+  density: [60, 26, 12],
+  /** Star sizes per layer, css px (pixel squares). */
+  sizes: [2, 2, 3],
+  /** Rising motes over the first screen (§8.5: ≤ 24 particles on phones). */
+  motes: 18,
+  moteRisePxPerS: 14,
+  /** §8.5: the star field at 30 fps. */
+  fps: 30,
+  /** Device pixel ratio cap (§8.5). */
+  maxDpr: 2,
+} as const;
+
+/**
+ * The phone's bars (PLAN-EXPERIENCE §8.2, X4; the rules are src/lib/hotbar.ts): the top bar and
+ * the hotbar slide away once the page has moved down a little, and come back on the way up, at
+ * the top and at the foot of the page. Calm and off move them without the slide.
+ */
+export const BARS = {
+  hideAfterPx: 24,
+  showAfterPx: 12,
+  topPx: 48,
+  endPx: 24,
+  /** Scroll-spy's reading line, as a share of the view's height (the desktop nav's too). */
+  spyLine: 0.4,
+  /** The slide: transform only, in pixel steps. */
+  slideMs: 160,
+  slideSteps: 4,
+  /** How long the tap-to-copy toast stays (§8.3 Contact). */
+  toastMs: 2400,
 } as const;
 
 /** The CSS-side parameters as a `style` value of custom properties (`--m-…`). */
@@ -104,6 +259,38 @@ export function motionCssVars(): string {
     '--m-globe-tile': px(GLOBE_TILE_PX),
     '--m-btn-hover': `${ms(UI.buttonHover.ms)} steps(${UI.buttonHover.steps})`,
     '--m-photo-swap': `${ms(UI.photoSwap.ms)} steps(${UI.photoSwap.steps})`,
+    '--m-calm-slow': String(CALM.loopSlowdown),
+    '--m-scene-fade': ms(SCENE.fadeMs),
+    // The hover & interaction catalogue (HOVER) and the chunk-load transitions (ENTER).
+    '--m-punch': ms(HOVER.punch.ms),
+    '--m-punch-squash': HOVER.punch.squash.join(' '),
+    '--m-punch-stretch': HOVER.punch.stretch.join(' '),
+    '--m-punch-bob': px(HOVER.punch.bobPx),
+    '--m-card': `${ms(HOVER.card.ms)} steps(${HOVER.card.steps})`,
+    '--m-card-lift': px(HOVER.card.liftPx),
+    '--m-spot': px(HOVER.card.spotPx),
+    '--m-glint': ms(HOVER.glintMs),
+    '--m-tip': ms(HOVER.tooltip.ms),
+    '--m-tip-rise': px(HOVER.tooltip.risePx),
+    '--m-cross': px(HOVER.crosshairPx),
+    '--m-pulse': ms(HOVER.commit.pulseMs),
+    '--m-pulses': String(HOVER.commit.pulses),
+    '--m-rail': ms(HOVER.commit.railMs),
+    '--m-nav-slide': `${ms(HOVER.navSlide.ms)} steps(${HOVER.navSlide.steps})`,
+    '--m-hop': px(HOVER.hopPx),
+    '--m-resolve': `${ms(HOVER.header.resolveMs)} steps(${HOVER.header.resolveSteps})`,
+    '--m-spawn-fall': ms(HOVER.spawn.fallMs),
+    '--m-spawn-drop': `${HOVER.spawn.fallVh}vh`,
+    '--m-spawn-spin': `${HOVER.spawn.spinDeg}deg`,
+    '--m-enter-rise': px(ENTER.risePx),
+    '--m-enter': ms(ENTER.ms),
+    '--m-enter-stagger': ms(ENTER.staggerMs),
+    '--m-enter-cell': ms(ENTER.cellMs),
+    // The phone's bars and its slower ticker (X4).
+    '--m-bars': `${ms(BARS.slideMs)} steps(${BARS.slideSteps})`,
+    '--m-ticker-phone': String(
+      Math.round((LOOP.tickerPxPerSecond / LOOP.tickerPhonePxPerSecond) * 1000) / 1000,
+    ),
   };
   return Object.entries(vars)
     .map(([k, v]) => `${k}:${v}`)

@@ -1,0 +1,594 @@
+---
+/**
+ * The settings window, `~/.config` (PLAN-EXPERIENCE §2.1): a terminal window over a real form.
+ * Radio groups (theme, motion, text size, shortcuts) — labelled, keyboard-operable, each choice
+ * applied and saved at once by src/scripts/settings.ts; the `$ theme --set` lines are the visual
+ * skin and hidden from screen readers, which hear each group's plain legend instead.
+ *
+ * Between motion and text size, the language row (§5.2): plain links, one per language this page
+ * offers (src/i18n/routing.ts switchLocales: the live ones, or every one on a preview page), each
+ * named in its own language with its own `lang`; they need no script (src/scripts/lang.ts only
+ * keeps the section in view and saves the choice).
+ *
+ * A modal <dialog>, closed until a visitor opens it (nav gear, footer `prefs`, the `,` key), so it
+ * adds nothing to the page as first painted. A dark object: it stays a dark terminal in the light
+ * themes (data-surface="dark").
+ *
+ * On phones (X4, Figma "State · Settings window" 73:17539) it opens from the hotbar's ⚙ slot and
+ * fills the screen down to the hotbar, within thumb reach, the hotbar showing above its backdrop
+ * with ⚙ selected; the motion choices sit in one row with the chosen one's note under them. The
+ * keyboard-shortcuts row is left out on a touch screen until a key is pressed there (a keyboard,
+ * or speech input that types): wherever a shortcut can fire, the switch that turns them off is
+ * shown (WCAG 2.1.4).
+ */
+import { MOTION_LEVELS, TEXT_SIZES, THEMES } from '../../prefs/model';
+import type { PageData } from '../../lib/page-data';
+
+interface Props {
+  data: PageData;
+}
+const { data } = Astro.props;
+const p = data.copy.prefs;
+
+const themes = [...THEMES, 'auto' as const].map((value) => ({ value, ...p.theme.options[value] }));
+const motions = (['auto', ...MOTION_LEVELS] as const).map((value) => ({
+  value,
+  ...p.motion.options[value],
+}));
+const sizes = TEXT_SIZES.map((size) => ({
+  value: String(size),
+  name: p.text.option.replace(/\{\s*size\s*\}/g, String(size)),
+}));
+const keys = [
+  { value: 'on', name: p.keys.on },
+  { value: 'off', name: p.keys.off },
+];
+---
+
+<dialog id="prefs" class="prefs" aria-labelledby="prefs-heading" data-surface="dark">
+  <div class="prefs__bar">
+    <span class="prefs__dot prefs__dot--r" aria-hidden="true"></span>
+    <span class="prefs__dot prefs__dot--y" aria-hidden="true"></span>
+    <span class="prefs__dot prefs__dot--g" aria-hidden="true"></span>
+    <span class="prefs__title" aria-hidden="true">
+      {p.title}
+    </span>
+    <button type="button" class="prefs__close" data-prefs-close>
+      <span aria-hidden="true">[x]</span>
+      {p.close}
+    </button>
+  </div>
+  <form class="prefs__form" method="dialog">
+    <h2 id="prefs-heading" class="prefs__heading">
+      <span class="prefs__hash" aria-hidden="true">
+        {'# '}
+      </span>
+      {p.heading}
+    </h2>
+    <p class="prefs__intro">{p.intro}</p>
+
+    <fieldset class="prefs__row">
+      <legend class="prefs__legend">
+        <span class="prefs__cmd" aria-hidden="true">
+          $ {p.theme.cmd}
+        </span>
+        <span class="prefs__name">{p.theme.legend}</span>
+      </legend>
+      <div class="prefs__opts prefs__opts--wide">
+        {themes.map((t) => (
+          <label class="prefs__opt">
+            <input type="radio" name="theme" value={t.value} />
+            {t.value === 'auto' ? (
+              <span class="prefs__swatch prefs__swatch--auto" aria-hidden="true">
+                <span data-theme="night">
+                  <i />
+                </span>
+                <span data-theme="day">
+                  <i />
+                </span>
+              </span>
+            ) : (
+              <span data-theme="night" class="prefs__swatch-base" aria-hidden="true">
+                <span class="prefs__swatch" data-theme={t.value}>
+                  <i />
+                </span>
+              </span>
+            )}
+            <span class="prefs__opt-text">
+              <span class="prefs__opt-name">{t.name}</span>
+              <span class="prefs__opt-note">{t.note}</span>
+            </span>
+          </label>
+        ))}
+      </div>
+      <p class="prefs__note" data-note-media="(prefers-contrast: more)" hidden>
+        {p.theme.contrast_note}
+      </p>
+    </fieldset>
+
+    <fieldset class="prefs__row">
+      <legend class="prefs__legend">
+        <span class="prefs__cmd" aria-hidden="true">
+          $ {p.motion.cmd}
+        </span>
+        <span class="prefs__name">{p.motion.legend}</span>
+      </legend>
+      <div class="prefs__opts prefs__opts--wide prefs__opts--motion">
+        {motions.map((m) => (
+          <label class="prefs__opt">
+            <input type="radio" name="motion" value={m.value} />
+            <span class="prefs__opt-text">
+              <span class="prefs__opt-name">{m.name}</span>
+              <span class="prefs__opt-note">{m.note}</span>
+            </span>
+          </label>
+        ))}
+      </div>
+      {/* Phones: the choices are one row of names; the chosen one's note is repeated under it. */}
+      {motions.map((m) => (
+        <p class="prefs__picked" data-for={m.value} aria-hidden="true">
+          {m.name} — {m.note}
+        </p>
+      ))}
+      <p class="prefs__note" data-note-media="(prefers-reduced-motion: reduce)" hidden>
+        {p.motion.reduced_note}
+      </p>
+    </fieldset>
+
+    <nav class="prefs__row" aria-labelledby="prefs-lang">
+      <p class="prefs__legend">
+        <span class="prefs__cmd" aria-hidden="true">
+          $ {p.lang.cmd}
+        </span>
+        <span class="prefs__name" id="prefs-lang">
+          {p.lang.legend}
+        </span>
+      </p>
+      <ul class="prefs__opts prefs__langs">
+        {data.languages.map((l) => (
+          <li>
+            <a
+              class="prefs__opt prefs__lang"
+              href={l.href}
+              hreflang={l.hreflang}
+              lang={l.lang}
+              data-lang-pick={l.locale}
+              aria-current={l.current ? 'page' : undefined}
+            >
+              <span class="prefs__box" aria-hidden="true" />
+              <span class="prefs__opt-name">{l.name}</span>
+              {l.preview && (
+                <span class="prefs__opt-note" lang={data.lang}>
+                  {p.lang.draft}
+                </span>
+              )}
+            </a>
+          </li>
+        ))}
+      </ul>
+      <p class="prefs__note">{p.lang.note}</p>
+    </nav>
+
+    <fieldset class="prefs__row">
+      <legend class="prefs__legend">
+        <span class="prefs__cmd" aria-hidden="true">
+          $ {p.text.cmd}
+        </span>
+        <span class="prefs__name">{p.text.legend}</span>
+      </legend>
+      <div class="prefs__opts">
+        {sizes.map((s) => (
+          <label class="prefs__opt">
+            <input type="radio" name="text" value={s.value} />
+            <span class="prefs__opt-name">{s.name}</span>
+          </label>
+        ))}
+      </div>
+    </fieldset>
+
+    <fieldset class="prefs__row prefs__row--keys">
+      <legend class="prefs__legend">
+        <span class="prefs__cmd" aria-hidden="true">
+          $ {p.keys.cmd}
+        </span>
+        <span class="prefs__name">{p.keys.legend}</span>
+      </legend>
+      <div class="prefs__opts">
+        {keys.map((k) => (
+          <label class="prefs__opt">
+            <input type="radio" name="keys" value={k.value} />
+            <span class="prefs__opt-name">{k.name}</span>
+          </label>
+        ))}
+      </div>
+      <p class="prefs__note">{p.keys.note}</p>
+    </fieldset>
+
+    <p class="prefs__foot">
+      <button type="button" class="prefs__reset" data-prefs-reset>
+        <span class="prefs__cmd" aria-hidden="true">
+          $ {p.reset_cmd}
+        </span>
+        <span>{p.reset}</span>
+      </button>
+    </p>
+  </form>
+</dialog>
+
+<style>
+  .prefs {
+    width: min(720px, calc(100vw - 32px));
+    max-width: none;
+    max-height: calc(100dvh - 32px);
+    padding: 0;
+    overflow: auto;
+    background: var(--color-bg-terminal);
+    color: var(--color-text-hi);
+    border: 2px solid var(--color-border-edge);
+    box-shadow: 8px 8px 0 0 var(--color-shadow-term);
+  }
+  .prefs::backdrop {
+    background: var(--color-backdrop);
+  }
+  /* The title bar of ui/TerminalWindow, with the close key on the right; stays in view. */
+  .prefs__bar {
+    position: sticky;
+    top: 0;
+    z-index: 1;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 10px 8px 14px;
+    background: var(--color-bg-panel);
+    border-bottom: 2px solid var(--color-border-line);
+  }
+  .prefs__dot {
+    width: 10px;
+    height: 10px;
+    flex: none;
+  }
+  .prefs__dot--r {
+    background: var(--term-dot-red);
+  }
+  .prefs__dot--y {
+    background: var(--term-dot-yellow);
+  }
+  .prefs__dot--g {
+    background: var(--term-dot-green);
+  }
+  .prefs__title {
+    flex: 1;
+    min-width: 0;
+    text-align: center;
+    font: var(--type-code-sm);
+    color: var(--color-text-mid);
+    overflow-wrap: anywhere;
+  }
+  .prefs__close {
+    display: inline-flex;
+    gap: 6px;
+    align-items: center;
+    min-height: 32px;
+    padding: 4px 10px;
+    border: 2px solid var(--color-border-edge);
+    background: var(--color-bg-terminal);
+    color: var(--color-text-hi);
+    font: var(--type-code-sm);
+    cursor: pointer;
+  }
+  .prefs__close:hover,
+  .prefs__close:focus-visible {
+    border-color: var(--color-accent-gold);
+    color: var(--color-accent-gold);
+  }
+  .prefs__form {
+    display: flex;
+    flex-direction: column;
+    gap: 22px;
+    margin: 0;
+    padding: 20px 24px 24px;
+  }
+  .prefs__heading {
+    margin: 0;
+    font: var(--type-pixel-h4);
+    letter-spacing: var(--type-pixel-h4-tracking);
+    color: var(--color-text-hi);
+  }
+  .prefs__hash {
+    color: var(--color-accent-terminal-green);
+  }
+  .prefs__intro,
+  .prefs__note {
+    margin: 0;
+    font: var(--type-code-sm);
+    color: var(--color-text-mid);
+  }
+  .prefs__note {
+    margin-top: 10px;
+  }
+  .prefs__row {
+    margin: 0;
+    padding: 0;
+    border: 0;
+    min-width: 0;
+  }
+  .prefs__legend {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: 4px 14px;
+    padding: 0;
+    margin: 0 0 10px;
+  }
+  .prefs__cmd {
+    font: var(--type-term-md);
+    color: var(--color-accent-terminal-green);
+  }
+  .prefs__name {
+    font: var(--type-pixel-label);
+    letter-spacing: var(--type-pixel-label-tracking);
+    text-transform: var(--type-label-case);
+    color: var(--color-text-mid);
+  }
+  .prefs__opts {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+  .prefs__opts--wide {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(min(200px, 100%), 1fr));
+  }
+  .prefs__opt {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    min-height: 44px;
+    padding: 6px 12px;
+    border: 2px solid var(--color-border-line);
+    background: var(--color-bg-panel);
+    cursor: pointer;
+  }
+  .prefs__opt:hover {
+    border-color: var(--color-border-edge);
+  }
+  .prefs__opt:has(input:checked) {
+    border-color: var(--color-accent-terminal-green);
+    background: var(--color-nav-active-bg);
+  }
+  .prefs__opt:has(input:focus-visible) {
+    outline: 2px solid var(--color-focus);
+    outline-offset: 2px;
+  }
+  /* The radio stays a real radio; drawn as a pixel box with a filled square when chosen. */
+  .prefs__opt input {
+    appearance: none;
+    flex: none;
+    display: grid;
+    place-content: center;
+    width: 18px;
+    height: 18px;
+    margin: 0;
+    border: 2px solid var(--color-text-mid);
+    background: var(--color-bg-terminal);
+  }
+  .prefs__opt input::before {
+    content: '';
+    width: 8px;
+    height: 8px;
+    background: var(--color-accent-terminal-green);
+    visibility: hidden;
+  }
+  .prefs__opt input:checked {
+    border-color: var(--color-accent-terminal-green);
+  }
+  .prefs__opt input:checked::before {
+    visibility: visible;
+  }
+  .prefs__opt input:focus-visible {
+    outline: none; /* drawn round the whole choice above */
+  }
+  .prefs__opt-text {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    min-width: 0;
+  }
+  .prefs__opt-name {
+    font: var(--type-code-bold);
+    color: var(--color-text-hi);
+  }
+  .prefs__opt-note {
+    font: var(--type-code-sm);
+    color: var(--color-text-mid);
+  }
+
+  /* The language row: links drawn like the choices, the current page's language as chosen. */
+  .prefs__langs {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+  .prefs__lang {
+    color: var(--color-text-hi);
+    text-decoration: none;
+  }
+  .prefs__lang:hover .prefs__opt-name {
+    text-decoration: underline;
+  }
+  .prefs__lang[aria-current='page'] {
+    border-color: var(--color-accent-terminal-green);
+    background: var(--color-nav-active-bg);
+  }
+  .prefs__box {
+    flex: none;
+    display: grid;
+    place-content: center;
+    width: 18px;
+    height: 18px;
+    border: 2px solid var(--color-text-mid);
+    background: var(--color-bg-terminal);
+  }
+  .prefs__lang[aria-current='page'] .prefs__box {
+    border-color: var(--color-accent-terminal-green);
+  }
+  .prefs__lang[aria-current='page'] .prefs__box::before {
+    content: '';
+    width: 8px;
+    height: 8px;
+    background: var(--color-accent-terminal-green);
+  }
+
+  /* A small picture of each theme: page, panel and three accents, in that theme's own tokens. */
+  .prefs__swatch-base {
+    display: contents;
+  }
+  .prefs__swatch {
+    flex: none;
+    display: flex;
+    align-items: flex-end;
+    width: 36px;
+    height: 26px;
+    padding: 4px;
+    background: var(--color-bg-night);
+    border: 2px solid var(--color-border-edge);
+  }
+  .prefs__swatch i {
+    display: block;
+    width: 100%;
+    height: 8px;
+    background: linear-gradient(
+      90deg,
+      var(--color-accent-terminal-green) 0 33%,
+      var(--color-accent-diamond) 33% 66%,
+      var(--color-accent-gold) 66%
+    );
+    box-shadow: 0 -4px 0 0 var(--color-bg-panel);
+  }
+  .prefs__swatch--auto {
+    padding: 0;
+    gap: 0;
+  }
+  .prefs__swatch--auto > span {
+    display: flex;
+    align-items: flex-end;
+    width: 50%;
+    height: 100%;
+    padding: 3px 2px;
+    background: var(--color-bg-night);
+  }
+
+  .prefs__foot {
+    margin: 0;
+  }
+  .prefs__reset {
+    display: inline-flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: 4px 12px;
+    min-height: 44px;
+    padding: 8px 14px;
+    border: 2px solid var(--color-border-edge);
+    background: var(--color-bg-panel);
+    color: var(--color-text-hi);
+    font: var(--type-code-sm);
+    cursor: pointer;
+  }
+  .prefs__reset:hover,
+  .prefs__reset:focus-visible {
+    border-color: var(--color-accent-gold);
+  }
+  .prefs__picked {
+    display: none;
+  }
+  @media (max-width: 767px) {
+    .prefs__form {
+      padding: 16px;
+    }
+    /* Docked from just below the top of the screen to just above the hotbar (Figma: 8 px in). */
+    .prefs {
+      inset: calc(8px + env(safe-area-inset-top)) 8px calc(var(--hotbar-h) + 8px);
+      width: auto;
+      height: auto;
+      max-width: none;
+      max-height: none;
+      margin: 0;
+    }
+    /* The hotbar shows through the backdrop, undimmed, ⚙ selected: the backdrop still covers it,
+       so a tap there is a tap outside the window, which closes it, in every browser (the bar
+       itself is inert while the window is open). ::backdrop inherits nothing everywhere yet, so
+       the bar's height is written out. */
+    .prefs::backdrop {
+      background: linear-gradient(
+        to top,
+        transparent calc(64px + env(safe-area-inset-bottom)),
+        var(--color-backdrop) 0
+      );
+    }
+    .prefs__close {
+      min-height: 44px;
+      padding-inline: 14px;
+    }
+    /* Themes: two columns of tiles — box and swatch, then the name and its note (Figma). */
+    .prefs__opts--wide {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+    .prefs__opts--wide:not(.prefs__opts--motion) .prefs__opt {
+      flex-wrap: wrap;
+      align-items: flex-start;
+      align-content: flex-start;
+      gap: 8px;
+      padding: 10px 12px;
+    }
+    .prefs__opts--wide:not(.prefs__opts--motion) .prefs__opt-text {
+      flex-basis: 100%;
+    }
+    /* One row of four (two with larger text); the box stays: in Mono colour alone would not tell
+       the chosen one. */
+    .prefs__opts--motion {
+      display: flex;
+      flex-wrap: wrap;
+    }
+    .prefs__opts--motion .prefs__opt {
+      flex: 1 0 auto;
+      justify-content: center;
+      gap: 6px;
+      padding-inline: 4px;
+    }
+    .prefs__opts--motion .prefs__opt-note {
+      position: absolute;
+      width: 1px;
+      height: 1px;
+      overflow: hidden;
+      clip-path: inset(50%);
+      white-space: nowrap;
+    }
+    .prefs__row:has(input[value='auto']:checked) .prefs__picked[data-for='auto'],
+    .prefs__row:has(input[value='full']:checked) .prefs__picked[data-for='full'],
+    .prefs__row:has(input[value='calm']:checked) .prefs__picked[data-for='calm'],
+    .prefs__row:has(input[value='off']:checked) .prefs__picked[data-for='off'] {
+      display: block;
+      margin: 10px 0 0;
+      font: var(--type-code-sm);
+      color: var(--color-text-mid);
+    }
+  }
+  /* A touch screen with no keyboard in use: no shortcuts can fire, so no switch for them. */
+  @media (hover: none) and (pointer: coarse) {
+    :global(html:not([data-keyboard])) .prefs__row--keys {
+      display: none;
+    }
+  }
+  /* Windows High Contrast: the system draws real radios; the pixel box would vanish. */
+  @media (forced-colors: active) {
+    .prefs__opt input {
+      appearance: auto;
+    }
+    .prefs__opt input::before {
+      display: none;
+    }
+    .prefs__opt:has(input:checked) {
+      border-color: Highlight;
+    }
+  }
+</style>

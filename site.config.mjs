@@ -9,7 +9,9 @@ const root = fileURLToPath(new URL('.', import.meta.url));
 /** @typedef {'preview' | 'launched'} Stage */
 
 /**
- * @returns {{ domain: string, version: string, launched: boolean, stage: Stage, base: string, previewPath: string }}
+ * `locales` is content/site.yaml `locales` as written (each language `live` or `preview`; the
+ * build validates it).
+ * @returns {{ domain: string, version: string, launched: boolean, stage: Stage, base: string, previewPath: string, locales: Record<string, string> }}
  */
 export function loadSiteConfig(env = process.env) {
   const raw = parse(readFileSync(`${root}content/site.yaml`, 'utf8')) ?? {};
@@ -33,5 +35,6 @@ export function loadSiteConfig(env = process.env) {
     // Before launch (DECISIONS Q1) the legacy site stays at "/" and v2 is served from /v2/.
     base: stage === 'launched' ? '/' : previewPath,
     previewPath,
+    locales: raw.locales && typeof raw.locales === 'object' ? { ...raw.locales } : { en: 'live' },
   };
 }

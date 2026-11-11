@@ -5,7 +5,7 @@
  * The pause itself is one CSS rule in src/styles/motion.css. Globes do the same in globe.ts.
  */
 export function initOffscreenPause(): void {
-  if (!document.documentElement.classList.contains('motion')) return;
+  // Always watched: motion can start later (the settings, reduced motion turned off).
   const io = new IntersectionObserver((entries) => {
     for (const entry of entries) {
       if (entry.isIntersecting) delete (entry.target as HTMLElement).dataset.offscreen;

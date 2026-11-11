@@ -3,8 +3,33 @@
   org: University of Washington
   year: 2025-2026
   source: Resume.pdf (2026-11-03)
+  # Translations (content/README.md "Translations"); the university's name stays in English.
+  zh-hans:
+    draft: true
+    name: 年度院长名单
+    from:
+      name: a38cca75
+  zh-hant:
+    draft: true
+    name: 年度院長名單
+    from:
+      name: 5350bc85
 - name: Annual Dean's List
   org: University of Washington
   year: 2024-2025
   note: with 4 consecutive quarters
   source: legacy index.html; note from Resume.pdf (2026-03-31 version, in git history)
+  zh-hans:
+    draft: true
+    name: 年度院长名单
+    note: 连续 4 个学季
+    from:
+      name: a38cca75
+      note: cdd341ef
+  zh-hant:
+    draft: true
+    name: 年度院長名單
+    note: 連續 4 個學季
+    from:
+      name: 5350bc85
+      note: a9ff0a51

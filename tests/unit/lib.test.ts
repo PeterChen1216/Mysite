@@ -3,21 +3,33 @@ import { formatVersion, parseStamp } from '../../src/lib/build-info';
 import { byStartDesc, copyrightYears, formatRange, formatYearMonth } from '../../src/lib/format';
 import { withBase } from '../../src/lib/paths';
 
+/** copy.yaml `labels` month words as shipped, and copy.zh-hans.yaml's. */
+const EN = {
+  months: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'],
+  year_month: '{month} {year}',
+};
+const ZH = {
+  months: Array.from({ length: 12 }, (_, i) => `${i + 1}月`),
+  year_month: '{year}年{month}',
+};
+
 describe('format', () => {
-  it('formats YYYY-MM', () => {
-    expect(formatYearMonth('2024-07')).toBe('Jul 2024');
-    expect(formatYearMonth('2027-06')).toBe('Jun 2027');
-    expect(formatYearMonth('present', 'Present')).toBe('Present');
+  it('formats YYYY-MM in the page’s words', () => {
+    expect(formatYearMonth('2024-07', EN)).toBe('Jul 2024');
+    expect(formatYearMonth('2027-06', EN)).toBe('Jun 2027');
+    expect(formatYearMonth('2027-03', ZH)).toBe('2027年3月');
+    expect(formatYearMonth('present', EN, 'Present')).toBe('Present');
     // An ongoing end always needs the copy.yaml label: no built-in English.
-    expect(() => formatYearMonth('present')).toThrow(/needs a label/);
+    expect(() => formatYearMonth('present', EN)).toThrow(/needs a label/);
   });
   it('rejects malformed values', () => {
-    expect(() => formatYearMonth('2024-7')).toThrow();
-    expect(() => formatYearMonth('2024-13')).toThrow();
+    expect(() => formatYearMonth('2024-7', EN)).toThrow();
+    expect(() => formatYearMonth('2024-13', EN)).toThrow();
   });
   it('formats ranges', () => {
-    expect(formatRange('2024-07', '2024-09', 'Present')).toBe('Jul 2024 – Sep 2024');
-    expect(formatRange('2026-03', 'present', 'ongoing')).toBe('Mar 2026 – ongoing');
+    expect(formatRange('2024-07', '2024-09', 'Present', EN)).toBe('Jul 2024 – Sep 2024');
+    expect(formatRange('2026-03', 'present', 'ongoing', EN)).toBe('Mar 2026 – ongoing');
+    expect(formatRange('2026-03', 'present', '至今', ZH)).toBe('2026年3月 – 至今');
   });
   it('sorts newest first', () => {
     const items = [{ start: '2023-09' }, { start: '2025-01' }, { start: '2024-07' }];

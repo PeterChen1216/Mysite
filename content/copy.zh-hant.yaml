@@ -1,0 +1,529 @@
+# 由 pnpm content:hant 從簡體版（copy.zh-hans.yaml）逐字轉換為香港繁體字形（OpenCC s2hk），只轉字形、不改用詞。
+# draft: true —— 尚未審閱：請讀過、改正一對多的錯字（發/髮、後/后、乾/幹/干、麵/面…）和香港用詞，
+# 然後刪掉 draft 這一行。from 記錄它轉換自的簡體文字；之後這份繁體由你維護，腳本不會再覆蓋它。
+
+draft: true
+
+nav:
+  links:
+    - { label: '~/關於', href: '#about' }
+    - { label: '~/項目', href: '#projects' }
+    - { label: '~/經歷', href: '#experience' }
+    - { label: '~/聯繫', href: '#contact' }
+  status: 在線 · {city}
+  resume: 簡歷（英文）
+  say_hi: 打個招呼
+  logo_label: '{domain}——回到頂部'
+  sections_label: 欄目
+  hotbar:
+    - 關於
+    - 項目
+    - 經歷
+    - 聯繫
+  hotbar_prefs: 設置
+
+hero:
+  headline:
+    - 把[數據]
+    - 打造成
+    - 人們喜愛的東西[_]
+  terminal_title: '{host}@{domain}: ~ — zsh'
+  cmd_whoami: whoami
+  cmd_interests: cat ~/interests.txt
+  ok: '[OK]'
+  summon: '/summon pixel_globe ~ ~ ~ {rotate:1b}'
+  summon_ok: '已召喚 PixelGlobe。區塊已加載：36/36。{status}。'
+  whoami_line: '{name} — {programme} @ {school}，{year} 屆。'
+  cta_projects: 查看項目
+  cta_resume: 下載英文簡歷
+  eyebrow_prefix: '// 玩家:'
+  globe_label: 地球
+  globe_value: '已轉動 {deg}°'
+  avgeek_badge: AvGeek  ✈  航線 · 座位 · 里程
+  avgeek_route: AvGeek  ✈  {from} ⇄ {to}
+  globe_lat:
+    n: 北緯 {deg}°
+    s: 南緯 {deg}°
+  globe_lon:
+    e: 東經 {deg}°
+    w: 西經 {deg}°
+  globe_regions:
+    north_america: 北美洲
+    south_america: 南美洲
+    europe: 歐洲
+    africa: 非洲
+    asia: 亞洲
+    oceania: 大洋洲
+    antarctica: 南極洲
+    pacific: 太平洋
+    atlantic: 大西洋
+    indian: 印度洋
+    arctic: 北冰洋
+    southern: 南大洋
+  copy_handle: 複製
+  copy_label: 複製 {handle}
+  copied: 已複製
+  prompt:
+    open: 在終端裏輸入命令
+    label: 命令
+    hint: 輸入 help 查看命令。按 Esc 關閉。
+    help:
+      - help — 這份列表
+      - whoami — 我是誰
+      - ls — 本頁的各個欄目
+      - cat interests.txt — 我的興趣
+      - open resume — 下載我的英文簡歷
+      - theme night | day | mono | paper | prism — 更換主題
+      - clear — 清屏
+      - exit — 關閉命令行
+    not_found: 找不到命令：{cmd} —— 試試 help
+    theme_set: 主題：{name}
+    opening: 正在打開 {name}…
+  more: 更多 ▾
+  less: 收起 ▴
+  badges_label: 亮點
+
+ticker:
+  label: 狀態
+  tags: { xp: XP, now: 當前, work: 工作, ping: PING, edu: 教育 }
+
+about:
+  cmd: cat ~/about.md
+  title: [ '玩家屬性與', '已加載區塊' ]
+  blurb: 我是誰、在學什麼，以及沒在發佈作品的時候都在忙些什麼。所有屬性均為自報，沒有作弊。
+  whoami_title: 你好，我是 {first}，在 {department} 讀{major}。
+  card_whoami: whoami
+  card_gpa: 績點 --等級
+  card_now: 現在 --在做
+  card_education: 教育經歷
+  card_off: 下班 --以後
+  card_avgeek: avgeek
+  card_skills: 物品欄 --技能
+  avgeek_title: 航線、座位、里程計劃。
+  now_link: 在 App Store 中打開
+  skills_basic: 基礎
+  gpa_out_of: 滿分
+  track_suffix: 方向
+  minor_prefix: 輔修
+  coursework: 相關課程
+  avgeek_panels:
+    watching: 關注中
+    seat_rules: 選座規則
+    favorite_cabins: 喜歡的艙位
+    news: 航線新聞
+    fare_examples: 票價實驗室
+    tools: 常用工具
+  slot_tip: "{group} · 第 {n} 項，共 {count} 項"
+
+projects:
+  cmd: ls ~/projects --sort=shipping
+  title: [ '已發佈與', '進行中的作品' ]
+  blurb: 我做過和正在做的東西。先看精選作品，然後是物品欄裏的其餘東西。
+  featured: ★ 精選
+  stack_label: '技術棧：'
+  status_title: '~/projects'
+  status_cmd: git status
+  link_appstore: App Store
+  link_repo: 源代碼
+  link_live: 在線網站
+  next_label: 下一個 --區塊
+  next_title: '???（加載中…）'
+  next_body: 區塊尚未生成——再過幾次提交後回來看看。
+  next_tags: [ 待定 ]
+  next_progress: 正在生成區塊 (-1, 3)…
+  # 手機畫的是 App 自己的英文界面，所以這裏保持英文。
+  phone:
+    home_zone: America/Los_Angeles
+    cities:
+      - { code: FRA, name: Frankfurt, time_zone: Europe/Berlin }
+      - { code: SEA, name: Seattle, time_zone: America/Los_Angeles }
+      - { code: SHA, name: Shanghai, time_zone: Asia/Shanghai }
+    weather: Open-Meteo
+    hours: 24h
+    tab_list: List
+    tab_clock: Clock
+    pick_label: 顯示此城市的時間：
+  list_all: 全部列出 ▸
+  position: 第 {n} 個，共 {count} 個
+
+experience:
+  cmd: git log --oneline --graph ~/career
+  title: [ 提交歷史 ]
+  blurb: 我走過的路，最新的在前。HEAD 指向接下來的事。
+  head_hint: 打個招呼 ↓
+  head_dates: 現在 →
+  community_cmd: git log --oneline ~/community
+  community_title: 社區
+  show_cmd: git show {hash}
+
+contact:
+  cmd: ping {host} --count 1
+  title: [ '一起來', '做點什麼吧。' ]
+  say_hi: 打個招呼 · 郵件
+  github: GITHUB
+  linkedin: LINKEDIN
+  resume: 英文簡歷 PDF
+  terminal_title: '~/contact — zsh'
+  ping:
+    request: 'PING {host} ({email}): 56 data bytes'
+    reply: '64 bytes from {email}: icmp_seq=0 ttl=64 time=0.27 ms'
+    summary: '--- 1 packet transmitted, 1 received, 0% packet loss ---'
+  open_cmd: 'open mailto:{email}'
+  emails_label: 或寫信至
+
+footer:
+  tagline: 由體素、咖啡和太多航班搭建而成
+  prefs: 設置
+  back_to_top: ▲ 回到出生點
+  rights: 保留所有權利。
+  updated: 更新於
+
+prefs:
+  open_label: 設置
+  pause_label: 暫停動畫
+  title: '~/.config — prefs'
+  heading: 設置
+  intro: 更改即時生效，並且只保存在此瀏覽器中。
+  close: 關閉
+  reset_cmd: reset
+  reset: 恢復默認設置
+  theme:
+    cmd: theme --set
+    legend: 主題
+    options:
+      night: { name: 夜間, note: 默認 }
+      day: { name: 白天, note: 主世界 }
+      mono-dark: { name: 黑白深色, note: 基岩 }
+      mono-light: { name: 黑白淺色, note: 紙張 }
+      cvd: { name: 色盲友好, note: 稜鏡 }
+      auto: { name: 自動, note: '夜間或白天，跟隨設備' }
+    contrast_note: 你的設備要求更高的對比度，所以每個主題都使用更醒目的線條和文字。
+  motion:
+    cmd: motion --set
+    legend: 動效
+    options:
+      auto: { name: 自動, note: 跟隨設備 }
+      full: { name: 完整, note: 一切都會動 }
+      calm: { name: 平靜, note: '沒有開場和火花，循環放慢' }
+      off: { name: 關閉, note: 一切靜止 }
+    reduced_note: 你的設備要求減少動態效果，所以無論選擇什麼，頁面都保持靜止。
+  text:
+    cmd: text --size
+    legend: 文字大小
+    option: '{size}%'
+  keys:
+    cmd: keys --shortcuts
+    legend: 鍵盤快捷鍵
+    on: 開
+    off: 關
+    note: '不在輸入框裏打字時，按“,”打開此窗口，按“p”暫停動畫。'
+  lang:
+    cmd: lang --set
+    legend: 語言
+    note: 每種語言都是單獨的頁面；點擊鏈接後仍停留在當前位置。
+    draft: 草稿
+
+labels:
+  now: 現在
+  present: 至今
+  expected: （預計）
+  gpa: GPA
+  months: [ 1月, 2月, 3月, 4月, 5月, 6月, 7月, 8月, 9月, 10月, 11月, 12月 ]
+  year_month: '{year}年{month}'
+  list_separator: 、
+  platform: { ios: iOS, web: 網頁, cli: 命令行, research: 研究 }
+  status:
+    idea: 構想
+    wip: 進行中
+    testflight: TestFlight
+    shipped: 已發佈
+    completed: 已完成
+    archived: 已歸檔
+  new_tab: （在新標籤頁中打開）
+  skip_link: 跳到正文
+
+i18n:
+  name: 繁體中文
+  preview_notice: 草稿譯文，尚未經過審閲。
+  preview_link: 閲讀英文版
+  suggest: 本頁也有繁體中文版。
+  suggest_go: 閲讀繁體中文版
+  suggest_dismiss: 不用了
+  suggest_label: 語言建議
+
+windows:
+  more: 更多 ▸
+  more_label: 全部項目
+  move_label: 移動視窗
+  move_hint: 方向鍵移動視窗，按住 Shift 移得更遠；Enter 或 Home 放回原處。
+  close: 關閉
+  hint: 按 Esc 或點擊標題欄，把視窗縮回桌面。
+  loading: 正在載入區塊…
+  failed: 區塊載入失敗。打開這一頁：
+  directory_title: projects/ — 目錄
+  directory_cmd: ls -la ~/projects
+  directory_heading: 全部項目
+  project_title: '~/projects/{id}'
+  project_cmd: 'cat ~/projects/{id}.md'
+  crumbs_label: 你在這裏
+  home_label: 首頁
+  page_title: '{project} — {domain}'
+  directory_page_title: '項目 — {domain}'
+  neighbours_label: 更多項目
+  prev: ← 上一個
+  next: 下一個 →
+  back: cd ~/projects
+  back_home: cd ~
+not_found:
+  page_title: '找不到區塊 — {domain}'
+  title: '404 — 找不到區塊'
+  cmd: 'cd {path}'
+  error: 'cd: 沒有這個區塊：{path}'
+  heading: 找不到區塊
+  body: 這一頁不存在。它可能已經搬走了，也可能還沒有生成。
+  home: cd ~
+  home_label: 回到首頁
+  projects_label: 全部項目
+og:
+  alt: '體素世界前的一個終端視窗：{title}'
+
+scene:
+  hud: '幀率 {fps} · {ms} 毫秒 · 圖形等級 {tier}（{reason}）· {draws} 次繪製 · 像素比 {dpr}'
+from:
+  nav.links: 4ee8cf8e
+  nav.status: 18310fc0
+  nav.resume: 0fc8ee9a
+  nav.say_hi: 0a32a6d9
+  nav.logo_label: 308a2cf3
+  nav.sections_label: 02d2cd88
+  hero.headline: af483781
+  hero.terminal_title: 9247c7b0
+  hero.cmd_whoami: 6f75e753
+  hero.cmd_interests: "8464e218"
+  hero.ok: 6f70d01f
+  hero.summon: ce7e775a
+  hero.summon_ok: 2f45ac51
+  hero.whoami_line: d8946e25
+  hero.cta_projects: 2b77959e
+  hero.cta_resume: da10920d
+  hero.eyebrow_prefix: "82554664"
+  hero.globe_label: bd7a9abe
+  hero.globe_value: 691ff75a
+  hero.avgeek_badge: 37ae41af
+  hero.avgeek_route: 200e4b82
+  ticker.label: 7dc96b1d
+  ticker.tags.xp: 3eabb4e8
+  ticker.tags.now: 0faaae86
+  ticker.tags.work: d2d1b4a3
+  ticker.tags.ping: 11d672b2
+  ticker.tags.edu: 33490f51
+  about.cmd: 8eda90ca
+  about.title: 69c66cda
+  about.blurb: 35b78c3c
+  about.whoami_title: 572f83fc
+  about.card_whoami: 6f75e753
+  about.card_gpa: ef01b867
+  about.card_now: 286e0a34
+  about.card_education: 9249362b
+  about.card_off: e090ce44
+  about.card_avgeek: ffbd3d7c
+  about.card_skills: d14b217e
+  about.avgeek_title: 78088a8b
+  about.now_link: e6ae2eac
+  about.skills_basic: c35aabe8
+  about.gpa_out_of: d49bd9b2
+  about.track_suffix: cc1ed99f
+  about.minor_prefix: f2d1bd04
+  about.coursework: 7ae6edd4
+  about.avgeek_panels.watching: dca335c5
+  about.avgeek_panels.seat_rules: 8883d43f
+  about.avgeek_panels.favorite_cabins: 941b192f
+  about.avgeek_panels.news: ad6e0650
+  about.avgeek_panels.fare_examples: d888f2b0
+  about.avgeek_panels.tools: 303140c1
+  projects.cmd: d12e335b
+  projects.title: ea8249bf
+  projects.blurb: 9305bb9f
+  projects.featured: a70fc2b4
+  projects.stack_label: 9142812e
+  projects.status_title: 8af51ce7
+  projects.status_cmd: 7d2a22d7
+  projects.link_appstore: 4a29c5da
+  projects.link_repo: 1a49a9c8
+  projects.link_live: c6a51c48
+  projects.next_label: 9a780695
+  projects.next_title: 56bb4616
+  projects.next_body: 1bc33734
+  projects.next_tags: 2a047e1a
+  projects.next_progress: ffb83edc
+  projects.phone.home_zone: a4b5e4e3
+  projects.phone.cities: 73bba408
+  projects.phone.weather: b8f96035
+  projects.phone.hours: 4188eb3f
+  projects.phone.tab_list: "22943611"
+  projects.phone.tab_clock: 899e905e
+  experience.cmd: af8d6ae8
+  experience.title: e3519654
+  experience.blurb: 9640ff75
+  experience.head_hint: 648fbe9d
+  experience.head_dates: 4097bf51
+  experience.community_cmd: 5a149355
+  experience.community_title: dce82dc0
+  contact.cmd: d7455acc
+  contact.title: 0b193462
+  contact.say_hi: 601c76b1
+  contact.github: a9e2e3a8
+  contact.linkedin: "32262e00"
+  contact.resume: 892dc822
+  contact.terminal_title: 3520c851
+  contact.ping.request: eebe9de1
+  contact.ping.reply: eae1031a
+  contact.ping.summary: 03c1c788
+  contact.open_cmd: 9a93c06c
+  contact.emails_label: f7c805cb
+  footer.tagline: 843e952f
+  footer.prefs: 94dfe5d5
+  footer.back_to_top: 52f652bc
+  footer.rights: 56bc1cd3
+  footer.updated: 67e9d7e2
+  prefs.open_label: 94dfe5d5
+  prefs.pause_label: f2e65a77
+  prefs.title: 570db951
+  prefs.heading: 94dfe5d5
+  prefs.intro: bb3c345f
+  prefs.close: a1e25e38
+  prefs.reset_cmd: 1c7a1973
+  prefs.reset: "819e6015"
+  prefs.theme.cmd: "20377e06"
+  prefs.theme.legend: 5b264da7
+  prefs.theme.options.night.name: ea302a60
+  prefs.theme.options.night.note: 8045fb0d
+  prefs.theme.options.day.name: d1cf5dc1
+  prefs.theme.options.day.note: c7287cbc
+  prefs.theme.options.mono-dark.name: a5efb73b
+  prefs.theme.options.mono-dark.note: 6ad1c311
+  prefs.theme.options.mono-light.name: aa315218
+  prefs.theme.options.mono-light.note: 89a02a3d
+  prefs.theme.options.cvd.name: 5e23e4d3
+  prefs.theme.options.cvd.note: d7cdcc3e
+  prefs.theme.options.auto.name: 1dcdd93f
+  prefs.theme.options.auto.note: 7f0d5309
+  prefs.theme.contrast_note: da18561a
+  prefs.motion.cmd: 1bdcf225
+  prefs.motion.legend: e6506c4f
+  prefs.motion.options.auto.name: 1dcdd93f
+  prefs.motion.options.auto.note: 0ecb2c50
+  prefs.motion.options.full.name: bc20bdd7
+  prefs.motion.options.full.note: 4472f00e
+  prefs.motion.options.calm.name: d68f85a2
+  prefs.motion.options.calm.note: 6859ea90
+  prefs.motion.options.off.name: a1e25e38
+  prefs.motion.options.off.note: dadec12d
+  prefs.motion.reduced_note: 8f7d8602
+  prefs.text.cmd: 2d5cff8d
+  prefs.text.legend: 14613eb7
+  prefs.text.option: e838dfbd
+  prefs.keys.cmd: e92c0f75
+  prefs.keys.legend: 7df50ec8
+  prefs.keys.on: 4b9bf7bf
+  prefs.keys.off: bc684767
+  prefs.keys.note: d7b24386
+  prefs.lang.cmd: f1c4ac7e
+  prefs.lang.legend: e52972a5
+  prefs.lang.note: d4ef9380
+  prefs.lang.draft: 89d3eae7
+  labels.now: 7a027153
+  labels.present: 97a17fd3
+  labels.expected: 74bfd96f
+  labels.gpa: "41474e63"
+  labels.months: 441f3226
+  labels.year_month: a2a0cc3e
+  labels.list_separator: b722d5c1
+  labels.platform.ios: "94777e47"
+  labels.platform.web: 2280e7ee
+  labels.platform.cli: 830fc1fa
+  labels.platform.research: d88fc7b5
+  labels.status.idea: ec321803
+  labels.status.wip: e4f73c35
+  labels.status.testflight: "5704e906"
+  labels.status.shipped: 79b8b67a
+  labels.status.completed: cd008a30
+  labels.status.archived: 7b15b9fd
+  labels.new_tab: da3fdcdc
+  labels.skip_link: c0cff34b
+  i18n.name: 6ddb120b
+  i18n.preview_notice: a3f25d71
+  i18n.preview_link: bd1d2eab
+  i18n.suggest: d5212da4
+  i18n.suggest_go: 47e198aa
+  i18n.suggest_dismiss: 1ae0017b
+  i18n.suggest_label: 3921dabc
+  scene.hud: a9ab427d
+  hero.globe_lat.n: c9e94ebc
+  hero.globe_lat.s: d3b0e5c4
+  hero.globe_lon.e: 07ca45e4
+  hero.globe_lon.w: b4a435cc
+  hero.globe_regions.north_america: 21f9a82a
+  hero.globe_regions.south_america: 478a3ce5
+  hero.globe_regions.europe: fc32106f
+  hero.globe_regions.africa: c495676b
+  hero.globe_regions.asia: 242c6120
+  hero.globe_regions.oceania: a5173218
+  hero.globe_regions.antarctica: ebc2e598
+  hero.globe_regions.pacific: bd7f3093
+  hero.globe_regions.atlantic: c37cd6c0
+  hero.globe_regions.indian: 622b5df7
+  hero.globe_regions.arctic: 4bdaba93
+  hero.globe_regions.southern: 5044171c
+  hero.copy_handle: 435f6d8b
+  hero.copy_label: 766bfdc9
+  hero.copied: 94a13ba8
+  hero.prompt.open: a832cd72
+  hero.prompt.label: c8d669da
+  hero.prompt.hint: fc994647
+  hero.prompt.help: 6696b502
+  hero.prompt.not_found: ce74391b
+  hero.prompt.theme_set: cb899697
+  hero.prompt.opening: 80b89246
+  about.slot_tip: 7bcf65b3
+  projects.phone.pick_label: 2055fb5a
+  experience.show_cmd: d014beb9
+  windows.more: 0f152ee5
+  windows.more_label: 6f33f409
+  windows.move_label: e01e1451
+  windows.move_hint: 4c2e8ea2
+  windows.close: a1e25e38
+  windows.hint: 6ba647e6
+  windows.loading: 9b023df6
+  windows.failed: 00952bd1
+  windows.directory_title: 3af19f5e
+  windows.directory_cmd: 347b54da
+  windows.directory_heading: 6f33f409
+  windows.project_title: 21ffa82f
+  windows.project_cmd: 74c0322a
+  windows.crumbs_label: a25e50b6
+  windows.home_label: 51ad1039
+  windows.page_title: d8d4e1e7
+  windows.directory_page_title: 3c7332ac
+  windows.neighbours_label: a363f575
+  windows.prev: 6d742751
+  windows.next: 1694b322
+  windows.back: 18a6ac0e
+  windows.back_home: 4316bf5f
+  not_found.page_title: 6a70fe73
+  not_found.title: 20c38e15
+  not_found.cmd: b57fadaf
+  not_found.error: ca550daf
+  not_found.heading: 19c543dd
+  not_found.body: cf3cfd9c
+  not_found.home: 4316bf5f
+  not_found.home_label: b7e60605
+  not_found.projects_label: 6f33f409
+  og.alt: 6494fcc5
+  nav.hotbar: 0da8a208
+  nav.hotbar_prefs: 94dfe5d5
+  hero.more: 68f6f992
+  hero.less: 6992f115
+  projects.list_all: 84f569fd
+  projects.position: a2dc324b
+  hero.badges_label: aa0d31f7

@@ -16,14 +16,10 @@ interface Props {
   others: PageData['interests']['items'];
 }
 const { data, others } = Astro.props;
-const { copy, profile, edu, hero, About } = data;
+const { copy, profile, hero, About } = data;
 
-const slug = (s: string) =>
-  s
-    .toLowerCase()
-    .replace(/[^a-z0-9]+/g, '-')
-    .replace(/^-|-$/g, '');
-const tags = [...new Set([...(edu.track ? [slug(edu.track)] : []), ...hero.tags])];
+// The track as a tag (`data-science`), from the English track on every page: a tag is a name.
+const tags = [...new Set([...(data.trackTag ? [data.trackTag] : []), ...hero.tags])];
 // Chip colours in turn, as in the design (data-science diamond, gen-ai enchant, aviation cyan,
 // ios/vibe-coding gold, table-tennis redstone, choir white).
 const TONES = ['diamond', 'enchant', 'cyan', 'gold', 'redstone', 'white'] as const;
@@ -44,7 +40,7 @@ const TONES = ['diamond', 'enchant', 'cyan', 'gold', 'redstone', 'white'] as con
         {profile.tagline}
       </p>
       {About && (
-        <div class="who__body">
+        <div class="who__body" lang={data.aboutLang}>
           <About />
         </div>
       )}
@@ -65,8 +61,8 @@ const TONES = ['diamond', 'enchant', 'cyan', 'gold', 'redstone', 'white'] as con
           {tags.map((t, i) => {
             const tone = TONES[i % TONES.length]!;
             return (
-              <li class:list={['who__tag', { 'who__tag--cyan': tone === 'cyan' }]}>
-                <Chip tone={tone === 'cyan' ? 'diamond' : tone}>{t}</Chip>
+              <li class="who__tag">
+                <Chip tone={tone}>{t}</Chip>
               </li>
             );
           })}
@@ -99,6 +95,7 @@ const TONES = ['diamond', 'enchant', 'cyan', 'gold', 'redstone', 'white'] as con
   .who__title {
     max-width: min(620px, calc(100% - 140px));
     margin: 0;
+    overflow-wrap: break-word; /* a long word breaks rather than spill at large text sizes */
     font: var(--type-pixel-h3);
     letter-spacing: var(--type-pixel-h3-tracking);
     color: var(--color-text-hi);
@@ -107,7 +104,7 @@ const TONES = ['diamond', 'enchant', 'cyan', 'gold', 'redstone', 'white'] as con
     margin: 0;
     font: var(--type-pixel-label);
     letter-spacing: var(--type-pixel-label-tracking);
-    text-transform: uppercase;
+    text-transform: var(--type-label-case);
     color: var(--color-accent-diamond);
   }
   .who__body {
@@ -123,14 +120,14 @@ const TONES = ['diamond', 'enchant', 'cyan', 'gold', 'redstone', 'white'] as con
   }
   /* Links inside running text: underlined, not colour alone (WCAG 1.4.1). */
   .who__body :global(a) {
-    color: var(--color-accent-diamond);
+    color: var(--color-link);
     text-decoration: underline;
     text-decoration-thickness: 1px;
     text-underline-offset: 3px;
   }
   .who__body :global(a:hover),
   .who__body :global(a:focus-visible) {
-    color: var(--color-accent-gold);
+    color: var(--color-link-hover);
   }
   .who__foot {
     display: flex;
@@ -163,10 +160,6 @@ const TONES = ['diamond', 'enchant', 'cyan', 'gold', 'redstone', 'white'] as con
   .who__tag {
     display: flex;
   }
-  /* Figma's aviation chip is #55ffff — Chip.astro has no cyan tone (see integration notes). */
-  .who__tag--cyan :global(.chip) {
-    color: #55ffff;
-  }
   @media (max-width: 767px) {
     .who__shelf {
       top: -8px;
@@ -178,7 +171,11 @@ const TONES = ['diamond', 'enchant', 'cyan', 'gold', 'redstone', 'white'] as con
     }
     .who__title {
       max-width: calc(100% - 64px);
-      font-size: 26px;
+      font-size: calc(26px * var(--ts));
+    }
+    /* Chinese: 12 px multiples for the pixel CJK face (PLAN-EXPERIENCE §5.5). */
+    :global(:root:lang(zh)) .who__title {
+      font-size: calc(24px * var(--ts));
     }
   }
 </style>

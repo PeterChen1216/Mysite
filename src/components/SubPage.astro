@@ -1,0 +1,74 @@
+---
+/**
+ * A page of its own besides the home page (M3: the projects directory, a project): the site's
+ * nav, background and footer around one window as the page's main content, in one locale. The
+ * nav's section links lead back to the home page; settings and the language row work as there
+ * (the language links go to this same page in the other locales).
+ */
+import BaseLayout from '../layouts/BaseLayout.astro';
+import Background from './sections/Background.astro';
+import Footer from './sections/Footer.astro';
+import LangNotice from './sections/LangNotice.astro';
+import LangSuggest from './sections/LangSuggest.astro';
+import Nav from './sections/Nav.astro';
+import PageScripts from './PageScripts.astro';
+import PrefsWindow from './sections/PrefsWindow.astro';
+import type { PageData } from '../lib/page-data';
+
+interface Props {
+  data: PageData;
+  /** The page's <title> and description (the window's subject). */
+  title: string;
+  description: string;
+}
+const { data, title, description } = Astro.props;
+const page = { ...data, head: { ...data.head, title, description } };
+---
+
+<BaseLayout data={page}>
+  <LangSuggest data={data} />
+  <div class="page sub">
+    {data.preview && <LangNotice data={data} />}
+    <Background />
+    <Nav data={data} />
+    <main id="main" class="sub__main">
+      <slot />
+    </main>
+    <Footer data={data} />
+  </div>
+  <PrefsWindow data={data} />
+  <PageScripts />
+</BaseLayout>
+
+<style>
+  .page {
+    position: relative;
+    overflow-x: clip;
+  }
+  .sub {
+    /* The background art is taller than a short page: it must not make the page scroll. */
+    overflow: clip;
+    display: flex;
+    flex-direction: column;
+    min-height: 100svh;
+  }
+  .sub__main {
+    position: relative;
+    z-index: 1;
+    flex: 1 0 auto;
+    display: flex;
+    flex-direction: column;
+    gap: 32px;
+    padding: 64px var(--gutter) 96px;
+  }
+  @media (max-width: 1279px) {
+    .sub__main {
+      padding-inline: 32px;
+    }
+  }
+  @media (max-width: 767px) {
+    .sub__main {
+      padding: 32px 16px 64px;
+    }
+  }
+</style>

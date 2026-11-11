@@ -1,7 +1,8 @@
 import { expect, test, type Page } from '@playwright/test';
 import { glyphParts } from '../../src/lib/derive';
+import { introPlayed, runningAnimations, runningLoops } from './animations';
 import { copy, escapeRe } from './copy';
-import { V2 } from './site';
+import { directoryKey, LOCALE_PAGES, open, TIER_PAGES, V2 } from './site';
 
 /**
  * Text that is cut off or runs into its neighbours. Checks every visible word against the
@@ -15,15 +16,32 @@ import { V2 } from './site';
 function textProblems(page: Page) {
   return page.evaluate(() => {
     const vw = document.documentElement.clientWidth;
-    const skip = (el: Element) => el.closest('.visually-hidden, .ticker') !== null;
+    /** Read out only: the .visually-hidden helper, or the same technique in a component's own
+     * styles (a 1 px box clipped to nothing: the hotbar's names where only icons fit). */
+    const srOnly = (el: Element) => {
+      for (let a: Element | null = el; a; a = a.parentElement) {
+        const cs = getComputedStyle(a);
+        if (cs.clipPath === 'inset(50%)' && a.getBoundingClientRect().width <= 1) return true;
+      }
+      return false;
+    };
+    /** Folded away in a closed <details> (the phone's commit rows, X4): not drawn at all, though
+     * Chromium still reports a box for it. Its summary is drawn and checked. */
+    const folded = (el: Element) => {
+      const details = el.closest('details:not([open])');
+      return details !== null && el.closest('summary')?.parentElement !== details;
+    };
+    const skip = (el: Element) =>
+      el.closest('.visually-hidden, .ticker') !== null || srOnly(el) || folded(el);
     const problems: string[] = [];
     const walker = document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT);
     for (let node = walker.nextNode(); node; node = walker.nextNode()) {
       const el = node.parentElement;
       const text = node.textContent ?? '';
       if (!el || !text.trim() || skip(el) || getComputedStyle(el).visibility === 'hidden') continue;
-      let left = 0;
-      let right = vw;
+      let left = -Infinity;
+      let right = Infinity;
+      let scroller = false;
       let shortened = false;
       for (let a: Element | null = el; a && a !== document.documentElement; a = a.parentElement) {
         const cs = getComputedStyle(a);
@@ -33,10 +51,24 @@ function textProblems(page: Page) {
           break;
         }
         const r = a.getBoundingClientRect();
+        // A row that scrolls sideways (the phone's carousels and slot rows, X4) shows the rest of
+        // its text when scrolled: it is cut off only past the end of what it scrolls through.
+        // (The row itself is checked against the page as any box is.)
+        if (/auto|scroll/.test(cs.overflowX) && a.scrollWidth > a.clientWidth + 1) {
+          const from = r.left - a.scrollLeft;
+          left = Math.max(left, from);
+          right = Math.min(right, from + a.scrollWidth);
+          scroller = true;
+          break;
+        }
         left = Math.max(left, r.left);
         right = Math.min(right, r.right);
       }
       if (shortened) continue;
+      if (!scroller) {
+        left = Math.max(left, 0);
+        right = Math.min(right, vw);
+      }
       const range = document.createRange();
       for (const m of text.matchAll(/\S+/g)) {
         range.setStart(node, m.index);
@@ -76,61 +108,158 @@ function textProblems(page: Page) {
 test.describe('layout holds at every width', () => {
   test.skip(({ isMobile }) => isMobile, 'desktop projects resize the viewport themselves');
   test.use({ reducedMotion: 'reduce' });
-  // 320 px is the WCAG 1.4.10 reflow width.
-  for (const width of [320, 360, 390, 600, 768, 1024, 1100, 1280, 1440, 1920]) {
-    test(`no text is cut off or overlapping at ${width}px`, async ({ page }) => {
+  // 320 px is the WCAG 1.4.10 reflow width. Every locale (PLAN-EXPERIENCE §5.5: Chinese strings
+  // are shorter but taller; §9.1: all three locales in Night).
+  for (const { locale, path } of LOCALE_PAGES)
+    for (const width of [320, 360, 390, 600, 768, 1024, 1100, 1280, 1440, 1920]) {
+      test(`no text is cut off or overlapping at ${width}px (${locale})`, async ({ page }) => {
+        await page.setViewportSize({ width, height: 900 });
+        await page.goto(path);
+        await page.evaluate(() => document.fonts.ready);
+        expect(await textProblems(page)).toEqual([]);
+        // The About grid template is valid for this width (an invalid one is dropped, and the
+        // cards fall back to auto-placement with holes).
+        const areas = await page
+          .locator('.inv')
+          .evaluate((el) => getComputedStyle(el).gridTemplateAreas);
+        expect(areas).not.toBe('none');
+      });
+    }
+  // The other themes show cue glyphs in tags and chips (wider); they share one layout, so one of
+  // them stands for all (PLAN-EXPERIENCE §9.1: prune the matrix to what can interact).
+  for (const width of [320, 390, 768, 1024, 1440]) {
+    test(`no text is cut off at ${width}px with the cue glyphs of the other themes`, async ({
+      page,
+    }) => {
+      await page.addInitScript(() => localStorage.setItem('zhic:prefs:v1', '{"theme":"cvd"}'));
       await page.setViewportSize({ width, height: 900 });
       await page.goto(V2);
       await page.evaluate(() => document.fonts.ready);
+      expect(
+        await page
+          .locator('.chip[data-cue]')
+          .first()
+          .evaluate((el) => getComputedStyle(el, '::before').display),
+      ).not.toBe('none');
       expect(await textProblems(page)).toEqual([]);
-      // The About grid template is valid for this width (an invalid one is dropped, and the
-      // cards fall back to auto-placement with holes).
-      const areas = await page
-        .locator('.inv')
-        .evaluate((el) => getComputedStyle(el).gridTemplateAreas);
-      expect(areas).not.toBe('none');
     });
   }
+  // WCAG 1.4.12: a reader's own spacing (the bookmarklet values) must not clip or overlap text.
+  for (const { locale, path } of LOCALE_PAGES)
+    for (const width of [320, 390, 430, 768, 1024, 1440]) {
+      test(`text-spacing override: nothing cut off at ${width}px (${locale})`, async ({ page }) => {
+        await page.setViewportSize({ width, height: 900 });
+        await page.goto(path);
+        await page.addStyleTag({
+          content:
+            '* { line-height: 1.5 !important; letter-spacing: 0.12em !important; word-spacing: 0.16em !important; } p { margin-bottom: 2em !important; }',
+        });
+        await page.evaluate(() => document.fonts.ready);
+        expect(await textProblems(page)).toEqual([]);
+      });
+    }
+  // The settings' largest text size (130 %) at the widths where the layout changes.
+  for (const { locale, path } of LOCALE_PAGES)
+    for (const width of [320, 390, 430, 768, 1024, 1280, 1440]) {
+      test(`text size 130 %: nothing cut off at ${width}px (${locale})`, async ({
+        page,
+        browser,
+      }) => {
+        await page.addInitScript(() => localStorage.setItem('zhic:prefs:v1', '{"text":130}'));
+        await page.setViewportSize({ width, height: 900 });
+        await page.goto(path);
+        await page.evaluate(() => document.fonts.ready);
+        // The type really is larger: the headline at 130 % against the same page at 100 %, loaded
+        // in a fresh context. (Removing --text-scale on this page and reading the headline again
+        // raced the preferences script, which may re-apply the stored size at any time.)
+        const h1 = (p: Page) =>
+          p.locator('h1').evaluate((el) => parseFloat(getComputedStyle(el).fontSize));
+        const scaled = await h1(page);
+        const plain = await browser.newContext({
+          viewport: { width, height: 900 },
+          reducedMotion: 'reduce',
+        });
+        const fresh = await plain.newPage();
+        await fresh.goto(path);
+        const base = await h1(fresh);
+        await plain.close();
+        expect(scaled).toBeCloseTo(base * 1.3, 0);
+        expect(await textProblems(page)).toEqual([]);
+      });
+    }
   test('long skill lists wrap instead of running off the card', async ({ page }) => {
     await page.goto(V2);
     await expect(page.locator('.sk__basic').first()).toHaveCSS('flex-wrap', 'wrap');
   });
 });
 
-/** CSS animations that are still running and never end (loops). */
-function runningLoops(page: Page) {
-  return page.evaluate(
-    () =>
-      document
-        .getAnimations()
-        .filter((a) => a.playState === 'running' && a.effect?.getTiming().iterations === Infinity)
-        .length,
-  );
-}
+// M3: the directory, a project's page and the 404 in every locale, and the windows over the home
+// page: no text cut off at the reflow width and on a desktop, with a reader's own spacing and at
+// the largest text size (pruned to the widths where these layouts change).
+test.describe('the pages and windows of M3 hold too', () => {
+  test.skip(({ isMobile }) => isMobile, 'desktop projects resize the viewport themselves');
+  test.use({ reducedMotion: 'reduce' });
+  const SPACING =
+    '* { line-height: 1.5 !important; letter-spacing: 0.12em !important; word-spacing: 0.16em !important; } p { margin-bottom: 2em !important; }';
+  for (const { locale, path } of LOCALE_PAGES) {
+    const pages = [`${path}projects/`, `${path}projects/clock-stamp/`, `${path}no/such/chunk/`];
+    for (const [mode, widths] of [
+      ['as built', [320, 768, 1440]],
+      ['text-spacing override', [320, 1440]],
+      ['text size 130 %', [320, 1440]],
+    ] as const)
+      for (const width of widths)
+        test(`${mode}: nothing cut off at ${width}px (${locale})`, async ({ page }) => {
+          if (mode === 'text size 130 %')
+            await page.addInitScript(() => localStorage.setItem('zhic:prefs:v1', '{"text":130}'));
+          await page.setViewportSize({ width, height: 900 });
+          for (const url of pages) {
+            await page.goto(url);
+            if (mode === 'text-spacing override') await page.addStyleTag({ content: SPACING });
+            await page.evaluate(() => document.fonts.ready);
+            expect(await textProblems(page), url).toEqual([]);
+          }
+        });
+  }
+  for (const width of [320, 1440])
+    test(`a window open over the page: nothing cut off at ${width}px`, async ({ page }) => {
+      await page.setViewportSize({ width, height: 900 });
+      await page.goto(V2);
+      await directoryKey(page).click();
+      await expect(page.locator('dialog[data-window-kind="directory"]')).toBeVisible();
+      expect(await textProblems(page)).toEqual([]);
+      await page.locator('dialog[open] a[data-project-link]').first().click();
+      await expect(page.locator('dialog[data-window-kind="project"] [data-project]')).toBeVisible();
+      expect(await textProblems(page)).toEqual([]);
+    });
+});
 
-/**
- * Every running animation, named with its element, so a failure says what is still moving.
- * Assertions poll it until it is empty: a stray loop (a revived globe spin) never stops, while a
- * transition or intro step that is just finishing does.
- */
-function runningAnimations(page: Page) {
-  return page.evaluate(() =>
-    document
-      .getAnimations()
-      .filter((a) => a.playState === 'running')
-      .map((a) => {
-        const target = (a.effect as KeyframeEffect | null)?.target as Element | null | undefined;
-        const name =
-          (a as CSSAnimation).animationName ||
-          (a as CSSTransition).transitionProperty ||
-          a.constructor.name;
-        const where = target
-          ? `${target.tagName.toLowerCase()}${target.classList[0] ? `.${target.classList[0]}` : ''}`
-          : '?';
-        return `${name} on ${where}`;
-      }),
-  );
-}
+// Every graphics tier (PLAN-EXPERIENCE §7, acceptance F), at full motion (reduced motion would
+// make every tier static): the scene sits behind the content and must not move or hide any of it.
+test.describe('layout holds at every graphics tier', () => {
+  test.skip(({ isMobile }) => isMobile, 'desktop projects resize the viewport themselves');
+  // Tier 3 is the desktop scene (from 1024 px).
+  for (const { path, tier } of TIER_PAGES)
+    for (const width of tier === 3 ? [1024, 1440] : [390, 1024, 1440]) {
+      test(`no text is cut off or overlapping at ${width}px (graphics tier ${tier})`, async ({
+        page,
+        browserName,
+      }) => {
+        test.skip(
+          tier === 3 && browserName !== 'chromium',
+          "CI's WebKit draws WebGL in software; its scene coverage is scene.spec.ts",
+        );
+        await page.setViewportSize({ width, height: 900 });
+        await open(page, path);
+        await page.evaluate(() => document.fonts.ready);
+        // The intro has played (words rise into place as it runs).
+        const late = await introPlayed(page);
+        if (late.length)
+          test.info().annotations.push({ type: 'intro late', description: late.join(', ') });
+        expect(await textProblems(page)).toEqual([]);
+      });
+    }
+});
 
 test.describe('motion', () => {
   test('focus pauses the ticker; it is a named region', async ({ page }) => {
@@ -267,6 +396,56 @@ test.describe('globe drag and reduced motion', () => {
   });
 });
 
+test.describe('the globe from the keyboard (WCAG 2.5.7: a drag has a keyboard twin)', () => {
+  /** Tab until the hero globe has focus (a real keyboard focus, so the spin holds). */
+  async function tabToGlobe(page: Page) {
+    const globe = page.getByRole('slider', { name: copy.hero.globe_label, exact: true });
+    for (let i = 0; i < 80 && !(await globe.evaluate((el) => el === document.activeElement)); i++)
+      await page.keyboard.press('Tab');
+    await expect(globe).toBeFocused();
+    return globe;
+  }
+  const value = (deg: number) => copy.hero.globe_value.replace(/\{\s*deg\s*\}/, String(deg));
+  // Where the map is: the spin's transform, or the still map's translate (px of the 648 px tile;
+  // −648 = 0°). Polled: under reduced motion a change runs a 0.01 ms transition.
+  const offset = (page: Page) =>
+    page.locator('.stage [data-globe-strip]').evaluate((el) => {
+      const cs = getComputedStyle(el);
+      const tx = cs.transform === 'none' ? 0 : new DOMMatrix(cs.transform).m41;
+      return Math.round(tx + (cs.translate === 'none' ? 0 : parseFloat(cs.translate)));
+    });
+  const at = (deg: number) => Math.round((deg / 360 - 1) * 648);
+
+  for (const motion of ['no-preference', 'reduce'] as const) {
+    test(`arrow keys, Page Up/Down and Home turn it (${motion} motion)`, async ({
+      page,
+      browserName,
+    }) => {
+      test.skip(browserName === 'webkit', 'Safari does not Tab to every element by default');
+      await page.emulateMedia({ reducedMotion: motion });
+      await page.goto(V2);
+      const globe = await tabToGlobe(page);
+      await page.keyboard.press('Home');
+      await expect(globe).toHaveAttribute('aria-valuenow', '0');
+      await expect(globe).toHaveAttribute('aria-valuetext', value(0));
+      await expect.poll(() => offset(page)).toBe(at(0));
+      await page.keyboard.press('ArrowRight');
+      await expect(globe).toHaveAttribute('aria-valuenow', '15');
+      await expect(globe).toHaveAttribute('aria-valuetext', value(15));
+      await expect.poll(() => offset(page)).toBe(at(15));
+      await page.keyboard.press('ArrowLeft');
+      await page.keyboard.press('ArrowLeft');
+      await expect(globe).toHaveAttribute('aria-valuenow', '345');
+      await expect.poll(() => offset(page)).toBe(at(345));
+      await page.keyboard.press('PageUp');
+      await expect(globe).toHaveAttribute('aria-valuenow', '75');
+      // While it has keyboard focus the spin holds, so the value stays true.
+      await page.waitForTimeout(300);
+      await expect.poll(() => offset(page)).toBe(at(75));
+    });
+  }
+});
+
 test.describe('keyboard and screen readers', () => {
   test.use({ reducedMotion: 'reduce' });
 
@@ -290,12 +469,15 @@ test.describe('keyboard and screen readers', () => {
       await expect(link).toHaveAccessibleName(new RegExp(`${escapeRe(copy.labels.new_tab)}$`));
   });
 
-  test('decorative symbols are left out of names', async ({ page }) => {
+  test('decorative symbols are left out of names', async ({ page, isMobile }) => {
     await page.goto(V2);
     await expect(page.locator('h1')).not.toHaveAccessibleName(/_\s*$/);
-    await expect(page.locator('footer a[href="#top"]')).toHaveAccessibleName(
-      glyphParts(copy.footer.back_to_top).text,
-    );
+    // X4: a phone's footer is two lines; back to spawn is the top bar's logo there (its name is
+    // its aria-label), and the footer's link is not shown.
+    if (!isMobile)
+      await expect(page.locator('footer a[href="#top"]')).toHaveAccessibleName(
+        glyphParts(copy.footer.back_to_top).text,
+      );
     await expect(page.locator('#experience a[href="#contact"]')).toHaveAccessibleName(
       glyphParts(copy.experience.head_hint).text,
     );

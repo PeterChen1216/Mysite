@@ -5,7 +5,7 @@
  */
 import { createHash } from 'node:crypto';
 import { decodeHTML, decodeHTMLAttribute } from 'entities';
-import { formatYearMonth } from './format';
+import { formatYearMonth, type DateWords } from './format';
 
 // ---------------------------------------------------------------- shapes (structural)
 export interface EducationLike {
@@ -127,10 +127,40 @@ export function fillTemplate(
 
 /**
  * Placeholders filled per use rather than page-wide, by copy.yaml key: `hero.avgeek_route` takes
- * {from} and {to} (its airports). Anywhere else they are unknown and fail the build.
+ * {from} and {to} (its airports), `hero.globe_value` {deg} (filled in the browser as the globe
+ * turns), `prefs.text.option` {size}, `scene.hud` (the `?debug=1` numbers, filled in the
+ * browser), and the X3 catalogue's: the globe's coordinates {deg}, the copy key {handle}, the
+ * prompt's {cmd} / {name}, a slot's tooltip {group} {n} {count}, a commit's {hash}; and M3's: a
+ * project's {id} and {project} title, the 404's {path}, a share card's {title}. Anywhere else they
+ * are unknown and fail the build.
  */
 export const LOCAL_PLACEHOLDERS: Readonly<Record<string, readonly string[]>> = {
   'hero.avgeek_route': ['from', 'to'],
+  'hero.globe_value': ['deg'],
+  'hero.globe_lat.n': ['deg'],
+  'hero.globe_lat.s': ['deg'],
+  'hero.globe_lon.e': ['deg'],
+  'hero.globe_lon.w': ['deg'],
+  'hero.copy_label': ['handle'],
+  'hero.prompt.not_found': ['cmd'],
+  'hero.prompt.theme_set': ['name'],
+  'hero.prompt.opening': ['name'],
+  'about.slot_tip': ['group', 'n', 'count'],
+  'experience.show_cmd': ['hash'],
+  'hero.summon_ok': ['status'],
+  'hero.whoami_line': ['name', 'programme', 'year'],
+  'labels.year_month': ['month', 'year'],
+  'prefs.text.option': ['size'],
+  'scene.hud': ['fps', 'ms', 'tier', 'reason', 'draws', 'dpr'],
+  // M3: a project's window and page, the 404 (the address, filled in the browser), share cards.
+  'windows.project_title': ['id'],
+  'windows.project_cmd': ['id'],
+  'windows.page_title': ['project'],
+  'not_found.cmd': ['path'],
+  'not_found.error': ['path'],
+  'og.alt': ['title'],
+  // X4: a card's place in the phone's carousel of other builds.
+  'projects.position': ['n', 'count'],
 };
 
 /**
@@ -173,7 +203,8 @@ export function copyVars(input: {
     first,
     /** Lower-case first name, the "host" in the terminal prompts (`peter@zhic.me`, `ping peter`). */
     host: first.toLowerCase(),
-    city: input.location.split(',')[0]?.trim() || input.location,
+    // The first part of the location ("Seattle, Washington" → Seattle; a Chinese comma counts).
+    city: input.location.split(/[,，]/)[0]?.trim() || input.location,
     domain: input.domain,
     email: input.email,
     major: input.edu.major ?? input.edu.degree,
@@ -456,12 +487,10 @@ export function headlineWords(lines: string[]): HeadlineToken[][] {
 }
 
 // ---------------------------------------------------------------- labels
-export const PLATFORM_LABEL: Record<string, string> = {
-  ios: 'iOS',
-  web: 'Web',
-  cli: 'CLI',
-  research: 'Research',
-};
+/** Platform words: copy.yaml `labels.platform` (an unknown platform shows as written). */
+export type PlatformLabels = Readonly<Record<string, string>>;
+const platformWords = (p: ProjectLike, labels: PlatformLabels) =>
+  p.platform.map((x) => labels[x] ?? x);
 /**
  * Project status words: copy.yaml `labels.status`. Interface words are always passed in, never
  * defaulted here, so a component that forgets them fails the type check instead of silently
@@ -479,6 +508,20 @@ export const STATUS_PROGRESS: Record<ProjectLike['status'], number> = {
 };
 
 // ---------------------------------------------------------------- facts for the page
+/**
+ * The honors of one school (X4: on phones they sit in that school's Education card): those whose
+ * `org` is the school's name, or its name before the comma ("University of Washington" for
+ * "University of Washington, Seattle"), in file order.
+ */
+export function schoolHonors<H extends { org: string }>(school: string, honors: readonly H[]): H[] {
+  const full = school.trim().toLowerCase();
+  const base = full.split(',')[0]!.trim();
+  return honors.filter((h) => {
+    const org = h.org.trim().toLowerCase();
+    return org === full || org === base;
+  });
+}
+
 /** Newest honor first (honors.yaml order is newest first; ties keep file order). */
 export function latestHonor(honors: HonorLike[]): HonorLike | undefined {
   return [...honors].sort((a, b) => b.year.localeCompare(a.year))[0];
@@ -494,10 +537,46 @@ export function heroEyebrow(
   return `${prefix} ${name}  ·  ${edu.short ?? edu.school} ${classYear(edu.end)}  ·  ${location}`;
 }
 
-/** `Zhicheng (Peter) Chen — Informatics · Data Science @ University of Washington, Seattle, class of ’27.` */
-export function whoamiLine(fullName: string, edu: EducationLike, classOf: string): string {
-  const what = [edu.major ?? edu.degree, edu.track].filter(Boolean).join(' · ');
-  return `${fullName} — ${what} @ ${edu.school}, ${classOf} ${classYear(edu.end)}.`;
+/**
+ * The phone's one-line eyebrow (X4): `// player: Peter Chen` and, as a separate tail the
+ * narrowest phones leave out, ` · UW ’27` — the last part of the profile's tagline when it is a
+ * class year ("Informatics: Data Science, UW ’27"); no tail otherwise.
+ */
+export function eyebrowShort(
+  prefix: string,
+  name: string,
+  tagline: string | undefined,
+): { head: string; tail: string } {
+  const last =
+    (tagline ?? '')
+      .split(/[,，]\s*/)
+      .pop()
+      ?.trim() ?? '';
+  const tail = /’\d{2}$/.test(last) ? ` · ${last}` : '';
+  return { head: `${prefix} ${name}`, tail };
+}
+
+/**
+ * `Zhicheng (Peter) Chen — Informatics · Data Science @ University of Washington, Seattle, class
+ * of ’27.` from copy.yaml `hero.whoami_line` ({name}, {programme}, {year}; {school} is filled
+ * page-wide).
+ */
+export function whoamiLine(fullName: string, edu: EducationLike, template: string): string {
+  const programme = [edu.major ?? edu.degree, edu.track].filter(Boolean).join(' · ');
+  return fillTemplate(
+    template,
+    { name: fullName, programme, year: classYear(edu.end), school: edu.school },
+    [],
+    'copy.yaml hero.whoami_line',
+  );
+}
+
+/** A label as a chip tag: `Data Science` → `data-science` (ASCII words only; else empty). */
+export function tagSlug(label: string): string {
+  return label
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-|-$/g, '');
 }
 
 /**
@@ -515,13 +594,14 @@ export function gpaBadge(
   return honor ? `${gpa}  ★  ${honor.name} ${shortAcademicYear(honor.year)}` : gpa;
 }
 
-/** `Clock Stamp · iOS  [SHIPPED → App Store]` (store label and status words from copy.yaml). */
+/** `Clock Stamp · iOS  [SHIPPED → App Store]` (store, status and platform words from copy.yaml). */
 export function projectBadge(
   p: ProjectLike,
   appStoreLabel: string,
   statusLabels: StatusLabels,
+  platformLabels: PlatformLabels,
 ): string {
-  const platform = p.platform.map((x) => PLATFORM_LABEL[x] ?? x).join('/');
+  const platform = platformWords(p, platformLabels).join('/');
   const status = statusLabels[p.status].toUpperCase();
   const where = p.links?.appstore ? ` → ${appStoreLabel}` : '';
   return `${p.title} · ${platform}  [${status}${where}]`;
@@ -593,6 +673,7 @@ export function tickerItems(input: {
   email?: string | undefined;
   tags: TickerTags;
   statusLabels: StatusLabels;
+  platformLabels: PlatformLabels;
 }): TickerItem[] {
   const items: TickerItem[] = [];
   const { edu, tags, statusLabels } = input;
@@ -609,7 +690,7 @@ export function tickerItems(input: {
     items.push({ tag: tags.work, text: `${x.role} @ ${x.company}`, tone: 'enchant' });
   }
   for (const p of input.projects.filter((p) => p.featured)) {
-    const platform = p.platform.map((x) => PLATFORM_LABEL[x] ?? x).join('/');
+    const platform = platformWords(p, input.platformLabels).join('/');
     items.push({ tag: platform, text: `${p.title} · ${statusLabels[p.status]}`, tone: 'gold' });
   }
   items.push({
@@ -714,7 +795,7 @@ export function gitLog(input: {
   ];
 }
 
-/** `Sep 2023 – Mar 2027 (expected)`. */
-export function educationDates(e: EducationLike, expectedLabel: string): string {
-  return `${formatYearMonth(e.start)} – ${formatYearMonth(e.end)}${e.expected ? ` ${expectedLabel}` : ''}`;
+/** `Sep 2023 – Mar 2027 (expected)` (month words and `(expected)` from copy.yaml). */
+export function educationDates(e: EducationLike, expectedLabel: string, words: DateWords): string {
+  return `${formatYearMonth(e.start, words)} – ${formatYearMonth(e.end, words)}${e.expected ? ` ${expectedLabel}` : ''}`;
 }

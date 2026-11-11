@@ -1,7 +1,11 @@
 /*
- * Intro + ambient motion. Everything is keyed on `html.motion`, which an inline <head> script adds
- * only when JavaScript runs and the visitor hasn't asked for reduced motion. Without it, the page
- * is fully static and complete (PLAN §5.2 reduced-motion, §6.4 a11y).
+ * Intro + ambient motion, by motion level (PLAN-EXPERIENCE §4.1; src/prefs/model.ts). The inline
+ * <head> script sets them before first paint, only when JavaScript runs:
+ *   html.intro   the load sequence plays (motion "full")
+ *   html.motion  loops may run ("full", or "calm" where they run slower: --loop-slow)
+ *   html[data-motion='off'], or no class at all (no JavaScript, reduced motion): fully static
+ * html[data-paused] (the pause key) holds every loop. Without the classes the page is complete
+ * (PLAN §5.2 reduced-motion, §6.4 a11y).
  * Timings are the `--m-*` custom properties from src/motion/params.ts (motionCssVars on <html>).
  *
  * Intro animations fill `backwards` only: the hidden start state covers each delay, and once an
@@ -10,7 +14,7 @@
  */
 
 /* ---------- headline words: rise + unblur, staggered ---------- */
-html.motion [data-intro='word'] {
+html.intro [data-intro='word'] {
   display: inline-block;
   animation: intro-word var(--m-word-dur) var(--m-word-ease) backwards;
   animation-delay: calc(var(--i, 0) * var(--m-word-stagger));
@@ -24,7 +28,7 @@ html.motion [data-intro='word'] {
 }
 
 /* ---------- terminal lines: typed left → right (per-line --steps/--dur/--d from Hero) ---------- */
-html.motion [data-intro='type'] {
+html.intro [data-intro='type'] {
   animation: intro-type var(--dur, 600ms) steps(var(--steps, 20), end) backwards;
   animation-delay: var(--d, 0ms);
 }
@@ -38,7 +42,7 @@ html.motion [data-intro='type'] {
 }
 
 /* ---------- globe: scale + fade in ---------- */
-html.motion [data-intro='globe'] {
+html.intro [data-intro='globe'] {
   animation:
     intro-globe-scale var(--m-globe-scale-dur) ease-out var(--m-globe-delay) backwards,
     intro-fade var(--m-globe-fade-dur) ease-out var(--m-globe-delay) backwards;
@@ -55,7 +59,7 @@ html.motion [data-intro='globe'] {
 }
 
 /* ---------- blocks: drop, overshoot, settle (70 % = Figma's 420 ms of 600 ms) ---------- */
-html.motion [data-intro='drop'] {
+html.intro [data-intro='drop'] {
   animation: intro-drop var(--m-drop-dur) backwards;
   animation-delay: calc(var(--m-drop-delay) + var(--i, 0) * var(--m-drop-stagger));
 }
@@ -79,7 +83,7 @@ html.motion [data-intro='drop'] {
 }
 
 /* ---------- cards / tooltips: slide up, staggered ---------- */
-html.motion [data-intro='rise'] {
+html.intro [data-intro='rise'] {
   animation: intro-rise var(--m-rise-dur) ease-out backwards;
   animation-delay: calc(var(--m-rise-delay) + var(--i, 0) * var(--m-rise-stagger));
 }
@@ -90,9 +94,12 @@ html.motion [data-intro='rise'] {
   }
 }
 
-/* ---------- ambient loops ---------- */
+/* ---------- ambient loops (slower when calm) ---------- */
+html[data-motion='calm'] {
+  --loop-slow: var(--m-calm-slow);
+}
 html.motion [data-loop='blink'] {
-  animation: loop-blink var(--m-blink) steps(1, end) infinite;
+  animation: loop-blink calc(var(--m-blink) * var(--loop-slow, 1)) steps(1, end) infinite;
 }
 @keyframes loop-blink {
   50% {
@@ -100,15 +107,30 @@ html.motion [data-loop='blink'] {
   }
 }
 html.motion [data-loop='orbit'] {
-  animation: loop-spin var(--m-orbit-turn) linear infinite;
+  animation: loop-spin calc(var(--m-orbit-turn) * var(--loop-slow, 1)) linear infinite;
 }
 /* Figma sways the tilted second ring (17:127); a full spin of an ellipse looks wrong. */
 html.motion [data-loop='orbit-sway'] {
-  animation: loop-sway var(--m-sway-dur) ease-in-out infinite alternate;
+  animation: loop-sway calc(var(--m-sway-dur) * var(--loop-slow, 1)) ease-in-out infinite alternate;
 }
 @keyframes loop-sway {
   to {
     rotate: var(--m-sway-deg);
+  }
+}
+/* Phones (X4): the two rings fade in with the globe they circle, as the blocks and the name tag
+   already do. There the stage sits at the foot of the first screen, and a ring drawn from the first
+   frame would be the screen's largest paint (its LCP) for a picture that is decoration. */
+@media (max-width: 767px) {
+  html.intro [data-loop='orbit'] {
+    animation:
+      loop-spin calc(var(--m-orbit-turn) * var(--loop-slow, 1)) linear infinite,
+      intro-fade var(--m-globe-fade-dur) ease-out var(--m-globe-delay) backwards;
+  }
+  html.intro [data-loop='orbit-sway'] {
+    animation:
+      loop-sway calc(var(--m-sway-dur) * var(--loop-slow, 1)) ease-in-out infinite alternate,
+      intro-fade var(--m-globe-fade-dur) ease-out var(--m-globe-delay) backwards;
   }
 }
 @keyframes loop-spin {
@@ -117,10 +139,180 @@ html.motion [data-loop='orbit-sway'] {
   }
 }
 
+/* ---------- the hover & interaction catalogue (PLAN-EXPERIENCE §6; src/scripts/interact.ts) ----
+   Row-specific looks live with their components; these are the page-wide ones. */
+
+/* 1 · voxel block, punched: two frames of squash on its base, then it bobs back. Motion "full"
+   only (the script starts it then); reduced motion cancels it (end of this file). */
+html.motion img.voxel[data-punch] {
+  transform-origin: 50% 100%;
+  animation: punch var(--m-punch) linear;
+}
+@keyframes punch {
+  0%,
+  24% {
+    scale: var(--m-punch-squash);
+  }
+  25%,
+  49% {
+    scale: var(--m-punch-stretch);
+    translate: 0 calc(-1 * var(--m-punch-bob));
+  }
+  50% {
+    scale: 1;
+    translate: 0 calc(-1 * var(--m-punch-bob));
+    animation-timing-function: cubic-bezier(0.3, 0, 0.6, 1);
+  }
+  100% {
+    scale: 1;
+    translate: 0 0;
+  }
+}
+
+/* 13 · external link: the status line names the host (aria-hidden: the link says it opens a new
+   tab, and its address is the browser's to show). A dark object, as terminals are. */
+.linkline {
+  position: fixed;
+  left: 8px;
+  /* Above the phone's hotbar (--hotbar-h is 0 elsewhere). */
+  bottom: calc(8px + var(--hotbar-h));
+  z-index: 65;
+  max-width: calc(100vw - 16px);
+  padding: 4px 8px;
+  overflow: hidden;
+  background: var(--color-bg-terminal);
+  border: 2px solid var(--color-border-edge);
+  color: var(--color-accent-diamond);
+  font: var(--type-code-label);
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity var(--m-tip) steps(2);
+}
+.linkline[data-on='true'] {
+  opacity: 1;
+}
+/* … and the ↗ beside an external link hops a pixel up-right (an inline glyph moves by relative
+   position, which never moves anything else). */
+.ext-arrow {
+  position: relative;
+}
+@media (hover: hover) {
+  a:hover > .ext-arrow {
+    left: var(--m-hop);
+    top: calc(-1 * var(--m-hop));
+  }
+}
+a:focus-visible > .ext-arrow {
+  left: var(--m-hop);
+  top: calc(-1 * var(--m-hop));
+}
+
+/* 16 · back to spawn: a block falls down the window while the page scrolls up behind it. */
+.spawn-block {
+  position: fixed;
+  z-index: 64;
+  width: 48px;
+  height: auto;
+  pointer-events: none;
+  filter: var(--art-filter); /* grey in Mono, like every block */
+  animation: spawn-fall var(--m-spawn-fall) cubic-bezier(0.55, 0, 0.9, 0.55) forwards;
+}
+@keyframes spawn-fall {
+  to {
+    translate: 0 var(--m-spawn-drop);
+    rotate: var(--m-spawn-spin);
+    opacity: 0;
+  }
+}
+
+/* 14 · a section header, the first time it comes into view (src/scripts/enter.ts): the
+   `$ command` types (as the hero's terminal does), then the heading resolves in four steps. */
+html.motion [data-enter~='header'] :is(.sh__cmd, .community__cmd, .contact__cmd) {
+  animation: enter-type var(--enter-type, 400ms) steps(var(--enter-steps, 20), end) backwards;
+}
+html.motion [data-enter~='header'] :is(.sh__h, .community__h, .contact__title) {
+  animation: enter-resolve var(--m-resolve) backwards;
+  animation-delay: var(--enter-type, 400ms);
+}
+@keyframes enter-type {
+  from {
+    clip-path: inset(0 100% 0 0);
+  }
+  to {
+    clip-path: inset(0 0 0 0);
+  }
+}
+@keyframes enter-resolve {
+  from {
+    opacity: 0;
+    translate: 0 8px;
+  }
+}
+
+/* Chunk-load (PLAN-EXPERIENCE §7.4; graphics tier 2–3): the section's cards rise in turn and their
+   borders resolve from dashed to solid (a dashed card stays dashed); its data bars then fill to
+   their values, cell by cell. The 70 % is ENTER.dashUntil (src/motion/params.ts: keyframe offsets
+   cannot be custom properties; tests/unit/motion-params.test.ts keeps the two equal). */
+html.motion [data-enter~='chunk'] :is(.card, .log, .contact__term) {
+  animation:
+    enter-rise var(--m-enter) cubic-bezier(0.2, 0.8, 0.2, 1) backwards,
+    enter-solid var(--m-enter) linear backwards;
+  animation-delay: calc(var(--chunk-i, 0) * var(--m-enter-stagger));
+}
+@keyframes enter-rise {
+  from {
+    opacity: 0;
+    translate: 0 var(--m-enter-rise);
+  }
+}
+@keyframes enter-solid {
+  0%,
+  70% {
+    border-style: dashed;
+  }
+}
+html.motion [data-enter~='chunk'] :is(.xp__cell--on, .now__cell--on, .pf__cell--on) {
+  animation: enter-cell var(--m-enter-cell) step-end backwards;
+  animation-delay: calc(var(--m-enter) / 2 + var(--cell-i, 0) * var(--m-enter-cell));
+}
+@keyframes enter-cell {
+  from {
+    background-color: var(--cell-off, transparent);
+  }
+}
+.xp__cell--on {
+  --cell-off: var(--color-border-line);
+}
+
+/* Calm keeps every state a hover or focus brings (lift, lit rail, underline, status line) and
+   drops the movement into it. */
+html[data-motion='calm'] :is(.card, .card__spot, .nav__underline, .linkline, .tip),
+html[data-motion='calm'] .commit::before {
+  transition-duration: 0s !important;
+}
+
 /* Off-screen loops stop drawing frames (src/scripts/offscreen.ts sets data-offscreen). */
 html.motion [data-offscreen],
 html.motion [data-offscreen] * {
   animation-play-state: paused !important;
+}
+
+/* Pause-all (the ⏸ key in the nav, or `p`; WCAG 2.2.2) holds every loop where it is. Scripted
+   loops (the globe, the phone clock) listen for the same state in src/scripts/prefs.ts. */
+html[data-paused] *,
+html[data-paused] *::before,
+html[data-paused] *::after {
+  animation-play-state: paused !important;
+}
+
+/* Motion "off" chosen in the settings: as static as reduced motion (below and global.css). */
+html[data-motion='off'] *,
+html[data-motion='off'] *::before,
+html[data-motion='off'] *::after {
+  transition-duration: 0.01ms !important;
+  scroll-behavior: auto !important;
 }
 
 /* Belt and braces: the class is never added under reduced motion, but kill any stray motion

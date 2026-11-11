@@ -21,11 +21,21 @@ export function formatVersion(base: string, stamp: ContentStamp): string {
   return `v${base}+${stamp.date.replaceAll('-', '')}.${stamp.hash}`;
 }
 
-export function contentStamp(now: Date = new Date()): ContentStamp {
+/**
+ * The last commit that touched `path` (a file, a folder, or several git pathspecs, relative to
+ * `cwd`): its date and short hash. Outside a git checkout (a source tarball), today and "local".
+ */
+export function gitStamp(
+  path: string | readonly string[],
+  now: Date = new Date(),
+  cwd?: string,
+): ContentStamp {
   try {
-    const out = execFileSync('git', ['log', '-1', '--format=%cs %h', '--', 'content'], {
+    const paths = typeof path === 'string' ? [path] : [...path];
+    const out = execFileSync('git', ['log', '-1', '--format=%cs %h', '--', ...paths], {
       encoding: 'utf8',
       stdio: ['ignore', 'pipe', 'ignore'],
+      ...(cwd ? { cwd } : {}),
     });
     const parsed = parseStamp(out);
     if (parsed) return parsed;
@@ -33,4 +43,19 @@ export function contentStamp(now: Date = new Date()): ContentStamp {
     // Not a git checkout (e.g. a source tarball) — fall through.
   }
   return { date: now.toISOString().slice(0, 10), hash: 'local' };
+}
+
+/**
+ * What the site shows from content/ — everything there but the owner's README and the artifacts/
+ * drop folder, which never reach a page (a new guide paragraph is not a site update).
+ */
+export const CONTENT_PATHS = [
+  'content',
+  ':(exclude)content/README.md',
+  ':(exclude)content/artifacts',
+] as const;
+
+/** The last change to what the site shows: its "updated" date and the version's build part. */
+export function contentStamp(now: Date = new Date(), cwd?: string): ContentStamp {
+  return gitStamp(CONTENT_PATHS, now, cwd);
 }

@@ -1,0 +1,80 @@
+---
+/**
+ * Small pixel icons for keys (9×9 grid, drawn in currentColor, crisp at 2× scale): the settings
+ * gear, the pause / play pair and a window's move key (four arrows); and, for the phone (X4), the
+ * hotbar's larger gear (14×14, Figma "Mobile/Icon/gear") and the carousel keys' pointers (7×7).
+ * Decorative: the button or link around it carries the name.
+ */
+type Name =
+  | 'gear'
+  | 'pause'
+  | 'play'
+  | 'move'
+  | 'gear-lg'
+  | 'tri-left'
+  | 'tri-right'
+  | 'code'
+  | 'linkedin'
+  | 'doc'
+  | 'copy'
+  | 'check';
+interface Props {
+  name: Name;
+  /** The square icons' size in px. */
+  size?: number;
+  /** Instead: px per grid cell (the phone's contact keys and copy keys, X4, are not square). */
+  scale?: number;
+  class?: string;
+}
+/** Grid size per icon, width × height (9 × 9 unless listed). */
+const GRID: Partial<Record<Name, [number, number]>> = {
+  'gear-lg': [14, 14],
+  'tri-left': [7, 7],
+  'tri-right': [7, 7],
+  code: [13, 7],
+  linkedin: [11, 9],
+  doc: [9, 11],
+  copy: [10, 10],
+  check: [11, 7],
+};
+const PATHS: Record<Name, string> = {
+  gear: 'M3 0h3v1H3zM1 1h1v1H1zM3 1h3v1H3zM7 1h1v1H7zM2 2h5v1H2zM0 3h4v1H0zM5 3h4v1H5zM0 4h3v1H0zM6 4h3v1H6zM0 5h4v1H0zM5 5h4v1H5zM2 6h5v1H2zM1 7h1v1H1zM3 7h3v1H3zM7 7h1v1H7zM3 8h3v1H3z',
+  pause: 'M1 0h3v9H1zM5 0h3v9H5z',
+  play: 'M1 0h2v1H1zM1 1h3v1H1zM1 2h4v1H1zM1 3h5v1H1zM1 4h6v1H1zM1 5h5v1H1zM1 6h4v1H1zM1 7h3v1H1zM1 8h2v1H1z',
+  move: 'M4 0h1v1H4zM3 1h3v1H3zM4 2h1v1H4zM1 3h1v1H1zM4 3h1v1H4zM7 3h1v1H7zM0 4h9v1H0zM1 5h1v1H1zM4 5h1v1H4zM7 5h1v1H7zM4 6h1v1H4zM3 7h3v1H3zM4 8h1v1H4z',
+  'tri-left': 'M4 0h1v7H4zM3 1h1v5H3zM2 2h1v3H2zM1 3h1v1H1z',
+  code: 'M3 0h1v1H3zM7 0h1v1H7zM9 0h1v1H9zM2 1h1v1H2zM7 1h1v1H7zM10 1h1v1H10zM1 2h1v1H1zM6 2h1v1H6zM11 2h1v1H11zM0 3h1v1H0zM6 3h1v1H6zM12 3h1v1H12zM1 4h1v1H1zM6 4h1v1H6zM11 4h1v1H11zM2 5h1v1H2zM5 5h1v1H5zM10 5h1v1H10zM3 6h1v1H3zM5 6h1v1H5zM9 6h1v1H9z',
+  linkedin:
+    'M0 0h11v1H0zM0 1h1v1H0zM10 1h1v1H10zM0 2h1v1H0zM2 2h1v1H2zM10 2h1v1H10zM0 3h1v1H0zM4 3h1v1H4zM6 3h2v1H6zM10 3h1v1H10zM0 4h1v1H0zM2 4h1v1H2zM4 4h2v1H4zM8 4h1v1H8zM10 4h1v1H10zM0 5h1v1H0zM2 5h1v1H2zM4 5h1v1H4zM8 5h1v1H8zM10 5h1v1H10zM0 6h1v1H0zM2 6h1v1H2zM4 6h1v1H4zM8 6h1v1H8zM10 6h1v1H10zM0 7h1v1H0zM10 7h1v1H10zM0 8h11v1H0z',
+  doc: 'M0 0h6v1H0zM0 1h1v1H0zM5 1h2v1H5zM0 2h1v1H0zM5 2h1v1H5zM7 2h1v1H7zM0 3h1v1H0zM5 3h4v1H5zM0 4h1v1H0zM8 4h1v1H8zM0 5h1v1H0zM2 5h5v1H2zM8 5h1v1H8zM0 6h1v1H0zM8 6h1v1H8zM0 7h1v1H0zM2 7h5v1H2zM8 7h1v1H8zM0 8h1v1H0zM8 8h1v1H8zM0 9h1v1H0zM2 9h3v1H2zM8 9h1v1H8zM0 10h9v1H0z',
+  copy: 'M3 0h7v1H3zM3 1h1v1H3zM9 1h1v1H9zM0 2h7v1H0zM9 2h1v1H9zM0 3h1v1H0zM6 3h1v1H6zM9 3h1v1H9zM0 4h1v1H0zM6 4h1v1H6zM9 4h1v1H9zM0 5h1v1H0zM6 5h1v1H6zM9 5h1v1H9zM0 6h1v1H0zM6 6h4v1H6zM0 7h1v1H0zM6 7h1v1H6zM0 8h1v1H0zM6 8h1v1H6zM0 9h7v1H0z',
+  check:
+    'M9 0h2v1H9zM8 1h2v1H8zM7 2h2v1H7zM0 3h2v1H0zM6 3h2v1H6zM1 4h2v1H1zM5 4h2v1H5zM2 5h4v1H2zM3 6h2v1H3z',
+  'tri-right': 'M2 0h1v7H2zM3 1h1v5H3zM4 2h1v3H4zM5 3h1v1H5z',
+  'gear-lg':
+    'M5 0h4v1H5zM2 1h1v1H2zM5 1h4v1H5zM11 1h1v1H11zM1 2h12v1H1zM2 3h10v1H2zM2 4h3v1H2zM9 4h3v1H9zM0 5h4v1H0zM10 5h4v1H10zM0 6h4v1H0zM10 6h4v1H10zM0 7h4v1H0zM10 7h4v1H10zM0 8h4v1H0zM10 8h4v1H10zM2 9h3v1H2zM9 9h3v1H9zM2 10h10v1H2zM1 11h12v1H1zM2 12h1v1H2zM5 12h4v1H5zM11 12h1v1H11zM5 13h4v1H5z',
+};
+const { name, size = 18, scale, class: cls } = Astro.props;
+const [gw, gh] = GRID[name] ?? [9, 9];
+const width = scale ? gw * scale : size;
+const height = scale ? gh * scale : size;
+---
+
+<svg
+  class:list={['px-icon', cls]}
+  viewBox={`0 0 ${gw} ${gh}`}
+  width={width}
+  height={height}
+  aria-hidden="true"
+  focusable="false"
+>
+  <path d={PATHS[name]}></path>
+</svg>
+
+<style>
+  .px-icon {
+    flex: none;
+    fill: currentColor;
+    shape-rendering: crispEdges;
+  }
+</style>

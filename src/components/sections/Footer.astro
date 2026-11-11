@@ -1,5 +1,16 @@
 ---
-/** Footer (Figma "Footer"): copyright · domain, tagline, version · last updated, back to top. */
+/**
+ * Footer (Figma "Footer"): copyright · domain, tagline, version · last updated, `prefs` (opens the
+ * settings window; shown when JavaScript runs), back to top — where, at full motion, a grass block
+ * falls while the page scrolls up behind it (PLAN-EXPERIENCE §6 row 16; src/scripts/interact.ts).
+ *
+ * Phones (X4; §8.3, Figma "Footer · two lines"): the tagline, then `© 2025–2026 Peter Chen ·
+ * Seattle, Washington · updated <date>` — the version, the rights line and the update note stay on
+ * larger screens; `prefs` is the hotbar's ⚙ and "back to spawn" the top bar's logo there. The
+ * location is added to the frame's line: the phone's short eyebrow leaves it out, and no other
+ * phone screen shows it (§8.1: the same facts). The same elements as on a desktop, laid out anew.
+ */
+import grass from '../../assets/voxel/blocks/grass.svg';
 import Glyphs from '../ui/Glyphs.astro';
 import type { PageData } from '../../lib/page-data';
 
@@ -12,16 +23,30 @@ const { footer, copy, site } = data;
 
 <footer class="foot">
   <p class="foot__left">
-    {footer.copyright}. {copy.footer.rights} · {site.domain}
+    {footer.copyright}
+    <span class="foot__rights">
+      . {copy.footer.rights} · {site.domain}
+    </span>
+    <span class="foot__where"> · {data.profile.location}</span>
   </p>
   <p class="foot__mid">{copy.footer.tagline}</p>
   <div class="foot__right">
     <p>
-      <span class="foot__ver">{footer.version}</span> · {copy.footer.updated}{' '}
-      <time datetime={footer.updated}>{footer.updated}</time>
+      <span class="foot__ver">{footer.version}</span>
+      <span class="foot__sep"> · </span>
+      {copy.footer.updated} <time datetime={footer.updated}>{footer.updated}</time>
       {site.footer.update_note && <span class="foot__note"> · {site.footer.update_note}</span>}
     </p>
-    <a class="foot__top" href="#top">
+    <button
+      type="button"
+      class="foot__prefs"
+      data-prefs-open
+      aria-haspopup="dialog"
+      aria-controls="prefs"
+    >
+      {copy.footer.prefs}
+    </button>
+    <a class="foot__top" href="#top" data-spawn-block={grass.src}>
       <Glyphs text={copy.footer.back_to_top} />
     </a>
   </div>
@@ -36,7 +61,7 @@ const { footer, copy, site } = data;
     align-items: center;
     gap: 12px 32px;
     padding: 22px var(--gutter);
-    background: rgb(10 14 20 / 0.9);
+    background: var(--color-bg-bar);
     border-top: 2px solid var(--color-border-line);
     font: var(--type-code-sm);
     color: var(--color-text-mid);
@@ -64,8 +89,29 @@ const { footer, copy, site } = data;
     white-space: nowrap;
   }
   .foot__top:hover,
-  .foot__top:focus-visible {
+  .foot__top:focus-visible,
+  .foot__prefs:hover,
+  .foot__prefs:focus-visible {
     text-decoration: underline;
+  }
+  .foot__prefs {
+    display: none;
+    padding: 0;
+    border: 0;
+    background: none;
+    font: inherit;
+    color: var(--color-accent-terminal-green);
+    cursor: pointer;
+  }
+  :global(html.js) .foot__prefs {
+    display: inline;
+  }
+  /* High Contrast: a control gets a visible boundary (the link-styled button has none). */
+  @media (forced-colors: active) {
+    .foot__prefs {
+      padding: 0 4px;
+      border: 1px solid ButtonText;
+    }
   }
   @media (max-width: 1023px) {
     .foot {
@@ -80,9 +126,41 @@ const { footer, copy, site } = data;
       text-align: left;
     }
   }
+  .foot__where {
+    display: none;
+  }
   @media (max-width: 767px) {
     .foot {
-      padding: 24px 16px;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px 0;
+      /* The page's own colour: a rubber-band scroll past the foot shows no seam (§8.6). */
+      background: var(--color-bg-night);
+      /* Clear of the hotbar, which shows at the foot of the page. */
+      padding: 24px 16px calc(16px + var(--hotbar-h));
+    }
+    /* Line 1 the tagline; line 2 `© … · <place> · updated <date>`. */
+    .foot__mid {
+      flex-basis: 100%;
+      order: -1;
+      text-align: left;
+    }
+    .foot__rights,
+    .foot__ver,
+    .foot__note,
+    .foot__prefs,
+    .foot__top {
+      display: none !important;
+    }
+    .foot__where {
+      display: inline;
+    }
+    .foot__right {
+      display: inline;
+      padding-inline-start: 0.6ch;
+    }
+    .foot__right p {
+      display: inline;
     }
   }
 </style>

@@ -2,7 +2,12 @@ import { mkdirSync, mkdtempSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
-import { findBreakage, findPlaceholders, isStrict } from '../../scripts/check-content.mjs';
+import {
+  findBreakage,
+  findPlaceholders,
+  findUnplacedAirports,
+  isStrict,
+} from '../../scripts/check-content.mjs';
 import { loadSiteConfig } from '../../site.config.mjs';
 
 function fixture(files: Record<string, string>): string {
@@ -48,13 +53,34 @@ describe('content guard', () => {
   });
 });
 
+describe('watched routes the scene can draw', () => {
+  it('names an airport the WebGL scene has no position for, and nothing else', () => {
+    const dir = fixture({
+      'aviation.yaml':
+        'watching:\n  - { from: SEA, to: NRT, airline: A, aircraft: B, why: C }\n  - { from: sea, to: XYZ, airline: A, aircraft: B, why: C }\n',
+    });
+    const notes = findUnplacedAirports(dir);
+    expect(notes).toHaveLength(1);
+    expect(notes[0]).toMatch(/"XYZ"/);
+    expect(findUnplacedAirports(fixture({ 'aviation.yaml': 'watching: []\n' }))).toEqual([]);
+    expect(findUnplacedAirports(fixture({ 'other.yaml': 'a: 1\n' }))).toEqual([]);
+    expect(findUnplacedAirports(join(import.meta.dirname, '../../content'))).toEqual([]);
+  });
+});
+
 describe('content breakage (always an error)', () => {
   it('flags an unclosed HTML comment in Markdown with its line', () => {
     const dir = fixture({ 'now.md': 'line one\n<!-- note\nrest of page\n', 'ok.md': '<!-- a -->' });
-    expect(findBreakage(dir)).toEqual(['content/now.md:2: "<!--" is never closed with "-->"']);
+    expect(findBreakage(dir)).toEqual([
+      expect.stringMatching(
+        /^content\/now\.md:2: "<!--" is never closed with "-->" — .*add "-->" where the note ends$/,
+      ),
+    ]);
     // `<!-->` and `<!--->` are complete, empty comments; an open one after them is still found.
     const empty = fixture({ 'now.md': 'a <!--> b\n<!---> c\nnext <!-- open\n' });
-    expect(findBreakage(empty)).toEqual(['content/now.md:3: "<!--" is never closed with "-->"']);
+    expect(findBreakage(empty)).toEqual([
+      expect.stringMatching(/^content\/now\.md:3: "<!--" is never closed/),
+    ]);
     expect(findBreakage(fixture({ 'now.md': 'a <!--> b <!---> c\n' }))).toEqual([]);
     // Each on its own, with no later "-->" that could close a comment read the old way.
     expect(findBreakage(fixture({ 'now.md': 'a <!--> b\n', 'b.md': 'c <!---> d\n' }))).toEqual([]);

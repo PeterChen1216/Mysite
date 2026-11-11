@@ -1,8 +1,9 @@
 ---
 /**
  * Featured build (Figma Card/Featured 22:1020): chips, title, tagline + bullets, a status terminal
- * built only from the project's data (stack, derive.statusBar, dates), link buttons and — for an
- * iOS build — the decorative phone mock-up (22:1158) with Command / Glow blocks.
+ * built only from the project's data (stack, derive.statusBar, dates), link buttons and — for a
+ * project with `demo: world-clock` — the live Clock Stamp phone (PhoneMockup) with Command /
+ * Glow blocks.
  *
  * Content contract (tests/e2e/content.spec.ts): inside #project-<id> the first `.meta` reads
  * "year · platforms · status" (the chip row; the separators are visually hidden), then one `.meta`
@@ -16,14 +17,22 @@ import TerminalWindow from '../ui/TerminalWindow.astro';
 import VoxelBlock from '../ui/VoxelBlock.astro';
 import PhoneMockup from './PhoneMockup.astro';
 import { statusBar } from '../../lib/derive';
-import { projectView, type Project, type ProjectLabels, type ProjectsCopy } from './projects-view';
+import {
+  cityKeys,
+  projectView,
+  type Project,
+  type ProjectLabels,
+  type ProjectsCopy,
+} from './projects-view';
 
 interface Props {
   project: Project;
   copy: ProjectsCopy;
   labels: ProjectLabels;
+  /** The project's own page (M3): its title links there (with JavaScript, it opens over the page). */
+  href: string;
 }
-const { project: p, copy, labels } = Astro.props;
+const { project: p, copy, labels, href } = Astro.props;
 const v = projectView(p, copy, labels);
 const { Body } = p;
 const bar = statusBar(p.status, labels.status);
@@ -32,7 +41,13 @@ const cells = Array.from({ length: bar.total }, (_, i) => i < bar.filled);
 // parts share one <span> so the chip's flex box doesn't swallow the space after the symbol.
 const SYMBOL = /^[★✈⇄→✦]$/u;
 const featuredParts = copy.featured.split(/([★✈⇄→✦])/u).filter(Boolean);
-const withPhone = p.platform.includes('ios');
+const withPhone = p.demo === 'world-clock';
+// Phones (X4): the phone's hands are 24 px tags, so a row of 44 px city keys under it does what a
+// tap on a hand does (src/scripts/clock.ts). Named like the hands: "FRA, Frankfurt".
+const cities = cityKeys(copy.phone).map((c) => ({
+  ...c,
+  label: c.mark === c.name ? c.name : `${c.mark}${labels.list_separator}${c.name}`,
+}));
 ---
 
 <Card as="article" class="pf" id={v.anchor} labelledby={`${v.anchor}-title`}>
@@ -41,7 +56,9 @@ const withPhone = p.platform.includes('ios');
   </span>
   <div class="pf__copy">
     <h3 class="pf__title" id={`${v.anchor}-title`}>
-      {p.title}
+      <a class="project-link hit-44" href={href} data-project-link={p.id}>
+        {p.title}
+      </a>
     </h3>
     <div class="pf__chips">
       <Chip tone="gold">
@@ -76,7 +93,7 @@ const withPhone = p.platform.includes('ios');
           sizes="(max-width: 767px) 100vw, 560px"
         />
       )}
-      <div class="pf__body">
+      <div class="pf__body" lang={p.bodyLang}>
         <Body />
       </div>
     </div>
@@ -122,7 +139,31 @@ const withPhone = p.platform.includes('ios');
       <span class="pf__block pf__block--glow" aria-hidden="true">
         <VoxelBlock name="glow" size={50} />
       </span>
-      <PhoneMockup phone={copy.phone} />
+      <PhoneMockup phone={copy.phone} separator={labels.list_separator} />
+      <div class="pf__cities" role="group" aria-labelledby={`${v.anchor}-cities`} data-city-keys>
+        <p class="pf__cities-label" id={`${v.anchor}-cities`}>
+          {copy.phone.pick_label}
+        </p>
+        <div class="pf__city-keys">
+          {cities.map((c) => (
+            <button
+              type="button"
+              class="pf__city"
+              data-city-key={c.zone}
+              aria-pressed={c.selected ? 'true' : 'false'}
+              aria-label={c.label}
+            >
+              <span class={`pf__swatch pf__swatch--${c.tone}`} aria-hidden="true" />
+              {c.tone === 'here' && (
+                <svg class="pf__here" viewBox="0 0 8 8" width="12" height="12" aria-hidden="true">
+                  <path d="M7 0h1v1H7zM5 1h2v1H5zM3 2h4v1H3zM1 3h5v1H1zM0 4h6v1H0zM4 5h1v3H4zM5 5h1v1H5z" />
+                </svg>
+              )}
+              {c.mark}
+            </button>
+          ))}
+        </div>
+      </div>
     </div>
   )}
 </Card>
@@ -141,7 +182,7 @@ const withPhone = p.platform.includes('ios');
   .pf__block--glow {
     left: -34px;
     bottom: 92px;
-    filter: drop-shadow(0 0 14.4px rgb(242 201 76 / 0.6));
+    filter: drop-shadow(0 0 14.4px var(--color-glow-gold));
   }
   .pf__copy {
     flex: 1 1 0;
@@ -156,7 +197,7 @@ const withPhone = p.platform.includes('ios');
     font: var(--type-pixel-h3);
     letter-spacing: var(--type-pixel-h3-tracking);
     color: var(--color-text-hi);
-    text-shadow: 3px 3px 0 rgb(0 0 0 / 0.8);
+    text-shadow: 3px 3px 0 var(--color-heading-shadow-md);
   }
   /* Chips sit above the title on screen; the title stays first for screen readers. */
   .pf__chips {
@@ -172,8 +213,8 @@ const withPhone = p.platform.includes('ios');
     margin: 0;
   }
   .sym {
-    font-family: 'Segoe UI Symbol', 'Apple Symbols', 'Noto Sans Symbols 2', system-ui, sans-serif;
-    font-size: 10px;
+    font-family: var(--font-symbol);
+    font-size: calc(10px * var(--ts));
     line-height: 1;
   }
   /* Figma's paragraph is 560 px; bullets get a little more room so they wrap like it does. */
@@ -189,6 +230,7 @@ const withPhone = p.platform.includes('ios');
     color: var(--color-text-hi);
   }
   .pf__cover {
+    filter: var(--art-filter);
     display: block;
     width: 100%;
     height: auto;
@@ -268,7 +310,7 @@ const withPhone = p.platform.includes('ios');
     gap: 12px;
   }
   .pf__links :global(.mc-btn) {
-    text-transform: uppercase;
+    text-transform: var(--type-label-case);
   }
   .pf__stage {
     position: relative;
@@ -282,7 +324,87 @@ const withPhone = p.platform.includes('ios');
       right: 24px;
     }
   }
+  /* Phones (X4): a row of 44 px city keys under the phone, the touch twin of its hands (with
+     JavaScript, which makes them work). */
+  .pf__cities {
+    display: none;
+  }
   @media (max-width: 767px) {
+    :global(html.js) .pf__cities {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 14px;
+      width: 100%;
+      margin-top: 14px;
+    }
+    .pf__stage {
+      align-self: stretch;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+    .pf__links,
+    .pf__links :global(.mc-btn) {
+      width: 100%;
+      justify-content: center;
+    }
+    .pf__cities-label {
+      margin: 0;
+      font: var(--type-code-label);
+      letter-spacing: var(--type-code-label-tracking);
+      text-transform: var(--type-label-case);
+      color: var(--color-text-mid);
+    }
+    .pf__city-keys {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(min(88px, 100%), 1fr));
+      gap: 8px;
+      width: 100%;
+    }
+    .pf__city {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      min-height: 44px;
+      padding: 0 8px;
+      border: 2px solid var(--color-border-edge);
+      background: var(--color-bg-slot);
+      font: var(--type-pixel-button);
+      color: var(--color-text-hi);
+      cursor: pointer;
+      touch-action: manipulation;
+    }
+    /* Chosen: a green edge, an inner ring and green words — not colour alone. */
+    .pf__city[aria-pressed='true'] {
+      border-color: var(--color-accent-terminal-green);
+      box-shadow: inset 0 0 0 2px var(--color-accent-terminal-green);
+      color: var(--color-accent-terminal-green);
+    }
+    .pf__swatch {
+      flex: none;
+      width: 10px;
+      height: 10px;
+      background: var(--color-accent-redstone);
+    }
+    .pf__swatch--gold {
+      background: var(--color-accent-gold);
+    }
+    .pf__swatch--enchant {
+      background: var(--color-accent-enchant);
+    }
+    .pf__swatch--grass {
+      background: var(--color-block-grass);
+    }
+    .pf__swatch--here {
+      background: var(--color-block-water);
+    }
+    .pf__here {
+      flex: none;
+      fill: currentColor;
+      shape-rendering: crispEdges;
+    }
     .pf__block--command {
       right: 12px;
       top: -20px;
@@ -292,15 +414,20 @@ const withPhone = p.platform.includes('ios');
       height: auto;
     }
     .pf__chips {
-      padding-right: 72px;
+      padding-right: 0;
     }
     .pf__title {
-      font-size: 26px;
+      font-size: calc(26px * var(--ts));
     }
     /* One class more than TerminalWindow's own `.term--term .term__body` font rule. */
     .pf__copy :global(.pf__term.term--term .term__body) {
-      font-size: 20px;
+      font-size: calc(20px * var(--ts));
       padding: 12px 14px;
+    }
+    /* Chinese: 12 px multiples for the pixel CJK face (PLAN-EXPERIENCE §5.5). */
+    :global(:root:lang(zh)) .pf__title,
+    :global(:root:lang(zh)) .pf__copy :global(.pf__term.term--term .term__body) {
+      font-size: calc(24px * var(--ts));
     }
   }
 </style>

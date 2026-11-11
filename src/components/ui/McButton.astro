@@ -3,16 +3,18 @@
  * Minecraft-style button (Figma component MCButton, node 15:733): Stone (neutral) / Grass (primary).
  * Hover = classic blue/yellow highlight in 3 steps over 120 ms (PLAN §5.2; `--m-btn-hover` from
  * src/motion/params.ts UI.buttonHover).
- * Colours are darkened slightly from Figma to meet WCAG AA (white on Figma's grass #5d9c3a is
- * 3.2:1, yellow on its hover blue #7b8dff 2.9:1); see docs/M1-PLAN.md §4.
+ * Colours (the --mc-* component tokens in src/styles/tokens.css) are darkened slightly from Figma
+ * to meet WCAG AA (white on Figma's grass was 3.2:1, yellow on its hover blue 2.9:1); see
+ * docs/M1-PLAN.md §4.
  */
-import { getCopy } from '../../lib/content';
+import { getNewTabLabel } from '../../lib/content';
 
 interface Props {
   href: string;
   kind?: 'stone' | 'grass';
   external?: boolean;
-  download?: boolean;
+  /** `true`, or the file name the download is saved as. */
+  download?: boolean | string;
   class?: string;
   /** Accessible name when the visible label is cryptic. */
   ariaLabel?: string;
@@ -25,14 +27,14 @@ const {
   class: cls,
   ariaLabel,
 } = Astro.props;
-const newTab = external ? (await getCopy()).labels.new_tab : '';
+const newTab = external ? await getNewTabLabel(Astro.currentLocale) : '';
 ---
 
 <a
   class:list={['mc-btn', `mc-btn--${kind}`, cls]}
   href={href}
   {...(external ? { target: '_blank', rel: 'noopener' } : {})}
-  {...(download ? { download: '' } : {})}
+  {...(download ? { download: download === true ? '' : download } : {})}
   {...(ariaLabel ? { 'aria-label': external ? `${ariaLabel} ${newTab}` : ariaLabel } : {})}
   data-particles
 >
@@ -44,21 +46,21 @@ const newTab = external ? (await getCopy()).labels.new_tab : '';
 
 <style>
   .mc-btn {
-    --bg: #6f6f6f;
-    --hi: #a8a8a8;
-    --lo: #2c2c2c;
-    --fg: #fff;
+    --bg: var(--mc-stone-bg);
+    --hi: var(--mc-stone-hi);
+    --lo: var(--mc-stone-lo);
+    --fg: var(--mc-stone-fg);
     position: relative;
     display: inline-flex;
     align-items: center;
     gap: 10px;
     padding: 14px 24px;
-    border: 2px solid #000;
+    border: 2px solid var(--mc-border);
     background: var(--bg);
     color: var(--fg);
     font: var(--type-pixel-button);
     letter-spacing: var(--type-pixel-button-tracking);
-    text-shadow: 2px 2px 0 #3f3f3f;
+    text-shadow: 2px 2px 0 var(--mc-text-shadow);
     text-decoration: none;
     white-space: nowrap;
     transition:
@@ -88,29 +90,58 @@ const newTab = external ? (await getCopy()).labels.new_tab : '';
     position: relative;
   }
   .mc-btn--grass {
-    --bg: #44802a;
-    --hi: #8ed35c;
-    --lo: #2f5a1c;
+    --bg: var(--mc-grass-bg);
+    --hi: var(--mc-grass-hi);
+    --lo: var(--mc-grass-lo);
+    --fg: var(--mc-grass-fg);
   }
-  .mc-btn:hover,
+  /* Hover only where there is hover: a tap must not leave a button lit (PLAN-EXPERIENCE §6). */
+  @media (hover: hover) {
+    .mc-btn:hover {
+      --bg: var(--mc-hover-bg);
+      --hi: var(--mc-hover-hi);
+      --lo: var(--mc-hover-lo);
+      --fg: var(--mc-hover-fg);
+      color: var(--fg);
+    }
+    .mc-btn--grass:hover {
+      --bg: var(--mc-grass-hover-bg);
+      --hi: var(--mc-grass-hover-hi);
+      --lo: var(--mc-grass-hover-lo);
+    }
+  }
   .mc-btn:focus-visible {
-    --bg: #4f63e0;
-    --hi: #aebbff;
-    --lo: #2a3380;
-    --fg: #ffffa0;
+    --bg: var(--mc-hover-bg);
+    --hi: var(--mc-hover-hi);
+    --lo: var(--mc-hover-lo);
+    --fg: var(--mc-hover-fg);
     color: var(--fg);
   }
-  .mc-btn--grass:hover,
   .mc-btn--grass:focus-visible {
-    --bg: #3d7a22;
-    --hi: #a7e07e;
-    --lo: #345f20;
+    --bg: var(--mc-grass-hover-bg);
+    --hi: var(--mc-grass-hover-hi);
+    --lo: var(--mc-grass-hover-lo);
   }
   .mc-btn:focus-visible {
-    outline: 2px solid var(--color-accent-gold);
+    outline: 2px solid var(--color-focus);
     outline-offset: 3px;
   }
+  /* Row 9: every kind presses down 2 px (a tap too: src/scripts/interact.ts lets iOS show it). */
   .mc-btn:active {
     transform: translateY(2px);
+  }
+  /* Touch: every MC button is a primary action and gets a hit area of at least 44 × 44 px
+     (PLAN-EXPERIENCE §4.1) without changing how it looks — an invisible box centred on the
+     label, which sits centred in the button. */
+  @media (pointer: coarse) {
+    .mc-btn__label::after {
+      content: '';
+      position: absolute;
+      left: 50%;
+      top: 50%;
+      width: max(100%, 44px);
+      height: 44px;
+      translate: -50% -50%;
+    }
   }
 </style>

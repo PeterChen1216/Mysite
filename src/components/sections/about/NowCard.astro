@@ -113,18 +113,46 @@ const store = project.links?.appstore;
   .now__link {
     margin-top: auto;
     font: var(--type-code-sm);
-    color: var(--color-accent-diamond);
+    color: var(--color-link);
     text-decoration: none;
   }
   .now__link:hover,
   .now__link:focus-visible {
-    color: var(--color-accent-gold);
+    color: var(--color-link-hover);
     text-decoration: underline;
   }
   @media (max-width: 400px) {
     .now__cell {
       width: 12px;
       height: 12px;
+    }
+  }
+  /* Phones (X4): half the width beside the XP card; no block (the featured card has it), small
+     cells, the store link a 44 px row. */
+  @media (max-width: 767px) {
+    .now {
+      gap: 10px;
+    }
+    .now__app :global(.voxel) {
+      display: none;
+    }
+    .now__bar {
+      gap: 2px;
+    }
+    .now__cell {
+      width: 8px;
+      height: 12px;
+      border-width: 0;
+      background: var(--color-border-line);
+    }
+    .now__cell--on {
+      background: var(--color-accent-terminal-green);
+    }
+    .now__link {
+      display: flex;
+      align-items: center;
+      min-height: 44px;
+      text-decoration: underline;
     }
   }
 </style>

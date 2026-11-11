@@ -184,7 +184,7 @@ const label = copy.about.avgeek_panels;
     margin: 0;
     font: var(--type-code-label);
     letter-spacing: var(--type-code-label-tracking);
-    text-transform: uppercase;
+    text-transform: var(--type-label-case);
     color: var(--color-text-mid);
   }
   .av__label::before {
@@ -214,7 +214,7 @@ const label = copy.about.avgeek_panels;
     color: var(--color-accent-diamond);
   }
   .av__sym {
-    font-family: 'Segoe UI Symbol', 'Apple Symbols', 'Noto Sans Symbols 2', system-ui, sans-serif;
+    font-family: var(--font-symbol);
     font-size: 0.8em;
   }
   .av__detail,
@@ -228,7 +228,7 @@ const label = copy.about.avgeek_panels;
     gap: 4px;
   }
   .av__list a {
-    color: var(--color-accent-diamond);
+    color: var(--color-link);
     text-decoration: underline;
   }
   .av__code {
@@ -245,7 +245,7 @@ const label = copy.about.avgeek_panels;
     align-items: center;
     gap: 6px;
     padding: 5px 10px;
-    background: var(--color-bg-terminal);
+    background: var(--color-bg-slot);
     border: 2px solid var(--color-border-edge);
     font: var(--type-code-sm);
     color: var(--color-accent-diamond);
@@ -257,9 +257,40 @@ const label = copy.about.avgeek_panels;
     content: '↗' / '';
     font-size: 0.85em;
   }
-  .av__tool:hover,
+  @media (hover: hover) {
+    .av__tool:hover {
+      border-color: var(--color-accent-diamond);
+      color: var(--color-accent-gold);
+    }
+    .av__tool:hover::after {
+      translate: var(--m-hop) calc(-1 * var(--m-hop));
+    }
+  }
   .av__tool:focus-visible {
     border-color: var(--color-accent-diamond);
     color: var(--color-accent-gold);
+  }
+  /* Row 13: the ↗ hops a pixel up-right. */
+  .av__tool:focus-visible::after {
+    translate: var(--m-hop) calc(-1 * var(--m-hop));
+  }
+  /* Phones (X4): the tools are 44 px keys, two to a row. */
+  @media (max-width: 767px) {
+    .av__tools {
+      display: grid;
+      /* Two to a row where they fit (Figma 390), one below. */
+      grid-template-columns: repeat(auto-fit, minmax(min(100%, 9.5em), 1fr));
+      margin: 0;
+      padding: 0;
+    }
+    .av__tools li {
+      display: flex;
+    }
+    .av__tool {
+      flex: 1;
+      min-height: 44px;
+      padding: 0 12px;
+      white-space: normal;
+    }
   }
 </style>

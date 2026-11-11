@@ -1,24 +1,96 @@
 ---
 /**
- * Phone mock-up beside the featured build (Figma PhoneMockup 22:1158, 236×470): a live clock and
- * date (src/scripts/clock.ts fills `data-clock`; without JS the classic 09:41 stays and the date
- * line is blank), a sample stamp in the app's style and a mini pixel globe. Purely decorative
- * (aria-hidden); its strings live in content/copy.yaml → projects.phone.
+ * The Clock Stamp phone, beside a project with `demo: world-clock`: the app's clock face redrawn
+ * in the site's pixel language (236×470, the size of Figma PhoneMockup 22:1158). The selected
+ * city's name, how far it is from home, its time and date; under them a 24-hour dial over a night
+ * map with one hand per city, marked with its code (FRA, SHA), and an arrow hand for "here" (the
+ * city in the home zone, SEA); then the 24h switch and the tabs.
+ *
+ * It runs on the real time. The markup is built for a fixed sample moment, which is what shows
+ * without JavaScript; src/scripts/clock.ts then sets every `data-clock` element to now and moves
+ * the hands on each new minute. Zones, cities and labels live in content/copy.yaml →
+ * projects.phone.
+ *
+ * Decorative (aria-hidden) but for its hands' tags (PLAN-EXPERIENCE §6 row 11): with JavaScript
+ * they are keys in a named group — point at one, tap it or Tab to it, and its city becomes the
+ * selected one (name, offset, big time and date switch to it) while the other hands dim. Without
+ * JavaScript they are plain tags and the whole phone is hidden from assistive technology.
  */
-import PixelGlobe from '../ui/PixelGlobe.astro';
+import land from '../../assets/voxel/globe/land.svg';
+import mask from '../../assets/voxel/globe/ocean-mask.svg';
+import {
+  SAMPLE_MOMENT,
+  dateLabel,
+  dialAngle,
+  hourLabel,
+  minuteLabel,
+  offsetLabel,
+  timeLabel,
+  zonedParts,
+} from '../../lib/world-clock';
 import type { ProjectsCopy } from './projects-view';
 
 interface Props {
   phone: ProjectsCopy['phone'];
+  /** copy.yaml labels.list_separator: between a hand's code and its city in its name. */
+  separator: string;
   class?: string;
 }
-const { phone, class: cls } = Astro.props;
+const { phone, separator, class: cls } = Astro.props;
+
+// Drawn for a fixed moment at build time; clock.ts takes over in the browser.
+const SAMPLE = SAMPLE_MOMENT;
+const home = phone.home_zone;
+// "Here" is the city in the home zone, if one is listed; the others get a coloured hand each, and
+// the first of them is the selected city.
+const here = phone.cities.find((c) => c.time_zone === home);
+const away = phone.cities.filter((c) => c !== here);
+const selected = away[0] ?? phone.cities[0]!;
+const at = (zone: string) => zonedParts(SAMPLE, zone);
+const angle = (zone: string) => `${dialAngle(at(zone)).toFixed(2)}deg`;
+
+// Hand colours in turn (the tag's text colour for each is set in the styles).
+const TONES = ['redstone', 'gold', 'enchant', 'grass'] as const;
+// Tags sit at different distances from the centre so cities close in time don't hide each
+// other, and the selected city (the first) is drawn on top.
+const REACH = [52, 38, 45, 31] as const;
+const hands = away.map((c, i) => ({
+  ...c,
+  mark: c.code ?? c.name,
+  tone: TONES[i % TONES.length]!,
+  reach: REACH[i % REACH.length]!,
+  layer: away.length - i,
+}));
+/** A hand's key is named by what it shows and its city: "FRA, Frankfurt" (or just the city). */
+const keyName = (c: { code?: string | undefined; name: string }) =>
+  c.code ? `${c.code}${separator}${c.name}` : c.name;
+
+// Dial geometry (px in the 180 px face): a tick per hour, a numeral every two hours.
+const R = 90;
+const polar = (deg: number, r: number) => {
+  const a = (deg * Math.PI) / 180;
+  return { x: R + r * Math.sin(a), y: R - r * Math.cos(a) };
+};
+const ticks = Array.from({ length: 24 }, (_, h) => {
+  const kind = h % 6 === 0 ? 'quarter' : h % 2 === 0 ? 'even' : 'odd';
+  const from = polar(h * 15, kind === 'quarter' ? 78 : kind === 'even' ? 81 : 84);
+  const to = polar(h * 15, 87);
+  return { kind, x1: from.x, y1: from.y, x2: to.x, y2: to.y };
+});
+const numerals = Array.from({ length: 12 }, (_, i) => ({ h: i * 2, ...polar(i * 30, 64) }));
 ---
 
-<div class:list={['phone', cls]} aria-hidden="true">
+<div
+  class:list={['phone', cls]}
+  aria-hidden="true"
+  data-phone
+  data-particles
+  data-surface="dark"
+  data-type-fixed
+>
   <span class="phone__notch"></span>
-  <span class="phone__clock" data-clock="time" data-tz={phone.time_zone}>
-    09:41
+  <span class="phone__clock" data-clock="time" data-tz={home}>
+    {timeLabel(at(home))}
   </span>
   <span class="phone__signal">
     <i></i>
@@ -26,47 +98,179 @@ const { phone, class: cls } = Astro.props;
     <i></i>
   </span>
   <span class="phone__battery">100%</span>
-  <p class="phone__time" data-clock="time" data-tz={phone.time_zone}>
-    09:41
-  </p>
-  <p class="phone__date" data-clock="date" data-tz={phone.time_zone}></p>
-  <div class="phone__stamp">
-    <p class="phone__stamp-label">{phone.stamp}</p>
-    <p class="phone__stamp-place">{phone.place}</p>
-    <p class="phone__stamp-coords">{phone.coords}</p>
+
+  <div class="phone__bar">
+    <span class="phone__key phone__key--more">
+      <i></i>
+      <i></i>
+      <i></i>
+    </span>
+    <span class="phone__city" data-clock-city>
+      {selected.name}
+    </span>
+    <span class="phone__key phone__key--add"></span>
   </div>
-  <div class="phone__globe">
-    <PixelGlobe size={162} />
+  <p class="phone__offset" data-clock="offset" data-tz={selected.time_zone} data-home={home}>
+    {offsetLabel(SAMPLE, selected.time_zone, home)}
+  </p>
+  <p class="phone__time">
+    <span data-clock="hour" data-tz={selected.time_zone}>
+      {hourLabel(at(selected.time_zone))}
+    </span>
+    <span class="phone__colon" data-loop="blink">
+      :
+    </span>
+    <span data-clock="minute" data-tz={selected.time_zone}>
+      {minuteLabel(at(selected.time_zone))}
+    </span>
+  </p>
+  <p class="phone__date" data-clock="date" data-tz={selected.time_zone}>
+    {dateLabel(at(selected.time_zone))}
+  </p>
+  <p class="phone__wx">
+    <svg class="px" viewBox="0 0 12 7" width="12" height="7">
+      <path d="M4 0h4v1h2v2h2v4H0V3h2V1h2z"></path>
+    </svg>
+    {phone.weather}
+  </p>
+
+  <div class="dial" style={`--mask:url("${mask.src}")`} data-pick-label={phone.pick_label}>
+    <div class="dial__face">
+      <img class="dial__map" src={land.src} width="360" height="180" alt="" draggable="false" />
+      <img
+        class="dial__map dial__map--wrap"
+        src={land.src}
+        width="360"
+        height="180"
+        alt=""
+        draggable="false"
+      />
+      <span class="dial__shade"></span>
+    </div>
+    <svg class="dial__ticks" viewBox="0 0 180 180" width="180" height="180">
+      {ticks.map((t) => (
+        <line
+          class={`tick tick--${t.kind}`}
+          x1={t.x1.toFixed(2)}
+          y1={t.y1.toFixed(2)}
+          x2={t.x2.toFixed(2)}
+          y2={t.y2.toFixed(2)}
+        />
+      ))}
+    </svg>
+    {numerals.map((n) => (
+      <span class="dial__num" style={`left:${n.x.toFixed(1)}px;top:${n.y.toFixed(1)}px`}>
+        {n.h}
+      </span>
+    ))}
+    {hands.map((c, i) => (
+      <span
+        class={`hand hand--${c.tone}`}
+        data-clock="hand"
+        data-tz={c.time_zone}
+        style={`--a:${angle(c.time_zone)};--r:${c.reach}px;z-index:${c.layer}`}
+      >
+        <i class="hand__line" />
+        <b
+          class="hand__tag"
+          data-city={c.name}
+          data-city-tz={c.time_zone}
+          data-city-name={keyName(c)}
+          data-selected={i === 0 ? '' : undefined}
+        >
+          {c.mark}
+        </b>
+      </span>
+    ))}
+    <span class="hand hand--here" data-clock="hand" data-tz={home} style={`--a:${angle(home)}`}>
+      <i class="hand__line"></i>
+      <b
+        class:list={['hand__tag', { 'hand__tag--icon': !here }]}
+        data-city={here?.name}
+        data-city-tz={here ? home : undefined}
+        data-city-name={here ? keyName(here) : undefined}
+      >
+        <svg class="px" viewBox="0 0 8 8" width="8" height="8" aria-hidden="true">
+          <path d="M7 0h1v1H7zM5 1h2v1H5zM3 2h4v1H3zM1 3h5v1H1zM0 4h6v1H0zM4 5h1v3H4zM5 5h1v1H5z"></path>
+        </svg>
+        {here && (here.code ?? here.name)}
+      </b>
+    </span>
+    <span class="dial__hub"></span>
+  </div>
+
+  <div class="phone__ctl">
+    <span class="phone__hours">{phone.hours}</span>
+    <span class="phone__switch">
+      <i></i>
+    </span>
+    <svg class="px" viewBox="0 0 8 9" width="8" height="9">
+      <path d="M2 0h4v1h1v3h1v5H0V4h5V1H3v1H2z"></path>
+    </svg>
+    <svg class="px" viewBox="0 0 8 8" width="8" height="8">
+      <path d="M7 0h1v1H7zM5 1h2v1H5zM3 2h4v1H3zM1 3h5v1H1zM0 4h6v1H0zM4 5h1v3H4zM5 5h1v1H5z"></path>
+    </svg>
+  </div>
+  <div class="phone__tabs">
+    <span class="phone__tab">
+      <svg class="px" viewBox="0 0 9 7" width="9" height="7">
+        <path d="M0 0h1v1H0zM2 0h7v1H2zM0 3h1v1H0zM2 3h7v1H2zM0 6h1v1H0zM2 6h7v1H2z"></path>
+      </svg>
+      {phone.tab_list}
+    </span>
+    <span class="phone__tab phone__tab--on">
+      <svg class="px" viewBox="0 0 9 9" width="9" height="9">
+        <path
+          d="M2 0h5v1h1v1h1v5H8v1H7v1H2V8H1V7H0V2h1V1h1zM4 2v3h3V4H5V2z"
+          fill-rule="evenodd"
+        ></path>
+      </svg>
+      {phone.tab_clock}
+    </span>
   </div>
   <span class="phone__home"></span>
 </div>
 
 <style>
-  /* Figma geometry: a 236×470 frame with a 6 px bezel inside, a 4 px black stroke outside and a
-     10 px hard shadow; children sit at the frame's coordinates. */
+  /* A 236×470 frame with a 6 px bezel inside, a 4 px black stroke outside and a 10 px hard
+     shadow (Figma PhoneMockup); children sit at the frame's coordinates. The screen is the
+     app's dusk blue, fading to the terminal colour. */
   .phone {
     position: relative;
     flex: none;
     width: 236px;
     height: 470px;
     overflow: clip;
-    background: var(--color-bg-terminal);
+    background: var(--color-bg-panel);
+    background: linear-gradient(
+      180deg,
+      color-mix(in srgb, var(--color-block-water) 24%, var(--color-bg-panel)) 0%,
+      var(--color-bg-panel) 46%,
+      var(--color-bg-terminal) 100%
+    );
     box-shadow:
       inset 0 0 0 6px var(--color-border-edge),
-      0 0 0 4px #000,
-      10px 10px 0 4px rgb(0 0 0 / 0.6);
+      0 0 0 4px var(--color-ink),
+      10px 10px 0 4px var(--color-shadow);
     user-select: none;
   }
   .phone > * {
     position: absolute;
     margin: 0;
   }
+  .px {
+    flex: none;
+    fill: currentColor;
+    shape-rendering: crispEdges;
+  }
+
+  /* ---------- status bar ---------- */
   .phone__notch {
     left: 83px;
     top: 6px;
     width: 70px;
     height: 12px;
-    background: #000;
+    background: var(--color-ink);
   }
   .phone__clock,
   .phone__battery {
@@ -79,68 +283,366 @@ const { phone, class: cls } = Astro.props;
     left: 18px;
   }
   .phone__battery {
-    right: 8px;
+    right: 14px;
   }
   .phone__signal {
-    left: 154px;
+    left: 152px;
     top: 24px;
     display: flex;
-    gap: 10px;
+    gap: 3px;
   }
   .phone__signal i {
     width: 3px;
-    height: 12px;
+    height: 10px;
     background: var(--color-text-mid);
   }
-  .phone__time {
-    left: 22px;
-    top: 96px;
-    font: 700 58px / 1.2 var(--font-pixel);
-    color: var(--color-accent-terminal-green);
-    text-shadow: 3px 3px 0 rgb(0 0 0 / 0.8);
+
+  /* ---------- selected city: name between the two keys, offset, time, date, weather ---------- */
+  .phone__bar {
+    left: 16px;
+    right: 16px;
+    top: 46px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+  .phone__key,
+  .phone__city {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 24px;
+    background: var(--color-border-edge);
+    box-shadow: inset 0 2px 0 var(--color-bevel-hi);
+  }
+  .phone__key {
+    position: relative;
+    gap: 3px;
+    width: 26px;
+  }
+  .phone__key--more i {
+    width: 3px;
+    height: 3px;
+    background: var(--color-text-hi);
+  }
+  .phone__key--add::before,
+  .phone__key--add::after {
+    content: '';
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    width: 10px;
+    height: 2px;
+    margin: -1px 0 0 -5px;
+    background: var(--color-text-hi);
+  }
+  .phone__key--add::after {
+    rotate: 90deg;
+  }
+  .phone__city {
+    padding: 0 10px;
+    font: var(--type-pixel-label);
+    letter-spacing: var(--type-pixel-label-tracking);
+    line-height: 1;
+    color: var(--color-paper);
     white-space: nowrap;
+  }
+  .phone__offset,
+  .phone__time,
+  .phone__date,
+  .phone__wx {
+    left: 0;
+    right: 0;
+    text-align: center;
+    white-space: nowrap;
+  }
+  .phone__offset {
+    top: 76px;
+    font: var(--type-code-sm);
+    line-height: 1;
+    color: var(--color-text-hi);
+  }
+  .phone__time {
+    top: 84px;
+    font: 400 76px / 1 var(--font-term);
+    color: var(--color-paper);
+    text-shadow: 3px 3px 0 var(--color-heading-shadow-md);
+  }
+  .phone__colon {
+    color: var(--color-accent-terminal-green);
   }
   .phone__date {
-    left: 24px;
-    top: 166px;
-    min-height: 1.25em;
+    top: 148px;
     font: var(--type-term-md);
-    color: var(--color-text-mid);
-    white-space: nowrap;
+    line-height: 1;
+    color: var(--color-text-hi);
   }
-  .phone__stamp {
-    left: 22px;
-    top: 212px;
+  .phone__wx {
+    top: 174px;
     display: flex;
-    flex-direction: column;
-    gap: 4px;
-    width: 192px;
-    padding: 12px 14px;
-    border: 2px solid #5000ff;
-    background: rgb(16 0 16 / 0.9);
-  }
-  .phone__stamp p {
-    margin: 0;
-  }
-  .phone__stamp-label {
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
     font: var(--type-pixel-tiny);
     letter-spacing: var(--type-pixel-tiny-tracking);
-    color: var(--color-accent-gold);
+    line-height: 1;
+    color: var(--color-text-mid);
   }
-  .phone__stamp-place {
-    font: var(--type-term-md);
-    color: var(--color-text-hi);
+
+  /* ---------- 24-hour dial: midnight at the top, noon at the bottom ---------- */
+  .dial {
+    left: 28px;
+    top: 192px;
+    width: 180px;
+    height: 180px;
+  }
+  .dial > * {
+    position: absolute;
+  }
+  /* The globe's pixel circle (18 px cells of 324), here with 10 px cells. */
+  .dial__face {
+    inset: 0;
+    overflow: hidden;
+    background: var(--color-bg-terminal);
+    -webkit-mask: var(--mask) 0 0 / 180px 180px no-repeat;
+    mask: var(--mask) 0 0 / 180px 180px no-repeat;
+  }
+  /* Night map: the globe's land as a dot matrix of lights, east Asia and Oceania in view. */
+  .dial__map {
+    --dots: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='5' height='5'%3E%3Crect width='2' height='2'/%3E%3C/svg%3E");
+    position: absolute;
+    left: -225px;
+    top: 0;
+    width: 360px;
+    height: 180px;
+    max-width: none;
+    image-rendering: pixelated;
+    filter: brightness(0) invert(1);
+    opacity: 0.34;
+    -webkit-mask: var(--dots) 1px 1px / 5px 5px repeat;
+    mask: var(--dots) 1px 1px / 5px 5px repeat;
+  }
+  .dial__map--wrap {
+    left: 135px;
+  }
+  .dial__shade {
+    position: absolute;
+    inset: 0;
+    background: radial-gradient(
+      circle closest-side,
+      var(--color-shade-clear) 45%,
+      var(--color-shade-dial) 100%
+    );
+  }
+  .dial__ticks {
+    inset: 0;
+  }
+  .tick {
+    stroke: var(--color-text-mid);
+    stroke-width: 1;
+  }
+  .tick--even {
+    stroke-width: 2;
+  }
+  .tick--quarter {
+    stroke: var(--color-text-hi);
+    stroke-width: 2;
+  }
+  .dial__num {
+    translate: -50% -50%;
+    font: var(--type-pixel-tiny);
+    line-height: 1;
+    color: var(--color-text-mid);
+  }
+
+  /* A hand turns about the centre by --a (set at build, then by clock.ts); its tag is turned
+     back so the name stays level. */
+  /* Tag text is ink or paper, whichever reads at 4.5:1 on the hand's colour. */
+  .hand {
+    --tone: var(--color-accent-redstone);
+    --on: var(--color-ink);
+    left: 90px;
+    top: 90px;
+    width: 0;
+    height: 0;
+    rotate: var(--a, 0deg);
+  }
+  :global(html.motion) .hand,
+  :global(html.motion) .hand__tag {
+    transition: rotate 900ms cubic-bezier(0.2, 0.8, 0.2, 1);
+  }
+  .hand--gold {
+    --tone: var(--color-accent-gold);
+    --on: var(--color-ink);
+  }
+  .hand--enchant {
+    --tone: var(--color-accent-enchant);
+    --on: var(--color-paper);
+  }
+  .hand--grass {
+    --tone: var(--color-block-grass);
+    --on: var(--color-ink);
+  }
+  .hand--here {
+    --tone: var(--color-block-water);
+    --on: var(--color-paper);
+  }
+  .hand__line {
+    position: absolute;
+    left: -1px;
+    bottom: 0;
+    width: 2px;
+    height: calc(var(--r, 50px) + 6px);
+    background: var(--tone);
+  }
+  /* Where purple is light (colour-blind safe) or grey (Mono), ink reads on it, not paper. */
+  :global([data-theme='cvd']) .hand--enchant,
+  :global([data-theme^='mono']) .hand--enchant {
+    --on: var(--color-ink);
+  }
+  /* Mono has no hues to tell the hands apart: each gets its own line (PLAN-EXPERIENCE §3.3) —
+     solid, dashed, dotted, dash-dot; the city codes on the tags say the rest. */
+  :global([data-theme^='mono']) .hand--gold .hand__line {
+    background: repeating-linear-gradient(to top, var(--tone) 0 5px, transparent 5px 8px);
+  }
+  :global([data-theme^='mono']) .hand--enchant .hand__line {
+    background: repeating-linear-gradient(to top, var(--tone) 0 2px, transparent 2px 4px);
+  }
+  :global([data-theme^='mono']) .hand--grass .hand__line {
+    background: repeating-linear-gradient(
+      to top,
+      var(--tone) 0 6px,
+      transparent 6px 8px,
+      var(--tone) 8px 10px,
+      transparent 10px 12px
+    );
+  }
+  .hand__tag {
+    position: absolute;
+    left: 0;
+    bottom: var(--r, 50px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 4px 5px 3px;
+    translate: -50% 50%;
+    rotate: calc(-1 * var(--a, 0deg));
+    background: var(--tone);
+    box-shadow: 2px 2px 0 var(--color-shadow);
+    font: var(--type-pixel-tiny);
+    font-weight: 400;
+    line-height: 1;
+    color: var(--on);
     white-space: nowrap;
   }
-  /* Figma gives the text box 164 px (it overhangs the padding), which sets where it wraps. */
-  .phone__stamp-coords {
-    width: 164px;
-    font: var(--type-code-sm);
-    color: var(--color-accent-diamond);
+  .hand--here .hand__line {
+    height: 40px;
   }
-  .phone__globe {
-    left: 56px;
-    top: 318px;
+  /* Row 11: with JavaScript the tags are buttons (src/scripts/clock.ts) that look as they did.
+     A button is a pointer target, so its box grows to 25 px tall (WCAG 2.5.8: the hands turn with
+     the time and two tags can meet): the tag itself is drawn 5 px inside, on the same centre. */
+  button.hand__tag {
+    isolation: isolate;
+    margin: 0;
+    border: 0;
+    padding-block: 9px 8px;
+    appearance: none;
+    background: none;
+    box-shadow: none;
+    letter-spacing: normal;
+    text-align: center;
+    cursor: pointer;
+  }
+  button.hand__tag::before {
+    content: '';
+    position: absolute;
+    z-index: -1;
+    inset: 5px 0;
+    background: var(--tone);
+    box-shadow: 2px 2px 0 var(--color-shadow);
+  }
+  /* Once a visitor has picked a city, the other hands dim (opacity: nothing moves). */
+  .dial[data-picked] .hand:not([data-picked]) {
+    opacity: 0.4;
+  }
+  @media (forced-colors: active) {
+    button.hand__tag {
+      border: 1px solid ButtonText;
+    }
+  }
+  /* "Here": the location arrow, then the code of the city in the home zone when one is listed. */
+  .hand--here .hand__tag {
+    bottom: 34px;
+    gap: 4px;
+  }
+  .hand--here .hand__tag--icon {
+    width: 16px;
+    height: 16px;
+    padding: 0;
+  }
+  .dial__hub {
+    z-index: 5;
+    left: 86px;
+    top: 86px;
+    width: 8px;
+    height: 8px;
+    background: var(--color-paper);
+    box-shadow: 0 0 0 2px var(--color-bg-terminal);
+  }
+
+  /* ---------- 24h switch, tabs, home bar ---------- */
+  .phone__ctl,
+  .phone__tabs {
+    left: 50%;
+    display: flex;
+    align-items: center;
+    translate: -50% 0;
+    background: var(--color-border-edge);
+    box-shadow: inset 0 2px 0 var(--color-bevel-hi);
+    font: var(--type-pixel-tiny);
+    line-height: 1;
+    white-space: nowrap;
+  }
+  .phone__ctl {
+    top: 383px;
+    gap: 10px;
+    height: 22px;
+    padding: 0 12px;
+    color: var(--color-text-mid);
+  }
+  .phone__hours {
+    color: var(--color-text-hi);
+  }
+  .phone__switch {
+    display: flex;
+    justify-content: flex-end;
+    width: 24px;
+    height: 12px;
+    padding: 2px;
+    background: var(--color-block-water);
+  }
+  .phone__switch i {
+    width: 10px;
+    height: 8px;
+    background: var(--color-paper);
+  }
+  .phone__tabs {
+    top: 414px;
+    gap: 16px;
+    height: 30px;
+    padding: 0 14px;
+    background: var(--color-bg-terminal);
+    box-shadow: inset 0 0 0 2px var(--color-border-edge);
+  }
+  .phone__tab {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+    color: var(--color-text-mid);
+  }
+  .phone__tab--on {
+    color: var(--color-paper);
   }
   .phone__home {
     left: 78px;
@@ -148,5 +650,11 @@ const { phone, class: cls } = Astro.props;
     width: 80px;
     height: 4px;
     background: var(--color-text-mid);
+  }
+  @media (prefers-reduced-motion: reduce) {
+    :global(html.motion) .hand,
+    :global(html.motion) .hand__tag {
+      transition: none;
+    }
   }
 </style>

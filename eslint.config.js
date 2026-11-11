@@ -23,6 +23,11 @@ export default defineConfig(
   js.configs.recommended,
   ...tseslint.configs.recommended,
   ...astro.configs.recommended,
+  // CommonJS config files (lighthouserc.cjs, .size-limit.cjs) load their helpers with require().
+  {
+    files: ['**/*.cjs'],
+    rules: { '@typescript-eslint/no-require-imports': 'off' },
+  },
   {
     languageOptions: { globals: { ...globals.node } },
     rules: {

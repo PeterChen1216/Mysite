@@ -4,7 +4,7 @@ import { z } from 'astro/zod';
 import { parse } from 'yaml';
 import { describe, expect, it, vi } from 'vitest';
 import { assertCommentsClosed, stripComments } from '../../src/content/guards';
-import { list, parseYaml, singleton } from '../../src/content/parsers';
+import { list, parseYaml, singleton, translatedCopy } from '../../src/content/parsers';
 import { copyVars, fillCopy } from '../../src/lib/derive';
 import {
   aviationSchema,
@@ -15,8 +15,11 @@ import {
   interestsSchema,
   profileSchema,
   projectSchema,
+  projectTranslationSchema,
+  proseTranslationSchema,
   siteSchema,
   skillsSchema,
+  translatedCopySchema,
 } from '../../src/content/schema';
 
 const CONTENT = join(import.meta.dirname, '../../content');
@@ -70,9 +73,22 @@ describe('real content/ files validate against their schemas', () => {
     expect(() => copySchema.parse(singleton('copy')(read('copy.yaml'))[0])).not.toThrow();
   });
   it('projects/*.md', () => {
-    const files = readdirSync(join(CONTENT, 'projects')).filter((f) => f.endsWith('.md'));
+    const files = readdirSync(join(CONTENT, 'projects')).filter(
+      (f) => f.endsWith('.md') && !/\.zh-han[st]\.md$/.test(f),
+    );
     expect(files.length).toBeGreaterThan(0);
     for (const f of files) projectSchema(image).parse(frontmatter(read(`projects/${f}`)));
+  });
+  it('translations: copy.zh-hans.yaml, copy.zh-hant.yaml and the twin files', () => {
+    const english = () => parseYaml(read('copy.yaml'));
+    for (const l of ['zh-hans', 'zh-hant'])
+      translatedCopySchema.parse(
+        translatedCopy(`copy.${l}.yaml`, english)(read(`copy.${l}.yaml`))[0],
+      );
+    const twins = readdirSync(join(CONTENT, 'projects')).filter((f) => /\.zh-han[st]\.md$/.test(f));
+    for (const f of twins) projectTranslationSchema.parse(frontmatter(read(`projects/${f}`)));
+    for (const f of readdirSync(CONTENT).filter((f) => /^(about|now)\.zh-han[st]\.md$/.test(f)))
+      proseTranslationSchema.parse(frontmatter(read(f)));
   });
 });
 
@@ -224,14 +240,29 @@ describe('schemas reject mistakes an owner could make', () => {
     );
   });
 
-  it('copy: the phone clock needs a real IANA time zone', () => {
+  it('copy: the phone clock needs real IANA time zones and 1–4 cities', () => {
     const copy = copySchema.parse(singleton('copy')(read('copy.yaml'))[0]);
-    const withZone = (time_zone: string) => ({
+    const withPhone = (phone: Record<string, unknown>) => ({
       ...copy,
-      projects: { ...copy.projects, phone: { ...copy.projects.phone, time_zone } },
+      projects: { ...copy.projects, phone: { ...copy.projects.phone, ...phone } },
     });
-    expect(() => copySchema.parse(withZone('Asia/Shanghai'))).not.toThrow();
-    expect(() => copySchema.parse(withZone('Seattle'))).toThrow(/IANA/);
+    const city = (time_zone: string) => ({ name: 'City', time_zone });
+    expect(() => copySchema.parse(withPhone({ home_zone: 'Asia/Shanghai' }))).not.toThrow();
+    expect(() => copySchema.parse(withPhone({ home_zone: 'Seattle' }))).toThrow(/IANA/);
+    expect(() => copySchema.parse(withPhone({ cities: [city('Europe/Paris')] }))).not.toThrow();
+    expect(() => copySchema.parse(withPhone({ cities: [city('Paris')] }))).toThrow(/IANA/);
+    expect(() => copySchema.parse(withPhone({ cities: [] }))).toThrow();
+    const coded = (code: string) => ({ ...city('Asia/Shanghai'), code });
+    expect(() => copySchema.parse(withPhone({ cities: [coded('SHA')] }))).not.toThrow();
+    expect(() => copySchema.parse(withPhone({ cities: [coded('sha')] }))).toThrow(/3-letter/);
+    expect(() =>
+      copySchema.parse(withPhone({ cities: Array.from({ length: 5 }, () => city('UTC')) })),
+    ).toThrow();
+  });
+  it('project: `demo` only takes a demo the site can draw', () => {
+    const p = { title: 'x', status: 'wip', platform: ['ios'], year: 2026, source: 's' };
+    expect(() => projectSchema(image).parse({ ...p, demo: 'world-clock' })).not.toThrow();
+    expect(() => projectSchema(image).parse({ ...p, demo: 'pong' })).toThrow();
   });
   it('copy: every project status has exactly one label', () => {
     const copy = copySchema.parse(singleton('copy')(read('copy.yaml'))[0]);

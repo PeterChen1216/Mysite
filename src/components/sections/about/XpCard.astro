@@ -5,7 +5,7 @@
  */
 import Card from '../../ui/Card.astro';
 import CardTitle from '../../ui/CardTitle.astro';
-import { gpaRatio } from '../../../lib/derive';
+import { gpaRatio, schoolHonors } from '../../../lib/derive';
 import type { PageData } from '../../../lib/page-data';
 
 interface Props {
@@ -17,6 +17,9 @@ const { copy, edu, honors } = data;
 const [level, max] = edu.gpa ? edu.gpa.split('/') : [];
 const CELLS = 20;
 const filled = Math.round((gpaRatio(edu.gpa) ?? 0) * CELLS);
+// On phones (X4) a school's honors are listed in its Education card instead (this card is half
+// the width there); the others stay here.
+const atSchool = new Set(data.education.flatMap((e) => schoolHonors(e.school, honors)));
 ---
 
 <Card class="about-card about-card--xp" labelledby="about-xp">
@@ -37,7 +40,7 @@ const filled = Math.round((gpaRatio(edu.gpa) ?? 0) * CELLS);
     )}
     <ul class="xp__honors" id="honors">
       {honors.map((h) => (
-        <li>
+        <li data-at-school={atSchool.has(h) ? '' : undefined}>
           {h.name}, {h.org}, {h.year}
           {h.note && ` — ${h.note}`}
         </li>
@@ -57,7 +60,7 @@ const filled = Math.round((gpaRatio(edu.gpa) ?? 0) * CELLS);
     font: var(--type-pixel-h2);
     letter-spacing: var(--type-pixel-h2-tracking);
     color: var(--color-accent-terminal-green);
-    text-shadow: 3px 3px 0 rgb(0 0 0 / 0.8);
+    text-shadow: 3px 3px 0 var(--color-heading-shadow-md);
   }
   /* Figma XPBar: 16 px tall, 2 px black border, 14 px cells 4 px apart, two greens. */
   .xp__bar {
@@ -66,15 +69,15 @@ const filled = Math.round((gpaRatio(edu.gpa) ?? 0) * CELLS);
     gap: 4px;
     height: 16px;
     padding: 2px;
-    background: var(--color-bg-terminal);
-    border: 2px solid #000;
+    background: var(--color-bg-slot);
+    border: 2px solid var(--color-ink);
   }
   .xp__cell {
     height: 8px;
     background: var(--color-border-line);
   }
   .xp__cell--on {
-    background: #7cf35f;
+    background: var(--color-xp-light);
   }
   .xp__cell--on:nth-child(even) {
     background: var(--color-accent-terminal-green);
@@ -100,6 +103,26 @@ const filled = Math.round((gpaRatio(edu.gpa) ?? 0) * CELLS);
     padding-left: 18px;
   }
   /* Gold pixel bullet (no glyph: the code font's subset has no ★). */
+  @media (max-width: 767px) {
+    .xp {
+      flex: 1 1 auto;
+      gap: 12px;
+    }
+    .xp__level {
+      font-size: calc(48px * var(--ts));
+    }
+    .xp__bar {
+      gap: 2px;
+      height: 12px;
+    }
+    .xp__honors li[data-at-school],
+    .xp__honors:not(:has(li:not([data-at-school]))) {
+      display: none;
+    }
+    .xp__of {
+      margin-top: auto;
+    }
+  }
   .xp__honors li::before {
     content: '';
     position: absolute;
@@ -108,6 +131,6 @@ const filled = Math.round((gpaRatio(edu.gpa) ?? 0) * CELLS);
     width: 8px;
     height: 8px;
     background: var(--color-accent-gold);
-    box-shadow: 2px 2px 0 rgb(0 0 0 / 0.6);
+    box-shadow: 2px 2px 0 var(--color-shadow);
   }
 </style>

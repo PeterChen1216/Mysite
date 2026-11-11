@@ -1,12 +1,25 @@
 #!/usr/bin/env node
 // Minimal static server that mimics GitHub Pages path resolution (dir → index.html, 404.html).
-// Used by Playwright so E2E runs against the exact Pages artifact. Usage: node scripts/serve.mjs <dir> [port]
+// Used by Playwright so E2E runs against the exact Pages artifact, and by the owner to look at a
+// site CI built (`pnpm preview:site <unzipped folder>`, docs/CONTENT-GUIDE.md §12).
+// Usage: node scripts/serve.mjs <dir> [port]
 import { createReadStream, existsSync, statSync } from 'node:fs';
 import { createServer } from 'node:http';
 import { extname, isAbsolute, join, normalize, relative, resolve, sep } from 'node:path';
 
-const root = resolve(process.argv[2] ?? '_site');
+// pnpm runs scripts from the project root; INIT_CWD is where the command was typed.
+const dir = process.argv[2] ?? '_site';
+const typed = resolve(process.env.INIT_CWD ?? process.cwd(), dir);
+const root = existsSync(typed) || !existsSync(resolve(dir)) ? typed : resolve(dir);
 const port = Number(process.argv[3] ?? process.env.PORT ?? 4322);
+if (!existsSync(join(root, 'index.html'))) {
+  console.error(
+    root.endsWith('.zip')
+      ? `✖ ${root} is still a zip: unzip it first (double-click it), then pass the folder`
+      : `✖ ${root} has no index.html — pass the folder of a built site (the unzipped site-… download, or _site)`,
+  );
+  process.exit(1);
+}
 /** @type {Record<string, string>} */
 const TYPES = {
   '.html': 'text/html; charset=utf-8',
@@ -56,4 +69,9 @@ createServer((req, res) => {
   }
   res.writeHead(200, { 'Content-Type': TYPES[extname(path)] ?? 'application/octet-stream' });
   createReadStream(path).pipe(res);
-}).listen(port, '127.0.0.1', () => console.log(`serving ${root} on http://localhost:${port}`));
+}).listen(port, '127.0.0.1', () => {
+  console.log(`serving ${root} on http://localhost:${port}`);
+  // Before launch the new site is under /v2/ (the old one keeps the root).
+  const v2 = existsSync(join(root, 'v2', 'index.html'));
+  console.log(`open http://localhost:${port}/${v2 ? 'v2/' : ''} — Ctrl+C stops it`);
+});

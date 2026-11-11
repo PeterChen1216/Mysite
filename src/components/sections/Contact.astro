@@ -3,7 +3,15 @@
  * Contact (Figma "Contact" 22:1612): `$ ping` eyebrow, the big pixel heading, the ping terminal
  * (copy.yaml contact.ping + `open mailto:` with a blinking cursor), the MC buttons and every public
  * email address as a mailto link. The floating blocks are decorative (aria-hidden).
+ *
+ * Phones (X4; §8.3, Figma "Contact" 69:15372): the big heading, one primary button (SAY HI ·
+ * EMAIL), the others as a row of 56 px stone keys with their names under them, and each email
+ * address on a row of its own — a mailto link (selectable text) with a 44 px copy key: a copy says
+ * `[OK] copied <address>` in a toast above the hotbar (role="status"; src/scripts/mobile.ts) and on
+ * the key. Without the Clipboard API the address is selected instead. No ping terminal there.
  */
+import PixelIcon from '../ui/PixelIcon.astro';
+import { fillTemplate } from '../../lib/derive';
 import McButton from '../ui/McButton.astro';
 import TerminalWindow from '../ui/TerminalWindow.astro';
 import VoxelBlock from '../ui/VoxelBlock.astro';
@@ -15,6 +23,25 @@ interface Props {
 const { data } = Astro.props;
 const { copy, links } = data;
 const { ping } = copy.contact;
+// The phone's row of keys (X4): GitHub, LinkedIn, the résumé — each a 56 px stone key and its name.
+const keys = [
+  links.github && {
+    href: links.github,
+    icon: 'code' as const,
+    label: copy.contact.github,
+    external: true,
+  },
+  links.linkedin && {
+    href: links.linkedin,
+    icon: 'linkedin' as const,
+    label: copy.contact.linkedin,
+    external: true,
+  },
+  { href: links.resume, icon: 'doc' as const, label: copy.contact.resume, external: false },
+].filter((k) => !!k);
+const copyName = (address: string) =>
+  fillTemplate(copy.hero.copy_label, { handle: address }, [], 'copy.yaml hero.copy_label');
+const newTab = copy.labels.new_tab;
 ---
 
 <section id="contact" class="contact" aria-labelledby="contact-title">
@@ -82,16 +109,60 @@ const { ping } = copy.contact;
           </svg>
         </McButton>
       )}
-      <McButton href={links.resume} download>
+      <McButton href={links.resume} download={links.resumeFile}>
         {copy.contact.resume}
       </McButton>
     </div>
+    <ul class="contact__keys">
+      {keys.map((k) => (
+        <li>
+          <a
+            class="contact__key"
+            href={k.href}
+            {...(k.external
+              ? { target: '_blank', rel: 'noopener' }
+              : { download: links.resumeFile })}
+          >
+            <span class="contact__stone" aria-hidden="true">
+              <PixelIcon name={k.icon} scale={3} />
+            </span>
+            <span class="contact__key-name">
+              {k.label}
+              {k.external && (
+                <>
+                  <span class="contact__key-ext" aria-hidden="true">
+                    {' ↗'}
+                  </span>
+                  <span class="visually-hidden"> {newTab}</span>
+                </>
+              )}
+            </span>
+          </a>
+        </li>
+      ))}
+    </ul>
     <div class="contact__mail">
       <span class="contact__mail-label">{copy.contact.emails_label}</span>
       <ul class="contact__mail-list">
         {data.publicEmails.map((address) => (
           <li>
-            <a href={`mailto:${address}`}>{address}</a>
+            <span class="contact__dollar" aria-hidden="true">
+              ${' '}
+            </span>
+            <a class="hit-44" href={`mailto:${address}`}>
+              {address}
+            </a>
+            <button
+              type="button"
+              class="contact__copy"
+              data-copy-email={address}
+              aria-label={copyName(address)}
+            >
+              <PixelIcon name="copy" scale={2} class="contact__copy-icon" />
+              <PixelIcon name="check" scale={2} class="contact__copied-icon" />
+              <span class="contact__copy-word">{copy.hero.copy_handle}</span>
+              <span class="contact__copied-word">{copy.hero.copied}</span>
+            </button>
           </li>
         ))}
       </ul>
@@ -139,13 +210,13 @@ const { ping } = copy.contact;
   .contact__block--glow {
     right: 198px;
     top: 120px;
-    filter: drop-shadow(0 0 18px rgb(242 201 76 / 0.6));
+    filter: drop-shadow(0 0 18px var(--color-glow-gold));
   }
   /* Diamond: 40 px right of the 680 px terminal (Figma left 1100 = centre + 380). */
   .contact__block--diamond {
     left: calc(50% + 380px);
     top: 360px;
-    filter: drop-shadow(0 0 11px rgb(74 237 217 / 0.35));
+    filter: drop-shadow(0 0 11px var(--color-glow-diamond));
   }
   .contact__block--tnt {
     left: 40px;
@@ -166,7 +237,7 @@ const { ping } = copy.contact;
     margin: 0;
     font: var(--type-code-label);
     letter-spacing: var(--type-code-label-tracking);
-    text-transform: uppercase;
+    text-transform: var(--type-label-case);
     color: var(--color-accent-diamond);
   }
   .g {
@@ -177,14 +248,14 @@ const { ping } = copy.contact;
     font: var(--type-pixel-display);
     letter-spacing: var(--type-pixel-display-tracking);
     color: var(--color-text-hi);
-    text-shadow: 4px 4px 0 rgb(0 0 0 / 0.85);
+    text-shadow: 4px 4px 0 var(--color-heading-shadow);
   }
 
   /* ---------- ping terminal ---------- */
   .contact :global(.contact__term) {
     position: relative;
     width: 680px;
-    box-shadow: 6px 6px 0 0 rgb(0 0 0 / 0.6);
+    box-shadow: 6px 6px 0 0 var(--color-shadow);
   }
   .ping {
     margin: 0;
@@ -227,7 +298,16 @@ const { ping } = copy.contact;
     vertical-align: 0;
     fill: currentColor;
     shape-rendering: crispEdges;
-    filter: drop-shadow(2px 2px 0 #3f3f3f);
+    filter: drop-shadow(2px 2px 0 var(--color-text-shadow));
+  }
+  /* Row 13: the pixel ↗ of an external button hops a pixel up-right. */
+  @media (hover: hover) {
+    .contact__btns :global(.mc-btn:hover) .ext {
+      translate: var(--m-hop) calc(-1 * var(--m-hop));
+    }
+  }
+  .contact__btns :global(.mc-btn:focus-visible) .ext {
+    translate: var(--m-hop) calc(-1 * var(--m-hop));
   }
   .contact__mail {
     display: flex;
@@ -280,7 +360,11 @@ const { ping } = copy.contact;
   }
   @media (max-width: 1023px) {
     .contact__title {
-      font-size: 64px;
+      font-size: calc(64px * var(--ts));
+    }
+    /* Chinese: 12 px multiples for the pixel CJK face (PLAN-EXPERIENCE §5.5). */
+    :global(:root:lang(zh)) .contact__title {
+      font-size: calc(60px * var(--ts));
     }
     .contact__btns :global(.mc-btn) {
       padding-inline: 18px;
@@ -305,7 +389,10 @@ const { ping } = copy.contact;
       padding: 104px 16px 64px;
     }
     .contact__title {
-      font-size: 44px;
+      font-size: calc(44px * var(--ts));
+    }
+    :global(:root:lang(zh)) .contact__title {
+      font-size: calc(36px * var(--ts));
     }
     .contact__cluster {
       left: 16px;
@@ -322,10 +409,175 @@ const { ping } = copy.contact;
     }
     .contact :global(.contact__term .term__body) {
       padding: 14px;
-      font-size: 13px;
+      font-size: calc(13px * var(--ts));
     }
     .contact__btns :global(.mc-btn) {
       padding: 12px 16px;
+    }
+  }
+
+  /* ---------- phones (X4): one primary button, a row of keys, the addresses as rows ---------- */
+  .contact__keys,
+  .contact__dollar,
+  .contact__copy {
+    display: none;
+  }
+  @media (max-width: 767px) {
+    .contact {
+      align-items: stretch;
+    }
+    .contact :global(.contact__term) {
+      display: none;
+    }
+    .contact__actions {
+      align-items: stretch;
+      width: 100%;
+    }
+    .contact__btns :global(.mc-btn:not(.mc-btn--grass)) {
+      display: none;
+    }
+    .contact__btns :global(.mc-btn--grass) {
+      flex: 1;
+      justify-content: center;
+      min-height: 52px;
+    }
+    .contact__keys {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 8px;
+      margin: 0;
+      padding: 0;
+      list-style: none;
+    }
+    .contact__key {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 10px;
+      padding: 4px 0;
+      color: var(--color-text-mid);
+      text-decoration: none;
+      touch-action: manipulation;
+    }
+    /* A stone key, as the MC buttons: bevels, a hard edge, pressed down 2 px. */
+    .contact__stone {
+      display: grid;
+      place-items: center;
+      width: 56px;
+      height: 56px;
+      border: 2px solid var(--mc-border);
+      background: var(--mc-stone-bg);
+      box-shadow:
+        inset 0 3px 0 0 var(--mc-stone-hi),
+        inset 0 -4px 0 0 var(--mc-stone-lo);
+      color: var(--mc-stone-fg);
+    }
+    .contact__stone :global(.px-icon) {
+      filter: drop-shadow(2px 2px 0 var(--mc-text-shadow));
+    }
+    .contact__key:active .contact__stone {
+      translate: 0 2px;
+    }
+    .contact__key:focus-visible {
+      outline-offset: 4px;
+    }
+    .contact__key:focus-visible .contact__stone {
+      background: var(--mc-hover-bg);
+      color: var(--mc-hover-fg);
+    }
+    /* Row 13: the ↗ hops a pixel up-right with focus (and under a mouse). */
+    .contact__key-ext {
+      position: relative;
+    }
+    .contact__key:focus-visible .contact__key-ext {
+      left: var(--m-hop);
+      top: calc(-1 * var(--m-hop));
+    }
+    @media (hover: hover) {
+      .contact__key:hover .contact__key-ext {
+        left: var(--m-hop);
+        top: calc(-1 * var(--m-hop));
+      }
+    }
+    .contact__key-name {
+      font: var(--type-code-label);
+      letter-spacing: var(--type-code-label-tracking);
+      text-transform: var(--type-label-case);
+      text-align: center;
+    }
+    .contact__mail {
+      flex-direction: column;
+      align-items: stretch;
+      gap: 12px;
+    }
+    .contact__mail-list {
+      flex-direction: column;
+      gap: 0;
+      background: var(--color-bg-slot);
+      border: 2px solid var(--color-border-edge);
+      box-shadow: 6px 6px 0 0 var(--color-shadow);
+    }
+    .contact__mail-list li {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      min-height: 52px;
+      padding: 4px 6px 4px 16px;
+    }
+    .contact__mail-list li + li {
+      border-top: 2px solid var(--color-border-edge);
+    }
+    .contact__mail-list li + li::before {
+      display: none;
+    }
+    .contact__dollar {
+      display: inline;
+      font: var(--type-code-bold);
+      color: var(--color-accent-terminal-green);
+    }
+    .contact__mail-list a {
+      flex: 1;
+      min-width: 0;
+      color: var(--color-text-hi);
+      text-decoration: none;
+      user-select: text;
+    }
+    :global(html.js) .contact__copy {
+      display: inline-flex;
+      flex: none;
+      align-items: center;
+      gap: 8px;
+      min-width: 44px;
+      min-height: 44px;
+      padding: 0 12px;
+      border: 2px solid var(--color-border-edge);
+      background: none;
+      font: var(--type-code-label);
+      letter-spacing: var(--type-code-label-tracking);
+      text-transform: var(--type-label-case);
+      color: var(--color-accent-terminal-green);
+      cursor: pointer;
+      touch-action: manipulation;
+    }
+    .contact__copy :global(.contact__copied-icon),
+    .contact__copied-word,
+    .contact__copy[data-done] :global(.contact__copy-icon),
+    .contact__copy[data-done] .contact__copy-word {
+      display: none;
+    }
+    .contact__copy[data-done] :global(.contact__copied-icon),
+    .contact__copy[data-done] .contact__copied-word {
+      display: inline;
+    }
+    /* Copied: a green edge and the row lit — and the key says so in words and a tick. */
+    .contact__copy[data-done] {
+      border-color: var(--color-accent-terminal-green);
+    }
+    .contact__mail-list li:has(.contact__copy[data-done]) {
+      background: var(--color-nav-active-bg);
+    }
+    .contact__copy:focus-visible {
+      border-color: var(--color-accent-gold);
     }
   }
 </style>

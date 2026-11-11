@@ -1,0 +1,92 @@
+---
+/**
+ * The first-visit language suggestion (PLAN-EXPERIENCE §5.2): one dismissible line at the bottom
+ * of the window, written in the suggested language for the reader who reads it. One per other
+ * live locale, all hidden; src/scripts/lang-suggest.ts shows the one that the browser's languages
+ * pick, only while the visitor has not chosen a language. It never redirects. Fixed in place, so
+ * showing it shifts nothing (CLS); without JavaScript nothing shows.
+ */
+import type { PageData } from '../../lib/page-data';
+
+interface Props {
+  data: PageData;
+}
+const { data } = Astro.props;
+---
+
+{data.suggestions.map((s) => (
+  <section
+    class="lang-suggest"
+    data-lang-suggest={s.locale}
+    lang={s.lang}
+    aria-label={s.suggest_label}
+    data-surface="dark"
+    hidden
+  >
+    <p class="lang-suggest__text">{s.suggest}</p>
+    <a class="lang-suggest__go" href={s.href} hreflang={s.hreflang} data-lang-pick={s.locale}>
+      {s.suggest_go}
+    </a>
+    <button type="button" class="lang-suggest__no" data-lang-dismiss>
+      {s.suggest_dismiss}
+    </button>
+  </section>
+))}
+
+<style>
+  .lang-suggest {
+    position: fixed;
+    /* Above the phone's hotbar (--hotbar-h is 0 elsewhere). */
+    inset: auto 16px calc(16px + var(--hotbar-h));
+    z-index: 51;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 8px 16px;
+    max-width: 720px;
+    margin-inline: auto;
+    padding: 10px 14px;
+    background: var(--color-bg-terminal);
+    border: 2px solid var(--color-accent-diamond);
+    box-shadow: 6px 6px 0 0 var(--color-shadow-term);
+    color: var(--color-text-hi);
+    font: var(--type-code-sm);
+  }
+  .lang-suggest[hidden] {
+    display: none;
+  }
+  .lang-suggest__text {
+    flex: 1 1 16em;
+    margin: 0;
+  }
+  .lang-suggest__go {
+    color: var(--color-accent-diamond);
+  }
+  .lang-suggest__no {
+    min-height: 32px;
+    padding: 4px 10px;
+    border: 2px solid var(--color-border-edge);
+    background: var(--color-bg-panel);
+    color: var(--color-text-hi);
+    font: inherit;
+    cursor: pointer;
+  }
+  .lang-suggest__no:hover,
+  .lang-suggest__no:focus-visible {
+    border-color: var(--color-accent-gold);
+  }
+  /* Phones (X4): both actions are 44 px targets. */
+  @media (max-width: 767px) {
+    .lang-suggest__go,
+    .lang-suggest__no {
+      display: inline-flex;
+      align-items: center;
+      min-height: 44px;
+    }
+  }
+  @media print {
+    .lang-suggest {
+      display: none;
+    }
+  }
+</style>

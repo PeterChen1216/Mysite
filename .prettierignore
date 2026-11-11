@@ -1,4 +1,5 @@
-# Owner-edited files are validated by schema, not by formatting rules (PLAN §7, R8)
+# Owner-edited files are validated by schema, not by formatting rules (PLAN §7, R8); CHANGELOG.md
+# is written by scripts/changelog.mjs.
 content/
 docs/
 legacy/
@@ -11,3 +12,4 @@ playwright-report/
 pnpm-lock.yaml
 coverage/
 .claude/
+CHANGELOG.md

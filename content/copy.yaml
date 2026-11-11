@@ -20,6 +20,11 @@ nav:
   # Read out by screen readers only.
   logo_label: '{domain} — back to top'
   sections_label: Sections
+  # The bar along the foot of a phone's screen (the hotbar): a short name for each section link
+  # above, in the same order, and one for the settings slot. On the narrowest phones only the
+  # icons show, and the current slot's link label (~/about …) floats above the bar.
+  hotbar: [about, projects, experience, contact]
+  hotbar_prefs: prefs
 
 hero:
   headline:
@@ -31,10 +36,63 @@ hero:
   cmd_interests: cat ~/interests.txt
   ok: '[OK]'
   summon: '/summon pixel_globe ~ ~ ~ {rotate:1b}'
-  summon_ok: 'Summoned PixelGlobe. Chunks loaded: 36/36.'
+  # The answer to /summon, ending with your status from profile.yaml ({status}).
+  summon_ok: 'Summoned PixelGlobe. Chunks loaded: 36/36. {status}.'
+  # The whoami line: {name} = full name, {programme} = major · track, {year} = ’27.
+  whoami_line: '{name} — {programme} @ {school}, class of {year}.'
+  # On phones the terminal opens folded: these keys unfold the rest of it and fold it again.
+  more: more ▾
+  less: less ▴
   cta_projects: SEE PROJECTS
   cta_resume: DOWNLOAD RESUME
   eyebrow_prefix: '// player:' # "// player: Peter Chen · UW iSchool ’27 · Seattle, Washington"
+  # The hero globe is a slider for the keyboard: arrow keys turn it. Read out by screen readers;
+  # {deg} is how far it has been turned.
+  globe_label: Globe
+  globe_value: 'turned {deg}°'
+  # Under the pointer (or, from the keyboard, at its centre) the globe shows where that is: a
+  # latitude, a longitude ({deg}: whole degrees) and the continent or ocean (read from the globe's
+  # own map). Decoration: screen readers have the slider's value above.
+  globe_lat: { n: '{deg}°N', s: '{deg}°S' }
+  globe_lon: { e: '{deg}°E', w: '{deg}°W' }
+  globe_regions:
+    north_america: North America
+    south_america: South America
+    europe: Europe
+    africa: Africa
+    asia: Asia
+    oceania: Oceania
+    antarctica: Antarctica
+    pacific: Pacific Ocean
+    atlantic: Atlantic Ocean
+    indian: Indian Ocean
+    arctic: Arctic Ocean
+    southern: Southern Ocean
+  # The player card's name tag: a key that copies the GitHub handle ({handle}).
+  copy_handle: copy # the key's word
+  copy_label: 'Copy {handle}' # read out by screen readers
+  copied: copied # after a copy (also read out)
+  # The hero terminal's last line, `$ █`, is a real prompt (an easter egg): click it, or Tab to it
+  # and press Enter. Commands stay in English; what they print comes from here and from your
+  # content ({cmd} and {name} are filled in as it runs).
+  prompt:
+    open: Type a command in the terminal # the line's name (read out)
+    label: Command # the text field's name (read out)
+    hint: 'Type help for the commands. Esc closes.'
+    help:
+      - 'help — this list'
+      - 'whoami — who I am'
+      - 'ls — the sections of this page'
+      - 'cat interests.txt — what I am into'
+      - 'open resume — download my résumé'
+      - 'theme night | day | mono | paper | prism — change the theme'
+      - 'clear — clear the screen'
+      - 'exit — close the prompt'
+    not_found: 'command not found: {cmd} — try help'
+    theme_set: 'theme: {name}'
+    opening: 'opening {name}…'
+  # On phones the three badges beside the globe are a row you swipe; what screen readers call it.
+  badges_label: Highlights
   avgeek_badge: AvGeek  ✈  routes · seats · mileage
   # Replaces avgeek_badge once aviation.yaml `watching` has a route ({from}/{to}: its airports).
   avgeek_route: AvGeek  ✈  {from} ⇄ {to}
@@ -56,6 +114,9 @@ about:
   card_off: off --the-clock
   card_avgeek: avgeek
   card_skills: inventory --skills
+  # The tooltip over a skill or a course under the pointer or keyboard focus: its group, where it
+  # is in the group and how many there are ({group} {n} {count}).
+  slot_tip: '{group} · {n} of {count}'
   avgeek_title: Routes, seats, mileage plans.
   now_link: Open in the App Store
   skills_basic: basic # "…; basic Java"
@@ -93,13 +154,30 @@ projects:
   # Chips on the "next chunk" card; leave the list empty ([]) for none.
   next_tags: [TBD]
   next_progress: generating chunk (-1, 3)…
-  # Decorative phone beside the featured build (hidden from screen readers): a sample stamp in
-  # the app's style, and the IANA time zone its live clock and date show.
+  # On phones the other builds are a row you swipe (or step through with the arrow keys under it):
+  # the link to the full list after it, and what screen readers hear for each card's place
+  # ({n} of {count}).
+  list_all: list all ▸
+  position: '{n} of {count}'
+  # The phone beside a project with `demo: world-clock` (Clock Stamp), drawn after the app's clock
+  # face and hidden from screen readers. It runs on the real time. Each city is a mark on the
+  # 24-hour dial, labelled with its `code` (or its name when it has none). `home_zone` is "here":
+  # the status-bar clock and what "+9h" counts from; a city in that zone gets the arrow hand.
+  # The first city outside the home zone is the selected one (name, big clock, date).
+  # 1–4 cities, IANA time zone names.
   phone:
-    stamp: STAMP
-    place: 'SEA · Seattle, WA'
-    coords: '47.6062° N, 122.3321° W'
-    time_zone: America/Los_Angeles
+    home_zone: America/Los_Angeles
+    cities:
+      - { code: FRA, name: Frankfurt, time_zone: Europe/Berlin }
+      - { code: SEA, name: Seattle, time_zone: America/Los_Angeles }
+      - { code: SHA, name: Shanghai, time_zone: Asia/Shanghai }
+    weather: Open-Meteo
+    # The hands are keys: point at one, tap it or Tab to it, and its city is shown. Read out
+    # before the city names.
+    pick_label: Show the time in
+    hours: 24h
+    tab_list: List
+    tab_clock: Clock
 
 experience:
   cmd: git log --oneline --graph ~/career
@@ -107,6 +185,8 @@ experience:
   blurb: Where I’ve been, newest first. HEAD points at whatever comes next.
   head_hint: say hi ↓
   head_dates: now →
+  # What a commit's hash becomes under the pointer or focus ({hash}).
+  show_cmd: 'git show {hash}'
   # The smaller log below the commit history: entries with `kind: volunteer` in experience.yaml.
   community_cmd: git log --oneline ~/community
   community_title: Community
@@ -129,17 +209,73 @@ contact:
 
 footer:
   tagline: built with voxels, coffee & too many flights
+  prefs: prefs # opens the settings window
   back_to_top: ▲ back to spawn
   rights: All rights reserved.
   updated: updated
+
+# The settings window (~/.config) and the keys in the nav that open it and pause the page.
+# The `cmd` lines are decoration; the `legend` and `name` lines are what screen readers read.
+# Each choice applies at once and is saved in the visitor's browser only.
+prefs:
+  open_label: Settings # the gear key in the nav (read out by screen readers)
+  pause_label: Pause animations # the pause key in the nav: pressed = paused
+  title: '~/.config — prefs' # the window's title bar
+  heading: Settings # the window's name (read out)
+  intro: Changes apply at once and are saved in this browser only.
+  close: close
+  reset_cmd: reset
+  reset: Reset to defaults
+  theme:
+    cmd: theme --set
+    legend: Theme
+    # One per theme: a plain name, and its in-world name (or a short note) under it.
+    options:
+      night: { name: Night, note: the default }
+      day: { name: Day, note: Overworld }
+      mono-dark: { name: Mono dark, note: Bedrock }
+      mono-light: { name: Mono light, note: Paper }
+      cvd: { name: Colour-blind safe, note: Prism }
+      auto: { name: Auto, note: 'Night or Day, like your device' }
+    contrast_note: Your device asks for more contrast, so every theme uses stronger lines and text.
+  motion:
+    cmd: motion --set
+    legend: Motion
+    options:
+      auto: { name: Auto, note: like your device }
+      full: { name: Full, note: everything moves }
+      calm: { name: Calm, note: 'no intro or sparks, slower loops' }
+      off: { name: 'Off', note: nothing moves }
+    reduced_note: Your device asks for reduced motion, so the page stays still whatever you pick.
+  text:
+    cmd: text --size
+    legend: Text size
+    option: '{size}%' # {size} = 100, 115 or 130
+  keys:
+    cmd: keys --shortcuts
+    legend: Keyboard shortcuts
+    on: 'On'
+    off: 'Off'
+    note: '“,” opens this window and “p” pauses animations, when you are not typing in a field.'
+  # The languages, each named in its own language (i18n.name in its copy file).
+  lang:
+    cmd: lang --set
+    legend: Language
+    note: Each language is its own page; the link keeps your place.
+    draft: draft # after a language that is still a preview (only listed on preview pages)
 
 # Small words used inside dates and lists.
 labels:
   now: now # end of an ongoing entry in the commit history
   present: Present # end of an ongoing project on its card ("Mar 2026 – Present")
   expected: (expected) # graduation date not reached yet
-  class_of: class of
   gpa: GPA # on the hero badge ("GPA 3.84 ★ …")
+  # Dates: month names, and how a month and year are written ({month} {year} → "Mar 2027").
+  months: [Jan, Feb, Mar, Apr, May, Jun, Jul, Aug, Sep, Oct, Nov, Dec]
+  year_month: '{month} {year}'
+  list_separator: ', ' # between the items of a list ("Python, R, SQL")
+  # Platform words (projects/*.md `platform`).
+  platform: { ios: iOS, web: Web, cli: CLI, research: Research }
   # Project status words (projects/*.md `status`), shown on the cards, badge and ticker.
   status:
     idea: idea
@@ -150,3 +286,71 @@ labels:
     archived: archived
   new_tab: (opens in a new tab) # read out by screen readers only
   skip_link: Skip to content # first thing a keyboard user reaches
+
+# Languages (PLAN-EXPERIENCE §5). Every copy file has this block, in its own language.
+i18n:
+  name: English # this language's own name, as the language switch lists it on every page
+  # The notice on every page of a language that is still a preview (site.yaml `locales`).
+  preview_notice: Draft translation, not yet reviewed.
+  preview_link: Read the English version
+  # The one-line suggestion on a first visit to a page in another language, when the browser
+  # prefers this one. Written in this language: it is meant for the reader who reads it.
+  suggest: This page is also in English.
+  suggest_go: Read it in English
+  suggest_dismiss: No thanks
+  suggest_label: Language suggestion # read out by screen readers only
+
+# Windows (M3; PLAN §5.2): a section's `more ▸` key grows its window into a directory; a project
+# opens in a window of its own over the page, and is a page of its own (/projects/<id>/) too.
+windows:
+  # The key at the end of a section's command line, and what screen readers hear.
+  more: more ▸
+  more_label: All projects
+  # Every window's title bar: the key that moves it (arrow keys; Enter puts it back) and the close
+  # key ("[x] close"). Clicking the bar itself, or Esc, also closes the window.
+  move_label: Move window
+  move_hint: Arrow keys move the window, with Shift further; Enter or Home puts it back.
+  close: close
+  hint: Esc or click the bar to shrink the window back onto the desk.
+  # While a project's window loads, and if it can't: then a plain link to the project's page.
+  loading: loading chunk…
+  failed: 'Chunk failed to load. Open the page:'
+  # The directory of projects: its title bar, its command line and its name (read out).
+  directory_title: projects/ — directory
+  directory_cmd: ls -la ~/projects
+  directory_heading: Every project
+  # A project's window and page: title bar and command ({id} = its file name), the path above it
+  # (read out as "You are here"), the page's <title> ({project} = its title) and its neighbours.
+  project_title: '~/projects/{id}'
+  project_cmd: 'cat ~/projects/{id}.md'
+  crumbs_label: You are here
+  home_label: Home
+  page_title: '{project} — {domain}'
+  directory_page_title: 'Projects — {domain}'
+  neighbours_label: More projects
+  prev: ← previous
+  next: next →
+  back: cd ~/projects
+  back_home: cd ~
+# The page for an address that does not exist (404): the terminal's reply, the heading and the
+# ways back. {path} is filled in the browser with the address that was asked for.
+not_found:
+  page_title: 'Chunk not found — {domain}'
+  title: '404 — chunk not found'
+  cmd: 'cd {path}'
+  error: 'cd: no such chunk: {path}'
+  heading: Chunk not found
+  body: This page doesn’t exist. It may have moved, or it hasn’t been generated yet.
+  home: cd ~
+  home_label: Back to the home page
+  projects_label: Every project
+# The share card a link to the site shows (Open Graph image): its text alternative ({title} = the
+# page's title).
+og:
+  alt: 'A terminal window over a voxel world: {title}'
+
+# The WebGL scene behind the page (PLAN-EXPERIENCE §7). It is decorative and says nothing, so this
+# is only the developer line shown with ?debug=1 in the address: frames per second, milliseconds
+# per frame, the graphics tier and why, draw calls and pixel ratio, filled in by the browser.
+scene:
+  hud: 'fps {fps} · {ms} ms · tier {tier} ({reason}) · {draws} draws · dpr {dpr}'

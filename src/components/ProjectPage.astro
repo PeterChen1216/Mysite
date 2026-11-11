@@ -1,0 +1,37 @@
+---
+/**
+ * A project's own page (M3; PLAN §4.1 `/projects/<id>`), in one locale: the project's window as
+ * the page. The same window opens over the home page from its title (src/scripts/windows.ts), which
+ * takes its body from this page — one source.
+ */
+import SubPage from './SubPage.astro';
+import ProjectDetail from './sections/ProjectDetail.astro';
+import Window from './ui/Window.astro';
+import type { Locale } from '../i18n/locales';
+import { fillTemplate } from '../lib/derive';
+import { getPageData } from '../lib/page-data';
+import { pageDescription } from './sections/projects-view';
+
+interface Props {
+  locale: Locale;
+  id: string;
+}
+const { locale, id } = Astro.props;
+const data = await getPageData(locale, { kind: 'project', id });
+const project = data.projects.find((p) => p.id === id);
+if (!project) throw new Error(`no project "${id}"`);
+const w = data.copy.windows;
+const title = fillTemplate(w.page_title, { project: project.title });
+---
+
+<SubPage data={data} title={title} description={pageDescription(project, data.head.description)}>
+  <Window
+    as="article"
+    title={fillTemplate(w.project_title, { id })}
+    labelledby={`project-${id}-heading`}
+    class="sub__win"
+    data={{ 'page-window': 'project' }}
+  >
+    <ProjectDetail data={data} project={project} level="h1" />
+  </Window>
+</SubPage>

@@ -1,0 +1,129 @@
+---
+/**
+ * zhic.me v2 — long-page voxel × terminal site (M1, Figma "Home — Voxel / 1440"), in one locale:
+ * src/pages/index.astro (English), zh-hans/ and zh-hant/ (PLAN-EXPERIENCE §5.2).
+ * Every fact comes from content/ via src/lib/page-data.ts; sections only lay it out.
+ */
+import BaseLayout from '../layouts/BaseLayout.astro';
+import About from './sections/About.astro';
+import Background from './sections/Background.astro';
+import Contact from './sections/Contact.astro';
+import Experience from './sections/Experience.astro';
+import Footer from './sections/Footer.astro';
+import Hero from './sections/Hero.astro';
+import LangNotice from './sections/LangNotice.astro';
+import LangSuggest from './sections/LangSuggest.astro';
+import Nav from './sections/Nav.astro';
+import PageScripts from './PageScripts.astro';
+import PrefsWindow from './sections/PrefsWindow.astro';
+import Projects from './sections/Projects.astro';
+import Ticker from './sections/Ticker.astro';
+import Directory from './sections/Directory.astro';
+import Window from './ui/Window.astro';
+import type { Locale } from '../i18n/locales';
+import { getPageData } from '../lib/page-data';
+import { projectBlock } from './sections/projects-view';
+// A project's window shows the markup of the project's page (src/scripts/windows.ts).
+import '../styles/project-detail.css';
+
+interface Props {
+  locale: Locale;
+}
+const data = await getPageData(Astro.props.locale);
+// For the WebGL scene (src/scene/, tier 3 only): the routes to draw on its Earth (aviation.yaml
+// `watching`, as airport codes) and the wording of its `?debug=1` line.
+const sceneRoutes = JSON.stringify(data.aviation.watching.map((r) => [r.from, r.to]));
+// Stops 4–6 (M3): each project's block on the workbench (id, block, 1 for the one with the live
+// Clock Stamp dial), and the phone's cities for that dial.
+const sceneProjects = JSON.stringify(
+  data.projects.map((p) => [
+    p.id,
+    p.id === data.featured.id ? 'command' : projectBlock(p),
+    p.demo === 'world-clock' ? 1 : 0,
+  ]),
+);
+const phone = data.copy.projects.phone;
+const sceneDial = JSON.stringify({
+  home: phone.home_zone,
+  cities: phone.cities.map((c) => c.time_zone),
+});
+// The windows over the page (M3): the projects directory that Projects' `more ▸` grows into, and
+// one window that shows a project's page (its body is fetched from that page when opened).
+const w = data.copy.windows;
+const keys = { move: w.move_label, hint: w.move_hint, close: w.close };
+---
+
+<BaseLayout data={data}>
+  <LangSuggest data={data} />
+  <div
+    class="page"
+    data-scene-routes={sceneRoutes}
+    data-scene-projects={sceneProjects}
+    data-scene-dial={sceneDial}
+    data-scene-hud={data.copy.scene.hud}
+  >
+    <!-- Inside the page, so the background still covers the whole first screen. -->
+    {data.preview && <LangNotice data={data} />}
+    <Background />
+    <Nav data={data} />
+    <main id="main">
+      <Hero data={data} />
+      <Ticker data={data} />
+      <About data={data} />
+      <Projects data={data} />
+      <Experience data={data} />
+      <Contact data={data} />
+    </main>
+    <Footer data={data} />
+  </div>
+  <!-- Phones (X4): the result of a tap-to-copy, above the hotbar (src/scripts/mobile.ts); in the
+       page from the start, empty, so screen readers announce what is put in it. -->
+  <p
+    class="toast"
+    role="status"
+    data-toast
+    data-ok={data.copy.hero.ok}
+    data-copied={data.copy.hero.copied}
+  ></p>
+  <PrefsWindow data={data} />
+  <PageScripts />
+  <Window
+    as="dialog"
+    id="directory-window"
+    title={w.directory_title}
+    labelledby="directory-window-heading"
+    keys={keys}
+    data={{ 'window-kind': 'directory', 'window-href': data.paths.projects }}
+  >
+    <Directory data={data} level="h2" headingId="directory-window-heading" />
+    <p class="win-hint">{w.hint}</p>
+  </Window>
+  <Window as="dialog" id="project-window" title="" keys={keys} data={{ 'window-kind': 'project' }}>
+    <div data-project-slot></div>
+    <p class="win-hint" data-project-loading hidden>
+      {w.loading}
+    </p>
+    <p class="win-hint" data-project-failed hidden>
+      {w.failed}{' '}
+      <a href={data.paths.projects} data-project-failed-link>
+        {w.directory_title}
+      </a>
+    </p>
+    <p class="win-hint">{w.hint}</p>
+  </Window>
+</BaseLayout>
+
+<style>
+  .page {
+    position: relative;
+    overflow-x: clip;
+  }
+  .win-hint {
+    margin: 0;
+    font: var(--type-code-sm);
+    color: var(--color-text-mid);
+  }
+  .win-hint a {
+    color: var(--color-accent-diamond);
+  }
+</style>
