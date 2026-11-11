@@ -25,6 +25,8 @@
 - ⚠ PR [#7](https://github.com/PeterChen1216/Mysite/pull/7)（第 12–14 步）的第一轮 CI：Firefox、iPhone、主作业 2/2 通过；**主作业 1/2 与上线配置作业各失败一条，同一条**——[chromium] `interactions.spec`「12 · terminal prompt › the keyboard … nothing on the page moves」：打开终端的命令行之后，终端下面的按钮往下移了 0.5 px（两次都是）。另有一条重试后通过：「3 · inventory slots › axe … with a tooltip open」（没有动）
 - ✅ 第 15 步（主会话）：**原因**——`src/scripts/prompt.ts` 打开命令行时把终端固定在 `offsetHeight`（取整）；终端的行加起来是 x.5 px 时就多出半个像素，把下面的内容推下去。X3 就有；第 14 步把状态句改长后，CI 的字体让终端高度落在半像素上（本机 1280 px 时恰好是整数，所以两轮本机检查都没有测出来；换到 1024 / 1100 / 1200 / 1366 / 1440 px 本机也复现：高 321.5 或 376.5，按钮移 0.5 px）。**修**——固定为布局算出的精确高度（`getComputedStyle(body).height`），上述宽度下移动量都是 0。**测试**——新增一条强制让终端高度带半个像素再打开命令行的测试（去掉修复后失败），不再依赖字体
 - ✅ 第 16 步（业主 2026-11-11 选定的首页搜索描述，LAUNCH A2）：`content/site.yaml → meta.description` 改为「Zhicheng (Peter) Chen — Informatics senior at the University of Washington (’27). Projects, experience and résumé; open to new-grad roles in IT, data and software engineering.」；两种中文是草稿，`from` 已更新
+- ⚠ PR #7 的第二轮 CI（`1a19052`，push 与 pull_request 两轮共 10 个作业）：9 个通过——上一轮失败的 Chromium 测试所在的两个作业都通过，第 15 步的修复在 CI 的字体下得到证实；**1 个失败**：pull_request 那一轮的 Firefox，失败的是第 15 步新加的测试「opening it moves nothing, also when the terminal is a fraction of a pixel tall」——按钮的 y 是 880.3333129882812 对 880.3333282470703，差 0.000015 px（同一份代码 push 那一轮的 Firefox 通过）。页面没有动：这是 `top + scrollY` 的浮点误差，测试用了完全相等
+- ✅ 第 17 步（主会话；本机 `pnpm verify` 上线状态：单测 553 / 1 跳过，E2E 771 通过 / 237 跳过，10.5 分钟）：两条命令行测试的位置比较改为「差小于 0.01 px」（`expectSamePlace`）——浏览器按 1/64 px（Firefox 1/60 px）排版，真正的移动至少 0.015 px，所以这个界限放不过任何真实的移动；去掉第 15 步的修复后新测试仍然失败（报 880.328125 → 880.828125）
 - 本分支已把 `main` 合并进来（`a516509` 之上的一个合并提交，树不变），后续修复要再开一个新的 PR 才能进 `main`——**开不开由业主决定**
 - ✅ 7. 交付说明「M5（上线前）交付说明」（下面）
 

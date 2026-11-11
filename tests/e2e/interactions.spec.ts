@@ -715,6 +715,22 @@ test.describe('11 · Clock Stamp phone: pick a city', () => {
   });
 });
 
+/**
+ * The same box, to the engine's own precision. Browsers lay out in 1/64 px (Firefox 1/60 px), so
+ * anything that really moves moves by at least 0.015 px; `top + scrollY` in floating point can
+ * differ in the fifth decimal for the very same layout (Firefox, CI: 880.33331 against 880.33333).
+ */
+function expectSamePlace(
+  now: { x: number; y: number; w: number; h: number },
+  before: { x: number; y: number; w: number; h: number },
+) {
+  for (const side of ['x', 'y', 'w', 'h'] as const)
+    expect(
+      Math.abs(now[side] - before[side]),
+      `${side}: ${before[side]} → ${now[side]}`,
+    ).toBeLessThan(0.01);
+}
+
 test.describe('12 · terminal prompt (an easter egg with a real form control)', () => {
   test('the keyboard: open it, run commands, close it; nothing on the page moves', async ({
     page,
@@ -757,7 +773,7 @@ test.describe('12 · terminal prompt (an easter egg with a real form control)', 
     expect(await page.evaluate(() => document.documentElement.hasAttribute('data-paused'))).toBe(
       false,
     );
-    expect(await onPage()).toEqual(before);
+    expectSamePlace(await onPage(), before);
     await page.keyboard.press('Escape');
     await expect(key).toBeFocused();
     await expect(field).toHaveCount(0);
@@ -789,7 +805,7 @@ test.describe('12 · terminal prompt (an easter egg with a real form control)', 
     if (isMobile) await key.tap();
     else await key.click();
     await expect(page.getByRole('textbox', { name: copy.hero.prompt.label })).toBeFocused();
-    expect(await onPage()).toEqual(before);
+    expectSamePlace(await onPage(), before);
   });
 
   test('a tap opens it; axe is clean with it open', async ({ page, isMobile }) => {
