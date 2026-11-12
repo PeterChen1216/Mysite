@@ -35,7 +35,7 @@ meta:
       description: 61c072ae
   zh-hant:
     draft: true
-    description: Zhicheng (Peter) Chen——University of Washington 信息學專業大四學生（’27 屆）。項目、經歷與簡歷；期待 IT、數據與軟件工程方向的應屆全職機會。
+    description: Zhicheng (Peter) Chen——University of Washington 主修資訊學的四年級學生（’27 屆）。項目、經歷與履歷；期待 IT、數據及軟件工程方向的應屆畢業生全職機會。
     from:
       description: c58d2cae
 
@@ -50,6 +50,6 @@ footer:
       update_note: 2d5227cd
   zh-hant:
     draft: true
-    update_note: 預計每兩週更新一次。
+    update_note: 預計每兩星期更新一次。
     from:
       update_note: 7b469257
