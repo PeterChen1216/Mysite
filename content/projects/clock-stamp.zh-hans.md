@@ -1,7 +1,6 @@
 ---
-# clock-stamp.md 的简体中文译文（Claude 起草，未经审阅）。名称 Clock Stamp 保持英文。
-# 审阅修改后删掉 draft 这一行；没翻译的字段显示英文原文。
-draft: true
+# clock-stamp.md 的简体中文译文（Claude 起草，Peter 于 2026-11-14 审阅并认可）。名称 Clock Stamp 保持英文。
+# 没翻译的字段显示英文原文。
 tagline: 独立开发的 iOS 应用
 from:
   tagline: 140b94f3

@@ -5,13 +5,11 @@
   source: Resume.pdf (2026-11-03)
   # Translations (content/README.md "Translations"); the university's name stays in English.
   zh-hans:
-    draft: true
     name: 年度院长名单
     from:
       name: a38cca75
   zh-hant:
-    draft: true
-    name: 年度院長名單
+    name: 年度院長嘉許名單
     from:
       name: 5350bc85
 - name: Annual Dean's List
@@ -19,12 +17,10 @@
   year: 2024-2025
   source: legacy index.html (its note, "with 4 consecutive quarters", was removed on 2026-11-11 at the owner's request)
   zh-hans:
-    draft: true
     name: 年度院长名单
     from:
       name: a38cca75
   zh-hant:
-    draft: true
-    name: 年度院長名單
+    name: 年度院長嘉許名單
     from:
       name: 5350bc85
