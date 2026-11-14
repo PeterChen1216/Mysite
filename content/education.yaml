@@ -23,7 +23,6 @@
   source: Resume.pdf (2026-11-03); department, school/department links, start date and "UW iSchool" from legacy index.html / site tagline; the Data Science track was removed on 2026-11-11 (the owner says the major is Informatics only)
   # Translations (content/README.md "Translations"); school and department names stay in English.
   zh-hans:
-    draft: true
     degree: 信息学理学学士
     major: 信息学
     gpa_label: 累计 GPA
@@ -43,7 +42,6 @@
       honors: c0cf6583
       coursework: 27a9fb68
   zh-hant:
-    draft: true
     degree: 資訊學理學士
     major: 資訊學
     gpa_label: 累積 GPA

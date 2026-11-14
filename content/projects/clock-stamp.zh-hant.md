@@ -1,9 +1,8 @@
 ---
 # 最初由 pnpm content:hant 從簡體版（projects/clock-stamp.zh-hans.md）轉換，其後已人手改為香港用詞：事實內容用書面語，
-# 介面文字帶少量粵語口語。draft: true —— 尚未經 Peter 審閱；他認可後才刪掉 draft 這一行。
+# 介面文字帶少量粵語口語。Peter 於 2026-11-14 審閱並認可。
 # from 記錄它對應的簡體文字；這份繁體由人手維護，腳本不會再覆蓋它。
 
-draft: true
 tagline: 獨立開發的 iOS 應用程式
 from:
   tagline: ee0d027d

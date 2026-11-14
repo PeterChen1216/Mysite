@@ -12,7 +12,6 @@
   source: Resume.pdf (2026-11-03); iSchool link from legacy index.html
   # Translations (content/README.md "Translations"); company names stay in English.
   zh-hans:
-    draft: true
     role: 本科助教，INFO 180：数据科学导论
     location: 华盛顿州西雅图
     highlights:
@@ -23,7 +22,6 @@
       location: dbae9e5a
       highlights: b056f134
   zh-hant:
-    draft: true
     role: 本科生教學助理，INFO 180：數據科學導論
     location: 華盛頓州西雅圖
     highlights:
@@ -46,7 +44,6 @@
     - Built Tongren Coding’s customer-support IM module with Python, SQLite, and JavaScript; deployed on Android and web.
   source: Resume.pdf (2026-11-03)
   zh-hans:
-    draft: true
     role: 智能体开发实习生
     location: 中国杭州
     highlights:
@@ -58,7 +55,6 @@
       location: 56d10c23
       highlights: f1e92b7c
   zh-hant:
-    draft: true
     role: 智能體開發實習生
     location: 中國杭州
     highlights:
@@ -84,7 +80,6 @@
     - Supported approximately 70 web users and 150 Telegram leads daily while developing an AI-assisted workflow for inquiry classification.
   source: Resume.pdf (2026-11-03); company link from legacy index.html
   zh-hans:
-    draft: true
     role: 运营实习生（暑期）
     location: 中国上海
     logo_alt: HashKey Global 标志
@@ -97,7 +92,6 @@
       logo_alt: 762cc8ed
       highlights: 99706b0e
   zh-hant:
-    draft: true
     role: 營運實習生（暑期）
     location: 中國上海
     logo_alt: HashKey Global 標誌
@@ -120,7 +114,6 @@
     - Volunteered 5 hours weekly in food distribution and sorting operations serving the local community.
   source: Resume.pdf (2026-11-03)
   zh-hans:
-    draft: true
     role: 志愿者
     location: 华盛顿州西雅图
     highlights:
@@ -130,7 +123,6 @@
       location: dbae9e5a
       highlights: cbcc5836
   zh-hant:
-    draft: true
     role: 義工
     location: 華盛頓州西雅圖
     highlights:

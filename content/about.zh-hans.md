@@ -1,7 +1,6 @@
 ---
-# about.md 的简体中文译文（Claude 起草，未经审阅）。审阅修改后删掉 draft 这一行。
+# about.md 的简体中文译文（Claude 起草，Peter 于 2026-11-14 审阅并认可）。
 # from 由 pnpm content:stale --accept 记录：英文原文改了，它会提醒你更新译文。
-draft: true
 from:
   body: b3a0f9e2
 ---

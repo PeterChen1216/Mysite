@@ -29,7 +29,7 @@
 | 域名 | 仓库根目录 `CNAME` 写 `zhic.me`；部署产物里的 `CNAME` 由 `content/site.yaml → domain` 生成 | `CNAME`、`scripts/assemble-pages.mjs` |
 | 部署 | 推到 `main` → `.github/workflows/deploy.yml`：内容检查（严格）→ 单测 → 构建 → 组装 → Chromium E2E → 发布到 GitHub Pages → 写 CHANGELOG（约 11 分钟） | `deploy.yml` |
 | DNS | **仓库里没有**。PLAN §14 Q9 还没答。审计时记下：`www.zhic.me` 没有证书 | 你的域名服务商 |
-| 语言 | 英文 `live`；简体、繁体 `preview`（草稿，`noindex`） | `content/site.yaml → locales` |
+| 语言 | 英文、简体、繁体都是 `live`（两种中文 2026-11-14 上线，业主读过对照表后认可）；之前是 `preview`（草稿，`noindex`） | `content/site.yaml → locales` |
 | 分析 | 没有（CLAUDE.md 不允许无你同意就加） | — |
 
 **你要自己看的（仓库看不到）**：
@@ -54,7 +54,7 @@
 | | 上线前（现在） | 上线后 |
 |---|---|---|
 | `/` | 旧站 | 新站（英文） |
-| `/zh-hans/`、`/zh-hant/` | 在 `/v2/` 下 | 在根目录下，仍是 preview（`noindex`、草稿提示） |
+| `/zh-hans/`、`/zh-hant/` | 在 `/v2/` 下 | 在根目录下；上线当时仍是 preview（`noindex`、草稿提示），2026-11-14 起 live |
 | `/v2/…` | 新站预览 | 旧地址的跳转页：每个页面一个，`0` 秒跳到去掉 `/v2/` 的同一页（`noindex`，canonical 指新地址）；`/v2/resume.pdf` 仍是简历 |
 | `/legacy/` | 旧站 | 旧站（robots 禁止） |
 | `/work/Resume.pdf` | 当前简历 | 当前简历（旧站的链接不断） |
@@ -71,7 +71,7 @@
 在无痕窗口里，每条打开、看结果：
 1. `https://zhic.me/` → 新站，页脚 `updated` 是最近一次内容提交的日期。
 2. `https://zhic.me/projects/`、`https://zhic.me/projects/clock-stamp/` → 目录与项目页。
-3. `https://zhic.me/zh-hans/`、`https://zhic.me/zh-hant/` → 中文页，顶上有「草稿译文」提示。
+3. `https://zhic.me/zh-hans/`、`https://zhic.me/zh-hant/` → 中文页（2026-11-14 之前顶上有「草稿译文」提示；两种中文 live 之后没有）。
 4. `https://zhic.me/resume.pdf` → 简历 PDF；首页 RÉSUMÉ 按钮下载的文件名是 `Peter-Chen-Resume-<日期>.pdf`。
 5. `https://zhic.me/legacy/` → 旧站；`https://zhic.me/work/Resume.pdf` → 简历。
 6. `https://zhic.me/v2/` → 跳到 `https://zhic.me/`；`https://zhic.me/v2/projects/clock-stamp/` → 跳到项目页。
@@ -187,13 +187,13 @@ DECISIONS Q5 你同意过 Cloudflare Web Analytics 与 Cloudflare Pages 预览�
 | D18 | 声音：永远不要（Q-A1） | **不要** | PLAN-EXPERIENCE §10 |
 | D19 | iOS 16.0–17.3 上窗口与设置窗口背后不变暗（那些版本的 `::backdrop` 看不到 `var()`；要修就得在那里写字面颜色，违反「颜色只在 tokens.css」） | **不修**（窗口不透明、仍是模态） | M5「跨浏览器：特性检查」 |
 
-**E. 不阻塞：翻译（两种中文都是草稿，§6 上线时一并处理）**
+**E. 翻译（已做完：两种中文 2026-11-14 上线，见 §6）**
 | # | 决定 | 默认 | 出处 |
 |---|---|---|---|
-| E1 | 读并改简体草稿、繁体草稿（含各里程碑新增的界面文字） | **草稿，不上线** | X2「请你审阅」、X3/M3/X4 中文草稿 |
+| E1 | ~~读并改简体草稿、繁体草稿~~ **已定（2026-11-14）**：业主读过对照表后认可，两种中文上线 | — | X2「请你审阅」、X3/M3/X4 中文草稿 |
 | E2 | 学校、公司用官方中文名（Q-L2）；地名译成中文 | **保持英文；译成中文** | X2 决定 1、3 |
-| E3 | 香港版书面语还是粤语口语（Q-L4） | **书面语** | X2 决定 2 |
-| E4 | 繁体用词（設定、預設、連結、聯絡、載入、原始碼、回饋、資訊學、視窗…）与「併→並」一处 | **转换器原样**（一处错字已列出，没改） | X2「请你审阅」、X3 决定 9、M3 决定 8、X4 决定 12 |
+| E3 | ~~香港版书面语还是粤语口语（Q-L4）~~ **已定（2026-11-12）**：书面语为底，界面带口语元素 | — | X2 决定 2 |
+| E4 | 繁体用词（設定、預設、連結、聯絡、載入、原始碼、回饋、資訊學、視窗…）与「併→並」一处 ——**已定（2026-11-14）**：已全部改为香港用词，错字已改 | — | X2「请你审阅」、X3 决定 9、M3 决定 8、X4 决定 12 |
 | E5 | 中文页面上 Clock Stamp 手机保持英文界面；小标签升到 12 px；滚动条标签；中文标题 36 px 三行 | **如此** | X2 决定 5、7、8，X4 决定 8 |
 | E6 | 「Dean's List」繁体用「院長名單」还是「院長嘉許名單」 | **院長名單** | X2 决定 9 |
 | E7 | 浏览器是英文、页面是中文时建议英文 | **建议** | X2 决定 11 |
@@ -241,7 +241,7 @@ PLAN §10 的 R1–R9 和 PLAN-EXPERIENCE §11 的 X-R1–X-R9。Owner：**Peter
 | X-R1 | 测试矩阵拖慢 CI | Claude | 主作业分两半 + 手机、Firefox、上线配置各一个作业并行；每个作业都在上限内（见 STATUS M5 的 CI 记录） |
 | X-R2 | 五套主题放大设计债 | Claude / Peter（Figma） | 只用语义 token，对比度是单测；Figma 回写没做（B6） |
 | X-R3 | 中文破坏像素网格 | Claude | 每种语言的字号 token、版面测试每种语言都跑 |
-| X-R4 | 译文过期 | Peter（读）/ Claude（报告） | `pnpm content:stale` 每次 CI 都报；中文仍是草稿 |
+| X-R4 | 译文过期 | Peter（读）/ Claude（报告） | `pnpm content:stale` 每次 CI 都报；两种中文已 live，过期的译文照常显示直到更新 |
 | X-R5 | WebGL 占比与性能预算打架 | Claude | 3 级时占比 97.5–100 %（CI 量的）；首屏不等场景（LCP 是文字）；真笔记本上的帧率没量过（KPI 表） |
 | X-R6 | 悬停目录变成噪音 | Peter（审） | calm 保留状态变化、去掉动画；等你看 |
 | X-R7 | 热键栏挡内容或与浏览器的栏打架 | Claude | 下滑隐藏、安全区、聚焦的元素不被盖住（测试）；微信等内置浏览器没真机看过 |
