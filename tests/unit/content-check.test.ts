@@ -562,11 +562,22 @@ describe('the résumé, stray files and notes', () => {
   });
 
   it('a live language with drafts: one line per file, not one per field', () => {
-    const dir = contentWith({ 'site.yaml': (t) => t.replace('zh-hans: preview', 'zh-hans: live') });
+    // The fixture makes its own drafts and its own live locale, whatever the owner's are today.
+    const dir = contentWith({
+      'site.yaml': (t) => t.replace(/^( +)zh-hans: \w+$/m, '$1zh-hans: live # this fixture'),
+      'honors.yaml': (t) => t.replace(/^( +)zh-hans:\n/gm, '$1zh-hans:\n$1  draft: true\n'),
+      'copy.zh-hans.yaml': (t) => `draft: true\n${t}`,
+    });
     const r = run(dir, { strict: false, github: false });
     expect(r.code).toBe(1);
     const drafts = r.out.filter((l) => l.includes('still marked draft'));
-    expect(drafts.length).toBeLessThan(15);
+    // Two files hold drafts here (hundreds of fields in the copy file): two lines.
+    expect(drafts).toHaveLength(2);
+    expect(drafts).toContainEqual(
+      expect.stringMatching(
+        /^error: content\/copy\.zh-hans\.yaml: \d{3} zh-hans translation\(s\) still marked draft \(/,
+      ),
+    );
     // One line for the file, naming each field — whatever the owner's honors hold today.
     expect(drafts).toContainEqual(
       expect.stringMatching(
