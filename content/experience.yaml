@@ -12,7 +12,6 @@
   source: Resume.pdf (2026-11-03); iSchool link from legacy index.html
   # Translations (content/README.md "Translations"); company names stay in English.
   zh-hans:
-    draft: true
     role: 本科助教，INFO 180：数据科学导论
     location: 华盛顿州西雅图
     highlights:
@@ -23,12 +22,11 @@
       location: dbae9e5a
       highlights: b056f134
   zh-hant:
-    draft: true
-    role: 本科助教，INFO 180：數據科學導論
+    role: 本科生教學助理，INFO 180：數據科學導論
     location: 華盛頓州西雅圖
     highlights:
-      - 主持答疑時間，幫助學生調試 R 代碼、解決數據分析問題。
-      - 為 80 名學生批改小測、實驗和數據作業，並給予反饋。
+      - 主持答疑時間，協助學生為 R 程式碼除錯、解決數據分析問題。
+      - 為 80 名學生批改小測、實驗及數據功課，並給予回饋。
     from:
       role: 0ef12380
       location: cf135ec6
@@ -46,11 +44,10 @@
     - Built Tongren Coding’s customer-support IM module with Python, SQLite, and JavaScript; deployed on Android and web.
   source: Resume.pdf (2026-11-03)
   zh-hans:
-    draft: true
     role: 智能体开发实习生
     location: 中国杭州
     highlights:
-      - 实现了专利检索与比对流程，帮助用户找出相关的在先专利，并为撰写技术交底书生成结构化的比对。
+      - 实现了专利检索与比对流程，帮助用户找出相关的在先专利，并生成结构化的比对结果，用于撰写技术交底书。
       - 使用 Python、FastAPI、React 和 DeepSeek API 开发了内部专利交底书工具；经 15 名用户测试，人工撰写工作量减少约 70%。
       - 使用 Python、SQLite 和 JavaScript 为 Tongren Coding 开发了客服即时通讯模块，已部署到 Android 和网页端。
     from:
@@ -58,17 +55,16 @@
       location: 56d10c23
       highlights: f1e92b7c
   zh-hant:
-    draft: true
     role: 智能體開發實習生
     location: 中國杭州
     highlights:
-      - 實現了專利檢索與比對流程，幫助用户找出相關的在先專利，併為撰寫技術交底書生成結構化的比對。
-      - 使用 Python、FastAPI、React 和 DeepSeek API 開發了內部專利交底書工具；經 15 名用户測試，人工撰寫工作量減少約 70%。
-      - 使用 Python、SQLite 和 JavaScript 為 Tongren Coding 開發了客服即時通訊模塊，已部署到 Android 和網頁端。
+      - 實現了專利檢索與比對流程，協助用戶找出相關的在先專利，並生成結構化的比對結果，用於撰寫技術交底書。
+      - 使用 Python、FastAPI、React 和 DeepSeek API 開發了內部專利交底書工具；經 15 名用戶測試，人手撰寫工作量減少約 70%。
+      - 使用 Python、SQLite 和 JavaScript 為 Tongren Coding 開發了客戶服務即時通訊模組，已部署至 Android 及網頁版。
     from:
       role: 83bcb685
       location: b0bc48e2
-      highlights: dcc42242
+      highlights: a573a1ba
 
 - company: HashKey Global
   role: Operations Intern (Summer)
@@ -84,31 +80,29 @@
     - Supported approximately 70 web users and 150 Telegram leads daily while developing an AI-assisted workflow for inquiry classification.
   source: Resume.pdf (2026-11-03); company link from legacy index.html
   zh-hans:
-    draft: true
     role: 运营实习生（暑期）
     location: 中国上海
     logo_alt: HashKey Global 标志
     highlights:
       - 用 Excel 分析每日交易量和流动性数据，为销售分析和动态费率调整提供支持。
-      - 每天为约 70 名网页端用户和 150 条 Telegram 潜在客户线索提供支持，同时开发了用于咨询分类的 AI 辅助工作流。
+      - 每天为约 70 名网页端用户和 150 名 Telegram 潜在客户提供支持，同时开发了用于咨询分类的 AI 辅助工作流。
     from:
       role: 2c8623cb
       location: 9fbe94f2
       logo_alt: 762cc8ed
       highlights: 99706b0e
   zh-hant:
-    draft: true
-    role: 運營實習生（暑期）
+    role: 營運實習生（暑期）
     location: 中國上海
     logo_alt: HashKey Global 標誌
     highlights:
-      - 用 Excel 分析每日交易量和流動性數據，為銷售分析和動態費率調整提供支持。
-      - 每天為約 70 名網頁端用户和 150 條 Telegram 潛在客户線索提供支持，同時開發了用於諮詢分類的 AI 輔助工作流。
+      - 以 Excel 分析每日交易量及流動性數據，為銷售分析和動態費率調整提供支援。
+      - 每日為約 70 名網頁版用戶和 150 名 Telegram 潛在客戶提供支援，同時開發了用於查詢分類的 AI 輔助工作流程。
     from:
       role: 8f7db62b
       location: 5952f426
       logo_alt: 1ef62176
-      highlights: a2fdbb48
+      highlights: ffa06aff
 
 - company: North Helpline Food Bank (Lake City)
   role: Volunteer
@@ -120,7 +114,6 @@
     - Volunteered 5 hours weekly in food distribution and sorting operations serving the local community.
   source: Resume.pdf (2026-11-03)
   zh-hans:
-    draft: true
     role: 志愿者
     location: 华盛顿州西雅图
     highlights:
@@ -130,11 +123,10 @@
       location: dbae9e5a
       highlights: cbcc5836
   zh-hant:
-    draft: true
-    role: 志願者
+    role: 義工
     location: 華盛頓州西雅圖
     highlights:
-      - 每週志願服務 5 小時，參與服務當地社區的食物分發與分揀工作。
+      - 每週擔任義工 5 小時，參與服務當地社區的食物派發及分類工作。
     from:
       role: 4f75d587
       location: cf135ec6

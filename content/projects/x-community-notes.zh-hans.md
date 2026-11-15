@@ -1,7 +1,6 @@
 ---
-# x-community-notes.md 的简体中文译文（Claude 起草，未经审阅）。学校与实验室名称保持英文。
-# 审阅修改后删掉 draft 这一行；没翻译的字段显示英文原文。
-draft: true
+# x-community-notes.md 的简体中文译文（Claude 起草，Peter 于 2026-11-14 审阅并认可）。学校与实验室名称保持英文。
+# 没翻译的字段显示英文原文。
 title: X Community Notes 潜在因子分析
 tagline: 研究工作室项目
 role: 组长，University of Washington，INFO 494（Saveski-Lab）

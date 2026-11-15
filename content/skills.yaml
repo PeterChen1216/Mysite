@@ -4,12 +4,10 @@ groups:
   - name: Frameworks & Techs
     items: [React, Agno Agent, SQLite]
     zh-hans:
-      draft: true
       name: 框架与技术
       from:
         name: 7619d1b5
     zh-hant:
-      draft: true
       name: 框架與技術
       from:
         name: 6fbd6080
@@ -17,26 +15,22 @@ groups:
     items: [Python, R, SQL, Swift (SwiftUI), JavaScript, HTML/CSS]
     basic: [Java]
     zh-hans:
-      draft: true
       name: 编程
       from:
         name: 9aab932a
     zh-hant:
-      draft: true
       name: 編程
       from:
         name: e677ac3f
   - name: Languages
     items: [Mandarin Chinese (Native), English (Professional Working Proficiency)]
     zh-hans:
-      draft: true
       name: 语言
       items: [普通话（母语）, 英语（专业工作水平）]
       from:
         name: e6140fcd
         items: ed265d8b
     zh-hant:
-      draft: true
       name: 語言
       items:
         - 普通話（母語）
@@ -47,14 +41,12 @@ groups:
   - name: Tools
     items: [GIS Mapping (QGIS & ArcGIS), Git, Xcode, Excel]
     zh-hans:
-      draft: true
       name: 工具
       items: [GIS 制图（QGIS 与 ArcGIS）, Git, Xcode, Excel]
       from:
         name: 98fb1c87
         items: 12fbd79e
     zh-hant:
-      draft: true
       name: 工具
       items:
         - GIS 製圖（QGIS 與 ArcGIS）

@@ -1,45 +1,44 @@
-# 由 pnpm content:hant 從簡體版（copy.zh-hans.yaml）逐字轉換為香港繁體字形（OpenCC s2hk），只轉字形、不改用詞。
-# draft: true —— 尚未審閱：請讀過、改正一對多的錯字（發/髮、後/后、乾/幹/干、麵/面…）和香港用詞，
-# 然後刪掉 draft 這一行。from 記錄它轉換自的簡體文字；之後這份繁體由你維護，腳本不會再覆蓋它。
+# 最初由 pnpm content:hant 從簡體版（copy.zh-hans.yaml）轉換，其後已人手改為香港用詞：事實內容用書面語，
+# 介面文字帶少量粵語口語。Peter 於 2026-11-14 審閱並認可。
+# from 記錄它對應的簡體文字；這份繁體由人手維護，腳本不會再覆蓋它。
 
-draft: true
 
 nav:
   links:
     - { label: '~/關於', href: '#about' }
     - { label: '~/項目', href: '#projects' }
     - { label: '~/經歷', href: '#experience' }
-    - { label: '~/聯繫', href: '#contact' }
+    - { label: '~/聯絡', href: '#contact' }
   status: 在線 · {city}
-  resume: 簡歷（英文）
-  say_hi: 打個招呼
-  logo_label: '{domain}——回到頂部'
+  resume: 履歷（英文）
+  say_hi: 打聲招呼
+  logo_label: '{domain}——返回頂部'
   sections_label: 欄目
   hotbar:
     - 關於
     - 項目
     - 經歷
-    - 聯繫
-  hotbar_prefs: 設置
+    - 聯絡
+  hotbar_prefs: 設定
 
 hero:
   headline:
-    - 把[數據]
-    - 打造成
-    - 人們喜愛的東西[_]
+    - 將[數據]
+    - 砌成
+    - 大家鍾意的東西[_]
   terminal_title: '{host}@{domain}: ~ — zsh'
   cmd_whoami: whoami
   cmd_interests: cat ~/interests.txt
   ok: '[OK]'
   summon: '/summon pixel_globe ~ ~ ~ {rotate:1b}'
-  summon_ok: '已召喚 PixelGlobe。區塊已加載：36/36。{status}。'
+  summon_ok: '已召喚 PixelGlobe。區塊已載入：36/36。{status}。'
   whoami_line: '{name} — {programme} @ {school}，{year} 屆。'
-  cta_projects: 查看項目
-  cta_resume: 下載英文簡歷
+  cta_projects: 睇睇項目
+  cta_resume: 下載英文履歷
   eyebrow_prefix: '// 玩家:'
   globe_label: 地球
   globe_value: '已轉動 {deg}°'
-  avgeek_badge: AvGeek  ✈  航線 · 座位 · 里程
+  avgeek_badge: AvGeek  ✈  航線 · 座位 · 里數
   avgeek_route: AvGeek  ✈  {from} ⇄ {to}
   globe_lat:
     n: 北緯 {deg}°
@@ -64,71 +63,71 @@ hero:
   copy_label: 複製 {handle}
   copied: 已複製
   prompt:
-    open: 在終端裏輸入命令
-    label: 命令
-    hint: 輸入 help 查看命令。按 Esc 關閉。
+    open: 在終端機輸入指令
+    label: 指令
+    hint: 輸入 help 睇指令。按 Esc 關閉。
     help:
-      - help — 這份列表
-      - whoami — 我是誰
-      - ls — 本頁的各個欄目
-      - cat interests.txt — 我的興趣
-      - open resume — 下載我的英文簡歷
-      - theme night | day | mono | paper | prism — 更換主題
-      - clear — 清屏
-      - exit — 關閉命令行
-    not_found: 找不到命令：{cmd} —— 試試 help
+      - help — 呢份清單
+      - whoami — 我係邊個
+      - ls — 本頁各個欄目
+      - cat interests.txt — 我鍾意啲乜
+      - open resume — 下載我的英文履歷
+      - theme night | day | mono | paper | prism — 轉主題
+      - clear — 清空畫面
+      - exit — 關閉指令列
+    not_found: 找不到指令：{cmd} —— 試下 help
     theme_set: 主題：{name}
-    opening: 正在打開 {name}…
+    opening: 正在開啟 {name}…
   more: 更多 ▾
   less: 收起 ▴
   badges_label: 亮點
 
 ticker:
   label: 狀態
-  tags: { xp: XP, now: 當前, work: 工作, ping: PING, edu: 教育 }
+  tags: { xp: XP, now: 而家, work: 工作, ping: PING, edu: 教育 }
 
 about:
   cmd: cat ~/about.md
-  title: [ '玩家屬性與', '已加載區塊' ]
-  blurb: 我是誰、在學什麼，以及沒在發佈作品的時候都在忙些什麼。所有屬性均為自報，沒有作弊。
-  whoami_title: 你好，我是 {first}（Zhicheng），{major}理學學士在讀。
+  title: [ '玩家屬性與', '已載入區塊' ]
+  blurb: 我是誰、在讀什麼，以及沒有作品要趕的時候都在忙什麼。所有屬性均為自行申報，絕無出貓。
+  whoami_title: 你好，我是 {first}（Zhicheng），修讀{major}理學士。
   card_whoami: whoami
   card_gpa: 績點 --等級
-  card_now: 現在 --在做
+  card_now: 而家 --砌緊
   card_education: 教育經歷
-  card_off: 下班 --以後
+  card_off: 收工 --之後
   card_avgeek: avgeek
   card_skills: 物品欄 --技能
-  avgeek_title: 航線、座位、里程計劃。
-  now_link: 在 App Store 中打開
+  avgeek_title: 航線、座位、里數計劃。
+  now_link: 在 App Store 開啟
   skills_basic: 基礎
   gpa_out_of: 滿分
   track_suffix: 方向
-  minor_prefix: 輔修
+  minor_prefix: 副修
   coursework: 相關課程
   avgeek_panels:
-    watching: 關注中
-    seat_rules: 選座規則
-    favorite_cabins: 喜歡的艙位
-    news: 航線新聞
+    watching: 留意緊
+    seat_rules: 揀位規則
+    favorite_cabins: 心水艙位
+    news: 航線消息
     fare_examples: 票價實驗室
     tools: 常用工具
   slot_tip: "{group} · 第 {n} 項，共 {count} 項"
 
 projects:
   cmd: ls ~/projects --sort=shipping
-  title: [ '已發佈與', '進行中的作品' ]
-  blurb: 我做過和正在做的東西。先看精選作品，然後是物品欄裏的其餘東西。
+  title: [ '已推出與', '進行中的作品' ]
+  blurb: 我做過和正在做的東西。先睇精選作品，然後是物品欄裏的其他東西。
   featured: ★ 精選
-  stack_label: '技術棧：'
+  stack_label: '技術：'
   status_title: '~/projects'
   status_cmd: git status
   link_appstore: App Store
-  link_repo: 源代碼
-  link_live: 在線網站
+  link_repo: 原始碼
+  link_live: 瀏覽網站
   next_label: 下一個 --區塊
-  next_title: '???（加載中…）'
-  next_body: 區塊尚未生成——再過幾次提交後回來看看。
+  next_title: '???（載入中…）'
+  next_body: 區塊尚未生成——多幾次提交之後再返嚟睇睇。
   next_tags: [ 待定 ]
   next_progress: 正在生成區塊 (-1, 3)…
   # 手機畫的是 App 自己的英文界面，所以這裏保持英文。
@@ -148,65 +147,66 @@ projects:
 
 experience:
   cmd: git log --oneline --graph ~/career
-  title: [ 提交歷史 ]
-  blurb: 我走過的路，最新的在前。HEAD 指向接下來的事。
-  head_hint: 打個招呼 ↓
-  head_dates: 現在 →
+  title:
+    - 提交紀錄
+  blurb: 我走過的路，最新的排最前。HEAD 指向接下來的事。
+  head_hint: 打聲招呼 ↓
+  head_dates: 而家 →
   community_cmd: git log --oneline ~/community
   community_title: 社區
   show_cmd: git show {hash}
 
 contact:
   cmd: ping {host} --count 1
-  title: [ '一起來', '做點什麼吧。' ]
-  say_hi: 打個招呼 · 郵件
+  title: [ '一齊', '砌啲嘢啦。' ]
+  say_hi: 打聲招呼 · 電郵
   github: GITHUB
   linkedin: LINKEDIN
-  resume: 英文簡歷 PDF
+  resume: 英文履歷 PDF
   terminal_title: '~/contact — zsh'
   ping:
     request: 'PING {host} ({email}): 56 data bytes'
     reply: '64 bytes from {email}: icmp_seq=0 ttl=64 time=0.27 ms'
     summary: '--- 1 packet transmitted, 1 received, 0% packet loss ---'
   open_cmd: 'open mailto:{email}'
-  emails_label: 或寫信至
+  emails_label: 或電郵至
 
 footer:
-  tagline: 由體素、咖啡和太多航班搭建而成
-  prefs: 設置
-  back_to_top: ▲ 回到出生點
-  rights: 保留所有權利。
+  tagline: 由體素、咖啡和太多航班砌成
+  prefs: 設定
+  back_to_top: ▲ 返回重生點
+  rights: 版權所有。
   updated: 更新於
 
 prefs:
-  open_label: 設置
+  open_label: 設定
   pause_label: 暫停動畫
   title: '~/.config — prefs'
-  heading: 設置
-  intro: 更改即時生效，並且只保存在此瀏覽器中。
+  heading: 設定
+  intro: 更改即時生效，並只儲存在此瀏覽器。
   close: 關閉
   reset_cmd: reset
-  reset: 恢復默認設置
+  reset: 重設為預設值
   theme:
     cmd: theme --set
     legend: 主題
     options:
-      night: { name: 夜間, note: 默認 }
-      day: { name: 白天, note: 主世界 }
+      night: { name: 夜間, note: 預設 }
+      day: { name: 日間, note: 主世界 }
       mono-dark: { name: 黑白深色, note: 基岩 }
       mono-light: { name: 黑白淺色, note: 紙張 }
-      cvd: { name: 色盲友好, note: 稜鏡 }
-      auto: { name: 自動, note: '夜間或白天，跟隨設備' }
-    contrast_note: 你的設備要求更高的對比度，所以每個主題都使用更醒目的線條和文字。
+      cvd: { name: 色盲友善, note: 稜鏡 }
+      auto: { name: 自動, note: '夜間或日間，跟隨裝置' }
+    contrast_note: 你的裝置要求較高對比度，因此所有主題都會使用更醒目的線條和文字。
   motion:
     cmd: motion --set
-    legend: 動效
+    legend: 動態效果
     options:
-      auto: { name: 自動, note: 跟隨設備 }
-      full: { name: 完整, note: 一切都會動 }
-      calm: { name: 平靜, note: '沒有開場和火花，循環放慢' }
-      off: { name: 關閉, note: 一切靜止 }
-    reduced_note: 你的設備要求減少動態效果，所以無論選擇什麼，頁面都保持靜止。
+      auto: { name: 自動, note: 跟隨裝置 }
+      full: { name: 完整, note: 樣樣都會郁 }
+      calm: { name: 平靜, note: '沒有開場動畫和火花，循環放慢' }
+      off: { name: 關閉, note: 樣樣都唔郁 }
+    reduced_note: 你的裝置要求減少動態效果，所以無論選哪一項，頁面都會保持靜止。
   text:
     cmd: text --size
     legend: 文字大小
@@ -216,11 +216,11 @@ prefs:
     legend: 鍵盤快捷鍵
     on: 開
     off: 關
-    note: '不在輸入框裏打字時，按“,”打開此窗口，按“p”暫停動畫。'
+    note: '不在輸入欄打字時，按「,」開啟此視窗，按「p」暫停動畫。'
   lang:
     cmd: lang --set
     legend: 語言
-    note: 每種語言都是單獨的頁面；點擊鏈接後仍停留在當前位置。
+    note: 每種語言都是獨立頁面；點擊連結後仍會停留在原來位置。
     draft: 草稿
 
 labels:
@@ -231,42 +231,42 @@ labels:
   months: [ 1月, 2月, 3月, 4月, 5月, 6月, 7月, 8月, 9月, 10月, 11月, 12月 ]
   year_month: '{year}年{month}'
   list_separator: 、
-  platform: { ios: iOS, web: 網頁, cli: 命令行, research: 研究 }
+  platform: { ios: iOS, web: 網頁, cli: 指令列, research: 研究 }
   status:
     idea: 構想
     wip: 進行中
     testflight: TestFlight
-    shipped: 已發佈
+    shipped: 已推出
     completed: 已完成
-    archived: 已歸檔
-  new_tab: （在新標籤頁中打開）
-  skip_link: 跳到正文
+    archived: 已封存
+  new_tab: （在新分頁開啟）
+  skip_link: 跳至正文
 
 i18n:
   name: 繁體中文
-  preview_notice: 草稿譯文，尚未經過審閲。
-  preview_link: 閲讀英文版
-  suggest: 本頁也有繁體中文版。
-  suggest_go: 閲讀繁體中文版
-  suggest_dismiss: 不用了
+  preview_notice: 草稿譯文，尚未審閱。
+  preview_link: 閱讀英文版
+  suggest: 本頁亦有繁體中文版。
+  suggest_go: 睇繁體中文版
+  suggest_dismiss: 唔使喇
   suggest_label: 語言建議
 
 windows:
   more: 更多 ▸
   more_label: 全部項目
   move_label: 移動視窗
-  move_hint: 方向鍵移動視窗，按住 Shift 移得更遠；Enter 或 Home 放回原處。
+  move_hint: 方向鍵移動視窗，按住 Shift 移得更遠；Enter 或 Home 放回原位。
   close: 關閉
-  hint: 按 Esc 或點擊標題欄，把視窗縮回桌面。
+  hint: 按 Esc 或點擊標題列，把視窗縮回桌面。
   loading: 正在載入區塊…
-  failed: 區塊載入失敗。打開這一頁：
+  failed: 區塊載入失敗。開啟此頁：
   directory_title: projects/ — 目錄
   directory_cmd: ls -la ~/projects
   directory_heading: 全部項目
   project_title: '~/projects/{id}'
   project_cmd: 'cat ~/projects/{id}.md'
   crumbs_label: 你在這裏
-  home_label: 首頁
+  home_label: 主頁
   page_title: '{project} — {domain}'
   directory_page_title: '項目 — {domain}'
   neighbours_label: 更多項目
@@ -278,14 +278,14 @@ not_found:
   page_title: '找不到區塊 — {domain}'
   title: '404 — 找不到區塊'
   cmd: 'cd {path}'
-  error: 'cd: 沒有這個區塊：{path}'
+  error: 'cd: 冇呢個區塊：{path}'
   heading: 找不到區塊
-  body: 這一頁不存在。它可能已經搬走了，也可能還沒有生成。
+  body: 此頁並不存在。它可能已經搬走，或者尚未生成。
   home: cd ~
-  home_label: 回到首頁
+  home_label: 返回主頁
   projects_label: 全部項目
 og:
-  alt: '體素世界前的一個終端視窗：{title}'
+  alt: '體素世界前的一個終端機視窗：{title}'
 
 scene:
   hud: '幀率 {fps} · {ms} 毫秒 · 圖形等級 {tier}（{reason}）· {draws} 次繪製 · 像素比 {dpr}'

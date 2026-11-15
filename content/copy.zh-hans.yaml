@@ -3,9 +3,8 @@
 # 终端命令（whoami、git log …）、ping 的输出和 Clock Stamp 手机上的画面保持英文：
 # 它们是代码或 App 本身的样子。
 #
-# draft: true —— 这是 Claude 根据英文起草的译文，还没有经过你审阅。审阅、修改之后删掉这一行；
-# 在此之前 site.yaml 里的 zh-hans 只能是 preview。
-draft: true
+# Claude 根据英文起草，Peter 于 2026-11-14 审阅并认可。之后新加的译文若还没读过，
+# 在它所在的块里写 draft: true（live 的语言里有草稿，检查会拦下）。
 
 nav:
   links:
